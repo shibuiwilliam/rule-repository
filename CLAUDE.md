@@ -1,0 +1,400 @@
+# CLAUDE.md
+
+> Operational guide for Claude Code when working on the **Rule Repository** project.
+> For the project vision, domain model, and roadmap, see **PROJECT.md**.
+
+This file is the working contract between you (Claude Code) and the project. Read it before making changes. When in doubt, follow the rules in this file over your prior conventions.
+
+---
+
+## 1. Project at a Glance
+
+The Rule Repository stores natural-language rules (laws, contracts, policies, engineering rules, doc standards) and makes them searchable, evaluable, and enforceable through LLM-assisted services and SDKs. See `PROJECT.md` for the full design.
+
+**This repository is a monorepo** containing the backend server, frontend, Python client SDKs, and local dev infrastructure. The first deliverable is a fully working local stack via **Docker Compose**.
+
+---
+
+## 2. Tech Stack (authoritative)
+
+| Layer | Technology | Notes |
+|---|---|---|
+| Backend | **Python 3.13** + FastAPI | Library management with **uv** |
+| Frontend | **TypeScript**, **React**, **Next.js**, **Tailwind CSS** | Library management with **pnpm** |
+| Python clients | **Python 3.13** (Rule Client, Agentic Rule Client) | Library management with **uv** |
+| LLM | **Gemini 3 Flash** (`gemini-3-flash-preview`) and **Gemini 3.1 Pro** (`gemini-3.1-pro-preview`) | via `google-genai` SDK |
+| Document parsing / OCR | **Gemini Files API** + document understanding | PDF, text, markdown |
+| Relational DB | **PostgreSQL** | rules, revisions, audit log |
+| Search | **Elasticsearch** | full-text + hybrid search |
+| Graph DB | **Neo4j** | rule relationships (`refines`, `overrides`, `conflicts_with`, `derives_from`, `succeeds`, `depends_on`) |
+| Local orchestration | **Docker Compose** | dev + integration tests |
+
+Do **not** introduce additional frameworks or services without updating this file and PROJECT.md first.
+
+---
+
+## 3. Repository Layout
+
+```
+rule-repository/
+├── apps/
+│   ├── server/                 # FastAPI backend (Python 3.13, uv)
+│   │   ├── pyproject.toml
+│   │   ├── src/rulerepo_server/
+│   │   │   ├── api/v1/         # REST API routers (rules, search, evaluate, intent, etc.)
+│   │   │   ├── core/           # config, logging, errors, auth, middleware, PII
+│   │   │   ├── domain/         # Rule, Evaluation, Verdict (pure domain objects)
+│   │   │   ├── services/       # evaluation/, extraction/, search, intent, intelligence/, context_delivery/
+│   │   │   ├── adapters/       # postgres, elasticsearch, neo4j, gemini, files
+│   │   │   ├── mcp/            # MCP server (tools, resources, prompts)
+│   │   │   ├── gateway/        # Enforcement gateway (normalizers, policies, SSE)
+│   │   │   ├── integrations/   # GitHub App, CI formatters
+│   │   │   ├── schemas/        # Pydantic request/response models
+│   │   │   └── workers/        # background jobs
+│   │   ├── alembic/            # database migrations
+│   │   └── tests/
+│   └── frontend/               # Next.js + TS + Tailwind (pnpm)
+│       ├── package.json
+│       ├── app/                # App Router (rules, search, documents, intelligence, gateway, integrations)
+│       └── components/         # Badge, RuleCard, RuleGraph, Pagination, etc.
+├── packages/
+│   ├── rule-client/            # Python SDK (thin wrapper over server APIs)
+│   ├── agentic-client/         # Python SDK (wraps rule-client + evaluation)
+│   └── cli/                    # CLI tools: rulerepo-check, rulerepo-hook, rulerepo-ingest
+├── infra/
+│   ├── docker/                 # Dockerfiles (server, frontend)
+│   ├── postgres/               # init SQL
+│   ├── elasticsearch/          # index templates + setup script
+│   └── neo4j/                  # constraints
+├── scripts/                    # seed_data, reconcile_graph, generate_claude_md
+├── development/                # technical development docs
+├── docs/                       # mkdocs documentation site
+├── docker-compose.yml          # local dev stack
+├── pyproject.toml              # uv workspace root
+├── pnpm-workspace.yaml
+├── .env.example
+├── PROJECT.md                  # project vision and specification
+└── CLAUDE.md                   # this file — operational guide
+```
+
+When adding a new package, place it under `apps/` (deployable apps) or `packages/` (libraries). Update `pyproject.toml` (uv workspace) or `pnpm-workspace.yaml` accordingly.
+
+---
+
+## 4. Quick Start (local dev)
+
+The whole stack must come up with one command. If your changes break this, fix it before continuing.
+
+```bash
+cp .env.example .env            # then fill in GEMINI_API_KEY
+docker compose up --build       # brings up: server, frontend, postgres, elasticsearch, neo4j
+```
+
+Expected services after `up`:
+
+| Service | URL | Purpose |
+|---|---|---|
+| Backend API | http://localhost:8000 | REST + Intent API |
+| API docs (OpenAPI) | http://localhost:8000/docs | FastAPI Swagger UI |
+| Frontend | http://localhost:3000 | Next.js dev server |
+| PostgreSQL | localhost:5432 | `ruledb` |
+| Elasticsearch | http://localhost:9200 | search index |
+| Neo4j Browser | http://localhost:7474 | rule graph |
+
+The frontend talks to the backend over `NEXT_PUBLIC_API_BASE_URL`. The Python clients talk to the backend over `RULEREPO_SERVER_URL`.
+
+---
+
+## 5. Common Commands
+
+### Backend (apps/server)
+
+```bash
+cd apps/server
+uv sync                         # install deps
+uv run uvicorn rulerepo_server.main:app --reload   # run dev server
+uv run pytest                   # run tests
+uv run ruff check .             # lint
+uv run ruff format .            # format
+uv run mypy src                 # type check
+```
+
+### Frontend (apps/frontend)
+
+```bash
+cd apps/frontend
+pnpm install
+pnpm dev                        # Next.js dev server
+pnpm build && pnpm start        # production build
+pnpm lint                       # ESLint
+pnpm test                       # Vitest / React Testing Library
+pnpm typecheck                  # tsc --noEmit
+```
+
+### Python SDKs (packages/rule-client, packages/agentic-client)
+
+```bash
+cd packages/rule-client
+uv sync
+uv run pytest
+uv build                        # build wheel
+```
+
+### CLI Tools (packages/cli)
+
+```bash
+rulerepo-check --diff "$(git diff origin/main...HEAD)" --format github-actions   # CI
+rulerepo-hook preflight --file src/api/handler.py     # agent hook: before edit
+rulerepo-hook posthoc --file src/api/handler.py       # agent hook: after edit
+rulerepo-ingest --source claude-md --file ./CLAUDE.md --scope engineering/python  # import rules
+```
+
+### MCP Server
+
+```bash
+uv run rulerepo-mcp                    # stdio (local, for Claude Code)
+MCP_TRANSPORT=streamable-http uv run rulerepo-mcp   # HTTP (remote agents)
+```
+
+### Whole repo (from root)
+
+```bash
+docker compose up --build
+docker compose down -v          # tear down + wipe volumes
+docker compose logs -f server   # tail server logs
+uv run python -m pytest         # run all tests (142+)
+```
+
+---
+
+## 6. Coding Conventions
+
+### Python (server + clients)
+- **Python 3.13**. Use modern syntax: built-in generics (`list[str]`, `dict[str, int]`), `match` where it improves clarity.
+- **Type hints are mandatory** on all public functions. mypy must pass on `src/`.
+- **Formatter and linter**: `ruff` (both linting and formatting). Configure via `pyproject.toml`. No `black`, no `isort` (ruff covers both).
+- **Naming**: snake_case for functions/vars, PascalCase for classes, SCREAMING_SNAKE_CASE for constants. Module names lowercase.
+- **Docstrings**: Google style. Required on all public APIs.
+- **Errors**: define a project-specific exception hierarchy under `rulerepo_server.errors` / `rulerepo.errors`. Never raise bare `Exception`.
+- **Logging**: `structlog` with JSON output. Never `print()` outside of one-off scripts.
+- **Pydantic** for all data validation at API boundaries. Use Pydantic v2 idioms.
+- **Tests**: `pytest` + `pytest-asyncio`. Aim for unit tests on pure logic, integration tests against the docker-compose stack.
+
+### TypeScript (frontend)
+- **Strict TS**: `"strict": true` in `tsconfig.json`. No `any` without justification.
+- **App Router** (Next.js 14+ idioms). Server Components by default, Client Components only when needed.
+- **Tailwind**: prefer utility classes over custom CSS. Centralize design tokens in `tailwind.config.ts`.
+- **State**: prefer Server Components and URL state. For client state, `zustand`. For server-state caching, `@tanstack/react-query`.
+- **Components**: PascalCase files, one component per file unless tightly coupled.
+- **API calls**: generated TypeScript client from the backend's OpenAPI spec (`openapi-typescript` or `orval`). Do not hand-write types that already exist in the API contract.
+- **Linting**: ESLint + Prettier. `pnpm lint` must pass.
+
+### Commits / branches
+- Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`.
+- Branch from `main`. Open PRs even for solo work — keeps history reviewable.
+
+---
+
+## 7. Backend Architecture Notes
+
+The server is a single FastAPI application that exposes:
+
+- **REST API** at `/api/v1/...` for CRUD on rules, documents, evaluations.
+- **Evaluate API** at `/api/v1/evaluate` for code-aware compliance checking (diffs, files, or facts).
+- **Intent API** at `/api/v1/intent` that classifies natural-language queries and routes to handlers.
+- **Gateway API** at `/api/v1/gateway/...` for webhook-driven enforcement.
+- **Intelligence API** at `/api/v1/intelligence/...` for health scoring, analytics, recommendations.
+- **Integrations** at `/api/v1/integrations/...` for GitHub webhook receiver.
+- **MCP Server** on a separate port (8001) for AI agent tool integration.
+
+Internal modules:
+
+```
+src/rulerepo_server/
+├── main.py                     # FastAPI app factory
+├── api/v1/                     # routers (rules, search, evaluate, intent, intelligence, extraction)
+├── core/                       # config, logging, errors, auth, middleware, PII, deps
+├── domain/                     # Rule, Evaluation, Verdict, AuditEntry (pure)
+├── services/
+│   ├── evaluation/             # Code-Aware Evaluation Engine (diff parser, rule selector, LLM judge)
+│   ├── extraction/             # Document ingestion pipeline (Gemini-powered)
+│   ├── intelligence/           # Health scoring, analytics, recommendations
+│   ├── context_delivery/       # Smart rule selection + formatting for agents
+│   ├── search.py               # Multi-modal search service
+│   ├── rule_service.py         # Rule CRUD orchestration (PG+ES+Neo4j)
+│   └── intent.py               # Intent classification and routing
+├── adapters/                   # postgres, elasticsearch, neo4j, gemini, files
+├── mcp/                        # MCP server (tools, resources, prompts)
+├── gateway/                    # Enforcement gateway (normalizers, policies)
+├── integrations/               # GitHub webhook, CI formatters
+├── workers/                    # background jobs
+└── schemas/                    # Pydantic request/response models
+```
+
+**Layering rule**: `api` depends on `services`, `services` depends on `domain` and `adapters`. `domain` depends on nothing else in the project. Do not import upward.
+
+**Async**: the API layer is fully async. DB calls use `asyncpg` (or `sqlalchemy[asyncio]`), Elasticsearch via the async client, Neo4j via the official async driver, Gemini via `google-genai`.
+
+---
+
+## 8. Frontend Notes
+
+The frontend is the operator console for the Rule Repository:
+
+- Browse and search rules
+- Upload documents → run extraction → review/approve candidate rules
+- View rule details, source provenance, and the relationship graph
+- Inspect evaluations and audit logs
+- Manage governance (owners, approvers, revision proposals)
+
+Use the Next.js App Router. Co-locate route segments under `app/(area)/...`. Use Server Components for data fetching where possible; switch to Client Components only for interactivity.
+
+The graph view (Neo4j-backed) renders using something like `react-flow` or `cytoscape`. Pick one early and stick with it.
+
+---
+
+## 9. Gemini API Integration (read carefully)
+
+The LLM layer is the heart of this system. Get this right.
+
+### 9.1 SDK
+- **Use `google-genai`** (the new unified SDK). Do **not** use the deprecated `google-generativeai`.
+- Install via uv: `uv add google-genai httpx`.
+
+### 9.2 Models
+Two models are in use:
+
+| Use case | Model ID | Why |
+|---|---|---|
+| High-throughput, routine tasks (search ranking, simple extraction, classification) | `gemini-3-flash-preview` | fast, cheap |
+| High-stakes judgment (rule extraction QC, conflict detection, evaluation of CRITICAL rules) | `gemini-3.1-pro-preview` | strongest reasoning |
+
+Centralize model selection in one config module (`core/llm.py`). Never hardcode model IDs in business logic — always read from config.
+
+### 9.3 Mandatory rules when calling Gemini
+- **Do NOT change `temperature`** away from the default (1.0). Lower temperatures degrade Gemini 3 reasoning quality and can cause loops. If a caller insists on determinism, document the override and review carefully.
+- Use **`thinking_level`** (not the legacy `thinking_budget`). Valid values: `minimal`, `low`, `medium`, `high`. Default to `low` for high-throughput tasks, `high` for judgment tasks.
+- For function calling, **thought signatures must be cycled through** every turn. The `google-genai` SDK and standard chat history handle this automatically — do not strip signatures from history.
+- For PDFs in document processing, set `media_resolution: "media_resolution_medium"` (560 tokens/page). Going higher rarely helps OCR and increases token cost.
+- Use **structured output** (`response_mime_type="application/json"` + `response_json_schema`) for any call that must return data the system parses. Do not regex out fields from free-form LLM text.
+
+### 9.4 Document ingestion (PDF, text, markdown)
+- **PDFs**: upload via the **Files API** (`client.files.upload(...)`) for documents > a few pages. Files API is free, files persist 48 hours, max 50 MB / 1000 pages.
+- For small / one-shot PDFs, inline `Part.from_bytes(data=..., mime_type='application/pdf')` is fine.
+- **Text and markdown**: pass as plain text. Note that Gemini "document understanding" only meaningfully renders PDFs; for `.md`/`.txt`, treat them as text-only inputs (no charts, no formatting interpretation).
+- Each PDF page is roughly 258 tokens for image content; extracted native text is included free.
+- The extraction pipeline (see PROJECT.md §6.1) wraps these calls; do not bypass it from random parts of the codebase.
+
+### 9.5 Cost and latency discipline
+- Cache LLM responses by `hash(inputs + model + prompt_version)` in Postgres. Invalidate on rule revision.
+- Use `gemini-3.1-flash-lite-preview` only if explicitly approved for a use case where Flash is overkill. Default is `gemini-3-flash-preview`.
+- Long-context calls (rule corpus + large doc) should use **context caching** for repeated reuse.
+
+### 9.6 Determinism and audit
+- Every LLM call that produces a verdict, a candidate rule, or a relationship suggestion **must** log: model ID, prompt version (a content hash), inputs, outputs, latency, timestamp. This goes to the audit log.
+- Prompts live in `services/<area>/prompts/` as standalone files (or constants), versioned in git. No inline strings scattered across the codebase.
+
+---
+
+## 10. Data Layer
+
+### 10.1 PostgreSQL (system of record)
+- Stores rules, revisions, source documents, evaluations, audit log.
+- Migrations: `alembic`. One head per branch; rebase migrations before merging.
+- The audit log table is **append-only**. Enforce with a Postgres trigger that rejects updates/deletes. Add a hash chain column linking each row to the previous row.
+
+### 10.2 Elasticsearch (search)
+- Index `rules` with: `statement` (analyzed), `tags`, `scope`, `modality`, `effective_period`, `embedding` (dense_vector for hybrid search).
+- Use BM25 + kNN hybrid scoring. Rerank top-k with the LLM only when the user requests "smart" search.
+- Re-index on rule revision; do not run partial updates that risk drift.
+
+### 10.3 Neo4j (relationship graph)
+- One node label: `Rule`. Node `id` matches the Postgres rule ID.
+- Relationships: `REFINES`, `OVERRIDES`, `CONFLICTS_WITH`, `DEPENDS_ON`, `DERIVES_FROM`, `SUCCEEDS`. Direction matters and is documented in PROJECT.md §5.2.
+- Postgres is the source of truth for rule existence; Neo4j is a derived projection of relationships. If they disagree, Postgres wins and Neo4j is rebuilt.
+- Provide a reconciler script (`scripts/reconcile_graph.py`) that rebuilds Neo4j from Postgres.
+
+---
+
+## 11. Testing
+
+- **Unit tests**: pure logic in `domain/`. No external services. Fast.
+- **Integration tests**: spin up docker-compose services in CI. Use `testcontainers-python` if running in CI without compose.
+- **LLM tests**: never call the real Gemini API in unit tests. Use a mock client. For integration, gate behind an env flag (`RULEREPO_LIVE_LLM=1`).
+- **Frontend tests**: Vitest + React Testing Library for components; Playwright for end-to-end if added later.
+- **Eval harness**: a separate test suite that validates LLM-driven features (rule extraction quality, conflict detection precision/recall) against curated fixtures. This runs nightly, not on every PR.
+
+---
+
+## 12. Environment Variables
+
+All env vars live in `.env.example`. Never commit `.env`. Required for local dev:
+
+```
+# Core
+GEMINI_API_KEY=...
+DATABASE_URL=postgresql+asyncpg://rule:rule@postgres:5432/ruledb
+ELASTICSEARCH_URL=http://elasticsearch:9200
+NEO4J_URI=bolt://neo4j:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=ruledev
+RULEREPO_SERVER_URL=http://server:8000
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+LOG_LEVEL=INFO
+LLM_DEFAULT_MODEL=gemini-3-flash-preview
+LLM_JUDGE_MODEL=gemini-3.1-pro-preview
+CORS_ORIGINS=["http://localhost:3000"]
+AUTH_REQUIRED=false
+
+# MCP Server
+MCP_TRANSPORT=stdio
+MCP_PORT=8001
+
+# GitHub Integration
+GITHUB_APP_ID=
+GITHUB_APP_PRIVATE_KEY=
+GITHUB_WEBHOOK_SECRET=
+```
+
+When you add a new env var, update `.env.example` in the same change.
+
+---
+
+## 13. Important Rules for Claude Code
+
+These are non-negotiable. Violating them breaks the system or wastes review time.
+
+1. **Read PROJECT.md before designing anything new.** Domain decisions belong there, not here.
+2. **Run linters, formatters, and type checkers before claiming a task is done.** `ruff`, `mypy`, `pnpm lint`, `pnpm typecheck`. CI will reject otherwise.
+3. **Never commit secrets.** No API keys, no DB passwords, nothing in code. Use `.env` and `.env.example`.
+4. **Never tweak Gemini `temperature`.** Default 1.0 stays.
+5. **Never use deprecated Gemini params.** Use `thinking_level`, not `thinking_budget`. Use `google-genai`, not `google-generativeai`.
+6. **Never bypass the extraction pipeline** to call Gemini directly from random services. There is one place that talks to Gemini for ingestion.
+7. **Never write to the audit log table from application code.** Only the evaluation/extraction services write, and only through the audit-log adapter that enforces hash chaining.
+8. **Never make Postgres and Neo4j disagree silently.** If you write to one, write to the other through the same service. If you can only write to one, queue the other change.
+9. **Never delete rules.** Use `effective_period.valid_until` to retire them. Past evaluations must remain re-explainable.
+10. **Keep `docker compose up --build` working.** If your change breaks the local stack, fix it before merging. The local stack is the developer onboarding path.
+11. **Update both `PROJECT.md` and `CLAUDE.md`** when introducing a new dependency, service, or architectural decision. Code without doc updates does not ship.
+12. **Prefer fewer dependencies.** Every added library is a long-term cost. Justify additions in the PR description.
+13. **Write structured logs, not `print`.** Logs are operational data.
+14. **Tests for LLM-driven features must mock the LLM** unless the test is explicitly an eval test.
+15. **When unsure, ask.** Open an issue or a draft PR with the question. Do not guess on domain semantics — wrong rules are worse than no rules.
+
+---
+
+## 14. References
+
+- Gemini 3 developer guide: https://ai.google.dev/gemini-api/docs/gemini-3
+- Gemini document processing: https://ai.google.dev/gemini-api/docs/document-processing
+- Gemini Files API: https://ai.google.dev/gemini-api/docs/files
+- Semantic Governance (conceptual inspiration): https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/policies/configure-semantic-governance
+- uv: https://docs.astral.sh/uv/
+- pnpm: https://pnpm.io/
+- FastAPI: https://fastapi.tiangolo.com/
+- Next.js App Router: https://nextjs.org/docs/app
+- Neo4j Python driver: https://neo4j.com/docs/api/python-driver/current/
+- Elasticsearch Python client: https://elasticsearch-py.readthedocs.io/
+
+---
+
+*This file is a contract. If you (Claude Code) find a conflict between this file and the user's request, surface the conflict and ask. Do not silently override.*

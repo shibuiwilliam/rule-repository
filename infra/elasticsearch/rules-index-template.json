@@ -1,0 +1,46 @@
+{
+  "index_patterns": ["rules*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "analysis": {
+        "analyzer": {
+          "rule_analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": ["lowercase", "stop", "snowball"]
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "rule_id": { "type": "keyword" },
+        "statement": {
+          "type": "text",
+          "analyzer": "rule_analyzer",
+          "fields": {
+            "keyword": { "type": "keyword", "ignore_above": 512 }
+          }
+        },
+        "tags": { "type": "keyword" },
+        "scope": { "type": "keyword" },
+        "modality": { "type": "keyword" },
+        "severity": { "type": "keyword" },
+        "status": { "type": "keyword" },
+        "effective_from": { "type": "date" },
+        "effective_until": { "type": "date" },
+        "embedding": {
+          "type": "dense_vector",
+          "dims": 768,
+          "index": true,
+          "similarity": "cosine"
+        },
+        "rationale": { "type": "text", "analyzer": "rule_analyzer" },
+        "created_at": { "type": "date" },
+        "updated_at": { "type": "date" }
+      }
+    }
+  }
+}

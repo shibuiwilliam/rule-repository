@@ -1,0 +1,61 @@
+[project]
+name = "rule-repository"
+version = "0.1.0"
+description = "A platform for managing, searching, serving, and enforcing natural-language rules"
+requires-python = ">=3.13"
+readme = "README.md"
+license = "MIT"
+
+[dependency-groups]
+dev = [
+    "rulerepo-server",
+    "rulerepo",
+    "rulerepo-agentic",
+    "rulerepo-cli",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "respx>=0.22",
+]
+
+[tool.uv.sources]
+rulerepo-server = { workspace = true }
+rulerepo = { workspace = true }
+rulerepo-agentic = { workspace = true }
+rulerepo-cli = { workspace = true }
+
+[tool.uv.workspace]
+members = ["apps/server", "packages/rule-client", "packages/agentic-client", "packages/cli"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["apps/server/src", "packages/rule-client/src", "packages/agentic-client/src", "packages/cli/src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "N", "ANN", "ASYNC", "S", "T20"]
+ignore = [
+    "ANN401",  # dynamically typed expressions (Any)
+    "S101",    # assert used (fine in tests)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "ANN"]
+"alembic/**/*.py" = ["ANN"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["apps/server/tests", "packages/rule-client/tests"]
+asyncio_mode = "auto"
+addopts = "--import-mode=importlib"
+
+[[tool.mypy.overrides]]
+module = ["neo4j.*", "google.*", "elasticsearch.*"]
+ignore_missing_imports = true

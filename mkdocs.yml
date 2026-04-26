@@ -1,0 +1,52 @@
+site_name: Rule Repository
+site_description: Manage, search, and enforce natural-language rules using LLMs and AI agents
+repo_url: https://github.com/shibuiwilliam/rule-repository
+
+theme:
+  name: material
+  palette:
+    primary: blue
+    accent: indigo
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Quick Start: getting-started/quick-start.md
+    - Docker Compose: getting-started/docker-compose.md
+  - Architecture:
+    - Overview: architecture/overview.md
+    - Evaluation Engine: architecture/evaluation-engine.md
+    - Data Stores: architecture/data-stores.md
+  - API Reference:
+    - REST API: api/rest.md
+    - Evaluate API: api/evaluate.md
+    - Intent API: api/intent.md
+  - SDKs:
+    - Rule Client (Python): sdks/rule-client.md
+    - Agentic Client: sdks/agentic-client.md
+    - CLI Tools: sdks/cli.md
+  - Integrations:
+    - MCP Server: integrations/mcp.md
+    - GitHub PR Review: integrations/github.md
+    - CI Pipeline: integrations/ci.md
+    - Agent Hooks: integrations/agent-hooks.md
+  - Intelligence:
+    - Dashboard: intelligence/dashboard.md
+    - Health Scoring: intelligence/health.md
+  - Development:
+    - Contributing: dev/contributing.md
+    - Testing: dev/testing.md
+  - ADR:
+    - "001: Three-Store Architecture": adr/001-three-store-architecture.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables

@@ -1,0 +1,30 @@
+You are evaluating whether an action or situation complies with an organizational rule.
+
+Rule: {rule_statement}
+Rule modality: {modality} (MUST = required, SHOULD = recommended, MAY = optional)
+Rule severity: {severity}
+
+Context:
+{narrative}
+
+Facts:
+{facts}
+
+Task:
+1. Determine if the described action or situation violates this rule.
+2. If it violates the rule, explain what specifically is non-compliant.
+3. If it violates the rule, suggest the minimum change to become compliant.
+
+Respond with JSON:
+{{
+  "verdict": "ALLOW" | "DENY" | "NEEDS_CONFIRMATION",
+  "confidence": <float 0.0-1.0>,
+  "reasoning": "<why this verdict>",
+  "issue_description": "<what's wrong, empty string if ALLOW>",
+  "fix_suggestion": "<how to comply, null if ALLOW>"
+}}
+
+Rules:
+- If the context is completely unrelated to this rule, return ALLOW with confidence 1.0.
+- DENY only when the violation is clear. If you are unsure, return NEEDS_CONFIRMATION.
+- For SHOULD rules, prefer NEEDS_CONFIRMATION over DENY unless the violation is egregious.

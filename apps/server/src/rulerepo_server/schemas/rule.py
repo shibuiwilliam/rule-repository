@@ -1,0 +1,149 @@
+"""Pydantic request/response schemas for rule CRUD operations."""
+
+from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from rulerepo_server.domain.rule import Modality, RuleStatus, Severity
+
+# ---------------------------------------------------------------------------
+# Nested value-object schemas
+# ---------------------------------------------------------------------------
+
+
+class SourceRefSchema(BaseModel):
+    """Source document reference."""
+
+    document_id: str
+    section: str | None = None
+    offset: int | None = None
+    page: int | None = None
+
+
+class EffectivePeriodSchema(BaseModel):
+    """Time window for rule effectiveness."""
+
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
+
+
+class GovernanceSchema(BaseModel):
+    """Ownership and approval metadata."""
+
+    owner: str = "system"
+    approvers: list[str] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Request schemas
+# ---------------------------------------------------------------------------
+
+
+class RuleCreate(BaseModel):
+    """Schema for creating a new rule."""
+
+    statement: str = Field(..., min_length=1, max_length=10000, description="Rule text")
+    modality: Modality = Modality.MUST
+    severity: Severity = Severity.MEDIUM
+    status: RuleStatus = RuleStatus.DRAFT
+    scope: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    rationale: str = ""
+    preconditions: list[str] = Field(default_factory=list)
+    exceptions: list[str] = Field(default_factory=list)
+    source_refs: list[SourceRefSchema] = Field(default_factory=list)
+    effective_period: EffectivePeriodSchema = Field(default_factory=EffectivePeriodSchema)
+    governance: GovernanceSchema = Field(default_factory=GovernanceSchema)
+
+
+class RuleUpdate(BaseModel):
+    """Schema for updating an existing rule. All fields are optional."""
+
+    statement: str | None = Field(default=None, min_length=1, max_length=10000)
+    modality: Modality | None = None
+    severity: Severity | None = None
+    status: RuleStatus | None = None
+    scope: list[str] | None = None
+    tags: list[str] | None = None
+    rationale: str | None = None
+    preconditions: list[str] | None = None
+    exceptions: list[str] | None = None
+    source_refs: list[SourceRefSchema] | None = None
+    effective_period: EffectivePeriodSchema | None = None
+    governance: GovernanceSchema | None = None
+    revision_note: str = Field(default="", description="Reason for this change")
+
+
+# ---------------------------------------------------------------------------
+# Response schemas
+# ---------------------------------------------------------------------------
+
+
+class RuleResponse(BaseModel):
+    """Full rule representation returned by the API."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    statement: str
+    modality: Modality
+    severity: Severity
+    status: RuleStatus
+    scope: list[str]
+    tags: list[str]
+    rationale: str
+    preconditions: list[str]
+    exceptions: list[str]
+    source_refs: list[SourceRefSchema]
+    effective_period: EffectivePeriodSchema
+    governance: GovernanceSchema
+    created_at: datetime
+    updated_at: datetime
+
+
+class RuleListResponse(BaseModel):
+    """Paginated list of rules."""
+
+    items: list[RuleResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class RuleRevisionResponse(BaseModel):
+    """A single revision in the rule's history."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    rule_id: UUID
+    revision_number: int
+    statement: str
+    modality: str
+    severity: str
+    status: str
+    scope: list[str]
+    tags: list[str]
+    rationale: str
+    changed_by: str
+    change_note: str
+    created_at: datetime
+
+
+class RelationshipResponse(BaseModel):
+    """A relationship between two rules."""
+
+    source_id: UUID
+    target_id: UUID
+    relationship_type: str
+    created_at: datetime
+    created_by: str
+
+
+class RelationshipCreate(BaseModel):
+    """Schema for creating a rule relationship."""
+
+    source_id: UUID
+    target_id: UUID
+    relationship_type: str

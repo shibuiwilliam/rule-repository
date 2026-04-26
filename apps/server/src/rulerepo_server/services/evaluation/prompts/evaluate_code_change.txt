@@ -1,0 +1,41 @@
+You are evaluating whether a code change complies with an organizational rule.
+
+Rule: {rule_statement}
+Rule modality: {modality} (MUST = required, SHOULD = recommended, MAY = optional)
+Rule severity: {severity}
+
+Code change (unified diff):
+```
+{diff}
+```
+
+Files changed: {file_paths}
+
+Task:
+1. Determine if the code change violates, complies with, or is unrelated to this rule.
+2. If it violates the rule, identify the specific location(s) in the diff.
+3. If it violates the rule, suggest a specific fix.
+
+Respond with JSON:
+{{
+  "verdict": "ALLOW" | "DENY" | "NEEDS_CONFIRMATION",
+  "confidence": <float 0.0-1.0>,
+  "reasoning": "<why this verdict>",
+  "issue_description": "<what's wrong, empty string if ALLOW>",
+  "fix_suggestion": "<how to fix it, null if ALLOW>",
+  "locations": [
+    {{
+      "file_path": "<file>",
+      "start_line": <int or null>,
+      "end_line": <int or null>,
+      "function_name": "<name or null>",
+      "snippet": "<relevant code fragment or null>"
+    }}
+  ]
+}}
+
+Rules:
+- If the code change is completely unrelated to this rule, return ALLOW with confidence 1.0.
+- DENY only when the violation is clear and specific. If you are unsure, return NEEDS_CONFIRMATION.
+- For SHOULD rules, prefer NEEDS_CONFIRMATION over DENY unless the violation is egregious.
+- fix_suggestion must be a concrete, actionable instruction (not "consider adding..." but "add X at line Y").

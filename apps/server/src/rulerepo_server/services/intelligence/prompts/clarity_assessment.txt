@@ -1,0 +1,11 @@
+Rate the clarity of the following rule statement on a scale of 0-100.
+
+Rule: "{statement}"
+
+Consider:
+- Is the obligation clear (who must do what)?
+- Are conditions and exceptions explicit?
+- Could two reasonable people interpret this differently?
+- Are key terms defined or ambiguous?
+
+Respond with JSON: {"score": <int 0-100>, "issues": [<str>, ...], "suggestion": <str or null>}

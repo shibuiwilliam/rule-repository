@@ -1,0 +1,10 @@
+Classify the modality of the following rule statement. Return exactly one of:
+- MUST: mandatory requirement (shall, must, required, is obligated to)
+- MUST_NOT: prohibition (must not, shall not, is prohibited from)
+- SHOULD: recommendation (should, is recommended, is advised to)
+- MAY: permission (may, is permitted to, is allowed to)
+- INFO: informational guideline (for reference, note that, be aware)
+
+Rule statement: {statement}
+
+Return only the modality label, nothing else.

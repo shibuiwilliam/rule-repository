@@ -1,0 +1,14 @@
+Given the newly extracted rule and a set of existing rules, suggest relationships between them.
+
+New rule:
+{new_rule}
+
+Existing rules:
+{existing_rules}
+
+For each relationship you identify, return a JSON object with:
+- "existing_rule_id": the ID of the existing rule
+- "relationship_type": one of REFINES, OVERRIDES, CONFLICTS_WITH, DEPENDS_ON, DERIVES_FROM
+- "reason": brief explanation of why this relationship exists
+
+Only suggest relationships where there is a clear semantic connection. Return a JSON array.

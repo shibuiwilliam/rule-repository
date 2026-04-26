@@ -1,0 +1,11 @@
+Given the following rule statement and its source document context, infer structured metadata.
+
+Rule statement: {statement}
+Source section: {section}
+Document type: {document_type}
+
+Return a JSON object with:
+- "severity": one of LOW, MEDIUM, HIGH, CRITICAL (based on potential impact of violation)
+- "scope": array of scope labels (e.g., ["engineering", "backend"], ["hr", "all-employees"])
+- "tags": array of relevant tags for categorization
+- "rationale": brief explanation of why this rule likely exists (infer from context if not stated)

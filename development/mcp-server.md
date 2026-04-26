@@ -1,0 +1,268 @@
+# MCP Server
+
+The Rule Repository exposes an MCP (Model Context Protocol) server that allows AI coding agents (Claude Code, Cursor, etc.) to search rules, evaluate compliance, and understand rule relationships through a standardized tool interface.
+
+Source code: `apps/server/src/rulerepo_server/mcp/`
+
+Architecture principle: the MCP server is a **thin adapter layer**. All tools delegate to existing services (`SearchService`, `EvaluationService`, `ContextDeliveryService`, etc.). Business logic must never be duplicated in MCP tool implementations.
+
+---
+
+## Transport
+
+The MCP server supports two transport modes, controlled by the `MCP_TRANSPORT` environment variable:
+
+| Transport | When to use | Default |
+|---|---|---|
+| **stdio** | Local agents (Claude Code, Cursor). The agent spawns the process and communicates over stdin/stdout. | Yes (default) |
+| **streamable-http** | Remote agents, multi-client scenarios. Runs an HTTP server. | Set `MCP_TRANSPORT=streamable-http` |
+
+For HTTP transport, the server listens on the port specified by `MCP_PORT` (default `8001`).
+
+---
+
+## Startup
+
+### Local (stdio)
+
+```bash
+cd apps/server
+uv run rulerepo-mcp
+```
+
+Or via Makefile targets:
+
+```bash
+make mcp.stdio          # stdio transport
+make mcp.http           # streamable-http transport on port 8001
+```
+
+### Docker
+
+The `mcp-server` service in `docker-compose.yml` runs the MCP server alongside the main API server. It connects to the same PostgreSQL, Elasticsearch, and Neo4j instances.
+
+---
+
+## Claude Code Configuration
+
+Add the following to your Claude Code MCP configuration (`.claude/settings.json` or the global MCP config):
+
+```json
+{
+  "mcpServers": {
+    "rule-repository": {
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/rule-repository/apps/server", "rulerepo-mcp"],
+      "env": {
+        "DATABASE_URL": "postgresql+asyncpg://rule:rule@localhost:5432/ruledb",
+        "ELASTICSEARCH_URL": "http://localhost:9200",
+        "NEO4J_URI": "bolt://localhost:7687",
+        "NEO4J_USER": "neo4j",
+        "NEO4J_PASSWORD": "ruledev"
+      }
+    }
+  }
+}
+```
+
+If the Rule Repository stack is running via Docker Compose, adjust the connection URLs to point to `localhost` with the exposed ports (5432, 9200, 7687).
+
+---
+
+## Tools
+
+All 5 tools are registered in `mcp/tools.py` via the `register_tools()` function.
+
+### search_rules
+
+Search the rule repository for rules matching a natural language query.
+
+```
+search_rules(
+    query: str,                          # Natural language search query (required)
+    scope: str | None = None,            # Narrow to scope (e.g., "engineering/python")
+    modality: str | None = None,         # MUST, MUST_NOT, SHOULD, MAY, INFO
+    severity: str | None = None,         # LOW, MEDIUM, HIGH, CRITICAL
+    top_k: int = 10                      # Maximum results
+) -> list[dict]
+```
+
+**Delegates to**: `ElasticsearchRuleIndex.search_fulltext()`, then hydrates from `PostgresRuleRepository`.
+
+**Returns**: List of rule dicts with id, statement, modality, severity, scope, tags, rationale, status.
+
+**When to use**: When you need to find organizational rules, policies, regulations, or guidelines relevant to a task or decision.
+
+---
+
+### evaluate_compliance
+
+Evaluate whether a code change or action complies with applicable rules.
+
+```
+evaluate_compliance(
+    diff: str | None = None,             # Unified diff text
+    file_paths: list[str] | None = None, # Files being modified
+    intended_action: str | None = None,  # NL description of the action
+    scope: str | None = None,            # Rule scope filter
+    facts: str | None = None             # JSON string of key-value context facts
+) -> dict
+```
+
+**Delegates to**: `EvaluationService.evaluate()` with `mode="preflight"`.
+
+**Returns**: Dict with `overall_verdict` (ALLOW/DENY/NEEDS_CONFIRMATION), `rules_evaluated`, `rules_violated`, `violations` (list with rule_id, rule_statement, issue, fix), `warnings`, `fix_summary`.
+
+**When to use**: Before making changes that may be subject to organizational rules. Accepts a unified diff, file paths, or a natural language action description.
+
+---
+
+### explain_rule
+
+Get a detailed explanation of a rule including rationale, provenance, relationships, and revision history.
+
+```
+explain_rule(
+    rule_id: str,                        # UUID of the rule (required)
+    depth: int = 2                       # Relationship traversal depth (1-5)
+) -> dict
+```
+
+**Delegates to**: `PostgresRuleRepository.get_by_id()`, `.get_revisions()`, `.get_relationships()`.
+
+**Returns**: Full rule metadata including statement, modality, severity, status, rationale, scope, tags, source_refs, governance, effective_period, revision_count, latest_revision (number, changed_by, note), and relationships (type, source_id, target_id).
+
+**When to use**: When you need to understand WHY a rule exists, WHERE it came from, and HOW it relates to other rules.
+
+---
+
+### find_conflicts
+
+Find rules that may conflict with a given rule or proposed rule statement.
+
+```
+find_conflicts(
+    rule_id: str | None = None,          # UUID of an existing rule
+    proposed_statement: str | None = None,# Text of a proposed new rule
+    scope: str | None = None             # Limit search to a scope
+) -> list[dict]
+```
+
+**Delegates to**: `ElasticsearchRuleIndex.search_fulltext()` for semantic similarity search.
+
+If `rule_id` is provided without `proposed_statement`, the tool fetches the rule's statement and uses it as the search query. The source rule is excluded from results.
+
+**Returns**: List of dicts with `rule_id`, `similarity_score`, `potential_conflict: true`. Returns up to 10 results.
+
+**When to use**: When proposing a new rule or changing an existing one, to check for contradictions with the existing corpus.
+
+---
+
+### get_rules_for_context
+
+**This is the key tool for coding agents.** Returns rules formatted for context injection, optimized for the agent's context window.
+
+```
+get_rules_for_context(
+    file_paths: list[str] | None = None, # Files being worked on
+    repository: str | None = None,       # Repository name
+    task_description: str | None = None, # What you're doing
+    languages: list[str] | None = None,  # Languages (auto-detected if omitted)
+    max_rules: int = 15,                 # Maximum rules to return
+    format: str = "instructions"         # Output format
+) -> str
+```
+
+**Delegates to**: `ContextDeliveryService.get_formatted_rules()`.
+
+**Output formats**:
+
+| Format | Best for | Description |
+|---|---|---|
+| `instructions` | Working context (default) | Concise MUST/SHOULD/MAY hierarchy, optimized for agent consumption |
+| `checklist` | PR review | Markdown checkboxes suitable for review checklists |
+| `detailed` | Learning/onboarding | Full metadata with rationale, scope, and governance info |
+
+**When to use**: Call this when you start working on a file or task to understand what organizational rules, conventions, and policies apply. This should be the first tool a coding agent calls.
+
+---
+
+## Resources
+
+Resources are registered in `mcp/resources.py` via `register_resources()`.
+
+### rule://{rule_id}
+
+A single rule with full metadata, accessible by UUID.
+
+**Returns**: Dict with id, statement, modality, severity, status, scope, tags, rationale, governance.
+
+**Delegates to**: `PostgresRuleRepository.get_by_id()`.
+
+### ruleset://{scope}
+
+A formatted rule set for a scope -- like a dynamic CLAUDE.md section that is always up-to-date.
+
+**Example**: `ruleset://engineering/python` returns all Python coding rules formatted as actionable instructions.
+
+**Returns**: Formatted string (using the `instructions` format from `ContextDeliveryService`).
+
+**Delegates to**: `ContextDeliveryService.get_formatted_rules()`.
+
+---
+
+## Prompts
+
+Prompts are registered in `mcp/prompts.py` via `register_prompts()`. They provide structured workflows that guide the agent through multi-step tasks.
+
+### compliance_check
+
+Parameters: `context` (string), `action` (string).
+
+Workflow: search for applicable rules, assess compliance for each, explain violations with fix suggestions, summarize with ALLOW/DENY/NEEDS_CONFIRMATION verdict.
+
+### rule_summary
+
+Parameters: `scope` (string).
+
+Workflow: search rules in scope, group by modality, list key obligations, highlight CRITICAL rules, note conflicts.
+
+### impact_analysis
+
+Parameters: `rule_id` (string), `proposed_change` (string).
+
+Workflow: explain current rule, check for conflicts with proposed change, find dependent rules, assess risk, recommend whether to proceed.
+
+---
+
+## Server Creation
+
+The MCP server is created by `create_mcp_server()` in `mcp/server.py`. It instantiates a `FastMCP` instance with a descriptive name and description, then registers all tools, resources, and prompts via their respective `register_*` functions.
+
+```python
+mcp = FastMCP(
+    "Rule Repository",
+    description="Search, evaluate, and manage natural-language rules..."
+)
+register_tools(mcp)
+register_resources(mcp)
+register_prompts(mcp)
+```
+
+---
+
+## Testing
+
+### Unit Tests
+
+Mock the underlying services (database sessions, Elasticsearch client, Gemini client) in unit tests. The MCP tools are thin wrappers, so testing focuses on parameter mapping and response formatting.
+
+### Integration Tests
+
+Use the MCP client SDK to connect to the server in stdio mode and invoke tools end-to-end. Requires the full Docker Compose stack (PostgreSQL, Elasticsearch, Neo4j) to be running.
+
+### Key Testing Rules
+
+- Never call the real Gemini API in unit tests. Use a mock client.
+- Gate live LLM integration tests behind `RULEREPO_LIVE_LLM=1`.
+- Test error paths: missing rules, unavailable services, invalid parameters.
