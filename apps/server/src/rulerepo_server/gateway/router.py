@@ -75,8 +75,11 @@ async def ingest_webhook(
     matched = match_policies(event, policies_raw)
     evaluations = []
 
+    import time
+
     for policy in matched:
         eval_id = uuid4()
+        eval_start = time.monotonic()
 
         # Run real evaluation via the evaluation engine
         try:
@@ -99,6 +102,8 @@ async def ingest_webhook(
         except Exception as exc:
             logger.warning("gateway_evaluation_failed", error=str(exc))
             verdict = "ALLOW"
+
+        elapsed_ms = int((time.monotonic() - eval_start) * 1000)
 
         # Dispatch actions on DENY verdicts (CLAUDE_ENHANCE.md §0.1)
         actions_executed: list[dict[str, Any]] = []
@@ -134,7 +139,7 @@ async def ingest_webhook(
             normalized_context={"subject": event.subject, **event.metadata},
             verdict=verdict,
             actions_taken=actions_executed,
-            latency_ms=0,
+            latency_ms=elapsed_ms,
         )
         session.add(eval_model)
         evaluations.append(

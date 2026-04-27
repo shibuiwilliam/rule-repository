@@ -87,6 +87,83 @@ See [Intent API](intent.md) for details and examples.
 | GET | `/api/v1/gateway/policies` | List enforcement policies (optionally filter to enabled only). |
 | GET | `/api/v1/gateway/evaluations` | List recent gateway evaluations with pagination. |
 
+## Discovery
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/discover/scan` | Start a discovery scan on project artifacts (config files, documentation). |
+| GET | `/api/v1/discover/scans/{scan_id}` | Get the status of a discovery scan. |
+| GET | `/api/v1/discover/scans/{scan_id}/candidates` | List candidate rules from a completed scan. |
+| POST | `/api/v1/discover/candidates/{candidate_id}/approve` | Approve a candidate, creating a rule. |
+| POST | `/api/v1/discover/candidates/{candidate_id}/dismiss` | Dismiss a candidate. |
+
+See [Discovery API](discovery.md) for detailed request/response documentation.
+
+## Feedback
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/feedback/corrections` | Submit a correction (original vs. corrected diff). |
+| GET | `/api/v1/feedback/corrections` | List corrections with pagination and filters (status, type). |
+| POST | `/api/v1/feedback/corrections/{correction_id}/approve` | Approve a correction, applying its suggestion. |
+| POST | `/api/v1/feedback/corrections/{correction_id}/dismiss` | Dismiss a correction. |
+| GET | `/api/v1/feedback/stats` | Feedback statistics (totals, by type/status, rules created, top violated rules). |
+
+See [Feedback API](feedback.md) for detailed request/response documentation.
+
+## Playground
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/playground/evaluate` | Sandbox evaluation of sample code against an inline rule (no audit, no cache). |
+| POST | `/api/v1/rules/{rule_id}/test-cases` | Create a test case for a rule. |
+| GET | `/api/v1/rules/{rule_id}/test-cases` | List test cases for a rule. |
+| DELETE | `/api/v1/rules/{rule_id}/test-cases/{test_case_id}` | Delete a test case. |
+| POST | `/api/v1/rules/{rule_id}/test-cases/run` | Run all test cases for a rule through sandbox evaluation. |
+| POST | `/api/v1/rules/{rule_id}/test-cases/generate` | Generate test cases for a rule using Gemini. |
+
+See [Playground API](playground.md) for detailed request/response documentation.
+
+## Alerts
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v1/alerts` | List alerts with filtering by status and type, paginated. |
+| GET | `/api/v1/alerts/{alert_id}` | Get a single alert by ID. |
+| POST | `/api/v1/alerts/{alert_id}/acknowledge` | Mark an alert as acknowledged. |
+| POST | `/api/v1/alerts/{alert_id}/resolve` | Mark an alert as resolved. |
+
+See [Alerts API](alerts.md) for detailed request/response documentation.
+
+## Snapshots
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/snapshots` | Create a new snapshot of the current rule corpus. |
+| GET | `/api/v1/snapshots` | List snapshots with pagination. |
+| GET | `/api/v1/snapshots/{snapshot_id}` | Get a snapshot by ID. |
+| POST | `/api/v1/snapshots/{snapshot_id}/deploy` | Deploy a snapshot to an environment. |
+| POST | `/api/v1/snapshots/{snapshot_id}/rollback` | Rollback to the previous snapshot in the deployed environment. |
+| POST | `/api/v1/snapshots/{snapshot_id}/simulate` | Simulate the impact of deploying this snapshot. |
+| GET | `/api/v1/snapshots/deployments` | List active snapshot per environment. |
+| GET | `/api/v1/snapshots/deployments/{environment}` | Get deployment history for an environment. |
+
+See [Snapshots API](snapshots.md) for detailed request/response documentation.
+
+## Federation
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/federations` | Create a federation node (organization, team, or project). |
+| GET | `/api/v1/federations` | List federation nodes as a tree. |
+| GET | `/api/v1/federations/{node_id}` | Get a federation node's details. |
+| POST | `/api/v1/federations/{node_id}/rules` | Add a rule to a federation node (optionally overriding a parent rule). |
+| DELETE | `/api/v1/federations/{node_id}/rules/{rule_id}` | Remove a rule from a federation node. |
+| GET | `/api/v1/federations/{node_id}/effective-rules` | Get the resolved effective rule set for a node. |
+| GET | `/api/v1/federations/{node_id}/diff` | Diff this node's effective rules against its parent. |
+
+See [Federation API](federation.md) for detailed request/response documentation.
+
 ## Integrations
 
 | Method | Path | Description |

@@ -20,7 +20,7 @@ _session_factory: async_sessionmaker[AsyncSession] | None = None
 
 def create_engine() -> AsyncEngine:
     """Create and store the async SQLAlchemy engine."""
-    global _engine, _session_factory  # noqa: PLW0603
+    global _engine, _session_factory
     settings = get_settings()
     _engine = create_async_engine(
         settings.database_url,
@@ -44,7 +44,7 @@ def get_engine() -> AsyncEngine:
 
 async def dispose_engine() -> None:
     """Dispose the async engine and release all connections."""
-    global _engine, _session_factory  # noqa: PLW0603
+    global _engine, _session_factory
     if _engine is not None:
         await _engine.dispose()
         _engine = None

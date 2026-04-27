@@ -63,15 +63,20 @@ The system is composed of three top-level components:
 │  │            │  │  Cat/Hyb)  │  │  (LLM-as-Judge)      │   │
 │  └────────────┘  └────────────┘  └──────────────────────┘   │
 │  ┌────────────┐  ┌────────────┐  ┌──────────────────────┐   │
-│  │ Rule Store │  │ Audit Log  │  │  Intelligence &      │   │
-│  │ (PG+ES+   │  │ (hash-     │  │  Observability       │   │
-│  │  Neo4j)   │  │  chained)  │  │                      │   │
+│  │ Discovery  │  │ Rule Store │  │  Intelligence &      │   │
+│  │  Engine    │  │ (PG+ES+   │  │  Observability +     │   │
+│  │            │  │  Neo4j)   │  │  Feedback Loop       │   │
 │  └────────────┘  └────────────┘  └──────────────────────┘   │
 │  ┌────────────┐  ┌────────────┐  ┌──────────────────────┐   │
 │  │ Governance │  │  Gateway   │  │  Context Delivery    │   │
-│  │ / RBAC     │  │  (webhook  │  │  (MCP + Formatter)   │   │
-│  │            │  │  enforce)  │  │                      │   │
+│  │ / RBAC +   │  │  (webhook  │  │  (MCP + Formatter)   │   │
+│  │ Federation │  │  enforce)  │  │                      │   │
 │  └────────────┘  └────────────┘  └──────────────────────┘   │
+│  ┌────────────┐                                              │
+│  │ Audit Log  │                                              │
+│  │ (hash-     │                                              │
+│  │  chained)  │                                              │
+│  └────────────┘                                              │
 │    REST API │ Intent API │ Evaluate API │ Gateway API        │
 └─────────────┼────────────┼──────────────┼────────────────────┘
               │            │              │
@@ -266,6 +271,74 @@ Event-driven, zero-code rule enforcement via webhooks.
 - **Event Normalizers**: GitHub (PR, issue events), Slack (message events), Generic (pass-through).
 - **Automated Evaluation**: Matched policies trigger the evaluation engine with extracted context.
 
+### 6.9 Automatic Rule Discovery
+
+Solves the cold-start problem: instead of requiring humans to write rules from scratch, the system discovers rules that already exist implicitly in a project's artifacts.
+
+- **Source Analyzers**: CLAUDE.md parser (extracts rules from agent instructions with modality detection and scope inference), linter config parser (converts ruff/eslint/tsconfig/prettier settings into natural-language rules with appropriate modality and severity), and code pattern analyzer (static analysis reveals implicit conventions — e.g., "94% of handlers use Pydantic" becomes a candidate rule).
+- **Pattern Detector**: Frequency analysis and deduplication across sources, with confidence scoring. Patterns detected independently from multiple sources receive higher confidence.
+- **Candidate Generator**: Gemini-powered refinement of raw patterns into structured rule candidates with statement, modality, severity, scope, and rationale. Uses structured JSON output.
+- **Human Review Queue**: All candidates go through an approve/edit/dismiss workflow before becoming active rules. Batch approval is available for high-confidence candidates (>0.9).
+- **API**: `POST /api/v1/discover/scan` (trigger scan), `GET /api/v1/discover/candidates` (review candidates), `POST /api/v1/discover/candidates/{id}/approve` (create rule from candidate).
+- **MCP Tool**: `discover_rules` — allows any MCP-connected agent to bootstrap rules from a codebase.
+- **Frontend**: `/discover` page with source selector, scan progress, and candidate review workflow.
+
+### 6.10 Agent Correction Feedback Loop
+
+Captures human corrections of AI-generated code and converts them into rule improvements, creating a flywheel: more agent usage -> more corrections -> better rules -> fewer corrections.
+
+- **Correction Capture**: Two mechanisms — PR-based (passive: compares evaluated diff with final merged diff to identify human corrections) and agent hook-based (active: detects human edits to files recently modified by an agent).
+- **Correction Analyzer**: Classifies each correction as `new_rule` (no matching rule exists — the correction reveals a coverage gap), `improve_existing` (a rule exists but is ambiguous — suggest rewrite), or `adjust_scope` (a rule exists but wasn't delivered to the agent — widen scope/file matching).
+- **Candidate Generation**: Gemini drafts a rule (or rewrite) from the correction context, with structured output for statement, modality, severity, and scope.
+- **Background Workers**: arq + Redis infrastructure for scheduled health scoring, recommendation generation, correction statistics aggregation, and async analysis.
+- **Intelligence Integration**: Correction trends over time, top violated rules (which rules agents break most), coverage gaps (file paths/scopes with unmatched corrections), and rule effectiveness (did corrections decrease after a rule was created?).
+- **API**: `POST /api/v1/feedback/corrections` (submit correction), `GET /api/v1/feedback/stats` (correction analytics), approve/dismiss workflow.
+- **Frontend**: `/feedback` page for correction review; additions to `/intelligence` with correction trend charts, top violated rules table, and coverage gap heatmap.
+
+### 6.11 Cross-Project Rule Federation
+
+Hierarchical rule composition across organizational boundaries: organization -> team -> project. Rules at higher levels automatically apply to all descendants, with project-level overrides.
+
+- **Hierarchy**: Organization rules apply to all teams and projects. Team rules apply to all projects in the team. Project rules apply only to that project. Each level can override a parent rule (the override replaces, not supplements, the parent rule).
+- **Federation Resolver**: Walks the ancestor chain (project -> team -> organization), collects rules from all levels, and applies overrides. The unified rule set feeds into the existing rule selector transparently.
+- **Domain Model**: `RuleFederation` (id, name, level, parent_id, default_scope) and `RuleFederationMembership` (rule_id, federation_id, override_parent_rule_id) in PostgreSQL.
+- **Evaluation Integration**: `rule_selector` accepts a `federation_id` parameter. When set, rules are resolved through the hierarchy. When absent, behavior is unchanged.
+- **MCP Integration**: `get_rules_for_context` accepts an optional `federation` parameter (e.g., `"acme-corp/backend/payments-api"`) for hierarchical rule resolution.
+- **Rule Sync**: When an organization-level rule changes, all descendant projects are flagged for re-evaluation and notifications fire.
+- **API**: Full CRUD at `/api/v1/federations`, plus `GET /api/v1/federations/{id}/effective-rules` (inherited + own) and `GET /api/v1/federations/{id}/diff/{other_id}` (compare two nodes).
+- **Frontend**: `/federations` page with tree view, effective rules per node with inheritance source, override button on inherited rules, and diff view between nodes.
+
+### 6.12 Rule Playground & Testing Framework
+
+Interactive sandbox and regression testing for rules.
+
+- **Playground**: `POST /api/v1/playground/evaluate` accepts a draft rule statement + sample code and returns a verdict without persisting anything — no audit log writes, no cache writes, no rule creation. Pure sandbox for testing rule wording.
+- **Per-Rule Test Cases**: Each rule can have test cases (sample input + expected verdict). Test cases can be manually created, auto-generated from historical evaluations, or generated by Gemini from the rule statement.
+- **Test Runner**: `POST /api/v1/rules/{id}/test-cases/run` executes all test cases against the rule, compares actual vs expected verdicts, and reports pass/fail.
+- **Test Generator**: `POST /api/v1/rules/{id}/test-cases/generate` calls Gemini to auto-create compliant and non-compliant examples.
+- **Frontend**: `/playground` page with split-pane layout (rule editor + code editor + result panel). Test Cases tab on rule detail page.
+
+### 6.13 Proactive Alert System
+
+Background workers generate alerts when they detect problems during scheduled analysis.
+
+- **Alert Types**: `dormant_rule` (0 evaluations in 90 days), `high_deny_rate` (>50% deny rate), `health_decline` (score dropped below 40), `conflict_detected` (repeated rule conflicts).
+- **Alert Lifecycle**: `active` → `acknowledged` → `resolved`. All alerts have severity (info/warning/critical), title, description, and optional rule reference.
+- **Webhook Notifications**: Critical alerts dispatch via `send_webhook()` to the configured `ALERT_WEBHOOK_URL`.
+- **API**: `GET /api/v1/alerts`, `POST /api/v1/alerts/{id}/acknowledge`, `POST /api/v1/alerts/{id}/resolve`.
+
+### 6.14 Rule Set Snapshots & Environment Deployment
+
+Versioned snapshots of the rule corpus with environment-based deployment and impact simulation.
+
+- **Snapshots**: Immutable frozen copies of all rules matching a scope filter at a point in time. Stored as JSONB in PostgreSQL. Created via `POST /api/v1/snapshots`.
+- **Environment Deployment**: Deploy a snapshot to `production`, `staging`, or `development`. Only one active deployment per environment. Deactivates the previous deployment atomically.
+- **Rollback**: Reactivate the previous deployment for an environment via `POST /api/v1/snapshots/{id}/rollback`.
+- **Impact Simulation**: Before deploying, `POST /api/v1/snapshots/{id}/simulate` compares the proposed snapshot against the current deployment — shows rules added/removed and risk assessment.
+- **Evaluation Integration**: `POST /api/v1/evaluate` accepts an `environment` parameter. When set, evaluation uses only rules from the active snapshot for that environment.
+- **MCP Integration**: `evaluate_compliance` tool accepts `environment` parameter.
+- **Frontend**: `/snapshots` page with create/deploy/rollback/simulate workflow.
+
 ---
 
 ## 7. Key Features
@@ -287,6 +360,12 @@ Event-driven, zero-code rule enforcement via webhooks.
 - **Provenance Lineage**: tracks the chain Law → Internal Policy → Department Rule → Contract Clause, so upstream changes propagate downstream.
 - **Rule Tutor**: an LLM-powered conversational interface that explains relevant rules to new employees or new project members.
 - **Why API**: returns multi-level rationale for any verdict, traversing `rationale` and `source_refs`.
+- **Automatic Rule Discovery**: bootstraps rules from CLAUDE.md, linter configs, and code conventions — solves the cold-start problem.
+- **Correction Feedback Loop**: learns from human corrections of AI-generated code, turning every fix into a candidate rule.
+- **Cross-Project Federation**: org->team->project rule inheritance with overrides, enabling organization-wide governance.
+- **Rule Playground**: interactive sandbox for testing rules against sample code before deployment.
+- **Proactive Alerts**: background workers detect dormant rules, high deny rates, and health decline — notify via webhooks.
+- **Versioned Snapshots**: atomic deployment of rule sets to environments with rollback and impact simulation.
 
 ### 7.3 Cross-Cutting
 - Immutable audit log with hash-chained integrity.
@@ -310,6 +389,9 @@ The Rule Repository stores the engineering team's coding standards, documentatio
 ### 8.4 Regulatory Compliance
 A financial institution stores regulations (e.g., consumer protection laws) in the repository, with derived internal procedures linked via `derives_from`. When a regulation is amended, the Provenance Lineage and Change Impact Simulator together identify all downstream procedures that need review.
 
+### 8.5 AI-Assisted Development
+A team uses Claude Code with the Rule Repository. Rule Discovery bootstraps 50 rules from their existing CLAUDE.md, linter configs, and code conventions in an afternoon. Agents receive applicable rules via MCP and write compliant code from the start. When a human reviews AI-generated code and makes corrections, the Correction Feedback Loop captures the delta, proposes new rules, and the correction rate drops over time. Organization-wide engineering standards are shared across all team repositories via Federation, with project-specific overrides where needed.
+
 ---
 
 ## 9. Technical Stack (Proposed)
@@ -325,6 +407,7 @@ These are starting recommendations, subject to revision during implementation.
 | Document storage | S3-compatible object storage |
 | LLM access | Pluggable provider layer (Anthropic, OpenAI, Google, self-hosted) |
 | Audit log | Append-only table with hash chain; optional WORM storage |
+| Task queue | Redis + arq (background workers for health scoring, correction analysis, scheduled jobs) |
 | Auth | OIDC / OAuth2 |
 | Deployment | Container-native, Kubernetes-ready |
 
@@ -334,9 +417,9 @@ The architecture intentionally avoids hard-coding a single LLM provider. The `Ev
 
 ## 10. Roadmap
 
-The project is structured in three phases, each delivering independent value.
+The project is structured in four phases, each delivering independent value.
 
-### Phase 1 — Foundation (Storage & Search)
+### Phase 1 — Foundation (Storage & Search) [COMPLETE]
 - Rule data model and persistence
 - Document ingestion and rule extraction pipeline (assisted, human-approved)
 - Full-text, vector, category, and hybrid search
@@ -346,7 +429,7 @@ The project is structured in three phases, each delivering independent value.
 
 **Value delivered:** "Our rules are organized and findable."
 
-### Phase 2 — Enforcement (Evaluation & Integration) [IMPLEMENTED]
+### Phase 2 — Enforcement (Evaluation & Integration) [COMPLETE]
 - Code-Aware Evaluation Engine (§6.4): diff parsing, rule selection, LLM-as-Judge, verdict aggregation
 - Agent Context Delivery (§6.5): MCP server, smart rule selection, three output formats
 - Development Workflow Integration (§6.6): GitHub PR review, CI CLI, agent hooks, rule ingestion
@@ -356,33 +439,40 @@ The project is structured in three phases, each delivering independent value.
 
 **Value delivered:** "Our rules are enforced where work happens."
 
-### Phase 2.5 — Production Hardening [IN PROGRESS]
-- Conflict-aware evaluation: graph resolver + OVERRIDES/CONFLICTS_WITH/DEPENDS_ON resolution
-- LLM response caching wired into evaluation (cache before calling Gemini)
-- Effective period enforcement (expired rules excluded from evaluation)
-- Gateway action dispatch on DENY verdicts (webhook callbacks)
-- GitHub Check Runs (pass/fail status on PRs)
+### Phase 3 — Discovery & Learning [COMPLETE]
+- Automatic Rule Discovery (§6.9): source analyzers, pattern detection, candidate generation, human review queue, MCP tool
+- Agent Correction Feedback Loop (§6.10): correction capture, analyzer, candidate generation, background workers (arq + Redis), intelligence integration
+- Cross-Project Rule Federation (§6.11): hierarchical rule composition, federation resolver, evaluation and MCP integration, rule sync
 
-**Value delivered:** "Our evaluation is trustworthy and production-ready."
+**Value delivered:** "Our rules bootstrap themselves, learn from corrections, and scale across the organization."
 
-### Phase 3 — Rule Set Versioning & AI Authoring [PLANNED]
-- Rule Set versioning with environment-based deployment (staging/production)
-- AI-powered rule authoring: intent-to-rule, template-based, learn-from-examples
-- Pre-save quality gate: clarity scoring, conflict detection, duplicate detection
-- Background job infrastructure (arq + Redis) for scheduled tasks
-- Rule change notifications via webhooks
+### Phase 3.5 — Adoption Acceleration [IMPLEMENTED]
+- One-click GitHub repository import: `POST /api/v1/discover/import` fetches CLAUDE.md, linter configs, and code patterns from a GitHub URL → produces candidate rules in seconds
+- Automatic PR correction capture: `services/feedback/pr_capture.py` compares evaluated diff vs merged diff to auto-capture human corrections
+- Rule impact preview: `services/evaluation/impact_preview.py` replays historical evaluations with modified rule to show blast radius before committing changes
+- Conflict resolution transparency: evaluate API now returns `conflict_resolutions[]` showing which rules were overridden and why
+- Cache + top violations analytics: intelligence dashboard exposes LLM cache hit rate and most frequently violated rules
 
-**Value delivered:** "Our rules are versioned, deployable, and easy to create."
+**Value delivered:** "Rules bootstrap in minutes, learn from every PR, and update confidently."
 
-### Phase 4 — Advanced Intelligence (Self-Improvement & Insight)
+### Phase 4 — Testing & Deployment Safety [COMPLETE]
+- Rule Playground (§6.12): sandbox evaluation, no-persistence testing
+- Per-Rule Test Cases: manual, historical, and Gemini-generated test cases with pass/fail tracking
+- Proactive Alerts (§6.13): background workers generate alerts for dormant rules, high deny rates, health decline
+- Rule Set Snapshots (§6.14): versioned snapshots, environment deployment, rollback, impact simulation
+- Environment-based evaluation: evaluate API and MCP tools accept environment parameter
+
+**Value delivered:** "Rules can be tested before deployment, the system alerts on problems, and rule sets deploy safely."
+
+### Phase 5 — Advanced Intelligence (Self-Improvement & Insight) [PLANNED]
 - Conflict detector (continuous scanning)
 - Counterexample generator (regression tests per rule)
-- Change impact simulator (replay with modified rules)
 - Verdict drift detection (temporal, model, semantic)
-- Refinement feedback loop (human corrections → rule rewrites)
 - Provenance lineage propagation (upstream changes cascade)
 - Polyglot rule synchronization (EN/JA equivalence verification)
 - Rule Tutor (conversational rule explainer)
+- Agent performance dashboard (compliance rate per agent, top violations, trends)
+- Webhook subscriptions for rule change notifications
 
 **Value delivered:** "Our rules evolve with us."
 

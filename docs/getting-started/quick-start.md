@@ -43,6 +43,8 @@ Once all containers are healthy, the following services are available:
 | Elasticsearch | [http://localhost:9200](http://localhost:9200) | Full-text and vector search index |
 | Neo4j Browser | [http://localhost:7474](http://localhost:7474) | Rule relationship graph (user `neo4j`, password `ruledev`) |
 | MCP Server | [http://localhost:8001](http://localhost:8001) | Model Context Protocol server for AI agents |
+| Redis | localhost:6379 | Job queue for background workers |
+| arq-worker | -- | Background worker running cron jobs (health refresh, recommendations, feedback analysis) |
 
 ## Try It Out
 

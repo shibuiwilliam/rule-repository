@@ -18,7 +18,7 @@ ContextAssembler  (normalize inputs into EvaluationContext)
   |
   v
 RuleSelector      (narrow corpus to ~5-20 relevant rules)
-  |
+  |                supports: environment-based snapshot, federation, or live corpus
   v
 EvaluationCore    (LLM-as-Judge per rule, concurrent via asyncio.gather)
   |
@@ -30,6 +30,8 @@ EvaluationResult  (returned to caller, logged to audit)
 ```
 
 The `EvaluationService.evaluate()` method runs all four stages in sequence. It also handles audit logging after aggregation, writing model IDs, latency, file paths, and verdict counts to the audit log via `AuditLogRepository`.
+
+The `evaluate()` method accepts an optional `environment` parameter. When set, the rule selector uses the snapshot deployed to that environment instead of the live rule corpus.
 
 ---
 
@@ -173,9 +175,19 @@ The diff parser is a simple state machine that handles standard `git diff` outpu
 
 **File**: `services/evaluation/rule_selector.py`
 
-The `select_rules()` function narrows the full rule corpus to the relevant subset. It runs a multi-stage filter pipeline.
+The `select_rules()` function narrows the full rule corpus to the relevant subset. It supports three rule source modes and a multi-stage filter pipeline.
 
-### Selection Pipeline
+### Rule Source Modes
+
+The selector checks these in order, using the first that applies:
+
+1. **Environment mode** (`environment` parameter set): Looks up the active `RuleSetDeploymentModel` for the given environment, fetches the associated `RuleSetSnapshotModel`, and deserializes its `rule_snapshot` via `snapshots/serializer.py`. This gives deterministic evaluation against a pinned rule set. If no active deployment is found, falls through to the default pipeline.
+
+2. **Federation mode** (`federation_id` parameter set): Delegates to `federation/resolver.py` to walk the ancestor chain and apply overrides, producing the effective rule set for that federation node.
+
+3. **Default pipeline** (neither set): Runs the multi-stage filter pipeline below.
+
+### Selection Pipeline (Default)
 
 **Stage 1 -- Scope SQL filter**: Queries PostgreSQL for rules with status `APPROVED` or `EFFECTIVE`. If a scope is provided, filters by `scope.contains([scope])`. Loads up to 500 candidates in a single query.
 
@@ -326,9 +338,12 @@ Full evaluation pipeline. Accepts:
   "repository": "payments-api",
   "mode": "preflight",
   "max_rules": 20,
-  "severity_min": "MEDIUM"
+  "severity_min": "MEDIUM",
+  "environment": "production"
 }
 ```
+
+The `environment` parameter is optional. When set (e.g., `"production"`), the evaluation uses the snapshot deployed to that environment instead of the live rule corpus. This enables reproducible evaluation against a pinned rule set.
 
 Returns `EvaluateResponse` with overall verdict, per-rule verdicts, violations, warnings, fix summary, model IDs used, and latency.
 
@@ -403,3 +418,4 @@ The audit log table is append-only with hash chaining (each row links to the pre
 - If no Gemini client is available (missing API key), the pipeline returns `ALLOW` with zero rules evaluated rather than failing.
 - All structured logging uses `structlog` with JSON output. Never `print()`.
 - Prompt files live in `services/evaluation/prompts/` and are loaded at call time via `_load_prompt()`. They are versioned in git.
+- The `environment` parameter flows from the API layer through `EvaluationService.evaluate()` to `rule_selector.select_rules()`, where it triggers snapshot-based rule resolution.

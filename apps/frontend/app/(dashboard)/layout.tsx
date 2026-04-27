@@ -4,7 +4,12 @@ const NAV_ITEMS = [
   { href: "/rules", label: "Rules", section: "manage" },
   { href: "/search", label: "Search", section: "manage" },
   { href: "/documents", label: "Documents", section: "manage" },
+  { href: "/discover", label: "Discover", section: "manage" },
+  { href: "/federations", label: "Federations", section: "manage" },
+  { href: "/playground", label: "Playground", section: "manage" },
+  { href: "/snapshots", label: "Snapshots", section: "manage" },
   { href: "/intelligence", label: "Intelligence", section: "observe" },
+  { href: "/feedback", label: "Feedback", section: "observe" },
   { href: "/gateway", label: "Gateway", section: "enforce" },
   { href: "/integrations", label: "Integrations", section: "enforce" },
 ];

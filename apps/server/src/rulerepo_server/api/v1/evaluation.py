@@ -64,12 +64,27 @@ def _verdict_to_response(v: object) -> RuleVerdictResponse:
 
 def _result_to_response(result: object) -> EvaluateResponse:
     """Convert a domain EvaluationResult to a response schema."""
+    from rulerepo_server.schemas.evaluation import ConflictResolutionResponse
+
+    conflict_resolutions = [
+        ConflictResolutionResponse(
+            rule_a_id=cr.get("rule_a_id", ""),
+            rule_b_id=cr.get("rule_b_id", ""),
+            relationship=cr.get("relationship", ""),
+            winner_id=cr.get("winner_id", ""),
+            reason=cr.get("reason", ""),
+            discarded_verdict=cr.get("discarded_verdict", ""),
+        )
+        for cr in (result.conflict_resolutions or [])  # type: ignore[attr-defined]
+    ]
+
     return EvaluateResponse(
         evaluation_id=result.evaluation_id,  # type: ignore[attr-defined]
         overall_verdict=result.overall_verdict.value,  # type: ignore[attr-defined]
         rule_verdicts=[_verdict_to_response(v) for v in result.rule_verdicts],  # type: ignore[attr-defined]
         violations=[_verdict_to_response(v) for v in result.violations],  # type: ignore[attr-defined]
         warnings=[_verdict_to_response(v) for v in result.warnings],  # type: ignore[attr-defined]
+        conflict_resolutions=conflict_resolutions,
         rules_evaluated=result.rules_evaluated,  # type: ignore[attr-defined]
         rules_passed=result.rules_passed,  # type: ignore[attr-defined]
         rules_violated=result.rules_violated,  # type: ignore[attr-defined]
@@ -105,6 +120,7 @@ async def evaluate(
         mode=request.mode,
         max_rules=request.max_rules,
         severity_min=request.severity_min,
+        environment=request.environment,
     )
     return _result_to_response(result)
 

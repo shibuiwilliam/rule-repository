@@ -56,6 +56,7 @@ class EvaluationService:
         max_rules: int = 20,
         severity_min: str = "MEDIUM",
         actor: str | None = None,
+        environment: str | None = None,
     ) -> EvaluationResult:
         """Run the full evaluation pipeline.
 
@@ -70,6 +71,7 @@ class EvaluationService:
             max_rules: Maximum rules to evaluate.
             severity_min: Minimum rule severity to include.
             actor: Who triggered the evaluation.
+            environment: Deployment environment for snapshot-based evaluation.
 
         Returns:
             EvaluationResult with overall verdict and per-rule breakdowns.
@@ -99,6 +101,7 @@ class EvaluationService:
             severity_min=severity_min,
             modality_filter=modality_filter,
             scope=scope,
+            environment=environment,
         )
 
         logger.info(
@@ -170,6 +173,17 @@ class EvaluationService:
             )
             eval_result = aggregate_verdicts(verdicts, model_ids, total_latency)
             eval_result.overall_verdict = overall_verdict
+            eval_result.conflict_resolutions = [
+                {
+                    "rule_a_id": cr.rule_a_id,
+                    "rule_b_id": cr.rule_b_id,
+                    "relationship": cr.relationship,
+                    "winner_id": cr.winner_id,
+                    "reason": cr.reason,
+                    "discarded_verdict": cr.discarded_verdict,
+                }
+                for cr in conflict_resolutions
+            ]
         else:
             eval_result = aggregate_verdicts(verdicts, model_ids, total_latency)
 

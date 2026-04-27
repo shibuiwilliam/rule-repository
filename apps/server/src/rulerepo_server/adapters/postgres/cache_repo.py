@@ -7,7 +7,7 @@ Invalidation happens when rules are revised (called from RuleService.update_rule
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -87,7 +87,7 @@ class LLMCacheRepository:
             inputs_hash=inputs_hash,
             response=response,
             latency_ms=latency_ms,
-            created_at=datetime.now(tz=timezone.utc),
+            created_at=datetime.now(tz=UTC),
         )
         await self._session.merge(model)
         await self._session.flush()

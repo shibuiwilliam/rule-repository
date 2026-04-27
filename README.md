@@ -1,125 +1,99 @@
 # Rule Repository
 
-A platform for managing, searching, and enforcing natural-language rules — laws, contracts, internal policies, engineering guidelines, and documentation standards — using LLMs and AI agents.
+A platform for managing, searching, and enforcing natural-language rules using LLMs and AI agents.
 
-Where traditional rule engines require translating human rules into formal logic (and losing nuance), the Rule Repository keeps the rule as written and uses LLMs to interpret, search, and enforce them at runtime.
+Traditional rule engines force you to translate human rules into formal logic — losing nuance along the way. The Rule Repository keeps rules as written and uses Gemini to interpret, search, enforce, and improve them at runtime. Built for software teams that use AI coding agents.
 
 ---
 
 ## Quick Start
 
 ```bash
-# 1. Clone and configure
 git clone <repo-url> && cd rule-repository
-cp .env.example .env          # fill in your GEMINI_API_KEY
-
-# 2. Start everything
-docker compose up --build
-
-# 3. Load sample rules
-uv run python scripts/seed_data.py
+cp .env.example .env          # add your GEMINI_API_KEY
+docker compose up --build     # starts 10 services
+uv run python scripts/seed_data.py  # load sample rules
 ```
-
-That's it. You now have:
 
 | Service | URL | What it does |
 |---|---|---|
-| Backend API | http://localhost:8000 | REST, Evaluate, Intent, Gateway, Intelligence APIs |
-| API Docs | http://localhost:8000/docs | Interactive Swagger UI |
-| Frontend | http://localhost:3000 | Operator console |
-| MCP Server | localhost:8001 | AI agent tool integration |
-| PostgreSQL | localhost:5432 | Rule storage (system of record) |
-| Elasticsearch | http://localhost:9200 | Full-text + vector search |
-| Neo4j Browser | http://localhost:7474 | Rule relationship graph |
+| Backend API | http://localhost:8000 | 13 API routers (rules, evaluate, search, intent, intelligence, discovery, feedback, federation, alerts, snapshots, playground, extraction, relationships) |
+| Swagger UI | http://localhost:8000/docs | Interactive API docs — try every endpoint |
+| Frontend | http://localhost:3000 | 11-page operator console |
+| MCP Server | localhost:8001 | AI agent tool integration (Model Context Protocol) |
+| PostgreSQL | localhost:5432 | System of record |
+| Elasticsearch | localhost:9200 | Full-text + vector search |
+| Neo4j | localhost:7474 | Rule relationship graph |
+| Redis | localhost:6379 | Background job queue |
 
 ---
 
-## What Can It Do?
+## What It Does
 
 ### Store rules in natural language
-
-Every rule is a structured envelope around a natural-language statement — with modality (MUST / SHOULD / MAY), severity, scope, tags, rationale, governance, and source provenance. The statement is the source of truth; metadata exists for indexing, not to override meaning.
-
-### Search rules five ways
-
-- **Full-text** (BM25) — keyword matching with stemming
-- **Vector** (semantic similarity) — meaning-based search using 768-dim embeddings
-- **Hybrid** — BM25 + vector combined for best results
-- **Category** — filter by modality, severity, scope, tags
-- **Context** — give it facts about a situation, get applicable rules back
+Every rule has modality (MUST / MUST_NOT / SHOULD / MAY / INFO), severity, scope, tags, rationale, governance, source provenance, and effective period. The statement is always the source of truth.
 
 ### Evaluate code changes against rules
-
-The **Code-Aware Evaluation Engine** is the core product:
+The **Code-Aware Evaluation Engine** accepts diffs, understands file paths and code structure, and returns per-rule verdicts with line-level locations and fix suggestions. It consults Neo4j for conflict resolution (OVERRIDES, DEPENDS_ON), checks the LLM cache before calling Gemini, enforces effective periods, and supports environment-based snapshot evaluation.
 
 ```
-Input:  diff of changes to src/api/handlers/payment.py
-Output:
-  Rule #17 (MUST: All API handlers must validate input with Pydantic models)
-    Verdict: DENY
-    Location: payment.py:45-52, function process_refund()
-    Issue: Raw dict access without Pydantic validation
-    Fix: Define a ProcessRefundRequest model
+POST /api/v1/evaluate { "diff": "...", "scope": "engineering/python", "environment": "staging" }
+→ Rule #17 DENY at payment.py:45 — "Add Pydantic model for input validation"
+→ conflict_resolutions: [{ "Rule #7 overrides Rule #42 (higher severity)" }]
 ```
 
-It understands file paths (scope matching), diffs (evaluates only what changed), code structure (references specific functions), and returns actionable fix suggestions. Model selection is tiered by severity — Flash for routine rules, Pro for CRITICAL.
+### Deliver rules to coding agents
+The MCP server's key tool is `get_rules_for_context` — agents call it with file paths and get formatted rules (MUST/SHOULD/MAY) before writing code. Three formats: `instructions`, `checklist`, `detailed`.
 
-### Deliver rules to AI coding agents
+### Discover rules from code
+**One-click GitHub import**: give it a repo URL → fetches CLAUDE.md, linter configs, code patterns → proposes 30-50 candidate rules. Also scans local files.
 
-Via the **MCP Server**, coding agents (Claude Code, Cursor, etc.) can:
-- Get rules for their current file context before writing code
-- Evaluate compliance of their changes
-- Understand why a rule exists and how it relates to other rules
+### Learn from corrections
+**Automatic PR capture**: when a merged PR differs from what was evaluated, the delta is auto-captured as a correction. Corrections suggest new rules or improvements.
 
-The key tool is `get_rules_for_context` — it delivers formatted rules to the agent's context window, grouped by MUST/SHOULD/MAY, without the agent needing to know the rules exist.
+### Preview impact before updating rules
+Replay historical evaluations with a modified rule to see how many verdicts would change and which repos are affected.
 
-### Enforce rules in CI and PR review
+### Organize rules hierarchically
+**Federation**: org → team → project with inheritance and overrides. **Snapshots**: versioned, deployable rule sets tied to environments (staging, production).
 
-- **GitHub PR Review** — webhook processes `pull_request` events, posts structured review comments with per-rule verdicts and fix suggestions
-- **CI Pipeline** — `rulerepo-check` CLI exits 0 (ALLOW), 1 (DENY), 2 (NEEDS_CONFIRMATION). Supports `--format github-actions` for inline annotations
-- **Agent Hooks** — `rulerepo-hook preflight` injects rules before edit, `posthoc` evaluates changes after edit
+### Enforce everywhere
+- **GitHub PR Review** — structured review comments with per-rule verdicts
+- **CI Pipeline** — `rulerepo-check` exits 0/1/2, supports `--format github-actions`
+- **Agent Hooks** — `rulerepo-hook preflight` / `posthoc` for Claude Code
+- **Gateway** — webhook-driven enforcement with action dispatch on DENY
+- **Alerts** — configurable alert rules that fire when conditions are met
 
-### Import rules from existing sources
-
-Upload PDFs, text, or markdown files. The extraction pipeline (powered by Gemini) proposes candidate rules with modality, severity, and metadata. A human reviews and approves.
-
-Import existing CLAUDE.md files: `rulerepo-ingest --source claude-md --file ./CLAUDE.md --scope engineering/python`
-
-### Monitor rule health
-
-The Intelligence dashboard scores every rule across 6 dimensions (completeness, clarity, test coverage, freshness, activity, owner engagement) and generates automated recommendations: retire dormant rules, clarify ambiguous wording, escalate persistent violations.
+### Monitor and improve
+Intelligence dashboard: health scoring (6 dimensions), cache hit rate, top violated rules, automated recommendations. **Playground** for testing evaluations interactively.
 
 ---
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                    Rule Management Server                      │
-│                                                                │
-│  Extraction   Search      Code-Aware         Intelligence     │
-│  Pipeline     (5 modes)   Evaluation Engine   & Observability │
-│                           (LLM-as-Judge)                      │
-│                                                                │
-│  PostgreSQL   Elasticsearch   Neo4j         Audit Log         │
-│  (truth)      (search)        (graph)       (hash-chained)    │
-│                                                                │
-│  REST API  │  Evaluate API  │  Intent API  │  Gateway API     │
-└────────────┼────────────────┼──────────────┼──────────────────┘
-             │                │              │
-    ┌────────┼────────┐  ┌───┼──────┐  ┌───┼────────┐
-    │        │        │  │   │      │  │   │        │
-  Rule    Agentic   MCP    CLI    GitHub   Gateway
-  Client  Client   Server  Tools  App      (webhooks)
-  (SDK)   (SDK)   (agents) (CI)   (PRs)
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Rule Management Server                          │
+│                                                                       │
+│  Extraction  Search(5)  Evaluation    Intelligence  Discovery        │
+│  Pipeline    BM25+Vec   Engine        Health+Recs   + GitHub Import  │
+│                         (conflict-    Cache Stats                     │
+│                          aware)       Violations    Federation        │
+│                                       Feedback Loop Snapshots         │
+│                                       + PR Capture  Alerts            │
+│                                       Impact Preview Playground       │
+│                                                                       │
+│  PostgreSQL   Elasticsearch   Neo4j       Redis     Audit Log        │
+│  (truth)      (search)        (graph)     (jobs)    (immutable)      │
+│                                                                       │
+│  13 routers │ MCP Server │ Gateway │ GitHub Integration              │
+└─────────────┼────────────┼─────────┼────────────────────────────────┘
+              │            │         │
+   Rule  Agentic  MCP    CLI    GitHub   Gateway  arq-worker
+   SDK    SDK    Server  Tools   App    (webhooks) (cron)
 ```
 
-**Three data stores, each for what it's best at:**
-- **PostgreSQL** — source of truth for rules, revisions, audit log, documents, policies
-- **Elasticsearch** — full-text + vector search (BM25 + dense_vector 768d)
-- **Neo4j** — rule relationship graph (REFINES, OVERRIDES, CONFLICTS_WITH, DEPENDS_ON, DERIVES_FROM, SUCCEEDS)
-
-If Neo4j and Postgres ever disagree, Postgres wins. `scripts/reconcile_graph.py` rebuilds Neo4j from scratch.
+**Data stores**: PostgreSQL (truth), Elasticsearch (search), Neo4j (graph). Postgres always wins on disagreement.
 
 ---
 
@@ -128,281 +102,111 @@ If Neo4j and Postgres ever disagree, Postgres wins. `scripts/reconcile_graph.py`
 ```
 rule-repository/
 ├── apps/
-│   ├── server/                  # FastAPI backend (Python 3.13, uv)
+│   ├── server/                      # FastAPI backend (144 Python modules)
 │   │   ├── src/rulerepo_server/
-│   │   │   ├── api/v1/          # 7 routers: rules, search, evaluate, intent, intelligence, extraction, relationships
-│   │   │   ├── core/            # Config, logging, errors, auth, middleware, PII sanitization
-│   │   │   ├── domain/          # Pure domain models (Rule, Evaluation, Verdict, AuditEntry)
+│   │   │   ├── api/v1/              # 13 routers
 │   │   │   ├── services/
-│   │   │   │   ├── evaluation/  # Code-Aware Evaluation Engine (diff parser, rule selector, LLM judge)
-│   │   │   │   ├── extraction/  # Document ingestion pipeline (Gemini-powered)
-│   │   │   │   ├── intelligence/# Health scoring, analytics, recommendations
-│   │   │   │   └── context_delivery/ # Smart rule selection + formatting for agents
-│   │   │   ├── adapters/        # Postgres, Elasticsearch, Neo4j, Gemini, file storage
-│   │   │   ├── mcp/             # MCP server (5 tools, 2 resources, 3 prompts)
-│   │   │   ├── gateway/         # Enforcement gateway (normalizers, policies, SSE)
-│   │   │   ├── integrations/    # GitHub webhook, CI output formatters
-│   │   │   └── schemas/         # Pydantic request/response models
-│   │   ├── alembic/             # 4 database migrations
-│   │   └── tests/               # 15 test files (unit + integration)
-│   └── frontend/                # Next.js 15 + TypeScript + Tailwind CSS 4
-│       ├── app/(dashboard)/     # 6 pages: rules, search, documents, intelligence, gateway, integrations
-│       ├── components/          # Badge, RuleCard, RuleGraph, RuleEditForm, Pagination, Providers
-│       └── lib/api.ts           # Typed API client
+│   │   │   │   ├── evaluation/      # 10 modules: diff parser, rule selector, graph resolver,
+│   │   │   │   │                    #   conflict aggregator, LLM judge (cached), impact preview
+│   │   │   │   ├── discovery/       # github_importer, analyzers, pattern detector
+│   │   │   │   ├── feedback/        # correction capture (manual + auto PR), analyzer
+│   │   │   │   ├── federation/      # hierarchy resolver with overrides
+│   │   │   │   ├── intelligence/    # health scorer, analytics (cache + violations), recommender
+│   │   │   │   ├── extraction/      # document ingestion (Gemini)
+│   │   │   │   └── context_delivery/# rule formatting for agents
+│   │   │   ├── mcp/                 # 5 tools, 2 resources, 3 prompts
+│   │   │   ├── gateway/             # normalizers, policy engine, action dispatch
+│   │   │   ├── integrations/        # GitHub webhook, check reporter, CI formatters
+│   │   │   └── workers/             # arq background jobs (settings.py, tasks.py)
+│   │   └── alembic/                 # 10 migrations
+│   └── frontend/                    # Next.js 15, TypeScript, Tailwind 4, React Flow
+│       └── app/(dashboard)/         # 11 pages
 ├── packages/
-│   ├── rule-client/             # Python SDK — async client with rules, search, intent, documents resources
-│   ├── agentic-client/          # Python SDK — evaluation via POST /api/v1/evaluate
-│   └── cli/                     # CLI tools: rulerepo-check, rulerepo-hook, rulerepo-ingest
-├── infra/
-│   ├── docker/                  # Multi-stage Dockerfiles (server + frontend with dev/prod targets)
-│   ├── postgres/                # Init SQL (uuid-ossp, pgcrypto extensions)
-│   ├── elasticsearch/           # Index template (768-dim dense_vector) + setup script
-│   └── neo4j/                   # Uniqueness constraints + indexes
-├── scripts/
-│   ├── seed_data.py             # 10 sample rules (HR, engineering, contracts, compliance)
-│   ├── reconcile_graph.py       # Rebuild Neo4j from Postgres
-│   └── generate_claude_md.py    # Export rules as static CLAUDE.md sections
-├── development/                 # 7 technical docs (architecture, API ref, evaluation engine, MCP, integrations, testing)
-├── docs/                        # mkdocs site (20 pages across 8 sections)
-├── docker-compose.yml           # Full local stack (8 services + 4 volumes)
-└── pyproject.toml               # uv workspace root (4 members)
+│   ├── rule-client/                 # Python SDK (async, typed)
+│   ├── agentic-client/              # Evaluation client
+│   └── cli/                         # rulerepo-check, rulerepo-hook, rulerepo-ingest
+├── scripts/                         # seed_data, reconcile_graph, generate_claude_md
+├── development/                     # 7 technical docs
+├── docs/                            # mkdocs site
+└── docker-compose.yml               # 10 services, 4 volumes
 ```
 
 ---
 
-## API Overview
+## API (13 routers)
 
-All endpoints under `/api/v1`. Interactive docs at [localhost:8000/docs](http://localhost:8000/docs).
+Swagger UI: [localhost:8000/docs](http://localhost:8000/docs)
 
-### Rules
+| Router | Key Endpoints |
+|---|---|
+| **rules** | CRUD, retire, revisions, relationships, graph |
+| **evaluate** | POST /evaluate, /evaluate/quick, /evaluate/applicable-rules (supports `environment`) |
+| **search** | fulltext, vector, hybrid, category, context |
+| **intent** | Natural language query → classify → route |
+| **intelligence** | dashboard (health, cache, top violations), analytics, recommendations |
+| **discovery** | scan, GitHub import, candidates, approve/dismiss |
+| **feedback** | corrections (manual + auto-captured), approve/dismiss, stats |
+| **federation** | hierarchy CRUD, effective rules, inheritance |
+| **snapshots** | versioned rule sets, deploy to environments |
+| **alerts** | configurable alert rules |
+| **playground** | interactive evaluation testing |
+| **extraction** | document upload, extract, review candidates |
+| **relationships** | create/delete rule relationships |
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/v1/rules` | Create a new rule |
-| `GET` | `/api/v1/rules` | List rules (paginated, filterable) |
-| `GET` | `/api/v1/rules/{id}` | Get a single rule |
-| `PATCH` | `/api/v1/rules/{id}` | Update a rule (creates revision) |
-| `POST` | `/api/v1/rules/{id}/retire` | Retire a rule (never delete) |
-| `GET` | `/api/v1/rules/{id}/revisions` | Revision history |
-| `GET` | `/api/v1/rules/{id}/graph` | Neo4j subgraph |
-
-### Evaluate
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/v1/evaluate` | Full code-aware evaluation (diffs, files, or facts) |
-| `POST` | `/api/v1/evaluate/quick` | Simplified non-code evaluation |
-| `POST` | `/api/v1/evaluate/applicable-rules` | Which rules apply, without evaluation |
-
-### Search
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/v1/search/fulltext` | BM25 keyword search |
-| `POST` | `/api/v1/search/vector` | Semantic similarity |
-| `POST` | `/api/v1/search/hybrid` | BM25 + vector combined |
-| `POST` | `/api/v1/search/category` | Filter by modality/severity/scope/tags |
-| `POST` | `/api/v1/search/context` | Given facts, find applicable rules |
-
-### Other
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/v1/intent` | Natural language query (classify + route) |
-| `POST` | `/api/v1/documents/upload` | Upload a document for extraction |
-| `POST` | `/api/v1/documents/{id}/extract` | Run extraction pipeline |
-| `GET` | `/api/v1/intelligence/dashboard` | Health scores, analytics, recommendations |
-| `POST` | `/api/v1/gateway/ingest/{source}` | Webhook receiver (GitHub, Slack, generic) |
-| `POST` | `/api/v1/integrations/webhooks/github` | GitHub PR review webhook |
-| `GET` | `/healthz` | Liveness probe |
-| `GET` | `/readyz` | Readiness probe (checks PG, ES, Neo4j) |
+Health: `/healthz` (liveness), `/readyz` (PG + ES + Neo4j).
 
 ---
 
-## Python SDKs
-
-### Rule Client
+## SDKs & CLI
 
 ```python
+# Rule Client
 from rulerepo import RuleClient
+async with RuleClient("http://localhost:8000") as client:
+    results = await client.search.hybrid("overtime limit")
+    rule = await client.rules.create("All PRs must be reviewed", modality="MUST")
 
-async with RuleClient("http://localhost:8000", api_key="...") as client:
-    # Search
-    results = await client.search.hybrid("overtime monthly limit")
-
-    # Ask in natural language
-    answer = await client.intent.ask("What are the rules for overtime?")
-
-    # CRUD
-    rule = await client.rules.create(
-        "Monthly overtime must not exceed 45 hours",
-        modality="MUST_NOT", severity="HIGH", scope=["hr/attendance"],
-    )
-    await client.rules.retire(rule.id)
-
-    # Document extraction
-    upload = await client.documents.upload("policy.pdf")
-    extraction = await client.documents.extract(upload.document_id)
-```
-
-### Agentic Client
-
-```python
+# Agentic Client
 from rulerepo_agentic import AgenticRuleClient
-
-async with AgenticRuleClient("http://localhost:8000", scope="hr/attendance") as client:
-    result = await client.evaluate(
-        context={"employee_id": "E001", "overtime_hours": 50},
-        intent="register_overtime",
-        mode="preflight",
-        diff="...",  # optional: unified diff for code evaluations
-    )
-    # result["overall_verdict"] = "DENY"
-    # result["violations"] = [{"rule_id": "...", "fix_suggestion": "..."}]
+async with AgenticRuleClient("http://localhost:8000", scope="engineering") as client:
+    result = await client.evaluate(context={...}, intent="Add endpoint", diff="...")
 ```
-
-### CLI Tools
 
 ```bash
-# CI pipeline: check code against rules
-rulerepo-check --diff "$(git diff origin/main...HEAD)" --format github-actions
-
-# Agent hook: inject rules before editing
-rulerepo-hook preflight --file src/api/handlers/payment.py
-
-# Agent hook: evaluate changes after editing
-rulerepo-hook posthoc --file src/api/handlers/payment.py
-
-# Import existing CLAUDE.md as rules
-rulerepo-ingest --source claude-md --file ./CLAUDE.md --scope engineering/python
+rulerepo-check --diff "$(git diff main...HEAD)" --format github-actions
+rulerepo-hook preflight --file src/api/handler.py
+rulerepo-ingest --source claude-md --file ./CLAUDE.md --scope engineering
 ```
 
 ---
 
-## MCP Server (AI Agent Integration)
+## MCP Server
 
-The Rule Repository exposes an [MCP](https://modelcontextprotocol.io) server so AI coding agents can query and enforce rules as tools.
-
-**Tools:**
 | Tool | What it does |
 |---|---|
-| `get_rules_for_context` | Deliver formatted rules for current file/task context (the key tool) |
-| `evaluate_compliance` | Evaluate a code change against applicable rules |
-| `search_rules` | Search rules by natural language query |
-| `explain_rule` | Get detailed explanation with rationale and relationships |
-| `find_conflicts` | Find rules that conflict with a given rule or proposed change |
+| `get_rules_for_context` | Formatted rules for current file/task — the key tool |
+| `evaluate_compliance` | Check a diff against rules, get verdicts + fixes |
+| `search_rules` | Natural language search |
+| `explain_rule` | Rationale, provenance, relationships |
+| `find_conflicts` | Conflicting rules for a given rule or statement |
 
-**Resources:**
-- `rule://{rule_id}` — single rule with full metadata
-- `ruleset://{scope}` — dynamic rule set (like a CLAUDE.md section that's always up-to-date)
-
-**Claude Code configuration:**
-
-```json
-{
-  "mcpServers": {
-    "rule-repository": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/apps/server", "rulerepo-mcp"],
-      "env": {
-        "DATABASE_URL": "postgresql+asyncpg://rule:rule@localhost:5432/ruledb",
-        "ELASTICSEARCH_URL": "http://localhost:9200",
-        "NEO4J_URI": "bolt://localhost:7687",
-        "NEO4J_USER": "neo4j",
-        "NEO4J_PASSWORD": "ruledev"
-      }
-    }
-  }
-}
-```
+Resources: `rule://{id}`, `ruleset://{scope}`. Transports: stdio (Claude Code) + streamable HTTP.
 
 ---
 
-## Development
+## Design Decisions
 
-### Prerequisites
-
-- **Python 3.13+** via [uv](https://docs.astral.sh/uv/)
-- **Node.js 22+** via [pnpm](https://pnpm.io/)
-- **Docker** for the full stack
-
-### Backend
-
-```bash
-cd apps/server
-uv sync                                                   # install deps
-uv run uvicorn rulerepo_server.main:app --reload          # dev server
-uv run pytest                                             # tests
-uv run ruff check . && uv run ruff format .               # lint + format
-```
-
-### Frontend
-
-```bash
-cd apps/frontend
-pnpm install && pnpm dev        # dev server at :3000
-pnpm lint && pnpm typecheck     # ESLint + TypeScript
-```
-
-### All tests (from repo root)
-
-```bash
-uv run python -m pytest         # 142 tests across server + SDK
-```
-
-### Docker
-
-```bash
-docker compose up --build       # start everything
-docker compose down -v          # tear down + wipe data
-```
-
----
-
-## Environment Variables
-
-Copy `.env.example` to `.env` and fill in:
-
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `GEMINI_API_KEY` | Yes | — | Google Gemini API key |
-| `DATABASE_URL` | No | `postgresql+asyncpg://rule:rule@postgres:5432/ruledb` | PostgreSQL |
-| `ELASTICSEARCH_URL` | No | `http://elasticsearch:9200` | Elasticsearch |
-| `NEO4J_URI` | No | `bolt://neo4j:7687` | Neo4j |
-| `LLM_DEFAULT_MODEL` | No | `gemini-3-flash-preview` | Fast model for routine tasks |
-| `LLM_JUDGE_MODEL` | No | `gemini-3.1-pro-preview` | Strong model for CRITICAL rules |
-| `AUTH_REQUIRED` | No | `false` | Require API key auth (set `true` for production) |
-| `MCP_TRANSPORT` | No | `stdio` | MCP transport: `stdio` or `streamable-http` |
-| `GITHUB_WEBHOOK_SECRET` | No | — | For GitHub PR review integration |
-
----
-
-## Domain Model
-
-The central entity is a **Rule** — a natural-language normative statement:
-
-```
-DRAFT ──> REVIEW ──> APPROVED ──> EFFECTIVE ──> SUPERSEDED ──> RETIRED
-  │          │                        │                           ^
-  └──────────┴────────────────────────┴───────────────────────────┘
-                      (can retire from any state)
-```
-
-Status transitions are validated — you can't jump from DRAFT to EFFECTIVE. RETIRED is terminal.
-
-Rules form a **graph** through relationships: REFINES, OVERRIDES, CONFLICTS_WITH, DEPENDS_ON, DERIVES_FROM, SUCCEEDS.
-
----
-
-## Key Design Decisions
-
-- **Rules are never deleted.** They're retired via `effective_period.valid_until`. Past evaluations must remain explainable.
-- **Postgres is the source of truth.** Elasticsearch and Neo4j are derived. If they disagree, Postgres wins.
-- **Audit log is append-only.** A PostgreSQL trigger prevents UPDATE/DELETE. Entries are hash-chained.
-- **Gemini temperature is always 1.0.** Lower values degrade reasoning quality.
-- **LLM calls are cached** by `hash(inputs + model + prompt_version)`. Invalidated on rule revision.
-- **PII is sanitized** before sending to Gemini and in audit log details.
-- **Evaluation is tiered**: Flash for LOW/MEDIUM rules, Flash+medium-thinking for HIGH, Pro+high-thinking for CRITICAL.
+| Decision | Rationale |
+|---|---|
+| Rules never deleted | Retired via `valid_until`. Past evaluations stay explainable. |
+| Postgres is truth | ES + Neo4j derived. `reconcile_graph.py` rebuilds. |
+| Audit log append-only | PG trigger blocks UPDATE/DELETE. Hash-chained. |
+| Temperature always 1.0 | Lower degrades Gemini 3 reasoning. |
+| LLM calls cached | Checked before every Gemini call. |
+| Evaluation tiered | Flash for LOW/MEDIUM, Pro for CRITICAL. |
+| Conflict-aware | Neo4j graph consulted for OVERRIDES/DEPENDS_ON. |
+| Effective period enforced | Expired rules excluded from evaluation. |
+| Environment-aware | Snapshot-based evaluation per deployment environment. |
 
 ---
 
@@ -410,37 +214,47 @@ Rules form a **graph** through relationships: REFINES, OVERRIDES, CONFLICTS_WITH
 
 | Layer | Technology |
 |---|---|
-| Backend | Python 3.13, FastAPI, SQLAlchemy (async), Alembic |
+| Backend | Python 3.13, FastAPI, SQLAlchemy async, Alembic (10 migrations) |
 | Frontend | TypeScript, React 19, Next.js 15, Tailwind CSS 4, React Flow |
 | LLM | Gemini 3 Flash + Gemini 3.1 Pro via `google-genai` |
-| Database | PostgreSQL 17 |
-| Search | Elasticsearch 8.17 |
-| Graph | Neo4j 5 Community |
-| MCP | FastMCP (stdio + streamable HTTP) |
-| SDKs | Python (httpx + Pydantic) |
+| Data | PostgreSQL 17, Elasticsearch 8.17, Neo4j 5, Redis 7 |
+| MCP | FastMCP (mcp >= 1.9) |
 | CLI | click + rich + httpx |
-| Testing | pytest (142 tests), Vitest |
+| Jobs | arq (async, Redis-backed) |
 | Linting | ruff (Python), ESLint + Prettier (TypeScript) |
+
+---
+
+## Development
+
+```bash
+make dev.server          # backend hot-reload (:8000)
+make dev.frontend        # frontend hot-reload (:3000)
+make test                # all tests
+make lint                # ruff + mypy + eslint + tsc
+make check               # format + lint + test
+docker compose up --build  # full stack
+```
 
 ---
 
 ## Documentation
 
-| Document | What it covers |
+| Location | Content |
 |---|---|
-| [PROJECT.md](PROJECT.md) | Project vision, domain model, roadmap — the canonical spec |
-| [CLAUDE.md](CLAUDE.md) | Operational guide for Claude Code — coding conventions, architecture rules |
-| [development/](development/) | Technical docs — architecture, API reference, evaluation engine, MCP, integrations, testing |
-| [docs/](docs/) | mkdocs site — getting started, architecture, SDK usage, integration guides |
+| [PROJECT.md](PROJECT.md) | Vision, domain model, roadmap |
+| [CLAUDE.md](CLAUDE.md) | Operational contract for Claude Code |
+| [development/](development/) | Architecture, API ref, evaluation engine, MCP, integrations, testing |
+| [docs/](docs/) | mkdocs site — getting started, SDK guides, integration walkthroughs |
 
 ---
 
 ## Contributing
 
-- Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`
-- Run `ruff check`, `ruff format`, `pnpm lint`, `pnpm typecheck` before pushing
-- Tests for LLM features must mock Gemini
-- Read `CLAUDE.md` for the full operational contract
+- Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`
+- Run `make check` before pushing
+- Mock Gemini in tests — never call real API in CI
+- Read [CLAUDE.md](CLAUDE.md)
 
 ---
 

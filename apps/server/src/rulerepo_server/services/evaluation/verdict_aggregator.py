@@ -8,7 +8,7 @@ Per CLAUDE_ENHANCE.md §1.4.4:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from rulerepo_server.domain.evaluation import EvaluationResult, RuleVerdict, Verdict
@@ -73,7 +73,7 @@ def aggregate_verdicts(
         fix_summary=fix_summary,
         model_ids_used=list(set(model_ids)),
         total_latency_ms=total_latency_ms,
-        timestamp=datetime.now(tz=timezone.utc),
+        timestamp=datetime.now(tz=UTC),
     )
 
 

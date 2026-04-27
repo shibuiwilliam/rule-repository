@@ -47,7 +47,7 @@ cd packages/rule-client && uv run pytest
 
 ## Test Structure
 
-The project has **14 test files** across three locations with **144 test functions** total.
+The project has **18 test files** across three locations with **161 test functions** total (153 server + 8 SDK).
 
 ### Unit Tests (`apps/server/tests/unit/`)
 
@@ -58,13 +58,16 @@ Pure logic tests with no external services. Fast (sub-second per file).
 | `test_domain.py` | 22 | `Modality`, `Severity`, `RuleStatus`, `RelationshipType` enums; `EffectivePeriod`, `SourceRef`, `Rule`, `RuleRelationship`, `RuleRevision`, `Verdict` domain models; status transition validation (`DRAFT -> REVIEW -> APPROVED -> EFFECTIVE -> RETIRED`); audit entry hash chaining and genesis hash |
 | `test_schemas.py` | 11 | Pydantic validation for `RuleCreate` (minimal, full, empty/long statement rejection), `RuleUpdate` (all-optional partial updates), `SearchQuery`, `CategorySearchQuery`, `IntentRequest` |
 | `test_pii.py` | 11 | PII sanitization: email, phone, SSN, credit card detection and redaction via `sanitize_text`; `sanitize_dict` for nested structures; `contains_pii` detection; no-PII passthrough |
-| `test_intelligence.py` | 13 | Health scoring: `compute_completeness` (full rule vs. empty rule, partial fields), `compute_freshness` (recent vs. stale rules), `compute_health_score` (composite); `generate_recommendations` for improvement suggestions |
-| `test_gateway.py` | 9 | `GitHubNormalizer` (PR events, push events), `SlackNormalizer` (message events), `GenericNormalizer` (webhook payloads); `match_policies` policy engine matching |
-| `test_evaluation/test_diff_parser.py` | 17 | Diff parsing for code-aware evaluation engine |
-| `test_evaluation/test_context_assembler.py` | 5 | Context assembly for evaluation pipeline |
-| `test_evaluation/test_verdict_aggregator.py` | 8 | Verdict aggregation logic |
-| `test_context_delivery.py` | 9 | Rule formatter output formats for context delivery |
-| `test_github_integration.py` | 4 | GitHub review comment formatting |
+| `test_intelligence.py` | 13 | Health scoring: `compute_completeness` (full rule vs. empty rule, partial fields), `compute_freshness` (recent vs. stale rules), `compute_health_score` (composite); `generate_recommendations` for improvement suggestions (dormant, ambiguous, full-compliance, healthy) |
+| `test_gateway.py` | 9 | `GitHubNormalizer` (PR events, issue events), `SlackNormalizer` (message events), `GenericNormalizer` (basic/empty payloads); `match_policies` policy engine matching (exact, wildcard, disabled excluded, wrong source excluded) |
+| `test_evaluation/test_diff_parser.py` | 15 | Diff parsing: multiple files, new/modified file detection, path extraction, language detection (Python, TypeScript, unknown), function detection (def, async def, class, no functions), hunks, empty diff |
+| `test_evaluation/test_context_assembler.py` | 5 | Context assembly: diff mode, file mode, facts mode, hybrid mode, empty input |
+| `test_evaluation/test_verdict_aggregator.py` | 8 | Verdict aggregation: all-allow, any-deny-means-deny, needs-confirmation-without-deny, deny-overrides-needs-confirmation, empty verdicts, fix summary includes violations, violations property, model IDs deduplication |
+| `test_evaluation/test_conflict_aggregator.py` | 5 | Conflict aggregation: overridden verdict discarded, higher severity wins, stronger modality wins on tie, dependent skipped on deny, standard aggregation with no relationships |
+| `test_context_delivery.py` | 9 | Rule formatter output: instructions format (groups by modality, includes rule IDs, context label, MUST_NOT prefix, empty rules), checklist format (checkboxes, severity), detailed format (rationale, scope) |
+| `test_github_integration.py` | 4 | GitHub review comment formatting: all-allow message, violations shown, warnings shown, violation count in header |
+| `test_discovery.py` | 16 | Rule discovery analyzers and pattern detection: `ClaudeMdAnalyzer` (MUST/SHOULD/MUST_NOT rules, heading scope, empty/non-claude files), `LinterConfigAnalyzer` (ruff.toml, .eslintrc.json, tsconfig.json, empty config), `CodePatternsAnalyzer` (test naming, docstring detection, below-threshold detection), `deduplicate_and_score` (dedup similar patterns, keep different, confidence boost from multiple sources) |
+| `test_playground.py` | 6 | Playground service: sandbox evaluation returns verdict, sandbox evaluation without Gemini returns NEEDS_CONFIRMATION, sandbox evaluation without audit log; snapshot serializer: serialize/deserialize round trip, serialize empty list, deserialize empty snapshot |
 
 ### Integration Tests (`apps/server/tests/integration/`)
 
@@ -72,10 +75,10 @@ Test API endpoints with mocked external services (Postgres, Elasticsearch, Neo4j
 
 | File | Tests | What it covers |
 |---|---|---|
-| `test_rules_api.py` | 15 | Full CRUD lifecycle: create rule, read by ID, list with pagination, update fields, status transitions; health endpoints (`/healthz`, `/api/v1/health`); validation error handling (422 responses) |
-| `test_search_api.py` | 7 | All search modes: full-text, vector, hybrid, category search; search with filters (scope, modality, severity) |
-| `test_intent_api.py` | 3 | Intent classification via `/api/v1/intent` endpoint |
-| `test_relationships_api.py` | 2 | Relationship CRUD: create and retrieve rule relationships |
+| `test_rules_api.py` | 15 | Full CRUD lifecycle: create rule, read by ID, list with pagination, update fields, status transitions; health endpoints (`/healthz`, `/api/v1/health`); validation error handling (422 responses); all modalities |
+| `test_search_api.py` | 7 | All search modes: full-text, vector, hybrid, category search; search with filters (scope, modality, severity); pagination; validation (empty query) |
+| `test_intent_api.py` | 3 | Intent classification via `/api/v1/intent` endpoint; intent with context; validation (empty query) |
+| `test_relationships_api.py` | 2 | Relationship CRUD: create and delete rule relationships |
 
 ### SDK Tests (`packages/rule-client/tests/`)
 

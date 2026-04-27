@@ -20,7 +20,9 @@ Returns a summary of the entire rule corpus.
     "WARN": 289,
     "DENY": 57
   },
-  "open_recommendations": 23
+  "open_recommendations": 23,
+  "active_alerts": 5,
+  "active_drift_alerts": 2
 }
 ```
 
@@ -31,6 +33,8 @@ Returns a summary of the entire rule corpus.
 | `evaluations_30d` | Number of evaluations run in the last 30 days |
 | `verdict_distribution` | Breakdown of evaluation verdicts (ALLOW, WARN, DENY) |
 | `open_recommendations` | Number of unresolved improvement recommendations |
+| `active_alerts` | Number of alerts in `active` status (not acknowledged or resolved) |
+| `active_drift_alerts` | Count of active alerts specifically related to rule drift (health decline, dormant rules) sourced from the alerts table |
 
 ### GET /api/v1/intelligence/analytics?period_days=30
 
@@ -117,7 +121,22 @@ A histogram of rule health scores across the corpus. Highlights clusters of unhe
 
 A prioritized list of improvement recommendations. Each recommendation includes the rule, the suggestion type, the reason, and a link to take action.
 
+### Alerts Panel
+
+A live feed of active alerts, ordered by creation time. Each alert shows its type, the affected rule, and the trigger message. Alerts can be acknowledged or resolved directly from the panel. The `active_drift_alerts` count in the summary cards reflects the real count from the alerts table (not a placeholder).
+
+Alert types displayed:
+
+| Type | Icon | Description |
+|---|---|---|
+| `dormant_rule` | Clock | Rule has not been evaluated recently |
+| `high_deny_rate` | Warning | Rule DENY rate exceeds threshold |
+| `health_decline` | TrendingDown | Rule health score dropped significantly |
+| `conflict_detected` | Zap | New conflict detected in the rule graph |
+
 ## See Also
 
 - [Health Scoring](health.md) -- how individual rule health scores are calculated
+- [Alerts API](../api/alerts.md) -- alert endpoints
+- [Background Workers](../integrations/workers.md) -- cron jobs that generate alerts
 - [Contributing](../dev/contributing.md) -- how to improve the intelligence features

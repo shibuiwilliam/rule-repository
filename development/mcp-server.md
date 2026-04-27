@@ -4,7 +4,7 @@ The Rule Repository exposes an MCP (Model Context Protocol) server that allows A
 
 Source code: `apps/server/src/rulerepo_server/mcp/`
 
-Architecture principle: the MCP server is a **thin adapter layer**. All tools delegate to existing services (`SearchService`, `EvaluationService`, `ContextDeliveryService`, etc.). Business logic must never be duplicated in MCP tool implementations.
+Architecture principle: the MCP server is a **thin adapter layer**. All tools delegate to existing services (`SearchService`, `EvaluationService`, `ContextDeliveryService`, `DiscoveryService`, etc.). Business logic must never be duplicated in MCP tool implementations.
 
 ---
 
@@ -71,7 +71,7 @@ If the Rule Repository stack is running via Docker Compose, adjust the connectio
 
 ## Tools
 
-All 5 tools are registered in `mcp/tools.py` via the `register_tools()` function.
+All 6 tools are registered in `mcp/tools.py` via the `register_tools()` function.
 
 ### search_rules
 
@@ -92,28 +92,6 @@ search_rules(
 **Returns**: List of rule dicts with id, statement, modality, severity, scope, tags, rationale, status.
 
 **When to use**: When you need to find organizational rules, policies, regulations, or guidelines relevant to a task or decision.
-
----
-
-### evaluate_compliance
-
-Evaluate whether a code change or action complies with applicable rules.
-
-```
-evaluate_compliance(
-    diff: str | None = None,             # Unified diff text
-    file_paths: list[str] | None = None, # Files being modified
-    intended_action: str | None = None,  # NL description of the action
-    scope: str | None = None,            # Rule scope filter
-    facts: str | None = None             # JSON string of key-value context facts
-) -> dict
-```
-
-**Delegates to**: `EvaluationService.evaluate()` with `mode="preflight"`.
-
-**Returns**: Dict with `overall_verdict` (ALLOW/DENY/NEEDS_CONFIRMATION), `rules_evaluated`, `rules_violated`, `violations` (list with rule_id, rule_statement, issue, fix), `warnings`, `fix_summary`.
-
-**When to use**: Before making changes that may be subject to organizational rules. Accepts a unified diff, file paths, or a natural language action description.
 
 ---
 
@@ -158,6 +136,55 @@ If `rule_id` is provided without `proposed_statement`, the tool fetches the rule
 
 ---
 
+### evaluate_compliance
+
+Evaluate whether a code change or action complies with applicable rules.
+
+```
+evaluate_compliance(
+    diff: str | None = None,             # Unified diff text
+    file_paths: list[str] | None = None, # Files being modified
+    intended_action: str | None = None,  # NL description of the action
+    scope: str | None = None,            # Rule scope filter
+    facts: str | None = None,            # JSON string of key-value context facts
+    environment: str | None = None       # Deployment environment (e.g., "production")
+) -> dict
+```
+
+**Delegates to**: `EvaluationService.evaluate()` with `mode="preflight"`.
+
+**The `environment` parameter**: When provided (e.g., `"production"`, `"staging"`), the evaluation uses the snapshot deployed to that environment instead of the live rule corpus. This enables deterministic evaluation against a pinned rule set. The rule selector looks up the active `RuleSetDeploymentModel` for the given environment, deserializes the associated snapshot, and evaluates only against those rules.
+
+**Returns**: Dict with `overall_verdict` (ALLOW/DENY/NEEDS_CONFIRMATION), `rules_evaluated`, `rules_violated`, `violations` (list with rule_id, rule_statement, issue, fix), `warnings`, `fix_summary`.
+
+**When to use**: Before making changes that may be subject to organizational rules. Accepts a unified diff, file paths, or a natural language action description.
+
+---
+
+### discover_rules
+
+Discover implicit rules from a codebase. Analyzes code patterns, config files, and CLAUDE.md to propose candidate rules.
+
+```
+discover_rules(
+    file_contents: str,                  # JSON string mapping file paths to contents
+    repository: str | None = None,       # Repository name or URL
+    sources: list[str] | None = None     # Source types to analyze
+) -> str
+```
+
+**Delegates to**: `DiscoveryService.start_scan()` and `DiscoveryService.get_candidates()`.
+
+**Input**: `file_contents` must be a valid JSON string mapping file paths to file content strings (e.g., `'{"pyproject.toml": "...", "CLAUDE.md": "..."}'`).
+
+**Default sources**: `["code_patterns", "linter_config", "claude_md"]` when not specified.
+
+**Returns**: Formatted text summary listing discovered candidate rules with source type, confidence, statement, and rationale. Includes the scan ID for subsequent approve/dismiss via the REST API.
+
+**When to use**: When bootstrapping rules for a new project. Provide contents of relevant files (configs, CLAUDE.md, linter configs, representative source files) and the service will extract implicit conventions as candidate rules.
+
+---
+
 ### get_rules_for_context
 
 **This is the key tool for coding agents.** Returns rules formatted for context injection, optimized for the agent's context window.
@@ -169,11 +196,14 @@ get_rules_for_context(
     task_description: str | None = None, # What you're doing
     languages: list[str] | None = None,  # Languages (auto-detected if omitted)
     max_rules: int = 15,                 # Maximum rules to return
-    format: str = "instructions"         # Output format
+    format: str = "instructions",        # Output format
+    federation: str | None = None        # UUID of a federation node
 ) -> str
 ```
 
 **Delegates to**: `ContextDeliveryService.get_formatted_rules()`.
+
+**The `federation` parameter**: When provided, only rules effective in that federation (including inherited rules and overrides resolved through the ancestor chain) are returned. This allows agents to get project-specific or team-specific rule sets within a federated hierarchy. The federation resolver walks from the specified node up to the root, collecting rules and applying overrides at each level, producing the final merged set.
 
 **Output formats**:
 

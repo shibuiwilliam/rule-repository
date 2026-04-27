@@ -12,7 +12,7 @@ _client: AsyncElasticsearch | None = None
 
 async def create_es_client() -> AsyncElasticsearch:
     """Create and store the async Elasticsearch client."""
-    global _client  # noqa: PLW0603
+    global _client
     settings = get_settings()
     _client = AsyncElasticsearch(
         hosts=[settings.elasticsearch_url],
@@ -34,7 +34,7 @@ def get_es_client() -> AsyncElasticsearch:
 
 async def close_es_client() -> None:
     """Close the Elasticsearch client."""
-    global _client  # noqa: PLW0603
+    global _client
     if _client is not None:
         await _client.close()
         _client = None

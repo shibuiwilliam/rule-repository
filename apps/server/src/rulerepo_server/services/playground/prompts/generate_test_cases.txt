@@ -1,0 +1,11 @@
+Given this rule: "{statement}"
+Modality: {modality}, Severity: {severity}
+
+Generate {count} test cases: half compliant (should ALLOW) and half non-compliant (should DENY).
+
+For each test case, provide:
+- name: short descriptive name (snake_case)
+- sample_input: a realistic code snippet or scenario
+- expected_verdict: ALLOW or DENY
+
+Respond with JSON: {{"test_cases": [{{"name": "...", "sample_input": "...", "expected_verdict": "..."}}]}}

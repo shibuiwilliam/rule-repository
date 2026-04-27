@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from rulerepo_server.gateway.normalizers.base import EventNormalizer
@@ -25,5 +25,5 @@ class GenericNormalizer(EventNormalizer):
             subject=payload.get("subject", "Generic webhook event"),
             metadata=payload.get("metadata", {}),
             raw_payload=payload,
-            timestamp=datetime.now(tz=timezone.utc),
+            timestamp=datetime.now(tz=UTC),
         )

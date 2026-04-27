@@ -6,7 +6,7 @@ dimensions). Clarity scoring uses the LLM sparingly — once per rule per cycle.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from rulerepo_server.core.logging import get_logger
@@ -73,7 +73,7 @@ def compute_freshness(rule: dict[str, Any], now: datetime | None = None) -> floa
     Returns:
         Freshness score 0-100.
     """
-    now = now or datetime.now(tz=timezone.utc)
+    now = now or datetime.now(tz=UTC)
     updated_at = rule.get("updated_at")
     if not updated_at:
         return 0.0
@@ -85,7 +85,7 @@ def compute_freshness(rule: dict[str, Any], now: datetime | None = None) -> floa
             return 0.0
 
     if updated_at.tzinfo is None:
-        updated_at = updated_at.replace(tzinfo=timezone.utc)
+        updated_at = updated_at.replace(tzinfo=UTC)
 
     days_since = (now - updated_at).days
     if days_since <= 30:
@@ -99,7 +99,7 @@ def compute_health_score(
     rule: dict[str, Any],
     evaluation_count_90d: int = 0,
     owner_active: bool = False,
-    clarity_score: float = 50.0,
+    clarity_score: float | None = None,
 ) -> dict[str, Any]:
     """Compute a composite health score for a rule.
 
@@ -107,7 +107,8 @@ def compute_health_score(
         rule: Rule data dictionary with all fields.
         evaluation_count_90d: Number of evaluations in the last 90 days.
         owner_active: Whether the rule owner has been active recently.
-        clarity_score: LLM-assessed clarity score (0-100). Default 50 if not assessed.
+        clarity_score: LLM-assessed clarity score (0-100). None falls back to rule's
+            stored clarity_score, then to 50.0 default.
 
     Returns:
         Dictionary with overall_score, per-dimension scores, and issues.
@@ -118,8 +119,12 @@ def compute_health_score(
     # Activity: has the rule been evaluated recently?
     activity = min(100.0, evaluation_count_90d * 10.0)  # 10+ evals = 100
 
-    # Test coverage: placeholder — would check for counterexamples in eval harness
-    test_coverage = 50.0  # Default mid-score until eval harness exists
+    # Clarity: use provided score, fall back to stored score on rule, then default 50
+    if clarity_score is None:
+        clarity_score = rule.get("clarity_score") or 50.0
+
+    # Test coverage: based on evaluation count (rules with evals have some "test" coverage)
+    test_coverage = min(100.0, evaluation_count_90d * 20.0) if evaluation_count_90d > 0 else 0.0
 
     # Owner engagement
     owner_engagement = 100.0 if owner_active else 0.0

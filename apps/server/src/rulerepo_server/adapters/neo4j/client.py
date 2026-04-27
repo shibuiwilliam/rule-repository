@@ -12,7 +12,7 @@ _driver: AsyncDriver | None = None
 
 async def create_neo4j_driver() -> AsyncDriver:
     """Create and store the async Neo4j driver."""
-    global _driver  # noqa: PLW0603
+    global _driver
     settings = get_settings()
     _driver = AsyncGraphDatabase.driver(
         settings.neo4j_uri,
@@ -37,7 +37,7 @@ def get_neo4j_driver() -> AsyncDriver:
 
 async def close_neo4j_driver() -> None:
     """Close the Neo4j driver."""
-    global _driver  # noqa: PLW0603
+    global _driver
     if _driver is not None:
         await _driver.close()
         _driver = None

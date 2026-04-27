@@ -144,6 +144,37 @@ services:
       - "8001:8001"
     command: ["rulerepo-mcp"]
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  arq-worker:
+    build:
+      context: .
+      dockerfile: infra/docker/server.Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://rule:rule@postgres:5432/ruledb
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ruledev
+      REDIS_URL: redis://redis:6379/0
+    command: ["python", "-m", "arq", "rulerepo_server.workers.settings.WorkerSettings"]
+    restart: "no"
+
 volumes:
   pgdata:
   esdata:

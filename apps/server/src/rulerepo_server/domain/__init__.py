@@ -18,9 +18,10 @@ from rulerepo_server.domain.rule import (
 from rulerepo_server.domain.verdict import Verdict, VerdictType
 
 __all__ = [
+    "GENESIS_HASH",
+    "VALID_STATUS_TRANSITIONS",
     "AuditEntry",
     "EffectivePeriod",
-    "GENESIS_HASH",
     "Governance",
     "Modality",
     "RelationshipType",
@@ -30,7 +31,6 @@ __all__ = [
     "RuleStatus",
     "Severity",
     "SourceRef",
-    "VALID_STATUS_TRANSITIONS",
     "Verdict",
     "VerdictType",
     "validate_status_transition",

@@ -91,6 +91,26 @@ Next.js development server. `NEXT_PUBLIC_API_BASE_URL` is set to `http://localho
 
 MCP server for AI agent integration. Uses `streamable-http` transport. Shares the same image as the backend server but runs the MCP entrypoint.
 
+### redis
+
+| Property | Value |
+|---|---|
+| Image | `redis:7-alpine` |
+| Port | 6379 |
+| Health check | `redis-cli ping` (5s interval) |
+
+Redis serves as the job queue and result backend for the arq background worker. No persistent volume by default; job state is ephemeral.
+
+### arq-worker
+
+| Property | Value |
+|---|---|
+| Build | `infra/docker/server.Dockerfile` |
+| Command | `arq rulerepo_server.workers.WorkerSettings` |
+| Depends on | `redis` (healthy), `server` (healthy) |
+
+Runs scheduled background jobs: health score refresh, recommendation generation, and feedback analysis. Shares the same Docker image as the backend server but uses the arq entrypoint.
+
 ## Volumes
 
 | Volume | Purpose |

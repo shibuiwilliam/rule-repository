@@ -27,6 +27,7 @@ The Rule Repository stores natural-language rules (laws, contracts, policies, en
 | Relational DB | **PostgreSQL** | rules, revisions, audit log |
 | Search | **Elasticsearch** | full-text + hybrid search |
 | Graph DB | **Neo4j** | rule relationships (`refines`, `overrides`, `conflicts_with`, `derives_from`, `succeeds`, `depends_on`) |
+| Job Queue | **arq** + **Redis** | Background tasks (health scoring, recommendations, correction analysis) |
 | Local orchestration | **Docker Compose** | dev + integration tests |
 
 Do **not** introduce additional frameworks or services without updating this file and PROJECT.md first.
@@ -44,13 +45,13 @@ rule-repository/
 │   │   │   ├── api/v1/         # REST API routers (rules, search, evaluate, intent, etc.)
 │   │   │   ├── core/           # config, logging, errors, auth, middleware, PII
 │   │   │   ├── domain/         # Rule, Evaluation, Verdict (pure domain objects)
-│   │   │   ├── services/       # evaluation/, extraction/, search, intent, intelligence/, context_delivery/
+│   │   │   ├── services/       # evaluation/, extraction/, search, intent, intelligence/, context_delivery/, discovery/, feedback/, federation/
 │   │   │   ├── adapters/       # postgres, elasticsearch, neo4j, gemini, files
 │   │   │   ├── mcp/            # MCP server (tools, resources, prompts)
 │   │   │   ├── gateway/        # Enforcement gateway (normalizers, policies, SSE)
 │   │   │   ├── integrations/   # GitHub App, CI formatters
 │   │   │   ├── schemas/        # Pydantic request/response models
-│   │   │   └── workers/        # background jobs
+│   │   │   └── workers/        # background jobs (arq): settings.py, tasks.py
 │   │   ├── alembic/            # database migrations
 │   │   └── tests/
 │   └── frontend/               # Next.js + TS + Tailwind (pnpm)
@@ -100,6 +101,9 @@ Expected services after `up`:
 | PostgreSQL | localhost:5432 | `ruledb` |
 | Elasticsearch | http://localhost:9200 | search index |
 | Neo4j Browser | http://localhost:7474 | rule graph |
+| MCP Server | http://localhost:8001 | Streamable-HTTP MCP for agents |
+| Redis | localhost:6379 | Job queue (arq) |
+| arq-worker | — | Background task processor |
 
 The frontend talks to the backend over `NEXT_PUBLIC_API_BASE_URL`. The Python clients talk to the backend over `RULEREPO_SERVER_URL`.
 
@@ -204,7 +208,13 @@ The server is a single FastAPI application that exposes:
 - **Intent API** at `/api/v1/intent` that classifies natural-language queries and routes to handlers.
 - **Gateway API** at `/api/v1/gateway/...` for webhook-driven enforcement.
 - **Intelligence API** at `/api/v1/intelligence/...` for health scoring, analytics, recommendations.
+- **Discovery API** at `/api/v1/discover/...` for automatic rule discovery from code, configs, and PR comments.
+- **Feedback API** at `/api/v1/feedback/...` for agent correction feedback loop.
+- **Federation API** at `/api/v1/federations/...` for cross-project rule federation.
 - **Integrations** at `/api/v1/integrations/...` for GitHub webhook receiver.
+- **Playground API** at `/api/v1/playground/...` for sandbox evaluation and test cases.
+- **Alerts API** at `/api/v1/alerts/...` for proactive alert management.
+- **Snapshots API** at `/api/v1/snapshots/...` for versioned rule set deployment.
 - **MCP Server** on a separate port (8001) for AI agent tool integration.
 
 Internal modules:
@@ -216,10 +226,37 @@ src/rulerepo_server/
 ├── core/                       # config, logging, errors, auth, middleware, PII, deps
 ├── domain/                     # Rule, Evaluation, Verdict, AuditEntry (pure)
 ├── services/
-│   ├── evaluation/             # Code-Aware Evaluation Engine (diff parser, rule selector, LLM judge)
+│   ├── evaluation/             # Code-Aware Evaluation Engine
+│   │   ├── service.py          #   Orchestrator (context→select→evaluate→aggregate)
+│   │   ├── diff_parser.py      #   Unified diff parser
+│   │   ├── context_assembler.py#   Normalize inputs into EvaluationContext
+│   │   ├── rule_selector.py    #   Narrow corpus (scope+severity+effective_period)
+│   │   ├── evaluation_core.py  #   LLM-as-Judge per rule (with cache)
+│   │   ├── graph_resolver.py   #   Neo4j relationship resolution (OVERRIDES/DEPENDS_ON)
+│   │   ├── conflict_aggregator.py # Conflict-aware verdict aggregation
+│   │   ├── verdict_aggregator.py  # Simple verdict aggregation (fallback)
+│   │   └── impact_preview.py   #   Rule change impact analysis (replay evaluations)
 │   ├── extraction/             # Document ingestion pipeline (Gemini-powered)
-│   ├── intelligence/           # Health scoring, analytics, recommendations
+│   ├── intelligence/           # Health scoring, analytics (cache stats, top violations), recommendations
 │   ├── context_delivery/       # Smart rule selection + formatting for agents
+│   ├── discovery/              # Automatic rule discovery
+│   │   ├── service.py          #   Scan orchestrator
+│   │   ├── github_importer.py  #   GitHub repo import (fetch CLAUDE.md, configs via API)
+│   │   ├── analyzers/          #   claude_md.py, linter_config.py, code_patterns.py
+│   │   └── pattern_detector.py #   Deduplication + confidence scoring
+│   ├── feedback/               # Correction feedback loop
+│   │   ├── service.py          #   FeedbackService (submit, analyze, approve)
+│   │   ├── pr_capture.py       #   Auto-capture corrections from merged PRs
+│   │   └── correction_analyzer.py # Semantic delta analysis
+│   ├── federation/             # Cross-project rule federation (hierarchy + resolution)
+│   ├── playground/             # Rule sandbox + test cases
+│   │   ├── service.py          #   PlaygroundService (sandbox eval, test CRUD)
+│   │   ├── test_runner.py      #   Execute test suite per rule
+│   │   └── test_generator.py   #   Gemini-powered test case generation
+│   ├── snapshots/              # Rule set versioning + deployment
+│   │   ├── service.py          #   SnapshotService (create, deploy, rollback)
+│   │   ├── simulator.py        #   Impact simulation (compare snapshots)
+│   │   └── serializer.py       #   Rule snapshot serialization
 │   ├── search.py               # Multi-modal search service
 │   ├── rule_service.py         # Rule CRUD orchestration (PG+ES+Neo4j)
 │   └── intent.py               # Intent classification and routing
@@ -227,7 +264,7 @@ src/rulerepo_server/
 ├── mcp/                        # MCP server (tools, resources, prompts)
 ├── gateway/                    # Enforcement gateway (normalizers, policies)
 ├── integrations/               # GitHub webhook, CI formatters
-├── workers/                    # background jobs
+├── workers/                    # background jobs (arq): settings.py, tasks.py
 └── schemas/                    # Pydantic request/response models
 ```
 
@@ -350,10 +387,19 @@ AUTH_REQUIRED=false
 MCP_TRANSPORT=stdio
 MCP_PORT=8001
 
+# Redis / Background Workers
+REDIS_URL=redis://redis:6379/0
+
 # GitHub Integration
 GITHUB_APP_ID=
 GITHUB_APP_PRIVATE_KEY=
 GITHUB_WEBHOOK_SECRET=
+
+# Discovery
+GITHUB_TOKEN=                        # for PR comment analysis
+
+# Alerts
+ALERT_WEBHOOK_URL=                   # URL to receive critical alert webhooks
 ```
 
 When you add a new env var, update `.env.example` in the same change.

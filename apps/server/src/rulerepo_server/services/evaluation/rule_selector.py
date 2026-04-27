@@ -6,6 +6,7 @@ Steps 1-3 should complete in <50ms. Step 4 (semantic) only when needed.
 
 from __future__ import annotations
 
+from datetime import UTC
 from typing import Any
 
 from sqlalchemy import select
@@ -29,6 +30,8 @@ async def select_rules(
     severity_min: str = "MEDIUM",
     modality_filter: list[str] | None = None,
     scope: str | None = None,
+    federation_id: str | None = None,
+    environment: str | None = None,
 ) -> list[dict[str, Any]]:
     """Select rules applicable to the given evaluation context.
 
@@ -45,10 +48,50 @@ async def select_rules(
         severity_min: Minimum severity to include.
         modality_filter: If set, only include these modalities. Default: MUST + MUST_NOT.
         scope: Explicit scope filter (overrides context-derived scope).
+        federation_id: If provided, use federation-resolved rules instead of querying all.
+        environment: If provided, use the snapshot deployed to this environment.
 
     Returns:
         List of rule dicts, ranked by relevance, capped at max_rules.
     """
+    # When environment is provided, use the deployed snapshot
+    if environment is not None:
+        from rulerepo_server.adapters.postgres.models import (
+            RuleSetDeploymentModel,
+            RuleSetSnapshotModel,
+        )
+        from rulerepo_server.services.snapshots.serializer import deserialize_snapshot
+
+        deploy_query = select(RuleSetDeploymentModel).where(
+            RuleSetDeploymentModel.environment == environment,
+            RuleSetDeploymentModel.active.is_(True),
+        )
+        deploy_result = await session.execute(deploy_query)
+        deployment = deploy_result.scalar_one_or_none()
+        if deployment is not None:
+            snap_query = select(RuleSetSnapshotModel).where(
+                RuleSetSnapshotModel.id == deployment.snapshot_id
+            )
+            snap_result = await session.execute(snap_query)
+            snapshot = snap_result.scalar_one_or_none()
+            if snapshot is not None:
+                rules = deserialize_snapshot(snapshot.rule_snapshot)
+                logger.info(
+                    "rule_selector_environment",
+                    environment=environment,
+                    rules=len(rules),
+                )
+                return rules[:max_rules]
+        logger.info("rule_selector_environment_fallback", environment=environment)
+
+    # When federation_id is provided, delegate to the federation resolver
+    if federation_id is not None:
+        from rulerepo_server.services.federation.resolver import resolve_effective_rules
+
+        effective = await resolve_effective_rules(federation_id, session)
+        logger.info("rule_selector_federation", federation_id=federation_id, rules=len(effective))
+        return effective[:max_rules]
+
     if modality_filter is None:
         modality_filter = ["MUST", "MUST_NOT"]
 
@@ -67,9 +110,9 @@ async def select_rules(
     all_rules_raw = list(result.scalars().all())
 
     # Enforce effective_period (CLAUDE_ENHANCE.md §0.3)
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
     all_rules = []
     for rule in all_rules_raw:
         ep = rule.effective_period if isinstance(rule.effective_period, dict) else {}

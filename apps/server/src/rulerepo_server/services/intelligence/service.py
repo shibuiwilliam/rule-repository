@@ -8,9 +8,14 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rulerepo_server.adapters.postgres.models import RuleModel
+from rulerepo_server.adapters.postgres.models import AlertModel, RuleModel
 from rulerepo_server.core.logging import get_logger
-from rulerepo_server.services.intelligence.analytics import get_corpus_analytics, get_rule_analytics
+from rulerepo_server.services.intelligence.analytics import (
+    get_cache_stats,
+    get_corpus_analytics,
+    get_rule_analytics,
+    get_top_violated_rules,
+)
 from rulerepo_server.services.intelligence.health_scorer import compute_health_score
 from rulerepo_server.services.intelligence.recommender import generate_recommendations
 
@@ -63,14 +68,38 @@ class IntelligenceService:
             else:
                 distribution["poor"] += 1
 
+        # Compute recommendation count from current health scores
+        open_recommendations = 0
+        for rule in rules:
+            rule_dict = self._model_to_dict(rule)
+            rule_analytics = await get_rule_analytics(self._session, str(rule.id), period_days=90)
+            health = compute_health_score(
+                rule_dict,
+                evaluation_count_90d=rule_analytics.get("total_evaluations", 0),
+            )
+            recs = generate_recommendations(rule_dict, health, rule_analytics)
+            open_recommendations += len(recs)
+
+        # Cache stats and top violations
+        cache_stats = await get_cache_stats(self._session, period_days=30)
+        top_violations = await get_top_violated_rules(self._session, period_days=30, limit=5)
+
+        # Active alerts count
+        alert_result = await self._session.execute(
+            select(func.count()).select_from(AlertModel).where(AlertModel.status == "active")
+        )
+        active_alerts = alert_result.scalar_one()
+
         return {
             "total_rules": total_rules,
             "avg_health_score": avg_health,
             "total_evaluations_30d": analytics.get("total_evaluations", 0),
             "verdict_distribution": analytics.get("verdict_distribution", {}),
-            "active_drift_alerts": 0,  # populated when drift detector runs
-            "open_recommendations": 0,  # populated when recommender runs
+            "active_drift_alerts": active_alerts,
+            "open_recommendations": open_recommendations,
             "health_distribution": distribution,
+            "cache_stats": cache_stats,
+            "top_violated_rules": top_violations,
         }
 
     async def get_health_scores(
@@ -213,6 +242,7 @@ class IntelligenceService:
             "rationale": model.rationale,
             "source_refs": model.source_refs,
             "governance": model.governance,
+            "clarity_score": getattr(model, "clarity_score", None),
             "created_at": model.created_at,
             "updated_at": model.updated_at,
         }

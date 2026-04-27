@@ -11,7 +11,7 @@ The Rule Repository exposes a Model Context Protocol (MCP) server that allows AI
 
 ## Tools
 
-The MCP server provides 5 tools:
+The MCP server provides 6 tools:
 
 ### `search_rules`
 
@@ -23,7 +23,7 @@ Search the rule corpus by keyword or natural language query.
 
 Evaluate a code change against applicable rules.
 
-**Parameters:** `diff` (string), `file_path` (string), `intent` (string, optional)
+**Parameters:** `diff` (string), `file_path` (string), `intent` (string, optional), `environment` (string, optional -- when provided, evaluates against the snapshot deployed to this environment instead of the live rule corpus; valid values: `production`, `staging`, `development`)
 
 ### `explain_rule`
 
@@ -37,11 +37,19 @@ Find rules that conflict with each other within a scope or across scopes.
 
 **Parameters:** `scope` (string, optional), `rule_id` (string, optional)
 
+### `discover_rules`
+
+Scan project artifacts (configuration files, documentation) to discover implicit rules.
+
+**Parameters:** `file_paths` (array of strings), `repository` (string, optional)
+
+Returns a list of candidate rules discovered from the provided files, with confidence scores and suggested metadata.
+
 ### `get_rules_for_context`
 
 Retrieve rules applicable to specific files, formatted for agent consumption. This is the primary tool for agent integrations.
 
-**Parameters:** `file_paths` (array of strings), `format` (string, optional)
+**Parameters:** `file_paths` (array of strings), `format` (string, optional), `federation` (string, optional)
 
 **Format options:**
 
@@ -52,6 +60,8 @@ Retrieve rules applicable to specific files, formatted for agent consumption. Th
 | `detailed` | Full rule metadata including scope, modality, tags, and source | Largest |
 
 Default format is `instructions`.
+
+When `federation` is provided (a federation node ID), rules are resolved through the federation hierarchy for that node, returning the effective rule set after applying inheritance and overrides.
 
 ## Resources
 

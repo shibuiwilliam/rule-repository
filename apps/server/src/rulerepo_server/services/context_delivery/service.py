@@ -39,6 +39,7 @@ class ContextDeliveryService:
         scope: str | None = None,
         max_rules: int = 15,
         format_type: str = "instructions",
+        federation_id: str | None = None,
     ) -> str:
         """Get rules formatted for agent context injection.
 
@@ -50,10 +51,20 @@ class ContextDeliveryService:
             scope: Explicit scope filter.
             max_rules: Maximum rules to return.
             format_type: "instructions", "checklist", or "detailed".
+            federation_id: If provided, resolve rules through federation hierarchy.
 
         Returns:
             Formatted plain text ready for agent context window.
         """
+        # When federation_id is provided, resolve rules through federation
+        if federation_id is not None:
+            from rulerepo_server.services.federation.resolver import resolve_effective_rules
+
+            effective = await resolve_effective_rules(federation_id, self._session)
+            rules = effective[:max_rules]
+            label = _build_context_label(file_paths, repository, task_description)
+            return format_rules(rules, format_type=format_type, context_label=label)
+
         # Auto-detect languages from file paths
         if not languages and file_paths:
             detected = set()

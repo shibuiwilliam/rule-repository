@@ -219,6 +219,7 @@ def register_tools(mcp: FastMCP) -> None:
         intended_action: str | None = None,
         scope: str | None = None,
         facts: str | None = None,
+        environment: str | None = None,
     ) -> dict[str, Any]:
         """Evaluate whether a code change or action complies with applicable rules.
 
@@ -233,6 +234,8 @@ def register_tools(mcp: FastMCP) -> None:
             intended_action: Natural language description of what you're doing.
             scope: Rule scope filter (e.g., "engineering/python").
             facts: JSON string of key-value context facts.
+            environment: Deployment environment (e.g., "production"). When set,
+                evaluation uses the snapshot deployed to this environment.
         """
         import json as json_mod
 
@@ -259,6 +262,7 @@ def register_tools(mcp: FastMCP) -> None:
                 intent=intended_action,
                 scope=scope,
                 mode="preflight",
+                environment=environment,
             )
             await session.commit()
 
@@ -286,6 +290,82 @@ def register_tools(mcp: FastMCP) -> None:
         }
 
     @mcp.tool()
+    async def discover_rules(
+        file_contents: str,
+        repository: str | None = None,
+        sources: list[str] | None = None,
+    ) -> str:
+        """Discover implicit rules from a codebase. Analyzes code patterns,
+        config files, and CLAUDE.md to propose candidate rules.
+
+        Call this when bootstrapping rules for a new project. Provide the
+        contents of relevant files (configs, CLAUDE.md, linter configs,
+        representative source files) and the service will extract implicit
+        conventions as candidate rules.
+
+        Args:
+            file_contents: JSON string mapping file paths to file contents
+                (e.g., '{"pyproject.toml": "...", "CLAUDE.md": "..."}').
+            repository: Optional repository name or URL.
+            sources: Source types to analyze. Defaults to
+                ["code_patterns", "linter_config", "claude_md"].
+        """
+        import json as json_mod
+
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.gemini.client import get_gemini_client
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.discovery.service import DiscoveryService
+
+        # Parse file_contents JSON
+        try:
+            parsed_contents: dict[str, str] = json_mod.loads(file_contents)
+        except (json_mod.JSONDecodeError, TypeError) as exc:
+            return f"Error: file_contents must be a valid JSON string — {exc}"
+
+        if not isinstance(parsed_contents, dict):
+            return "Error: file_contents must be a JSON object mapping paths to content strings."
+
+        effective_sources = sources or ["code_patterns", "linter_config", "claude_md"]
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            gemini = None
+            try:
+                gemini = get_gemini_client()
+            except Exception:
+                pass
+
+            svc = DiscoveryService(session, gemini)
+            scan_id = await svc.start_scan(
+                sources=effective_sources,
+                file_contents=parsed_contents,
+                repository=repository,
+            )
+            candidates = await svc.get_candidates(scan_id)
+            await session.commit()
+
+        # Format as readable text summary
+        if not candidates:
+            return "No candidate rules discovered from the provided files."
+
+        lines: list[str] = [f"Discovered {len(candidates)} candidate rule(s) (scan {scan_id}):\n"]
+        for i, c in enumerate(candidates, 1):
+            lines.append(f"  {i}. [{c['source_type']}] (confidence: {c['confidence']:.2f})")
+            lines.append(f"     {c['statement']}")
+            if c.get("rationale"):
+                lines.append(f"     Rationale: {c['rationale']}")
+            lines.append("")
+
+        lines.append(
+            "Use the REST API POST /api/v1/discovery/scans/{scan_id}/candidates/{id}/approve "
+            "to promote candidates to rules."
+        )
+        return "\n".join(lines)
+
+    @mcp.tool()
     async def get_rules_for_context(
         file_paths: list[str] | None = None,
         repository: str | None = None,
@@ -293,6 +373,7 @@ def register_tools(mcp: FastMCP) -> None:
         languages: list[str] | None = None,
         max_rules: int = 15,
         format: str = "instructions",
+        federation: str | None = None,
     ) -> str:
         """Get the rules that apply to your current coding context.
 
@@ -312,6 +393,9 @@ def register_tools(mcp: FastMCP) -> None:
             max_rules: Maximum rules to return (default 15).
             format: Output format — "instructions" (best for working context),
                     "checklist" (best for PR review), "detailed" (best for learning).
+            federation: UUID of a federation node. When provided, only rules
+                effective in that federation (including inherited/overridden)
+                are returned.
         """
         from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -329,4 +413,5 @@ def register_tools(mcp: FastMCP) -> None:
                 languages=languages,
                 max_rules=max_rules,
                 format_type=format,
+                federation_id=federation,
             )

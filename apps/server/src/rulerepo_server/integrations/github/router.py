@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from rulerepo_server.adapters.postgres.session import get_db_session
 from rulerepo_server.core.logging import get_logger
+from rulerepo_server.integrations.github.check_reporter import create_check_run
 from rulerepo_server.integrations.github.review_formatter import format_review_comment
 from rulerepo_server.integrations.github.signature import verify_github_signature
 
@@ -139,6 +140,11 @@ async def _handle_pr(payload: dict[str, Any], session: AsyncSession) -> dict[str
         }
 
         review_comment = format_review_comment(result_dict)
+
+        # Create GitHub Check Run (pass/fail status badge on PR)
+        head_sha = pr.get("head", {}).get("sha", "")
+        if head_sha:
+            await create_check_run(repo=repo, head_sha=head_sha, result=result_dict)
 
         logger.info(
             "github_pr_evaluated",

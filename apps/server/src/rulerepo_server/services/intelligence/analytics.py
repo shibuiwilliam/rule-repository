@@ -103,3 +103,70 @@ async def get_rule_analytics(
         "needs_confirmation_rate": round(confirm / max(total, 1), 3),
         "avg_latency_ms": round((row["avg_latency_ms"] or 0) if row else 0, 1),
     }
+
+
+async def get_cache_stats(session: AsyncSession, period_days: int = 30) -> dict[str, Any]:
+    """Get LLM cache hit/miss statistics from the audit log.
+
+    Args:
+        session: Async database session.
+        period_days: Number of days to aggregate.
+
+    Returns:
+        Dictionary with hits, misses, and hit_rate.
+    """
+    query = text("""
+        SELECT
+            COUNT(*) FILTER (
+                WHERE details->>'cache_hit' = 'true'
+            ) AS hits,
+            COUNT(*) FILTER (
+                WHERE details->>'cache_hit' IS NULL
+                   OR details->>'cache_hit' = 'false'
+            ) AS misses
+        FROM audit_log
+        WHERE action = 'evaluate'
+          AND timestamp > NOW() - MAKE_INTERVAL(days => :days)
+    """)
+    result = await session.execute(query, {"days": period_days})
+    row = result.mappings().first()
+
+    hits = (row["hits"] or 0) if row else 0
+    misses = (row["misses"] or 0) if row else 0
+    total = hits + misses
+
+    return {
+        "cache_hits": hits,
+        "cache_misses": misses,
+        "hit_rate": round(hits / max(total, 1), 3),
+        "period_days": period_days,
+    }
+
+
+async def get_top_violated_rules(
+    session: AsyncSession, period_days: int = 30, limit: int = 10
+) -> list[dict[str, Any]]:
+    """Get the most frequently violated rules from the audit log.
+
+    Args:
+        session: Async database session.
+        period_days: Number of days to look back.
+        limit: Maximum number of rules to return.
+
+    Returns:
+        List of {rule_id, violation_count} dicts, ordered by count.
+    """
+    query = text("""
+        SELECT
+            resource_id AS rule_id,
+            COUNT(*) AS violation_count
+        FROM audit_log
+        WHERE action = 'evaluate'
+          AND details->>'overall_verdict' = 'DENY'
+          AND timestamp > NOW() - MAKE_INTERVAL(days => :days)
+        GROUP BY resource_id
+        ORDER BY violation_count DESC
+        LIMIT :limit
+    """)
+    result = await session.execute(query, {"days": period_days, "limit": limit})
+    return [dict(row) for row in result.mappings().all()]

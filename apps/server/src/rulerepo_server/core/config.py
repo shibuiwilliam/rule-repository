@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     # Auth
     auth_required: bool = False
 
+    # Redis
+    redis_url: str = "redis://localhost:6379/0"
+
     # File storage
     file_storage_path: str = "/tmp/rulerepo-files"
 

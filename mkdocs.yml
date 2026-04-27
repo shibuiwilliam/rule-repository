@@ -21,10 +21,20 @@ nav:
     - Overview: architecture/overview.md
     - Evaluation Engine: architecture/evaluation-engine.md
     - Data Stores: architecture/data-stores.md
+    - Rule Discovery: architecture/discovery.md
+    - Rule Playground: architecture/playground.md
+    - Snapshots: architecture/snapshots.md
+    - Federation: architecture/federation.md
   - API Reference:
     - REST API: api/rest.md
     - Evaluate API: api/evaluate.md
     - Intent API: api/intent.md
+    - Discovery API: api/discovery.md
+    - Feedback API: api/feedback.md
+    - Playground API: api/playground.md
+    - Alerts API: api/alerts.md
+    - Snapshots API: api/snapshots.md
+    - Federation API: api/federation.md
   - SDKs:
     - Rule Client (Python): sdks/rule-client.md
     - Agentic Client: sdks/agentic-client.md
@@ -34,9 +44,11 @@ nav:
     - GitHub PR Review: integrations/github.md
     - CI Pipeline: integrations/ci.md
     - Agent Hooks: integrations/agent-hooks.md
+    - Background Workers: integrations/workers.md
   - Intelligence:
     - Dashboard: intelligence/dashboard.md
     - Health Scoring: intelligence/health.md
+    - Feedback Loop: intelligence/feedback.md
   - Development:
     - Contributing: dev/contributing.md
     - Testing: dev/testing.md

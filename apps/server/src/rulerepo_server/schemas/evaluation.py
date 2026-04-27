@@ -27,6 +27,10 @@ class EvaluateRequest(BaseModel):
     mode: str = Field(default="preflight", description="preflight | posthoc")
     max_rules: int = Field(default=20, ge=1, le=100)
     severity_min: str = Field(default="MEDIUM", description="Minimum severity to evaluate")
+    environment: str | None = Field(
+        default=None,
+        description="Deployment environment for snapshot-based evaluation",
+    )
 
 
 class QuickEvaluateRequest(BaseModel):
@@ -67,6 +71,17 @@ class RuleVerdictResponse(BaseModel):
     locations: list[CodeLocationResponse] = Field(default_factory=list)
 
 
+class ConflictResolutionResponse(BaseModel):
+    """Records how a conflict between two rules was resolved during evaluation."""
+
+    rule_a_id: str
+    rule_b_id: str
+    relationship: str
+    winner_id: str
+    reason: str
+    discarded_verdict: str
+
+
 class EvaluateResponse(BaseModel):
     """Response from the evaluation API."""
 
@@ -75,6 +90,7 @@ class EvaluateResponse(BaseModel):
     rule_verdicts: list[RuleVerdictResponse] = Field(default_factory=list)
     violations: list[RuleVerdictResponse] = Field(default_factory=list)
     warnings: list[RuleVerdictResponse] = Field(default_factory=list)
+    conflict_resolutions: list[ConflictResolutionResponse] = Field(default_factory=list)
     rules_evaluated: int = 0
     rules_passed: int = 0
     rules_violated: int = 0

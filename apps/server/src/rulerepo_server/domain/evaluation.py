@@ -7,7 +7,7 @@ Per CLAUDE_ENHANCE.md §1.3: these live in domain/ and depend on nothing else.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -98,7 +98,8 @@ class EvaluationResult:
     fix_summary: str | None
     model_ids_used: list[str]
     total_latency_ms: int
-    timestamp: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    conflict_resolutions: list[dict[str, str]] = field(default_factory=list)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
 
     @property
     def violations(self) -> list[RuleVerdict]:

@@ -8,12 +8,12 @@ Technical documentation for developing and extending the Rule Repository.
 
 | Document | Description |
 |---|---|
-| [architecture.md](architecture.md) | System architecture, data flow, component responsibilities, and layering rules |
-| [evaluation-engine.md](evaluation-engine.md) | How the Code-Aware Evaluation Engine works: diff parsing, context assembly, verdict aggregation |
-| [api-reference.md](api-reference.md) | All API endpoints, request/response schemas, and error codes |
-| [mcp-server.md](mcp-server.md) | MCP tools, resources, prompts, and transport configuration (stdio + HTTP) |
-| [integrations.md](integrations.md) | GitHub App, CI CLI, Slack gateway, agent hooks, and webhook normalizers |
-| [testing.md](testing.md) | Test strategy, running tests, writing new tests, LLM mocking, and linting |
+| [architecture.md](architecture.md) | System architecture: 10+ deployable services, server module map (13 routers, 11 service areas), layering rules, data flows, 10 migrations, 21 ORM models |
+| [evaluation-engine.md](evaluation-engine.md) | How the Code-Aware Evaluation Engine works: diff parsing, context assembly, rule selection (with environment-based snapshot evaluation), verdict aggregation |
+| [api-reference.md](api-reference.md) | All API endpoints (13 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots |
+| [mcp-server.md](mcp-server.md) | MCP tools (6 tools), resources, prompts, and transport configuration (stdio + HTTP) |
+| [integrations.md](integrations.md) | GitHub App, CI CLI, agent hooks, rule ingestion, background workers (arq + Redis, 3 cron jobs, alert generation), and webhook gateway |
+| [testing.md](testing.md) | Test strategy (18 test files, 161 tests), running tests, writing new tests, LLM mocking, and linting |
 
 ---
 
@@ -21,7 +21,6 @@ Technical documentation for developing and extending the Rule Repository.
 
 - **[PROJECT.md](../PROJECT.md)** -- Project vision, domain model, roadmap, and specification. Read this first for context on what the system does and why.
 - **[CLAUDE.md](../CLAUDE.md)** -- Operational contract for Claude Code: coding conventions, tech stack rules, Gemini API constraints, and non-negotiable development rules.
-- **[docs/](../docs/)** -- MkDocs site with user-facing documentation (getting started, architecture overviews, API guides, SDK docs, ADRs).
 
 ---
 

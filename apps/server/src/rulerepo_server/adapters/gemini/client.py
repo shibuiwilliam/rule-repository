@@ -16,7 +16,7 @@ def create_gemini_client() -> genai.Client:
     Returns:
         A configured google-genai Client instance.
     """
-    global _client  # noqa: PLW0603
+    global _client
     settings = get_settings()
     _client = genai.Client(api_key=settings.gemini_api_key)
     logger.info("gemini_client_created")
@@ -29,7 +29,7 @@ def get_gemini_client() -> genai.Client:
     Returns:
         The google-genai Client instance.
     """
-    global _client  # noqa: PLW0603
+    global _client
     if _client is None:
         _client = create_gemini_client()
     return _client

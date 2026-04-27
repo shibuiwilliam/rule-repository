@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, UploadFile
@@ -45,7 +45,7 @@ async def upload_document(
         mime_type=mime_type,
         size_bytes=len(file_bytes),
         storage_path=storage.get_storage_path(doc_id),
-        uploaded_at=datetime.now(timezone.utc),
+        uploaded_at=datetime.now(UTC),
     )
     session.add(doc_model)
     await session.flush()

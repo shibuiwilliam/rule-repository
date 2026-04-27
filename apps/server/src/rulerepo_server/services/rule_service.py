@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -53,7 +53,7 @@ class RuleService:
             Dictionary representation of the created rule.
         """
         rule_id = uuid4()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Generate embedding if Gemini client available
         embedding: list[float] = []
@@ -245,7 +245,7 @@ class RuleService:
         if data.governance is not None:
             updates["governance"] = data.governance.model_dump()
 
-        updates["updated_at"] = datetime.now(timezone.utc)
+        updates["updated_at"] = datetime.now(UTC)
 
         # Regenerate embedding if statement changed
         if data.statement is not None and self._gemini_client:
@@ -338,7 +338,7 @@ class RuleService:
         Returns:
             Dictionary representation of the retired rule.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         updates = {
             "status": "RETIRED",
             "effective_period": {"valid_from": None, "valid_until": now.isoformat()},
