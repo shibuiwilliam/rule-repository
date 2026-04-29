@@ -56,6 +56,10 @@ down: ## Stop the full stack
 down.clean: ## Stop the full stack and wipe all volumes
 	docker compose down -v
 
+reset: ## Reset all data to initial state (wipe volumes + rebuild + start fresh)
+	docker compose down -v
+	docker compose up --build -d
+
 restart: down up ## Restart the full stack
 
 build: ## Build all Docker images without starting
@@ -115,7 +119,7 @@ format.check: ## Check formatting without modifying files
 # ===========================================================================
 #  Test
 # ===========================================================================
-.PHONY: test test.server test.frontend test.client test.unit test.integration test.verbose
+.PHONY: test test.server test.frontend test.client test.unit test.integration test.verbose test.e2e test.e2e.extraction test.e2e.evaluation test.e2e.workflow
 
 test: test.server test.frontend ## Run all tests
 
@@ -139,6 +143,26 @@ test.verbose: ## Run all backend tests with verbose output
 
 test.cov: ## Run backend tests with coverage report
 	cd $(SERVER_DIR) && uv run pytest --cov=rulerepo_server --cov-report=term-missing
+
+test.e2e: ## Run E2E tests (starts stack if needed, uses real Gemini)
+	@echo "Ensuring docker-compose stack is running..."
+	@docker compose up -d 2>/dev/null || docker compose up --build -d
+	@echo "Waiting for server health..."
+	@for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
+		curl -sf http://localhost:8000/healthz > /dev/null 2>&1 && break; \
+		echo "  Waiting for server... ($$i/15)"; \
+		sleep 4; \
+	done
+	RULEREPO_LIVE_LLM=1 RULEREPO_SERVER_URL=http://localhost:8000 uv run python -m pytest apps/server/tests/e2e/ -v --tb=short
+
+test.e2e.extraction: ## Run E2E extraction tests only (stack must be running)
+	RULEREPO_LIVE_LLM=1 RULEREPO_SERVER_URL=http://localhost:8000 uv run python -m pytest apps/server/tests/e2e/test_extraction_e2e.py -v --tb=short
+
+test.e2e.evaluation: ## Run E2E evaluation tests only (stack must be running)
+	RULEREPO_LIVE_LLM=1 RULEREPO_SERVER_URL=http://localhost:8000 uv run python -m pytest apps/server/tests/e2e/test_evaluation_e2e.py -v --tb=short
+
+test.e2e.workflow: ## Run E2E full workflow test only (stack must be running)
+	RULEREPO_LIVE_LLM=1 RULEREPO_SERVER_URL=http://localhost:8000 uv run python -m pytest apps/server/tests/e2e/test_full_workflow.py -v --tb=short
 
 # ===========================================================================
 #  Database

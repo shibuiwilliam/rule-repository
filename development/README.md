@@ -8,12 +8,18 @@ Technical documentation for developing and extending the Rule Repository.
 
 | Document | Description |
 |---|---|
-| [architecture.md](architecture.md) | System architecture: 10+ deployable services, server module map (13 routers, 11 service areas), layering rules, data flows, 10 migrations, 21 ORM models |
-| [evaluation-engine.md](evaluation-engine.md) | How the Code-Aware Evaluation Engine works: diff parsing, context assembly, rule selection (with environment-based snapshot evaluation), verdict aggregation |
-| [api-reference.md](api-reference.md) | All API endpoints (13 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots |
+| [architecture.md](architecture.md) | System architecture: 10 deployable services, server module map (14 routers, 11 service areas), layering rules, data flows, 12 migrations |
+| [evaluation-engine.md](evaluation-engine.md) | How the Code-Aware Evaluation Engine works: diff parsing, context assembly, rule selection (with project + environment scoping), verdict aggregation |
+| [api-reference.md](api-reference.md) | All API endpoints (14 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects |
 | [mcp-server.md](mcp-server.md) | MCP tools (6 tools), resources, prompts, and transport configuration (stdio + HTTP) |
 | [integrations.md](integrations.md) | GitHub App, CI CLI, agent hooks, rule ingestion, background workers (arq + Redis, 3 cron jobs, alert generation), and webhook gateway |
-| [testing.md](testing.md) | Test strategy (18 test files, 161 tests), running tests, writing new tests, LLM mocking, and linting |
+| [testing.md](testing.md) | Test strategy (27 test files), running tests, writing new tests, LLM mocking, and linting |
+| [feedback-flywheel.md](feedback-flywheel.md) | Correction capture → analysis → auto-drafting → rule improvement loop |
+| [rule-registration-workflows.md](rule-registration-workflows.md) | Sequence diagrams for all 4 rule registration paths: manual, extraction, discovery, feedback. Data store sync matrix |
+| [database-schema.md](database-schema.md) | Complete database schema: 23 tables, 5 enum types, ER diagram, design decisions |
+| [intelligence-dashboard-plan.md](intelligence-dashboard-plan.md) | Intelligence Dashboard implementation plan (completed) — gap analysis and design |
+| [playground-enhancement-plan.md](playground-enhancement-plan.md) | Playground multi-mode input support (completed) — Code + Scenario evaluation |
+| [project-entity-plan.md](project-entity-plan.md) | Project entity as top-level organizational boundary (completed) — migration, CRUD, all-layer wiring |
 
 ---
 

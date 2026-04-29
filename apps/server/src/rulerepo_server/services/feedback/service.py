@@ -134,8 +134,14 @@ class FeedbackService:
                 "analysis_type": row.analysis_type,
                 "matched_rule_ids": row.matched_rule_ids or [],
                 "candidate_statement": row.candidate_statement,
+                "candidate_modality": row.candidate_modality,
+                "candidate_severity": row.candidate_severity,
                 "confidence": row.confidence,
                 "status": row.status,
+                "file_paths": row.file_paths or [],
+                "repository": row.repository,
+                "delta_summary": row.delta_summary,
+                "created_rule_id": str(row.created_rule_id) if row.created_rule_id else None,
                 "created_at": str(row.created_at),
             }
             for row in rows

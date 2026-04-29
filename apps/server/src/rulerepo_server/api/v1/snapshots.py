@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rulerepo_server.adapters.postgres.session import get_db_session
@@ -32,6 +32,7 @@ def _get_service(session: AsyncSession) -> SnapshotService:
 @router.post("", response_model=SnapshotResponse, status_code=201)
 async def create_snapshot(
     body: SnapshotCreate,
+    project_id: str | None = Query(default=None),
     session: AsyncSession = Depends(get_db_session),
 ) -> SnapshotResponse:
     """Create a new rule-set snapshot."""
@@ -41,6 +42,7 @@ async def create_snapshot(
         scope_filter=body.scope_filter,
         description=body.description,
         created_by=body.created_by,
+        project_id=project_id,
     )
     await session.commit()
     return SnapshotResponse(**result)
@@ -48,11 +50,12 @@ async def create_snapshot(
 
 @router.get("", response_model=list[SnapshotResponse])
 async def list_snapshots(
+    project_id: str | None = Query(default=None),
     session: AsyncSession = Depends(get_db_session),
 ) -> list[SnapshotResponse]:
     """List all snapshots."""
     svc = _get_service(session)
-    rows = await svc.list_snapshots()
+    rows = await svc.list_snapshots(project_id=project_id)
     return [SnapshotResponse(**r) for r in rows]
 
 

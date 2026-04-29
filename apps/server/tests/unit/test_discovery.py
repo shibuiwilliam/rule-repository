@@ -340,3 +340,153 @@ class TestPatternDetectorConfidenceBoost:
         assert len(result) == 1
         # With 2 unique sources, boost = base * (1 + 0.1 * 2) = base * 1.2
         assert result[0].confidence > base_confidence
+
+
+# ---------------------------------------------------------------------------
+# PolicyDocumentAnalyzer
+# ---------------------------------------------------------------------------
+
+from rulerepo_server.services.discovery.analyzers.policy_document import (
+    PolicyDocumentAnalyzer,
+)
+
+
+class TestPolicyDocumentMustStatements:
+    async def test_detects_must_in_hr_policy(self) -> None:
+        content = (
+            "# Employee Handbook\n\n"
+            "All employees must submit their timesheets by Friday 5pm.\n"
+            "Managers must approve leave requests within 3 business days.\n"
+        )
+        ctx = DiscoveryContext(
+            file_paths=["employee_handbook.md"],
+            file_contents={"employee_handbook.md": content},
+        )
+        analyzer = PolicyDocumentAnalyzer()
+        patterns = await analyzer.analyze(ctx)
+
+        assert len(patterns) >= 2
+        for p in patterns:
+            assert p.modality == "MUST"
+            assert p.source_type == "policy_document"
+            assert p.confidence >= 0.8
+
+
+class TestPolicyDocumentShallNot:
+    async def test_detects_shall_not_in_contract(self) -> None:
+        content = (
+            "## Confidentiality\n\n"
+            "The contractor shall not disclose any confidential information "
+            "to third parties without prior written consent.\n"
+        )
+        ctx = DiscoveryContext(
+            file_paths=["contractor_agreement.txt"],
+            file_contents={"contractor_agreement.txt": content},
+        )
+        analyzer = PolicyDocumentAnalyzer()
+        patterns = await analyzer.analyze(ctx)
+
+        assert len(patterns) >= 1
+        assert patterns[0].modality == "MUST_NOT"
+        assert "confidentiality" in patterns[0].scope[0]
+
+
+class TestPolicyDocumentShouldRecommendations:
+    async def test_detects_should_in_guidelines(self) -> None:
+        content = (
+            "# Expense Policy\n\n"
+            "Employees should retain receipts for all expenses over $25.\n"
+            "It is recommended to submit expense reports within 30 days.\n"
+        )
+        ctx = DiscoveryContext(
+            file_paths=["expense_policy.md"],
+            file_contents={"expense_policy.md": content},
+        )
+        analyzer = PolicyDocumentAnalyzer()
+        patterns = await analyzer.analyze(ctx)
+
+        assert len(patterns) >= 1
+        assert any(p.modality == "SHOULD" for p in patterns)
+
+
+class TestPolicyDocumentDomainTags:
+    async def test_infers_hr_tags(self) -> None:
+        content = "All employees must complete annual safety training.\n"
+        ctx = DiscoveryContext(
+            file_paths=["safety_training.txt"],
+            file_contents={"safety_training.txt": content},
+        )
+        analyzer = PolicyDocumentAnalyzer()
+        patterns = await analyzer.analyze(ctx)
+
+        assert len(patterns) >= 1
+        tags = patterns[0].tags
+        assert "policy_document" in tags
+        assert "safety" in tags or "hr" in tags
+
+
+class TestPolicyDocumentSeverityInference:
+    async def test_critical_for_security_rules(self) -> None:
+        content = "All users must enable two-factor authentication for security purposes.\n"
+        ctx = DiscoveryContext(
+            file_paths=["security_policy.txt"],
+            file_contents={"security_policy.txt": content},
+        )
+        analyzer = PolicyDocumentAnalyzer()
+        patterns = await analyzer.analyze(ctx)
+
+        assert len(patterns) >= 1
+        assert patterns[0].severity == "CRITICAL"
+
+
+class TestPolicyDocumentSkipsCodeFiles:
+    async def test_skips_claude_md(self) -> None:
+        content = "All code MUST be reviewed.\n"
+        ctx = DiscoveryContext(
+            file_paths=["CLAUDE.md"],
+            file_contents={"CLAUDE.md": content},
+        )
+        analyzer = PolicyDocumentAnalyzer()
+        patterns = await analyzer.analyze(ctx)
+
+        # CLAUDE.md is handled by ClaudeMdAnalyzer, not PolicyDocumentAnalyzer
+        assert len(patterns) == 0
+
+
+class TestPolicyDocumentEmptyFile:
+    async def test_empty_returns_nothing(self) -> None:
+        ctx = DiscoveryContext(
+            file_paths=["empty.txt"],
+            file_contents={"empty.txt": ""},
+        )
+        analyzer = PolicyDocumentAnalyzer()
+        patterns = await analyzer.analyze(ctx)
+
+        assert patterns == []
+
+
+class TestPolicyDocumentMixedContent:
+    async def test_extracts_only_normative_sentences(self) -> None:
+        content = (
+            "# Company Overview\n\n"
+            "Founded in 2020, our company has grown to 500 employees.\n"
+            "We operate in 12 countries across three continents.\n\n"
+            "# Workplace Rules\n\n"
+            "All employees must wear identification badges at all times.\n"
+            "Visitors should be escorted by a staff member.\n"
+            "The cafeteria serves lunch from 12pm to 2pm.\n"
+        )
+        ctx = DiscoveryContext(
+            file_paths=["company_handbook.md"],
+            file_contents={"company_handbook.md": content},
+        )
+        analyzer = PolicyDocumentAnalyzer()
+        patterns = await analyzer.analyze(ctx)
+
+        # Should find the 2 normative statements but not the descriptive ones
+        statements = [p.statement for p in patterns]
+        assert any("identification badges" in s for s in statements)
+        assert any("escorted" in s for s in statements)
+        # Descriptive sentences should NOT be extracted
+        assert not any("Founded in 2020" in s for s in statements)
+        assert not any("cafeteria" in s for s in statements)

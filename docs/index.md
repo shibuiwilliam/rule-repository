@@ -14,6 +14,7 @@ Where traditional rule engines require translating human rules into formal logic
 - **Enforce via webhooks**: receive events from GitHub, Slack, or any webhook source, match them to enforcement policies, and run automated evaluation.
 - **Discover rules automatically**: scan project artifacts (CLAUDE.md, linter configs, code patterns) to identify implicit rules and propose them as candidates for human review.
 - **Learn from corrections**: capture developer feedback on evaluation results and use it to create new rules, refine existing ones, and reduce false positives over time.
+- **Organize by project**: rules belong to projects; a project selector filters rules, evaluations, and search across the UI and API.
 - **Federate across teams**: compose rules hierarchically (organization, team, project) with inheritance and overrides so each team gets the right rule set.
 - **Observe rule health**: track per-rule health scores, evaluation analytics, and automated improvement recommendations across the corpus.
 - **Rule Playground**: sandbox-test rule statements against sample code without audit trails or caching, and manage per-rule test cases (manual, historical, and Gemini-generated).

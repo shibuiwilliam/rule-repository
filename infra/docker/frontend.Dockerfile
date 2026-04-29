@@ -4,15 +4,19 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# Copy package files
-COPY apps/frontend/package.json /app/package.json
-COPY apps/frontend/pnpm-lock.yaml* /app/
+# Copy workspace root files needed for pnpm install
+COPY pnpm-workspace.yaml /app/pnpm-workspace.yaml
+COPY pnpm-lock.yaml /app/pnpm-lock.yaml
+COPY apps/frontend/package.json /app/apps/frontend/package.json
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+# Install dependencies from workspace root
+RUN pnpm install --frozen-lockfile --filter rulerepo-frontend 2>/dev/null || \
+    pnpm install --filter rulerepo-frontend
 
-# Copy source
-COPY apps/frontend/ /app/
+# Copy frontend source into the workspace member location
+COPY apps/frontend/ /app/apps/frontend/
+
+WORKDIR /app/apps/frontend
 
 EXPOSE 3000
 
@@ -35,9 +39,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+COPY --from=builder /app/apps/frontend/.next/standalone ./
+COPY --from=builder /app/apps/frontend/.next/static ./.next/static
+COPY --from=builder /app/apps/frontend/public ./public 2>/dev/null || true
 
 EXPOSE 3000
 CMD ["node", "server.js"]

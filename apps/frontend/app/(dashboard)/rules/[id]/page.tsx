@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getRule, getRevisions, getRelationships, getGraph } from "@/lib/api";
+import { getRule, getRevisions, getRelationships, getGraph, getDocument } from "@/lib/api";
+import type { DocumentInfo } from "@/lib/api";
 import Badge from "@/components/Badge";
 import RuleDetailClient from "./client";
 
@@ -27,6 +28,24 @@ export default async function RuleDetailPage({
         </Link>
       </div>
     );
+  }
+
+  // Resolve source document filenames
+  const sourceDocMap: Record<string, DocumentInfo> = {};
+  if (rule.source_refs && rule.source_refs.length > 0) {
+    const docIds = [
+      ...new Set(
+        rule.source_refs
+          .map((ref: Record<string, unknown>) => ref.document_id as string)
+          .filter(Boolean),
+      ),
+    ];
+    const docs = await Promise.all(
+      docIds.map((docId: string) => getDocument(docId).catch(() => null)),
+    );
+    for (const doc of docs) {
+      if (doc) sourceDocMap[doc.id] = doc;
+    }
   }
 
   return (
@@ -64,7 +83,7 @@ export default async function RuleDetailPage({
               <dt className="font-medium text-gray-600">Tags</dt>
               <dd>
                 {rule.tags.length
-                  ? rule.tags.map((t) => (
+                  ? rule.tags.map((t: string) => (
                       <Badge key={t} label={t} variant="tag" className="mr-1" />
                     ))
                   : "—"}
@@ -79,6 +98,47 @@ export default async function RuleDetailPage({
               <dd>
                 {rule.effective_period?.valid_from ?? "—"} to{" "}
                 {rule.effective_period?.valid_until ?? "ongoing"}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium text-gray-600">Source Documents</dt>
+              <dd>
+                {rule.source_refs && rule.source_refs.length > 0 ? (
+                  <ul className="space-y-2">
+                    {rule.source_refs.map((ref: Record<string, unknown>, i: number) => {
+                      const docId = String(ref.document_id ?? "");
+                      const doc = sourceDocMap[docId];
+                      return (
+                        <li key={i} className="flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2">
+                          <svg className="h-4 w-4 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-gray-900">
+                              {doc ? doc.filename : `${docId.slice(0, 8)}...`}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {doc && (
+                                <span>{doc.mime_type} &middot; {(doc.size_bytes / 1024).toFixed(1)} KB</span>
+                              )}
+                              {ref.section && (
+                                <span> &middot; &sect; {String(ref.section)}</span>
+                              )}
+                              {ref.page != null && (
+                                <span> &middot; p.{String(ref.page)}</span>
+                              )}
+                              {!doc && docId && (
+                                <span className="font-mono">{docId}</span>
+                              )}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  "—"
+                )}
               </dd>
             </div>
             <div>

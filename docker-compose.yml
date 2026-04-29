@@ -45,16 +45,16 @@ services:
   neo4j:
     image: neo4j:5-community
     environment:
-      NEO4J_AUTH: neo4j/ruledev
+      NEO4J_AUTH: neo4j/ruledev1
       NEO4J_PLUGINS: '[]'
     volumes:
       - neo4jdata:/data
-      - ./infra/neo4j/init.cypher:/var/lib/neo4j/import/init.cypher:ro
+      - ./infra/neo4j/init.cypher:/tmp/init.cypher:ro
     ports:
       - "7474:7474"
       - "7687:7687"
     healthcheck:
-      test: ["CMD-SHELL", "cypher-shell -u neo4j -p ruledev 'RETURN 1' || exit 1"]
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p ruledev1 'RETURN 1' || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 20
@@ -65,14 +65,14 @@ services:
       neo4j:
         condition: service_healthy
     environment:
-      NEO4J_AUTH: neo4j/ruledev
+      NEO4J_AUTH: neo4j/ruledev1
     volumes:
       - ./infra/neo4j/init.cypher:/init.cypher:ro
     entrypoint:
       - /bin/bash
       - -c
       - |
-        cat /init.cypher | cypher-shell -u neo4j -p ruledev -a bolt://neo4j:7687 || true
+        cat /init.cypher | cypher-shell -u neo4j -p ruledev1 -a bolt://neo4j:7687 || true
         echo "Neo4j constraints initialized."
     restart: "no"
 
@@ -94,16 +94,17 @@ services:
       ELASTICSEARCH_URL: http://elasticsearch:9200
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_USER: neo4j
-      NEO4J_PASSWORD: ruledev
+      NEO4J_PASSWORD: ruledev1
     ports:
       - "8000:8000"
     volumes:
       - file_storage:/tmp/rulerepo-files
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8000/healthz || exit 1"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')\" || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
 
   frontend:
     build:
@@ -115,6 +116,7 @@ services:
         condition: service_healthy
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+      INTERNAL_API_URL: http://server:8000
     ports:
       - "3000:3000"
     healthcheck:
@@ -137,8 +139,8 @@ services:
       ELASTICSEARCH_URL: http://elasticsearch:9200
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_USER: neo4j
-      NEO4J_PASSWORD: ruledev
-      MCP_TRANSPORT: streamable-http
+      NEO4J_PASSWORD: ruledev1
+      MCP_TRANSPORT: sse
       MCP_PORT: "8001"
     ports:
       - "8001:8001"
@@ -146,6 +148,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    platform: linux/arm64
     ports:
       - "6379:6379"
     healthcheck:
@@ -170,7 +173,7 @@ services:
       ELASTICSEARCH_URL: http://elasticsearch:9200
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_USER: neo4j
-      NEO4J_PASSWORD: ruledev
+      NEO4J_PASSWORD: ruledev1
       REDIS_URL: redis://redis:6379/0
     command: ["python", "-m", "arq", "rulerepo_server.workers.settings.WorkerSettings"]
     restart: "no"

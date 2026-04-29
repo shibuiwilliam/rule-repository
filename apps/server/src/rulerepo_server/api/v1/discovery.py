@@ -37,6 +37,7 @@ def _get_discovery_service(
 @router.post("/scan", status_code=201)
 async def start_scan(
     data: ScanRequest,
+    project_id: str | None = Query(default=None),
     service: DiscoveryService = Depends(_get_discovery_service),
 ) -> ScanResponse:
     """Start a discovery scan to find candidate rules in source files.
@@ -52,6 +53,7 @@ async def start_scan(
         sources=data.sources,
         file_contents=data.file_contents,
         repository=data.repository,
+        project_id=project_id,
     )
     scan = await service.get_scan(scan_id)
     return ScanResponse(

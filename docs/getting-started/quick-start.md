@@ -41,10 +41,20 @@ Once all containers are healthy, the following services are available:
 | Frontend | [http://localhost:3000](http://localhost:3000) | Operator console (browse, search, upload, evaluate) |
 | PostgreSQL | localhost:5432 | Relational store (`ruledb`, user `rule`) |
 | Elasticsearch | [http://localhost:9200](http://localhost:9200) | Full-text and vector search index |
-| Neo4j Browser | [http://localhost:7474](http://localhost:7474) | Rule relationship graph (user `neo4j`, password `ruledev`) |
+| Neo4j Browser | [http://localhost:7474](http://localhost:7474) | Rule relationship graph (user `neo4j`, password `ruledev1`) |
 | MCP Server | [http://localhost:8001](http://localhost:8001) | Model Context Protocol server for AI agents |
 | Redis | localhost:6379 | Job queue for background workers |
 | arq-worker | -- | Background worker running cron jobs (health refresh, recommendations, feedback analysis) |
+
+## Load Sample Data
+
+The repository includes 17 sample rule documents (10 coding standards + 6 company policies). Load them with:
+
+```bash
+uv run python scripts/seed_data.py
+```
+
+Or drag and drop files from `sample_rules/` onto the Documents page at [http://localhost:3000/documents](http://localhost:3000/documents).
 
 ## Try It Out
 

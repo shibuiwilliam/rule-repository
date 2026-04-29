@@ -247,7 +247,8 @@ src/rulerepo_server/
 │   ├── feedback/               # Correction feedback loop
 │   │   ├── service.py          #   FeedbackService (submit, analyze, approve)
 │   │   ├── pr_capture.py       #   Auto-capture corrections from merged PRs
-│   │   └── correction_analyzer.py # Semantic delta analysis
+│   │   ├── correction_analyzer.py # Semantic delta analysis
+│   │   └── auto_drafter.py     #   [PLANNED] Auto-draft rules from correction patterns
 │   ├── federation/             # Cross-project rule federation (hierarchy + resolution)
 │   ├── playground/             # Rule sandbox + test cases
 │   │   ├── service.py          #   PlaygroundService (sandbox eval, test CRUD)
@@ -374,7 +375,7 @@ DATABASE_URL=postgresql+asyncpg://rule:rule@postgres:5432/ruledb
 ELASTICSEARCH_URL=http://elasticsearch:9200
 NEO4J_URI=bolt://neo4j:7687
 NEO4J_USER=neo4j
-NEO4J_PASSWORD=ruledev
+NEO4J_PASSWORD=ruledev1
 RULEREPO_SERVER_URL=http://server:8000
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 LOG_LEVEL=INFO

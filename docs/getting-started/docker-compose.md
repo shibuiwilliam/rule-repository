@@ -42,10 +42,10 @@ Applies the `rules` index template from `infra/elasticsearch/rules-index-templat
 |---|---|
 | Image | `neo4j:5-community` |
 | Ports | 7474 (HTTP browser), 7687 (Bolt) |
-| Health check | `cypher-shell -u neo4j -p ruledev 'RETURN 1'` (10s interval) |
+| Health check | `cypher-shell -u neo4j -p ruledev1 'RETURN 1'` (10s interval) |
 | Volume | `neo4jdata` mounted at `/data` |
 
-Credentials: `neo4j` / `ruledev`.
+Credentials: `neo4j` / `ruledev1`.
 
 ### neo4j-setup
 

@@ -19,15 +19,7 @@ def create_mcp_server() -> FastMCP:
     Returns:
         Configured FastMCP server instance.
     """
-    mcp = FastMCP(
-        "Rule Repository",
-        description=(
-            "Search, evaluate, and manage natural-language rules — "
-            "laws, contracts, policies, engineering guidelines. "
-            "Use these tools to check compliance, find applicable rules, "
-            "and understand rule relationships."
-        ),
-    )
+    mcp = FastMCP("Rule Repository")
 
     # Register tools, resources, and prompts
     from rulerepo_server.mcp.prompts import register_prompts

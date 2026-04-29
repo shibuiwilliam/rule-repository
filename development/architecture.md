@@ -37,6 +37,7 @@ src/rulerepo_server/
 │       ├── feedback.py             #   corrections, approve/dismiss, stats
 │       ├── federation.py           #   federation CRUD, rules, effective-rules, diff
 │       ├── playground.py           #   sandbox eval, test case CRUD, run, generate
+│       ├── projects.py            #   project CRUD (create, list, get, update)
 │       ├── alerts.py               #   list, get, acknowledge, resolve alerts
 │       └── snapshots.py            #   snapshot CRUD, deploy, rollback, simulate, deployments
 ├── core/
@@ -79,7 +80,8 @@ src/rulerepo_server/
 │   │       ├── base.py             #     DiscoveryContext, RawPattern
 │   │       ├── claude_md.py        #     CLAUDE.md rule extraction
 │   │       ├── code_patterns.py    #     Code convention detection
-│   │       └── linter_config.py    #     Linter config parsing
+│   │       ├── linter_config.py    #     Linter config parsing
+│   │       └── policy_document.py  #     Policy document rule extraction
 │   ├── feedback/                   # Correction feedback loop
 │   │   ├── service.py              #   FeedbackService (submit, approve, dismiss)
 │   │   ├── capture.py              #   Correction capture (manual)
@@ -139,11 +141,12 @@ src/rulerepo_server/
     └── snapshots.py
 ```
 
-### ORM Models (21 total in `adapters/postgres/models.py`)
+### ORM Models (22 total in `adapters/postgres/models.py`)
 
 | Model | Table | Purpose |
 |---|---|---|
-| `RuleModel` | `rules` | Core rule storage |
+| `ProjectModel` | `projects` | Top-level organizational boundary |
+| `RuleModel` | `rules` | Core rule storage (scoped by project_id) |
 | `RuleRevisionModel` | `rule_revisions` | Rule change history |
 | `RuleRelationshipModel` | `rule_relationships` | Directed relationships between rules |
 | `AuditLogModel` | `audit_log` | Append-only audit trail with hash chaining |
@@ -260,7 +263,7 @@ If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.
 
 ## Alembic Migrations
 
-10 migrations in `apps/server/alembic/versions/`:
+12 migrations in `apps/server/alembic/versions/`:
 
 | Migration | Description |
 |---|---|
@@ -274,6 +277,8 @@ If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.
 | `008_add_playground_tables` | Rule test cases for the playground testing framework |
 | `009_add_alerts_table` | General-purpose alerts raised by intelligence workers |
 | `010_add_snapshot_tables` | Rule set snapshots and deployments |
+| `011_add_document_content_text` | Document content text storage for extraction |
+| `012_add_projects` | Projects table + project_id FK on 7 resource tables |
 
 ---
 
@@ -320,7 +325,7 @@ The FastAPI application applies three middleware layers (outermost first):
 
 ## Frontend Pages
 
-The Next.js frontend has 11 pages under the `(dashboard)` route group:
+The Next.js frontend has 12 pages under the `(dashboard)` route group:
 
 | Route | Purpose |
 |---|---|
@@ -335,3 +340,4 @@ The Next.js frontend has 11 pages under the `(dashboard)` route group:
 | `/integrations` | GitHub webhook setup |
 | `/playground` | Sandbox rule evaluation and test case management |
 | `/snapshots` | Rule set snapshots and deployment management |
+| `/projects` | Project management (create, list, switch) |

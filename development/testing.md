@@ -47,7 +47,7 @@ cd packages/rule-client && uv run pytest
 
 ## Test Structure
 
-The project has **18 test files** across three locations with **161 test functions** total (153 server + 8 SDK).
+The project has **21 test files** across four locations with **161+ test functions** total (unit + integration + e2e + SDK).
 
 ### Unit Tests (`apps/server/tests/unit/`)
 
@@ -79,6 +79,25 @@ Test API endpoints with mocked external services (Postgres, Elasticsearch, Neo4j
 | `test_search_api.py` | 7 | All search modes: full-text, vector, hybrid, category search; search with filters (scope, modality, severity); pagination; validation (empty query) |
 | `test_intent_api.py` | 3 | Intent classification via `/api/v1/intent` endpoint; intent with context; validation (empty query) |
 | `test_relationships_api.py` | 2 | Relationship CRUD: create and delete rule relationships |
+
+### End-to-End Tests (`apps/server/tests/e2e/`)
+
+Full-stack tests that run against a live Docker Compose stack with real Gemini API calls. Gated behind `RULEREPO_LIVE_LLM=1`.
+
+| File | What it covers |
+|---|---|
+| `test_extraction_e2e.py` | Document upload, Gemini-powered rule extraction, candidate review |
+| `test_evaluation_e2e.py` | Code evaluation with real LLM judgment, verdict validation |
+| `test_full_workflow.py` | End-to-end workflow: create rule, evaluate code, check verdict |
+
+Run with:
+
+```bash
+make test.e2e                # starts stack if needed, runs all e2e tests
+make test.e2e.extraction     # extraction tests only (stack must be running)
+make test.e2e.evaluation     # evaluation tests only
+make test.e2e.workflow       # full workflow test only
+```
 
 ### SDK Tests (`packages/rule-client/tests/`)
 

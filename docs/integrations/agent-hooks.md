@@ -65,7 +65,7 @@ Applicable rules for src/api/routes.py:
 
 ```
 Evaluation of src/api/routes.py:
-  WARN  ENG-001  Function `create_rule` is missing a docstring.
+  NEEDS_CONFIRMATION  ENG-001  Function `create_rule` is missing a docstring.
   OK    ENG-003  No bare exceptions found.
   OK    SEC-005  Pydantic model used for request validation.
 ```

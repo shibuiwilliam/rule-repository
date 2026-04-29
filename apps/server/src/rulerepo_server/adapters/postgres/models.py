@@ -30,12 +30,38 @@ class Base(DeclarativeBase):
     pass
 
 
+# ---------------------------------------------------------------------------
+# Project — top-level organizational boundary
+# ---------------------------------------------------------------------------
+
+DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001"
+
+
+class ProjectModel(Base):
+    """A project groups rules, documents, and other resources."""
+
+    __tablename__ = "projects"
+
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
 class RuleModel(Base):
     """Persistent representation of a Rule."""
 
     __tablename__ = "rules"
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    project_id: Mapped[str] = mapped_column(
+        Uuid, ForeignKey("projects.id"), nullable=False, index=True, default=DEFAULT_PROJECT_ID
+    )
     statement: Mapped[str] = mapped_column(Text, nullable=False)
     modality: Mapped[str] = mapped_column(
         Enum("MUST", "MUST_NOT", "SHOULD", "MAY", "INFO", name="modality_enum"),
@@ -131,6 +157,9 @@ class AlertModel(Base):
     __tablename__ = "alerts"
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    project_id: Mapped[str] = mapped_column(
+        Uuid, ForeignKey("projects.id"), nullable=False, index=True, default=DEFAULT_PROJECT_ID
+    )
     alert_type: Mapped[str] = mapped_column(String(50), nullable=False)
     severity: Mapped[str] = mapped_column(String(20), nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -329,6 +358,9 @@ class DocumentModel(Base):
     __tablename__ = "documents"
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    project_id: Mapped[str] = mapped_column(
+        Uuid, ForeignKey("projects.id"), nullable=False, index=True, default=DEFAULT_PROJECT_ID
+    )
     filename: Mapped[str] = mapped_column(String(500), nullable=False)
     mime_type: Mapped[str] = mapped_column(String(100), nullable=False)
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -337,6 +369,7 @@ class DocumentModel(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     uploaded_by: Mapped[str] = mapped_column(String(255), nullable=False, default="system")
+    content_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class ExtractionModel(Base):
@@ -407,6 +440,9 @@ class EnforcementPolicyModel(Base):
     __tablename__ = "enforcement_policies"
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    project_id: Mapped[str] = mapped_column(
+        Uuid, ForeignKey("projects.id"), nullable=False, index=True, default=DEFAULT_PROJECT_ID
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     event_source: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -462,6 +498,9 @@ class DiscoveryScanModel(Base):
 
     id: Mapped[str] = mapped_column(
         Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
+    )
+    project_id: Mapped[str] = mapped_column(
+        Uuid, ForeignKey("projects.id"), nullable=False, index=True, default=DEFAULT_PROJECT_ID
     )
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="running")
     sources: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
@@ -520,9 +559,12 @@ class RuleSetSnapshotModel(Base):
     __tablename__ = "rule_set_snapshots"
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    project_id: Mapped[str] = mapped_column(
+        Uuid, ForeignKey("projects.id"), nullable=False, index=True, default=DEFAULT_PROJECT_ID
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    scope_filter: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    scope_filter: Mapped[list] = mapped_column(ARRAY(String), nullable=False, default=list)
     rule_snapshot: Mapped[dict] = mapped_column(JSONB, nullable=False)
     rule_count: Mapped[int] = mapped_column(Integer, nullable=False)
     created_by: Mapped[str] = mapped_column(String(255), nullable=False, default="system")
@@ -559,6 +601,9 @@ class CorrectionModel(Base):
 
     id: Mapped[str] = mapped_column(
         Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
+    )
+    project_id: Mapped[str] = mapped_column(
+        Uuid, ForeignKey("projects.id"), nullable=False, index=True, default=DEFAULT_PROJECT_ID
     )
     original_diff: Mapped[str] = mapped_column(Text, nullable=False)
     corrected_diff: Mapped[str] = mapped_column(Text, nullable=False)

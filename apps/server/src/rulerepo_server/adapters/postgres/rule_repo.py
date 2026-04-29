@@ -63,6 +63,7 @@ class PostgresRuleRepository:
         *,
         page: int = 1,
         page_size: int = 20,
+        project_id: str | None = None,
         modality: str | None = None,
         severity: str | None = None,
         status: str | None = None,
@@ -74,6 +75,7 @@ class PostgresRuleRepository:
         Args:
             page: Page number (1-indexed).
             page_size: Number of items per page.
+            project_id: Filter by project.
             modality: Filter by modality.
             severity: Filter by severity.
             status: Filter by status.
@@ -86,6 +88,9 @@ class PostgresRuleRepository:
         query = select(RuleModel)
         count_query = select(func.count()).select_from(RuleModel)
 
+        if project_id:
+            query = query.where(RuleModel.project_id == project_id)
+            count_query = count_query.where(RuleModel.project_id == project_id)
         if modality:
             query = query.where(RuleModel.modality == modality)
             count_query = count_query.where(RuleModel.modality == modality)

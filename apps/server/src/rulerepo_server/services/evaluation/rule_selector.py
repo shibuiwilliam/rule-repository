@@ -102,9 +102,15 @@ async def select_rules(
         RuleModel.status.in_(["APPROVED", "EFFECTIVE"]),
     )
 
-    # Scope filter: if scope provided, filter by scope overlap
+    # Scope filter: if scope provided, filter by overlap with any scope segment.
+    # Handles both "engineering/python" (slash-separated) and "engineering" (single).
     if scope:
-        query = query.where(RuleModel.scope.contains([scope]))
+        scope_parts = [s.strip() for s in scope.split("/") if s.strip()]
+        from sqlalchemy import or_
+
+        scope_conditions = [RuleModel.scope.contains([part]) for part in scope_parts]
+        if scope_conditions:
+            query = query.where(or_(*scope_conditions))
 
     result = await session.execute(query.limit(500))
     all_rules_raw = list(result.scalars().all())

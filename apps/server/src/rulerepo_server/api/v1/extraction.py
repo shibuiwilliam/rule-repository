@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends, Query, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,9 +26,103 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 
+@router.get("")
+async def list_documents(
+    page: int = 1,
+    page_size: int = 20,
+    project_id: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """List all registered documents with pagination."""
+    from sqlalchemy import func
+
+    offset = (page - 1) * page_size
+    query = (
+        select(DocumentModel)
+        .order_by(DocumentModel.uploaded_at.desc())
+        .offset(offset)
+        .limit(page_size)
+    )
+    result = await session.execute(query)
+    docs = list(result.scalars().all())
+
+    count_result = await session.execute(select(func.count()).select_from(DocumentModel))
+    total = count_result.scalar_one()
+
+    return {
+        "items": [
+            {
+                "id": str(d.id),
+                "filename": d.filename,
+                "mime_type": d.mime_type,
+                "size_bytes": d.size_bytes,
+                "uploaded_at": d.uploaded_at,
+                "uploaded_by": d.uploaded_by,
+            }
+            for d in docs
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+@router.get("/{document_id}")
+async def get_document(
+    document_id: UUID,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Get a single document's metadata and content."""
+    result = await session.execute(select(DocumentModel).where(DocumentModel.id == document_id))
+    doc = result.scalar_one_or_none()
+    if doc is None:
+        raise NotFoundError("Document", str(document_id))
+
+    # Try to read text content from storage
+    content_text: str | None = None
+    if hasattr(doc, "content_text") and doc.content_text:
+        content_text = doc.content_text
+    elif doc.mime_type in ("text/plain", "text/markdown", "application/octet-stream"):
+        try:
+            storage = LocalFileStorage()
+            file_bytes, _ = await storage.retrieve(str(doc.id))
+            content_text = file_bytes.decode("utf-8", errors="replace")
+        except Exception:
+            pass
+
+    # Get extractions for this document
+    ext_result = await session.execute(
+        select(ExtractionModel)
+        .where(ExtractionModel.document_id == document_id)
+        .order_by(ExtractionModel.extracted_at.desc())
+    )
+    extractions = list(ext_result.scalars().all())
+
+    return {
+        "id": str(doc.id),
+        "filename": doc.filename,
+        "mime_type": doc.mime_type,
+        "size_bytes": doc.size_bytes,
+        "uploaded_at": doc.uploaded_at,
+        "uploaded_by": doc.uploaded_by,
+        "content_text": content_text,
+        "extractions": [
+            {
+                "id": str(e.id),
+                "status": e.status,
+                "model_id": e.model_id,
+                "candidates_count": len(e.candidates) if e.candidates else 0,
+                "extracted_at": e.extracted_at,
+            }
+            for e in extractions
+        ],
+    }
+
+
 @router.post("/upload")
 async def upload_document(
     file: UploadFile,
+    project_id: str | None = Query(default=None),
     session: AsyncSession = Depends(get_db_session),
 ) -> dict:
     """Upload a document for rule extraction."""
@@ -39,13 +133,25 @@ async def upload_document(
     storage = LocalFileStorage()
     doc_id = await storage.store(file_bytes, filename, mime_type)
 
+    # Extract text content for searchability (text/markdown stored directly,
+    # PDFs could be OCR'd later — for now store None for binary formats)
+    content_text: str | None = None
+    text_types = ("text/plain", "text/markdown", "text/x-markdown", "application/octet-stream")
+    text_extensions = (".md", ".txt", ".markdown", ".rst")
+    if mime_type in text_types or any(filename.lower().endswith(ext) for ext in text_extensions):
+        try:
+            content_text = file_bytes.decode("utf-8", errors="replace")
+        except Exception:
+            pass
+
     doc_model = DocumentModel(
-        id=uuid4(),
+        id=UUID(doc_id),
         filename=filename,
         mime_type=mime_type,
         size_bytes=len(file_bytes),
         storage_path=storage.get_storage_path(doc_id),
         uploaded_at=datetime.now(UTC),
+        content_text=content_text,
     )
     session.add(doc_model)
     await session.flush()
@@ -154,23 +260,31 @@ async def review_extraction(
     candidates = extraction.candidates
     created_rules = []
 
-    # Process approved candidates as-is
+    # Process approved candidates — mark as APPROVED since human explicitly approved
     for idx in review.approved_indices:
         if idx < len(candidates):
             candidate = candidates[idx]
+            source_ref = {
+                "document_id": str(extraction.document_id),
+                "section": candidate.get("source_section", ""),
+                "page": candidate.get("source_page"),
+            }
             rule_data = RuleCreate(
                 statement=candidate["statement"],
                 modality=candidate.get("modality", "MUST"),
                 severity=candidate.get("severity", "MEDIUM"),
+                status="APPROVED",
                 scope=candidate.get("scope", []),
                 tags=candidate.get("tags", []),
                 rationale=candidate.get("rationale", ""),
+                source_refs=[source_ref],
             )
             rule = await rule_service.create_rule(rule_data, actor="extraction_pipeline")
             created_rules.append(rule)
 
-    # Process edited candidates
+    # Process edited candidates — also mark as APPROVED
     for idx_str, edit in review.edits.items():
+        edit.status = "APPROVED"
         rule = await rule_service.create_rule(edit, actor="extraction_pipeline")
         created_rules.append(rule)
 

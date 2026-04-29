@@ -23,6 +23,7 @@ from rulerepo_server.services.discovery.analyzers.base import DiscoveryContext
 from rulerepo_server.services.discovery.analyzers.claude_md import ClaudeMdAnalyzer
 from rulerepo_server.services.discovery.analyzers.code_patterns import CodePatternsAnalyzer
 from rulerepo_server.services.discovery.analyzers.linter_config import LinterConfigAnalyzer
+from rulerepo_server.services.discovery.analyzers.policy_document import PolicyDocumentAnalyzer
 from rulerepo_server.services.discovery.candidate_generator import generate_candidates
 from rulerepo_server.services.discovery.pattern_detector import deduplicate_and_score
 
@@ -50,6 +51,7 @@ class DiscoveryService:
             ClaudeMdAnalyzer(),
             LinterConfigAnalyzer(),
             CodePatternsAnalyzer(),
+            PolicyDocumentAnalyzer(),
         ]
 
     async def start_scan(

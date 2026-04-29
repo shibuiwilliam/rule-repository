@@ -2,7 +2,7 @@
 
 ## Deployable Components
 
-The Rule Repository consists of eight services, all orchestrated locally via Docker Compose. The backend exposes 13 API routers backed by 11 service directories.
+The Rule Repository consists of ten services (plus two one-shot setup containers), all orchestrated locally via Docker Compose. The backend exposes 14 API routers backed by 11 service directories. Rules are scoped to projects for multi-team organization.
 
 | Component | Technology | Port | Role |
 |---|---|---|---|

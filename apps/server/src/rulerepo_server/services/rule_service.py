@@ -42,16 +42,21 @@ class RuleService:
         self._gemini_client = gemini_client
         self._session = session
 
-    async def create_rule(self, data: RuleCreate, actor: str = "system") -> dict:
+    async def create_rule(
+        self, data: RuleCreate, actor: str = "system", project_id: str | None = None
+    ) -> dict:
         """Create a new rule across all stores.
 
         Args:
             data: The rule creation data.
             actor: Who is creating the rule.
+            project_id: Project to associate the rule with.
 
         Returns:
             Dictionary representation of the created rule.
         """
+        from rulerepo_server.adapters.postgres.models import DEFAULT_PROJECT_ID
+
         rule_id = uuid4()
         now = datetime.now(UTC)
 
@@ -66,6 +71,7 @@ class RuleService:
         # 1. Postgres (source of truth)
         rule_data = {
             "id": rule_id,
+            "project_id": project_id or DEFAULT_PROJECT_ID,
             "statement": data.statement,
             "modality": data.modality.value,
             "severity": data.severity.value,
@@ -107,6 +113,7 @@ class RuleService:
         try:
             es_doc = {
                 "rule_id": str(rule_id),
+                "project_id": project_id or DEFAULT_PROJECT_ID,
                 "statement": data.statement,
                 "modality": data.modality.value,
                 "severity": data.severity.value,
@@ -170,6 +177,7 @@ class RuleService:
         *,
         page: int = 1,
         page_size: int = 20,
+        project_id: str | None = None,
         modality: str | None = None,
         severity: str | None = None,
         status: str | None = None,
@@ -184,6 +192,7 @@ class RuleService:
         rules, total = await self._rule_repo.list_rules(
             page=page,
             page_size=page_size,
+            project_id=project_id,
             modality=modality,
             severity=severity,
             status=status,
@@ -527,6 +536,7 @@ class RuleService:
         """Convert a SQLAlchemy RuleModel to a plain dictionary."""
         return {
             "id": str(model.id),
+            "project_id": str(model.project_id),
             "statement": model.statement,
             "modality": model.modality,
             "severity": model.severity,

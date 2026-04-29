@@ -233,6 +233,7 @@ class IntelligenceService:
     def _model_to_dict(model: Any) -> dict[str, Any]:
         return {
             "id": str(model.id),
+            "project_id": str(model.project_id) if hasattr(model, "project_id") else None,
             "statement": model.statement,
             "modality": model.modality,
             "severity": model.severity,

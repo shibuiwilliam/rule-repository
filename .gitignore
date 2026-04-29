@@ -231,3 +231,4 @@ uv.lock
 
 # File storage
 /tmp/rulerepo-files/
+.DS_Store

@@ -36,6 +36,7 @@ async def list_alerts(
     status: str | None = Query(None, description="Filter by alert status"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    project_id: str | None = Query(default=None),
     session: AsyncSession = Depends(get_db_session),
 ) -> AlertListResponse:
     """List alerts with optional status filter and pagination."""

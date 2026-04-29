@@ -12,6 +12,7 @@ Source analyzers extract potential rules from different artifact types:
 
 | Analyzer | Source | Examples |
 |---|---|---|
+| **Policy Document Analyzer** | Policy documents (PDF, markdown, text) | HR policies, legal contracts, compliance handbooks, safety regulations |
 | **CLAUDE.md Analyzer** | `CLAUDE.md` files | Coding conventions, naming rules, forbidden patterns |
 | **Linter Config Analyzer** | `.eslintrc`, `ruff.toml`, `pyproject.toml` | Linting rules, formatting requirements, import ordering |
 | **Code Pattern Analyzer** | Source code files | Recurring patterns, guard clauses, error handling conventions |

@@ -70,7 +70,7 @@ See [Intent API](intent.md) for details and examples.
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/api/v1/intelligence/dashboard` | Corpus-wide intelligence dashboard (health summary, evaluation volume, verdicts). |
+| GET | `/api/v1/intelligence/dashboard` | Corpus-wide intelligence dashboard (health summary, evaluation volume, verdicts, cache stats, top violated rules). |
 | GET | `/api/v1/intelligence/health` | Paginated rule health scores, sortable by dimension. |
 | GET | `/api/v1/intelligence/health/{rule_id}` | Detailed health breakdown for a single rule. |
 | GET | `/api/v1/intelligence/analytics` | Corpus-wide evaluation analytics for a configurable period (1--365 days). |

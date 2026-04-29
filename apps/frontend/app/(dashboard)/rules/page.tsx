@@ -19,13 +19,14 @@ const SEVERITY_COLORS: Record<string, string> = {
 export default async function RulesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; project_id?: string }>;
 }) {
   const params = await searchParams;
   const page = Number(params.page) || 1;
+  const projectId = params.project_id;
   let data;
   try {
-    data = await getRules(page);
+    data = await getRules(page, 20, projectId);
   } catch {
     data = null;
   }

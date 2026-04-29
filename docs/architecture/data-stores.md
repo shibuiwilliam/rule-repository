@@ -18,8 +18,19 @@ PostgreSQL 17 holds the canonical data. All writes go through PostgreSQL first. 
 | `llm_cache` | Cached LLM responses keyed by hash of inputs, model, and prompt version. Invalidated on rule revision. |
 | `enforcement_policies` | Gateway policies that map webhook events to evaluation rules (event source, type pattern, scope, mode, response actions). |
 | `gateway_evaluations` | Results from gateway webhook evaluations (policy, event, verdict, actions taken). |
+| `discovery_scans` | Rule discovery scan records (status, source types, candidate count). |
+| `discovery_candidates` | Candidate rules proposed by discovery analyzers (pending review). |
+| `corrections` | Human correction feedback entries from the feedback loop. |
+| `rule_federations` | Federation hierarchy nodes (organization, team, project levels). |
+| `rule_federation_memberships` | Rule-to-federation assignments with optional parent override. |
+| `rule_test_cases` | Playground test cases attached to rules (input, expected verdict). |
+| `alerts` | Alerts raised by intelligence workers (dormant, high deny rate, health decline). |
+| `rule_health_scores` | Persisted health score snapshots computed by background workers. |
+| `rule_recommendations` | Automated improvement recommendations for rules. |
+| `rule_set_snapshots` | Immutable versioned captures of the rule corpus. |
+| `rule_set_deployments` | Snapshot-to-environment deployment tracking. |
 
-Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
+21 ORM models total across 23 tables. Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
 
 Migrations are managed by **Alembic**.
 

@@ -17,6 +17,7 @@
     "mappings": {
       "properties": {
         "rule_id": { "type": "keyword" },
+        "project_id": { "type": "keyword" },
         "statement": {
           "type": "text",
           "analyzer": "rule_analyzer",

@@ -83,8 +83,8 @@ rule-check:
 ### Example: text output
 
 ```
-DENY  src/api/auth.py:42  SEC-001  Missing input validation on user-supplied token
-WARN  src/config.py:15    ENG-003  Bare Exception raised; use project exception hierarchy
+DENY   src/api/auth.py:42  SEC-001  Missing input validation on user-supplied token
+NEEDS_CONFIRMATION  src/config.py:15  ENG-003  Bare Exception raised; use project exception hierarchy
 ```
 
 ### Example: json output

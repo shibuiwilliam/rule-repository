@@ -280,12 +280,4 @@ class WorkerSettings:
         cron(compute_correction_stats, minute=0),
     ]
 
-    @staticmethod
-    def redis_settings() -> RedisSettings:
-        """Build Redis connection settings from application config.
-
-        Returns:
-            RedisSettings configured from the application's redis_url.
-        """
-        settings = get_settings()
-        return RedisSettings.from_dsn(settings.redis_url)
+    redis_settings = RedisSettings.from_dsn(get_settings().redis_url)

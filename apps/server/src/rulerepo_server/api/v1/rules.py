@@ -14,16 +14,18 @@ router = APIRouter(prefix="/rules", tags=["rules"])
 @router.post("", status_code=201)
 async def create_rule(
     data: RuleCreate,
+    project_id: str | None = Query(default=None),
     service: RuleService = Depends(get_rule_service),
 ) -> dict:
     """Create a new rule."""
-    return await service.create_rule(data)
+    return await service.create_rule(data, project_id=project_id)
 
 
 @router.get("")
 async def list_rules(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
+    project_id: str | None = Query(default=None),
     modality: str | None = None,
     severity: str | None = None,
     status: str | None = None,
@@ -33,6 +35,7 @@ async def list_rules(
     return await service.list_rules(
         page=page,
         page_size=page_size,
+        project_id=project_id,
         modality=modality,
         severity=severity,
         status=status,

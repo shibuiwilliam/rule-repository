@@ -14,7 +14,7 @@ POST /api/v1/discover/scan
 
 ```json
 {
-  "sources": ["claude_md", "linter_config", "code_patterns"],
+  "sources": ["policy_document", "claude_md", "linter_config", "code_patterns"],
   "file_contents": {
     "CLAUDE.md": "# CLAUDE.md\n\n## Coding Conventions\n- Use snake_case...",
     ".eslintrc.json": "{\"rules\": {\"no-console\": \"error\"}}"
@@ -25,7 +25,7 @@ POST /api/v1/discover/scan
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `sources` | array of strings | Yes | Analyzer types to run. Values: `claude_md`, `linter_config`, `code_patterns`. |
+| `sources` | array of strings | Yes | Analyzer types to run. Values: `policy_document`, `claude_md`, `linter_config`, `code_patterns`. |
 | `file_contents` | object | Yes | Map of file paths to their contents. |
 | `repository` | string | No | Repository identifier for provenance tracking. |
 

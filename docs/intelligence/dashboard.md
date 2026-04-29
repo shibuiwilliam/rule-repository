@@ -13,130 +13,216 @@ Returns a summary of the entire rule corpus.
 ```json
 {
   "total_rules": 142,
-  "avg_health": 72.5,
-  "evaluations_30d": 1893,
+  "avg_health_score": 72.5,
+  "total_evaluations_30d": 1893,
   "verdict_distribution": {
     "ALLOW": 1547,
-    "WARN": 289,
-    "DENY": 57
+    "DENY": 289,
+    "NEEDS_CONFIRMATION": 57
   },
+  "active_drift_alerts": 5,
   "open_recommendations": 23,
-  "active_alerts": 5,
-  "active_drift_alerts": 2
+  "health_distribution": {
+    "excellent": 45,
+    "good": 52,
+    "fair": 30,
+    "poor": 15
+  },
+  "cache_stats": {
+    "cache_hits": 1420,
+    "cache_misses": 473,
+    "hit_rate": 0.750,
+    "period_days": 30
+  },
+  "top_violated_rules": [
+    {"rule_id": "abc-123", "violation_count": 47},
+    {"rule_id": "def-456", "violation_count": 31}
+  ]
 }
 ```
 
 | Field | Description |
 |---|---|
-| `total_rules` | Total number of active rules in the repository |
-| `avg_health` | Average health score across all rules (0-100) |
-| `evaluations_30d` | Number of evaluations run in the last 30 days |
-| `verdict_distribution` | Breakdown of evaluation verdicts (ALLOW, WARN, DENY) |
+| `total_rules` | Total number of rules in the repository |
+| `avg_health_score` | Average health score across all rules (0-100) |
+| `total_evaluations_30d` | Number of evaluations in the last 30 days |
+| `verdict_distribution` | Breakdown of evaluation verdicts (ALLOW, DENY, NEEDS_CONFIRMATION) |
+| `active_drift_alerts` | Count of active alerts (dormant rules, health decline, high deny rate) |
 | `open_recommendations` | Number of unresolved improvement recommendations |
-| `active_alerts` | Number of alerts in `active` status (not acknowledged or resolved) |
-| `active_drift_alerts` | Count of active alerts specifically related to rule drift (health decline, dormant rules) sourced from the alerts table |
+| `health_distribution` | Rules bucketed by health: excellent (80+), good (60-79), fair (40-59), poor (<40) |
+| `cache_stats` | LLM cache performance: hits, misses, and hit rate for the period |
+| `top_violated_rules` | Rules with the most DENY verdicts, ordered by violation count |
 
-### GET /api/v1/intelligence/analytics?period_days=30
+### GET /api/v1/intelligence/health
 
-Returns corpus-wide analytics for the specified period.
+Returns paginated health scores for all rules.
 
 **Query Parameters:**
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `period_days` | integer | 30 | Number of days to include in the analytics window |
-
-**Response includes:**
-
-- Evaluation volume over time (daily counts)
-- Top violated rules
-- Most evaluated scopes
-- Verdict trend (ALLOW/WARN/DENY ratio over time)
-
-### GET /api/v1/intelligence/analytics/{rule_id}
-
-Returns analytics for a single rule.
-
-**Response includes:**
-
-- Evaluation count and verdict breakdown for this rule
-- Health score and dimension breakdown
-- Related rules (from the relationship graph)
-- Recent evaluation history
-
-### GET /api/v1/intelligence/recommendations
-
-Returns improvement recommendations for the rule corpus.
+| `page` | integer | 1 | Page number |
+| `page_size` | integer | 50 | Items per page (max 200) |
+| `sort_by` | string | `overall_score` | Dimension to sort by |
 
 **Response:**
 
 ```json
-[
-  {
-    "type": "retire",
-    "rule_id": "ENG-042",
-    "reason": "No evaluations in 90 days and superseded by ENG-078",
-    "priority": "medium"
+{
+  "items": [
+    {
+      "rule_id": "abc-123",
+      "overall_score": 68.5,
+      "completeness": 85.7,
+      "clarity": 50.0,
+      "test_coverage": 40.0,
+      "freshness": 100.0,
+      "activity": 70.0,
+      "owner_engagement": 0.0,
+      "issues": [
+        "Missing or incomplete: source_refs",
+        "Rule owner has not been active recently"
+      ]
+    }
+  ],
+  "total": 142,
+  "page": 1,
+  "page_size": 50
+}
+```
+
+### GET /api/v1/intelligence/health/{rule_id}
+
+Returns the health score and dimension breakdown for a single rule.
+
+### GET /api/v1/intelligence/analytics?period_days=30
+
+Returns corpus-wide evaluation analytics for the specified period.
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `period_days` | integer | 30 | Number of days to aggregate (1-365) |
+
+**Response:**
+
+```json
+{
+  "total_evaluations": 1893,
+  "verdict_distribution": {
+    "ALLOW": 1547,
+    "DENY": 289,
+    "NEEDS_CONFIRMATION": 57
   },
-  {
-    "type": "clarify",
-    "rule_id": "SEC-003",
-    "reason": "High WARN rate (68%) suggests the rule statement is ambiguous",
-    "priority": "high"
-  }
-]
+  "avg_latency_ms": 342.5
+}
+```
+
+### GET /api/v1/intelligence/analytics/{rule_id}
+
+Returns per-rule analytics: evaluation count, verdict rates, average latency.
+
+### GET /api/v1/intelligence/recommendations
+
+Returns paginated improvement recommendations.
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `status` | string | `open` | Filter by status |
+| `page` | integer | 1 | Page number |
+| `page_size` | integer | 50 | Items per page (max 200) |
+
+**Response:**
+
+```json
+{
+  "items": [
+    {
+      "id": "rec-001",
+      "rule_id": "abc-123",
+      "type": "retire",
+      "title": "Consider retiring dormant rule",
+      "description": "This rule has not been evaluated in the last 90 days.",
+      "suggested_change": null,
+      "related_rule_ids": [],
+      "priority": "medium",
+      "status": "open"
+    }
+  ],
+  "total": 23,
+  "page": 1,
+  "page_size": 50
+}
 ```
 
 **Recommendation types:**
 
-| Type | Description |
-|---|---|
-| `retire` | Rule is unused or superseded; consider setting `valid_until` |
-| `clarify` | Rule has a high WARN rate or ambiguous statement |
-| `escalate` | Rule has a high DENY rate; may need stronger enforcement or owner attention |
-| `strengthen` | Rule is frequently overridden; may need scope or modality adjustment |
-| `completeness` | Rule is missing fields (rationale, tags, source references, etc.) |
+| Type | Trigger | Priority |
+|---|---|---|
+| `retire` | Zero evaluations in 90+ days | medium |
+| `clarify` | NEEDS_CONFIRMATION rate > 30%, or completeness score < 60 | high or medium |
+| `escalate` | Deny rate > 50% with 10+ evaluations | critical |
+| `strengthen` | 100% ALLOW rate with SHOULD modality and 10+ evaluations | low |
 
 ## Frontend Sections
 
-The `/intelligence` page is organized into the following sections:
+The `/intelligence` page is a fully interactive client component organized into six sections:
 
 ### Summary Cards
 
-Top-level metrics: total rules, average health, evaluation count (30 days), and open recommendations. Each card links to the relevant detail view.
+Six cards in a responsive grid:
 
-### Verdict Distribution
+1. **Total Rules** — count of all rules in the corpus
+2. **Avg Health Score** — color-coded (green >= 80, yellow >= 60, orange >= 40, red < 40)
+3. **Evaluations (30d)** — evaluation volume for the last 30 days
+4. **Open Recommendations** — count of actionable suggestions (orange when > 0)
+5. **Active Alerts** — count of unresolved alerts (red when > 0)
+6. **Cache Hit Rate** — LLM cache performance percentage with hit/miss detail
 
-A chart showing the ALLOW/WARN/DENY breakdown over the selected time period. Helps identify trends in compliance.
+### Distribution Overviews
+
+Two side-by-side panels:
+
+- **Health Distribution** — stacked color bar showing excellent/good/fair/poor buckets with legend and percentages
+- **Verdict Distribution (30d)** — stacked color bar showing ALLOW/DENY/NEEDS_CONFIRMATION breakdown with legend and percentages
 
 ### Top Violated Rules
 
-A ranked list of rules with the highest DENY and WARN counts. Each entry links to the rule detail page.
+Ranked list of rules with the most DENY verdicts in the last 30 days. Each entry shows a linked rule ID, a proportional bar chart, and the violation count.
 
-### Health Distribution
+### Evaluation Analytics
 
-A histogram of rule health scores across the corpus. Highlights clusters of unhealthy rules that need attention.
+Corpus-wide metrics with a **period selector** (7d / 30d / 90d / 365d):
+
+- Total evaluations and evaluations per day
+- Average latency (ms)
+- Compliance rate (ALLOW percentage)
+
+### Rule Health Scores
+
+Full table showing all six dimensions for each rule:
+
+- **Columns**: Rule ID (linked), Overall, Completeness, Clarity, Test Coverage, Freshness, Activity, Owner Engagement
+- **Sort**: dropdown to sort by any dimension
+- **Pagination**: Previous/Next controls with page indicator
+- **Expandable rows**: click a row to see detailed score bars for each dimension and a list of identified issues
 
 ### Recommendations
 
-A prioritized list of improvement recommendations. Each recommendation includes the rule, the suggestion type, the reason, and a link to take action.
+Priority-sorted list with:
 
-### Alerts Panel
-
-A live feed of active alerts, ordered by creation time. Each alert shows its type, the affected rule, and the trigger message. Alerts can be acknowledged or resolved directly from the panel. The `active_drift_alerts` count in the summary cards reflects the real count from the alerts table (not a placeholder).
-
-Alert types displayed:
-
-| Type | Icon | Description |
-|---|---|---|
-| `dormant_rule` | Clock | Rule has not been evaluated recently |
-| `high_deny_rate` | Warning | Rule DENY rate exceeds threshold |
-| `health_decline` | TrendingDown | Rule health score dropped significantly |
-| `conflict_detected` | Zap | New conflict detected in the rule graph |
+- Priority badge (critical/high/medium/low) with colored left border
+- Type badge (retire/clarify/escalate/strengthen)
+- Linked rule ID
+- Title, description, and suggested change (when available)
+- Related rule links
+- Pagination controls
 
 ## See Also
 
 - [Health Scoring](health.md) -- how individual rule health scores are calculated
 - [Alerts API](../api/alerts.md) -- alert endpoints
-- [Background Workers](../integrations/workers.md) -- cron jobs that generate alerts
-- [Contributing](../dev/contributing.md) -- how to improve the intelligence features
+- [Background Workers](../integrations/workers.md) -- cron jobs that generate alerts and recommendations

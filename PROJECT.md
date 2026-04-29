@@ -464,17 +464,35 @@ The project is structured in four phases, each delivering independent value.
 
 **Value delivered:** "Rules can be tested before deployment, the system alerts on problems, and rule sets deploy safely."
 
-### Phase 5 — Advanced Intelligence (Self-Improvement & Insight) [PLANNED]
+### Phase 5 — Self-Improving Governance [PLANNED]
+
+#### 5a. Correction-to-Rule Flywheel
+- Automatic rule drafting: when 3+ corrections in the same pattern accumulate within 14 days with confidence > 0.8, auto-create a DRAFT rule with linked evidence
+- Smart batching: cluster corrections by semantic similarity before drafting (avoid 50 individual draft rules)
+- Maintainer routing: auto-notify the scope's rule owner with evidence, confidence score, and approve/edit/dismiss actions
+- Effectiveness tracking: measure correction rate before vs after rule activation to prove ROI
+
+#### 5b. Structured Remediation
+- Machine-readable `Remediation` objects in evaluation response (type, file, line, action, original, replacement)
+- Agents can auto-apply fixes for low-severity rules without human intervention
+- `--auto-fix` flag for `rulerepo-check` CLI that applies remediations and re-evaluates
+- CI pipelines that self-heal: fix → commit → re-check → pass
+
+#### 5c. Rule Maturity Model
+- Three maturity levels: `experimental` → `stable` → `proven`
+- Experimental rules (< 30 days) produce NEEDS_CONFIRMATION instead of DENY (shadow mode)
+- Auto-promotion based on false positive rate: < 5% → stable, < 1% → proven
+- Progressive enforcement: observe → warn → enforce pipeline visible on dashboard
+
+#### 5d. Advanced Intelligence
 - Conflict detector (continuous scanning)
-- Counterexample generator (regression tests per rule)
 - Verdict drift detection (temporal, model, semantic)
-- Provenance lineage propagation (upstream changes cascade)
-- Polyglot rule synchronization (EN/JA equivalence verification)
-- Rule Tutor (conversational rule explainer)
 - Agent performance dashboard (compliance rate per agent, top violations, trends)
 - Webhook subscriptions for rule change notifications
+- Weekly governance digest (new drafts, promotions, top violations, pending actions)
+- Provenance lineage propagation, polyglot rule sync, Rule Tutor
 
-**Value delivered:** "Our rules evolve with us."
+**Value delivered:** "Our rules improve themselves — every correction teaches the system."
 
 ---
 

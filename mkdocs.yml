@@ -35,6 +35,7 @@ nav:
     - Alerts API: api/alerts.md
     - Snapshots API: api/snapshots.md
     - Federation API: api/federation.md
+    - Projects API: api/projects.md
   - SDKs:
     - Rule Client (Python): sdks/rule-client.md
     - Agentic Client: sdks/agentic-client.md
@@ -49,6 +50,7 @@ nav:
     - Dashboard: intelligence/dashboard.md
     - Health Scoring: intelligence/health.md
     - Feedback Loop: intelligence/feedback.md
+    - Correction Flywheel: intelligence/flywheel.md
   - Development:
     - Contributing: dev/contributing.md
     - Testing: dev/testing.md

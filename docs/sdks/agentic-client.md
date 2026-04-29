@@ -28,7 +28,7 @@ async with AgenticRuleClient(
         intent="Refactoring the config loader",
         mode="preflight",  # "preflight" (before edit) or "postcheck" (after edit)
     )
-    print(result.verdict)       # "ALLOW", "WARN", or "DENY"
+    print(result.verdict)       # "ALLOW", "DENY", or "NEEDS_CONFIRMATION"
     print(result.violations)    # list of rule violations, if any
 
     # Get rules that apply to specific files

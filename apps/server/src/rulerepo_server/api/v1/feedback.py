@@ -39,6 +39,7 @@ def _get_feedback_service(
 @router.post("/corrections", response_model=CorrectionResponse)
 async def submit_correction(
     body: CorrectionRequest,
+    project_id: str | None = Query(default=None),
     svc: FeedbackService = Depends(_get_feedback_service),
 ) -> CorrectionResponse:
     """Submit a correction for analysis.
@@ -53,6 +54,7 @@ async def submit_correction(
         repository=body.repository,
         pr_number=body.pr_number,
         evaluation_ids=body.evaluation_ids,
+        project_id=project_id,
     )
     return CorrectionResponse(**result)
 
@@ -62,10 +64,11 @@ async def list_corrections(
     status: str | None = Query(default=None, description="Filter by status."),
     page: int = Query(default=1, ge=1, description="Page number."),
     page_size: int = Query(default=20, ge=1, le=100, description="Items per page."),
+    project_id: str | None = Query(default=None),
     svc: FeedbackService = Depends(_get_feedback_service),
 ) -> CorrectionListResponse:
     """List corrections with optional status filter and pagination."""
-    result = await svc.get_corrections(status=status, page=page, page_size=page_size)
+    result = await svc.get_corrections(status=status, page=page, page_size=page_size, project_id=project_id)
     return CorrectionListResponse(
         items=[CorrectionResponse(**item) for item in result["items"]],
         total=result["total"],

@@ -86,6 +86,7 @@ class RuleResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    project_id: str | None = None
     statement: str
     modality: Modality
     severity: Severity

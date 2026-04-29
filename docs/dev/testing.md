@@ -4,11 +4,15 @@
 
 | Command | What It Runs |
 |---|---|
-| `make test` | All tests (server, frontend, SDKs) |
+| `make test` | All tests (server + frontend) |
 | `make test.server` | Backend tests only (`apps/server`) |
 | `make test.frontend` | Frontend tests only (`apps/frontend`) |
+| `make test.client` | SDK tests only (`packages/rule-client`) |
 | `make test.unit` | Unit tests only (no external services required) |
 | `make test.integration` | Integration tests (requires Docker Compose services) |
+| `make test.e2e` | End-to-end tests (starts stack, uses real Gemini) |
+| `make test.verbose` | Backend tests with verbose output |
+| `make test.cov` | Backend tests with coverage report |
 
 ### Running tests directly
 
@@ -78,6 +82,15 @@ Tests involving the Gemini API are split into two categories:
 ```bash
 RULEREPO_LIVE_LLM=1 GEMINI_API_KEY=... uv run pytest tests/eval/
 ```
+
+### End-to-End Tests
+
+Full-stack tests that run against a live Docker Compose stack with real Gemini API calls:
+
+- Located in `tests/e2e/` under `apps/server`
+- Gated behind `RULEREPO_LIVE_LLM=1`
+- Tests: document extraction, code evaluation, and full workflow (create rule, evaluate, verify verdict)
+- Run with `make test.e2e` (starts the stack automatically)
 
 ### Frontend Tests
 

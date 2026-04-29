@@ -56,3 +56,19 @@ class SearchResponse(BaseModel):
     page: int
     page_size: int
     query: str = ""
+
+
+class DocumentSearchQuery(BaseModel):
+    """Parameters for document search by filename or content."""
+
+    query: str = Field(..., min_length=1, max_length=2000, description="Search by filename or content")
+    page: int = Field(default=1, ge=1)
+    page_size: int = Field(default=20, ge=1, le=100)
+
+
+class SourceDocSearchQuery(BaseModel):
+    """Parameters for searching rules by their source document."""
+
+    document_id: str = Field(..., description="Document UUID to find rules extracted from")
+    page: int = Field(default=1, ge=1)
+    page_size: int = Field(default=20, ge=1, le=100)

@@ -6,25 +6,47 @@ The Playground API provides sandbox evaluation and test case management. All end
 
 ### POST /api/v1/playground/evaluate
 
-Evaluate sample code against an inline rule definition. No audit log, no cache, no persistence.
+Evaluate sample code or a scenario against an inline rule definition. No audit log, no cache, no persistence.
 
-**Request:**
+The endpoint accepts two input modes: **code** (via `sample_code`) and **scenario** (via `sample_facts`). Each mode triggers a different evaluation prompt optimized for that input type.
+
+**Code evaluation request:**
 
 ```json
 {
   "rule_statement": "All public functions must have type hints on parameters and return values",
   "rule_modality": "MUST",
-  "rule_severity": "ERROR",
+  "rule_severity": "MEDIUM",
   "sample_code": "def greet(name):\n    return f'Hello, {name}!'"
+}
+```
+
+**Scenario evaluation request:**
+
+```json
+{
+  "rule_statement": "Monthly overtime must not exceed 45 hours without prior 36-agreement filing",
+  "rule_modality": "MUST_NOT",
+  "rule_severity": "HIGH",
+  "sample_facts": {
+    "narrative": "Employee John submitted 52 hours of overtime for April 2026. No 36-agreement has been filed.",
+    "employee_id": "E001",
+    "overtime_hours": "52",
+    "month": "2026-04",
+    "agreement_filed": "false"
+  }
 }
 ```
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `rule_statement` | string | yes | The natural-language rule to evaluate against |
-| `rule_modality` | string | yes | `MUST`, `SHOULD`, or `MAY` |
-| `rule_severity` | string | yes | `ERROR`, `WARNING`, or `INFO` |
-| `sample_code` | string | yes | Code or text to evaluate |
+| `rule_modality` | string | no | `MUST`, `MUST_NOT`, `SHOULD`, `MAY`, or `INFO` (default: `MUST`) |
+| `rule_severity` | string | no | `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL` (default: `MEDIUM`) |
+| `sample_code` | string | no | Code snippet or unified diff (triggers code evaluation prompt) |
+| `sample_facts` | object | no | Key-value facts with optional `narrative` key (triggers scenario evaluation prompt) |
+
+If both `sample_code` and `sample_facts` are provided, `sample_code` takes precedence. If neither is provided, the evaluation runs against an empty context.
 
 **Response:**
 
@@ -32,25 +54,21 @@ Evaluate sample code against an inline rule definition. No audit log, no cache, 
 {
   "verdict": "DENY",
   "confidence": 0.95,
-  "reasoning": "The function 'greet' lacks a type hint on parameter 'name' and has no return type annotation.",
-  "fix_suggestion": "def greet(name: str) -> str:\n    return f'Hello, {name}!'",
-  "locations": [
-    {
-      "line": 1,
-      "column": 0,
-      "snippet": "def greet(name):"
-    }
-  ]
+  "reasoning": "The employee's 52 overtime hours exceed the 45-hour limit, and no 36-agreement has been filed.",
+  "issue_description": "Overtime of 52 hours exceeds the 45-hour limit without a 36-agreement.",
+  "fix_suggestion": "File a 36-agreement before registering overtime above 45 hours, or reduce overtime to 45 hours or fewer.",
+  "locations": []
 }
 ```
 
 | Field | Type | Description |
 |---|---|---|
-| `verdict` | string | `ALLOW`, `DENY`, or `WARN` |
+| `verdict` | string | `ALLOW`, `DENY`, or `NEEDS_CONFIRMATION` |
 | `confidence` | float | Model confidence (0.0--1.0) |
 | `reasoning` | string | Explanation of the verdict |
-| `fix_suggestion` | string or null | Suggested fix if the verdict is DENY or WARN |
-| `locations` | array | Code locations relevant to the verdict |
+| `issue_description` | string | What's wrong (empty string if ALLOW) |
+| `fix_suggestion` | string or null | Suggested fix if the verdict is DENY or NEEDS_CONFIRMATION |
+| `locations` | array | Code locations relevant to the verdict (typically empty for scenario evaluations) |
 
 ## Test Cases
 
@@ -63,10 +81,18 @@ Create a test case for a rule.
 ```json
 {
   "name": "Missing type hints",
-  "input": "def add(a, b):\n    return a + b",
+  "sample_input": "def add(a, b):\n    return a + b",
+  "input_type": "code",
   "expected_verdict": "DENY"
 }
 ```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | yes | Human-readable label |
+| `sample_input` | string | yes | Code snippet or scenario text |
+| `input_type` | string | no | `"code"` (default) or `"facts"` — determines how the test runner evaluates the input |
+| `expected_verdict` | string | yes | `ALLOW` or `DENY` |
 
 ### GET /api/v1/rules/{rule_id}/test-cases
 
@@ -78,31 +104,35 @@ Delete a specific test case.
 
 ### POST /api/v1/rules/{rule_id}/test-cases/run
 
-Run all test cases for a rule through sandbox evaluation. Returns per-case results and an overall pass rate.
+Run all test cases for a rule through sandbox evaluation. The `input_type` on each test case determines whether the input is treated as code or facts. Returns per-case results and an overall pass rate.
 
 **Response:**
 
 ```json
 {
-  "rule_id": "ENG-042",
   "total": 5,
-  "passed": 4,
-  "failed": 1,
+  "passing": 4,
+  "failing": 1,
   "results": [
     {
-      "test_case_id": "tc-001",
+      "id": "tc-001",
       "name": "Missing type hints",
+      "sample_input": "def add(a, b):\n    return a + b",
+      "input_type": "code",
       "expected_verdict": "DENY",
-      "actual_verdict": "DENY",
-      "passed": true
+      "last_result": "DENY",
+      "passing": true,
+      "last_run_at": "2026-04-29T10:30:00Z"
     },
     {
-      "test_case_id": "tc-002",
+      "id": "tc-002",
       "name": "Fully typed function",
+      "sample_input": "def add(a: int, b: int) -> int:\n    return a + b",
+      "input_type": "code",
       "expected_verdict": "ALLOW",
-      "actual_verdict": "WARN",
-      "passed": false,
-      "reasoning": "Return type is annotated but uses 'Any', which is discouraged."
+      "last_result": "NEEDS_CONFIRMATION",
+      "passing": false,
+      "last_run_at": "2026-04-29T10:30:01Z"
     }
   ]
 }
@@ -110,9 +140,17 @@ Run all test cases for a rule through sandbox evaluation. Returns per-case resul
 
 ### POST /api/v1/rules/{rule_id}/test-cases/generate
 
-Generate test cases using Gemini. The LLM analyzes the rule statement and produces synthetic test cases that cover typical, edge, and boundary scenarios.
+Generate test cases using Gemini. The LLM analyzes the rule statement and produces synthetic test cases that cover compliant and non-compliant scenarios.
 
-**Response:** an array of generated test case objects (not yet persisted). The caller can review and selectively create them via `POST /rules/{rule_id}/test-cases`.
+**Request:**
+
+```json
+{
+  "count": 6
+}
+```
+
+**Response:** an array of generated test case objects (persisted to the database). Each case has a name, sample_input, input_type, and expected_verdict.
 
 ## See Also
 
