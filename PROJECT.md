@@ -496,17 +496,19 @@ The project is structured in four phases, each delivering independent value.
 #### 5e. Active Rule Injection [PARTIALLY IMPLEMENTED]
 - Claude Code hooks integration: `PreToolUse` (before file write) fetches applicable rules, `PostToolUse` (after file write) evaluates changes
 - `--agent-id` option on `rulerepo-hook` with `RULEREPO_AGENT_ID` env var auto-detection [IMPLEMENTED]
+- **File-aware scope resolution** [IMPLEMENTED]: `resolve_scopes()` function with `DEFAULT_SCOPE_MAP` (20 glob patterns for Python, TypeScript, Go, Rust, Java, docs, Docker, CI). Teams can override via custom maps.
+- **Session context API** [IMPLEMENTED]: `GET /api/v1/rules/context?files=...&format=instructions` — resolves scopes from file paths, auto-detects languages, returns formatted rules (~500 tokens for 15 rules)
 - Installable via `rulerepo hooks install` (writes to `.claude/hooks.json`) [PLANNED]
-- Scope-based file matching: file glob patterns mapped to rule scopes [PLANNED]
-- `.rules` context file generation for agents [PLANNED]
+- CLAUDE.md rules section generator [PLANNED]
 - Task-start hook mode: `UserPromptSubmit` hook that injects rules before agent starts a task [PLANNED]
 
 #### 5f. Zero-Config Bootstrapping [PARTIALLY IMPLEMENTED]
 - `rules.yaml` as first-class format: portable, version-controllable rule definitions with `RulesYaml` schema [IMPLEMENTED]
 - `rulerepo-export` command: fetches rules from server → writes `rules.yaml` with project/scope filtering [IMPLEMENTED]
+- **Bulk import endpoint** [IMPLEMENTED]: `POST /api/v1/rules/import` accepts rules.yaml-style payloads, creates rules in batch with `["imported"]` tag
+- **Rule templates library** [IMPLEMENTED]: 5 YAML templates (57 rules total) in `sample_rules/templates/` — python-fastapi, typescript-react, security-owasp, api-design, testing-standards
 - `rulerepo init` command: scans repository for CLAUDE.md, linter configs, code patterns → generates `rules.yaml` [PLANNED]
-- Server import endpoint: `POST /api/v1/rules/import/yaml` [PLANNED]
-- Rule templates library: curated templates for Python, TypeScript, API design, security, testing [PLANNED]
+- Frontend onboarding wizard [PLANNED]
 
 #### 5g. Structured Remediation [IMPLEMENTED]
 - **`Remediation` dataclass** in `domain/evaluation.py`: type (replace/insert/delete), file_path, start_line, end_line, original, replacement, description, auto_applicable
@@ -527,11 +529,12 @@ The project is structured in four phases, each delivering independent value.
 #### 5i. Advanced Intelligence [PARTIALLY IMPLEMENTED]
 - **Agent performance tracking** [IMPLEMENTED]: `agent_id` field on evaluations (migration 017), `agent_analytics.py` service with `get_agent_list`, `get_agent_detail`, `get_agent_top_violations`; API at `GET /intelligence/agents` and `GET /intelligence/agents/{agent_id}`
 - **Targeted rule delivery** [IMPLEMENTED]: `select_rules()` boosts rules an agent historically violates by +20 relevance points, using `get_agent_top_violations()`
-- Rule effectiveness score: precision, recall, impact metrics [PLANNED]
+- **Rule effectiveness score** [IMPLEMENTED]: `GET /api/v1/intelligence/effectiveness/{rule_id}` — precision (40%), prevention rate (35%), agent adoption (25%) → composite score 0-100. Data from `evaluations`, `corrections`, and `rules` tables.
+- **Weekly governance digest** [IMPLEMENTED]: `GET /api/v1/intelligence/digest` — compliance trend (this week vs last), rule changes, top violations, attention needed, corrections, pending actions. Cron job `send_weekly_digest` (Monday 9am) with `DIGEST_WEBHOOK_URL` delivery.
+- **Team comparison dashboard** [IMPLEMENTED]: `GET /api/v1/intelligence/comparison` — per-project rule count, compliance rate, sorted by performance.
 - Conflict detector (continuous scanning) [PLANNED]
 - Verdict drift detection (temporal, model, semantic) [PLANNED]
 - Webhook subscriptions for rule change notifications [PLANNED]
-- Weekly governance digest (new drafts, promotions, top violations, pending actions) [PLANNED]
 
 #### 5j. Infrastructure Tiers [PLANNED]
 - Tier 1 (Starter): Server + Postgres only, Postgres FTS fallback, inline job execution

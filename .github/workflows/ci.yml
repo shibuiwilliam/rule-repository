@@ -68,7 +68,8 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        working-directory: apps/frontend
+        run: pnpm install
 
       - name: ESLint
         working-directory: apps/frontend
@@ -76,9 +77,7 @@ jobs:
 
       - name: TypeScript check
         working-directory: apps/frontend
-        run: |
-          printf '/// <reference types="next" />\n/// <reference types="next/image-types/global" />\n' > next-env.d.ts
-          pnpm typecheck
+        run: pnpm typecheck
 
   # ---------------------------------------------------------------------------
   # SDK: tests

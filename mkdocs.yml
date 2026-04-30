@@ -39,6 +39,7 @@ nav:
     - Snapshots API: api/snapshots.md
     - Federation API: api/federation.md
     - Projects API: api/projects.md
+    - Templates & Import: api/templates.md
   - SDKs:
     - Rule Client (Python): sdks/rule-client.md
     - Agentic Client: sdks/agentic-client.md
@@ -56,6 +57,8 @@ nav:
     - Correction Flywheel: intelligence/flywheel.md
     - Compliance Dashboard: intelligence/compliance-dashboard.md
     - Agent Performance: intelligence/agent-tracking.md
+    - Rule Effectiveness: intelligence/effectiveness.md
+    - Weekly Digest: intelligence/digest.md
   - Development:
     - Contributing: dev/contributing.md
     - Testing: dev/testing.md

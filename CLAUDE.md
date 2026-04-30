@@ -489,11 +489,28 @@ These are architecture decisions and patterns for ongoing Phase 5 work. Read bef
 - `pyyaml>=6.0` added as CLI dependency.
 - Entry point: `rulerepo-export` registered in `packages/cli/pyproject.toml`.
 
-### 14.9 Future Implementation Notes
-- **Task-start hook**: Add `task-start` mode to `rulerepo-hook` with `--prompt` option. Create `POST /api/v1/context/rules` endpoint for task-aware rule injection.
+### 14.9 Seamless Agent Integration (Implemented)
+- **File-aware scope resolution**: `resolve_scopes(file_path, custom_map)` in `context_delivery/scope_registry.py` with `DEFAULT_SCOPE_MAP` (20 glob patterns). Returns deduplicated scope list.
+- **Session context API**: `GET /api/v1/rules/context?files=...&format=instructions`. Resolves scopes → loads rules → matches by language/path → formats with `format_rules(format_type=...)`. Must be registered before `/{rule_id}` route to avoid path conflict.
+- **Rules import endpoint**: `POST /api/v1/rules/import` accepts `RulesImportRequest` with version + rules array. Creates rules with `["imported"]` tag. Schema in `schemas/rule.py`.
+
+### 14.10 Rule Impact Analytics (Implemented)
+- **Effectiveness score**: `services/intelligence/effectiveness.py` — `compute_effectiveness(session, rule_id)`. Three metrics: precision (40%, from FP/TP counts), prevention rate (35%, corrections before vs after), agent adoption (25%, ALLOW rate). API at `GET /intelligence/effectiveness/{rule_id}`.
+- **Weekly digest**: `services/intelligence/digest.py` — `generate_weekly_digest(session, project_id)`. Sections: compliance trend, rule changes, top violations, attention needed, corrections, pending actions. API at `GET /intelligence/digest`. Cron: `send_weekly_digest` (Monday 9am) sends to `DIGEST_WEBHOOK_URL`.
+- **Team comparison**: `GET /intelligence/comparison` — per-project rule count + compliance rate, sorted by performance.
+
+### 14.11 Rule Templates (Implemented)
+- 5 YAML templates in `sample_rules/templates/`: python-fastapi (15 rules), typescript-react (12), security-owasp (10), api-design (10), testing-standards (10).
+- Format: `version: 1`, `template: {name, description, tags}`, `rules: [{statement, modality, severity, scope, tags, rationale}]`.
+- Import via `POST /api/v1/rules/import` with the rules array from any template.
+
+### 14.12 Future Implementation Notes
+- **CLAUDE.md generator**: `rulerepo-context update --file ./CLAUDE.md` — maintains a `## Rules` section in CLAUDE.md, auto-updated when rules change.
+- **Task-start hook**: Add `task-start` mode to `rulerepo-hook` with `--prompt` option for task-aware rule injection.
 - **Zero-config init**: Create `packages/cli/src/rulerepo_cli/init.py` that wraps the existing discovery analyzers for local execution without the server.
 - **CLI auto-fix**: Add `--auto-fix` flag to `rulerepo-check` that applies `auto_applicable` remediations and re-evaluates.
 - **Agent dashboard frontend**: Create `/agents` page showing compliance leaderboard, per-agent trends, top violations.
+- **Frontend onboarding wizard**: When zero rules exist, show 3-step wizard (scan → review → activate in shadow mode).
 - **Infrastructure tiers**: Add `ELASTICSEARCH_ENABLED`, `NEO4J_ENABLED`, `REDIS_ENABLED` flags to Settings. Implement Postgres FTS fallback in search service.
 - **Generated TypeScript client**: Export OpenAPI spec and use `openapi-typescript` + `openapi-fetch` to replace hand-written `lib/api.ts`.
 

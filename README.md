@@ -197,8 +197,8 @@ rule-repository/
 ├── scripts/                         # seed_data, reconcile_graph, reindex_elasticsearch,
 │                                    #   generate_claude_md
 ├── infra/                           # Dockerfiles, init SQL, ES templates, Neo4j constraints
-├── development/                     # 14 technical docs
-├── docs/                            # mkdocs site — 39 pages across 9 sections
+├── development/                     # 15 technical docs
+├── docs/                            # mkdocs site — 43 pages across 9 sections
 ├── docker-compose.yml               # 11 services
 ├── Makefile                         # 63 targets for dev workflow
 ├── .pre-commit-config.yaml          # ruff, mypy, trailing-whitespace, etc.
@@ -365,8 +365,8 @@ make check                # format + lint + test (run before committing)
 |---|---|
 | [PROJECT.md](PROJECT.md) | Vision, domain model, 5-phase roadmap (Phases 1-4 complete, Phase 5 in progress) |
 | [CLAUDE.md](CLAUDE.md) | Operational guide for Claude Code — coding conventions, Gemini rules, Phase 5 implementation guidance |
-| [development/](development/) | 14 technical docs — architecture, API reference, evaluation engine, database schema, phase 5 improvements, etc. |
-| [docs/](docs/) | mkdocs site — 39 pages across getting started, architecture, API, SDKs, integrations, intelligence |
+| [development/](development/) | 15 technical docs — architecture, API reference, evaluation engine, database schema, phase 5 improvements, etc. |
+| [docs/](docs/) | mkdocs site — 43 pages across getting started, architecture, API, SDKs, integrations, intelligence |
 | [Swagger UI](http://localhost:8000/docs) | Interactive API documentation (when stack is running) |
 
 ---

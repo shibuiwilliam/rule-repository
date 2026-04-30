@@ -21,6 +21,7 @@ Technical documentation for developing and extending the Rule Repository.
 | [playground-enhancement-plan.md](playground-enhancement-plan.md) | Playground multi-mode input support (completed) — Code + Scenario evaluation, rule picker, suggest-by-LLM |
 | [project-entity-plan.md](project-entity-plan.md) | Project entity as top-level organizational boundary (completed) |
 | [phase5-improvements.md](phase5-improvements.md) | Phase 5 self-improving governance: batched evaluation, evaluation persistence, dashboard summary, outcome-oriented home page, maturity model, remediation, flywheel |
+| [agent-integration-and-analytics.md](agent-integration-and-analytics.md) | Seamless agent integration (scope resolution, session context API), rule impact analytics (effectiveness score, weekly digest, team comparison), rule templates library, bulk import API |
 
 ---
 
