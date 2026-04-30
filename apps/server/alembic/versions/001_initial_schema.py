@@ -5,30 +5,38 @@ Revises: None
 Create Date: 2026-04-26
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
 
 revision: str = "001"
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     # Enum types
-    modality_enum = sa.Enum(
-        "MUST", "MUST_NOT", "SHOULD", "MAY", "INFO", name="modality_enum"
-    )
+    modality_enum = sa.Enum("MUST", "MUST_NOT", "SHOULD", "MAY", "INFO", name="modality_enum")
     severity_enum = sa.Enum("LOW", "MEDIUM", "HIGH", "CRITICAL", name="severity_enum")
     rule_status_enum = sa.Enum(
-        "DRAFT", "REVIEW", "APPROVED", "EFFECTIVE", "SUPERSEDED", "RETIRED",
+        "DRAFT",
+        "REVIEW",
+        "APPROVED",
+        "EFFECTIVE",
+        "SUPERSEDED",
+        "RETIRED",
         name="rule_status_enum",
     )
     relationship_type_enum = sa.Enum(
-        "REFINES", "OVERRIDES", "CONFLICTS_WITH", "DEPENDS_ON", "DERIVES_FROM", "SUCCEEDS",
+        "REFINES",
+        "OVERRIDES",
+        "CONFLICTS_WITH",
+        "DEPENDS_ON",
+        "DERIVES_FROM",
+        "SUCCEEDS",
         name="relationship_type_enum",
     )
     role_enum = sa.Enum("OWNER", "APPROVER", "READER", name="role_enum")

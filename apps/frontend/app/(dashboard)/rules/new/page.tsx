@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createRule } from "@/lib/api";
+import { useProject } from "@/lib/project-context";
 
 const MODALITIES = ["MUST", "MUST_NOT", "SHOULD", "MAY", "INFO"] as const;
 const SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 
 export default function NewRulePage() {
   const router = useRouter();
+  const { currentProject } = useProject();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
@@ -27,20 +29,23 @@ export default function NewRulePage() {
     setSubmitting(true);
     setError("");
     try {
-      const rule = await createRule({
-        statement: form.statement,
-        modality: form.modality,
-        severity: form.severity,
-        scope: form.scope
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        tags: form.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-        rationale: form.rationale,
-      });
+      const rule = await createRule(
+        {
+          statement: form.statement,
+          modality: form.modality,
+          severity: form.severity,
+          scope: form.scope
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+          tags: form.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+          rationale: form.rationale,
+        },
+        currentProject?.id,
+      );
       router.push(`/rules/${rule.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create rule");

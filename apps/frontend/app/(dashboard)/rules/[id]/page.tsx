@@ -121,9 +121,9 @@ export default async function RuleDetailPage({
                               {doc && (
                                 <span>{doc.mime_type} &middot; {(doc.size_bytes / 1024).toFixed(1)} KB</span>
                               )}
-                              {ref.section && (
+                              {ref.section ? (
                                 <span> &middot; &sect; {String(ref.section)}</span>
-                              )}
+                              ) : null}
                               {ref.page != null && (
                                 <span> &middot; p.{String(ref.page)}</span>
                               )}

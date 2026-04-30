@@ -54,8 +54,32 @@ The Rule Repository had no top-level organizational unit. All rules, documents, 
 | New | `alembic/versions/012_add_projects.py`, `schemas/project.py`, `services/project_service.py`, `api/v1/projects.py`, `lib/project-context.tsx`, `ProjectSelector.tsx`, `projects/page.tsx` |
 | Modified | `models.py` (ProjectModel + 7 FK columns), `rule_repo.py`, `rule_service.py`, `schemas/rule.py`, `api/v1/__init__.py`, `api/v1/rules.py`, `api/v1/search.py`, `api/v1/extraction.py`, `api/v1/discovery.py`, `api/v1/feedback.py`, `api/v1/snapshots.py`, `api/v1/alerts.py`, `api/v1/intelligence.py`, `intelligence/service.py`, `infra/elasticsearch/rules-index-template.json`, `lib/api.ts`, `layout.tsx`, `rules/page.tsx` |
 
-## 5. Validation
+## 5. Full project_id Wiring (Phase 2 — completed 2026-04-30)
+
+The initial implementation added `project_id` parameters to all API routes and service method signatures, but many services accepted the parameter without actually using it. Phase 2 completed the wiring:
+
+### Storage on model creation
+- **DocumentModel**: `upload_document()` stores `project_id` on the document
+- **CorrectionModel**: `submit_correction()` stores `project_id` on the correction
+- **DiscoveryScanModel**: `start_scan()` stores `project_id` on the scan
+- **RuleSetSnapshotModel**: `create_snapshot()` stores `project_id` on the snapshot
+- **AlertModel**: worker tasks (`compute_health_scores`, `generate_recommendations_task`) inherit `project_id` from the rule
+
+### Filtering on all list/query paths
+- `list_documents()`: filters by `DocumentModel.project_id`
+- `get_corrections()`: filters by `CorrectionModel.project_id`
+- `list_snapshots()`: filters by `RuleSetSnapshotModel.project_id`
+- `list_alerts()`: filters by `AlertModel.project_id`
+- `get_dashboard()`: filters rule count + rule sample by `RuleModel.project_id`
+- `get_health_scores()`: filters rules by `RuleModel.project_id`
+- `get_recommendations()`: filters rules by `RuleModel.project_id`
+
+### Frontend
+- All client-component pages (intelligence, feedback, discover, search, snapshots, gateway) now read `currentProject?.id` from `useProject()` context and pass it to every API call
+- `lib/api.ts`: 13 API functions updated with `projectId` parameter (search, discovery, feedback, intelligence, snapshots, alerts)
+
+## 6. Validation
 - 142 Python unit tests pass
-- Zero TypeScript errors in new files
-- Zero ESLint errors in new files
-- Ruff warnings are pre-existing B008 (standard FastAPI `Depends()` pattern)
+- Zero TypeScript errors in modified files
+- Zero ESLint errors in modified files
+- Integration verified: creating a rule with project_id, filtering returns only that project's rules, dashboard/snapshots scope correctly

@@ -38,9 +38,7 @@ class ScopeRegistry:
         Args:
             session: Async database session.
         """
-        result = await session.execute(
-            select(RuleModel).where(RuleModel.status.in_(["APPROVED", "EFFECTIVE"]))
-        )
+        result = await session.execute(select(RuleModel).where(RuleModel.status.in_(["APPROVED", "EFFECTIVE"])))
         self._rules = [
             {
                 "id": str(r.id),

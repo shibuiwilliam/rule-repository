@@ -63,3 +63,21 @@ class TestGenerateRequest(BaseModel):
     """Request body for generating test cases via LLM."""
 
     count: int = 6
+
+
+class SuggestInputRequest(BaseModel):
+    """Request body for suggesting a test input via LLM."""
+
+    rule_id: str | None = None
+    rule_statement: str | None = None
+    rule_modality: str | None = None
+    rule_severity: str | None = None
+    input_mode: str = "code"
+    violating: bool = True
+
+
+class SuggestInputResponse(BaseModel):
+    """Response from test input suggestion."""
+
+    sample_input: str
+    description: str

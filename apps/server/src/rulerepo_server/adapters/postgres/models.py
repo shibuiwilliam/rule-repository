@@ -45,9 +45,7 @@ class ProjectModel(Base):
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
@@ -87,6 +85,11 @@ class RuleModel(Base):
         default="DRAFT",
     )
 
+    # Maturity model (PROJECT_ENHANCE.md §2)
+    maturity_level: Mapped[str] = mapped_column(String(20), nullable=False, default="experimental")
+    false_positive_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    true_positive_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
     # JSONB fields for complex nested data
     source_refs: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     scope: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
@@ -107,9 +110,7 @@ class RuleModel(Base):
 
     clarity_score: Mapped[float | None] = mapped_column(Float, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
@@ -131,9 +132,7 @@ class RuleTestCaseModel(Base):
     __tablename__ = "rule_test_cases"
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
-    rule_id: Mapped[str] = mapped_column(
-        Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    rule_id: Mapped[str] = mapped_column(Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     sample_input: Mapped[str] = mapped_column(Text, nullable=False)
     input_type: Mapped[str] = mapped_column(String(20), nullable=False, default="code")
@@ -141,9 +140,7 @@ class RuleTestCaseModel(Base):
     last_result: Mapped[str | None] = mapped_column(String(30), nullable=True)
     last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     passing: Mapped[bool | None] = mapped_column(nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 # ---------------------------------------------------------------------------
@@ -180,12 +177,8 @@ class RuleHealthScoreModel(Base):
 
     __tablename__ = "rule_health_scores"
 
-    id: Mapped[str] = mapped_column(
-        Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
-    )
-    rule_id: Mapped[str] = mapped_column(
-        Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
+    rule_id: Mapped[str] = mapped_column(Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True)
     overall_score: Mapped[float] = mapped_column(Float, nullable=False)
     completeness: Mapped[float] = mapped_column(Float, nullable=False)
     clarity: Mapped[float] = mapped_column(Float, nullable=False)
@@ -194,9 +187,7 @@ class RuleHealthScoreModel(Base):
     activity: Mapped[float] = mapped_column(Float, nullable=False)
     owner_engagement: Mapped[float] = mapped_column(Float, nullable=False)
     issues: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    computed_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 class RuleRecommendationModel(Base):
@@ -204,12 +195,8 @@ class RuleRecommendationModel(Base):
 
     __tablename__ = "rule_recommendations"
 
-    id: Mapped[str] = mapped_column(
-        Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
-    )
-    rule_id: Mapped[str] = mapped_column(
-        Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
+    rule_id: Mapped[str] = mapped_column(Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True)
     type: Mapped[str] = mapped_column(String(30), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
@@ -218,9 +205,7 @@ class RuleRecommendationModel(Base):
     priority: Mapped[str] = mapped_column(String(20), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
     dismissed_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
@@ -234,9 +219,7 @@ class RuleFederationModel(Base):
 
     __tablename__ = "rule_federations"
 
-    id: Mapped[str] = mapped_column(
-        Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
-    )
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     level: Mapped[str] = mapped_column(String(20), nullable=False)
     parent_id: Mapped[str | None] = mapped_column(
@@ -244,9 +227,7 @@ class RuleFederationModel(Base):
     )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     default_scope: Mapped[list] = mapped_column(ARRAY(String), server_default="{}")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 class RuleFederationMembershipModel(Base):
@@ -254,21 +235,15 @@ class RuleFederationMembershipModel(Base):
 
     __tablename__ = "rule_federation_memberships"
 
-    id: Mapped[str] = mapped_column(
-        Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
-    )
-    rule_id: Mapped[str] = mapped_column(
-        Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False
-    )
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
+    rule_id: Mapped[str] = mapped_column(Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False)
     federation_id: Mapped[str] = mapped_column(
         Uuid, ForeignKey("rule_federations.id", ondelete="CASCADE"), nullable=False
     )
     override_parent_rule_id: Mapped[str | None] = mapped_column(
         Uuid, ForeignKey("rules.id", ondelete="SET NULL"), nullable=True
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 class RuleRevisionModel(Base):
@@ -277,9 +252,7 @@ class RuleRevisionModel(Base):
     __tablename__ = "rule_revisions"
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
-    rule_id: Mapped[str] = mapped_column(
-        Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    rule_id: Mapped[str] = mapped_column(Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True)
     revision_number: Mapped[int] = mapped_column(Integer, nullable=False)
 
     # Snapshot
@@ -294,9 +267,7 @@ class RuleRevisionModel(Base):
     # Change metadata
     changed_by: Mapped[str] = mapped_column(String(255), nullable=False, default="system")
     change_note: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     rule: Mapped["RuleModel"] = relationship(back_populates="revisions")
 
@@ -307,12 +278,8 @@ class RuleRelationshipModel(Base):
     __tablename__ = "rule_relationships"
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
-    source_id: Mapped[str] = mapped_column(
-        Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True
-    )
-    target_id: Mapped[str] = mapped_column(
-        Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    source_id: Mapped[str] = mapped_column(Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True)
+    target_id: Mapped[str] = mapped_column(Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True)
     relationship_type: Mapped[str] = mapped_column(
         Enum(
             "REFINES",
@@ -325,9 +292,7 @@ class RuleRelationshipModel(Base):
         ),
         nullable=False,
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     created_by: Mapped[str] = mapped_column(String(255), nullable=False, default="system")
 
 
@@ -365,9 +330,7 @@ class DocumentModel(Base):
     mime_type: Mapped[str] = mapped_column(String(100), nullable=False)
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     storage_path: Mapped[str] = mapped_column(String(1000), nullable=False)
-    uploaded_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     uploaded_by: Mapped[str] = mapped_column(String(255), nullable=False, default="system")
     content_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -384,9 +347,7 @@ class ExtractionModel(Base):
     candidates: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     model_id: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDING")
-    extracted_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    extracted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 class ApiKeyModel(Base):
@@ -404,9 +365,7 @@ class ApiKeyModel(Base):
     )
     scopes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     active: Mapped[bool] = mapped_column(default=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 class LLMCacheModel(Base):
@@ -424,9 +383,7 @@ class LLMCacheModel(Base):
     inputs_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     response: Mapped[dict] = mapped_column(JSONB, nullable=False)
     latency_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 # ---------------------------------------------------------------------------
@@ -455,12 +412,28 @@ class EnforcementPolicyModel(Base):
     response_actions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     on_deny: Mapped[str] = mapped_column(String(20), nullable=False, default="notify")
     enabled: Mapped[bool] = mapped_column(default=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
+
+
+class EvaluationRecordModel(Base):
+    """Per-rule evaluation result for analytics and persistence."""
+
+    __tablename__ = "evaluations"
+
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
+    project_id: Mapped[str | None] = mapped_column(Uuid, ForeignKey("projects.id"), nullable=True, index=True)
+    rule_id: Mapped[str] = mapped_column(Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True)
+    verdict: Mapped[str] = mapped_column(String(30), nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    latency_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    scope: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    input_type: Mapped[str] = mapped_column(String(20), nullable=False, default="code")
+    model_id: Mapped[str] = mapped_column(String(100), nullable=False, default="unknown")
+    cached: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 class GatewayEvaluationModel(Base):
@@ -481,9 +454,7 @@ class GatewayEvaluationModel(Base):
     violations: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     actions_taken: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 # ---------------------------------------------------------------------------
@@ -496,9 +467,7 @@ class DiscoveryScanModel(Base):
 
     __tablename__ = "discovery_scans"
 
-    id: Mapped[str] = mapped_column(
-        Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
-    )
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
     project_id: Mapped[str] = mapped_column(
         Uuid, ForeignKey("projects.id"), nullable=False, index=True, default=DEFAULT_PROJECT_ID
     )
@@ -506,9 +475,7 @@ class DiscoveryScanModel(Base):
     sources: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
     repository: Mapped[str | None] = mapped_column(String(255), nullable=True)
     candidates_found: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     candidates: Mapped[list["DiscoveryCandidateModel"]] = relationship(
@@ -521,9 +488,7 @@ class DiscoveryCandidateModel(Base):
 
     __tablename__ = "discovery_candidates"
 
-    id: Mapped[str] = mapped_column(
-        Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
-    )
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
     scan_id: Mapped[str] = mapped_column(
         Uuid, ForeignKey("discovery_scans.id", ondelete="CASCADE"), nullable=False, index=True
     )
@@ -540,9 +505,7 @@ class DiscoveryCandidateModel(Base):
     created_rule_id: Mapped[str | None] = mapped_column(
         Uuid, ForeignKey("rules.id", ondelete="SET NULL"), nullable=True
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     scan: Mapped["DiscoveryScanModel"] = relationship(back_populates="candidates")
     created_rule: Mapped["RuleModel | None"] = relationship(foreign_keys=[created_rule_id])
@@ -577,15 +540,11 @@ class RuleSetDeploymentModel(Base):
     __tablename__ = "rule_set_deployments"
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
-    snapshot_id: Mapped[str] = mapped_column(
-        Uuid, ForeignKey("rule_set_snapshots.id"), nullable=False
-    )
+    snapshot_id: Mapped[str] = mapped_column(Uuid, ForeignKey("rule_set_snapshots.id"), nullable=False)
     environment: Mapped[str] = mapped_column(String(50), nullable=False)
     active: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=True)
     deployed_by: Mapped[str] = mapped_column(String(255), nullable=False, default="system")
-    deployed_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    deployed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     rolled_back_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
@@ -599,9 +558,7 @@ class CorrectionModel(Base):
 
     __tablename__ = "corrections"
 
-    id: Mapped[str] = mapped_column(
-        Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()")
-    )
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
     project_id: Mapped[str] = mapped_column(
         Uuid, ForeignKey("projects.id"), nullable=False, index=True, default=DEFAULT_PROJECT_ID
     )
@@ -629,9 +586,36 @@ class CorrectionModel(Base):
     created_rule_id: Mapped[str | None] = mapped_column(
         Uuid, ForeignKey("rules.id", ondelete="SET NULL"), nullable=True
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
+
+
+# ---------------------------------------------------------------------------
+# Enhancement 3: Correction-to-Rule Flywheel (PROJECT_ENHANCE.md §3)
+# ---------------------------------------------------------------------------
+
+
+class DraftRuleProposalModel(Base):
+    """A rule draft auto-generated from clustered corrections."""
+
+    __tablename__ = "draft_rule_proposals"
+
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    project_id: Mapped[str] = mapped_column(Uuid, ForeignKey("projects.id"), nullable=False, index=True)
+    statement: Mapped[str] = mapped_column(Text, nullable=False)
+    modality: Mapped[str] = mapped_column(String(20), nullable=False)
+    severity: Mapped[str] = mapped_column(String(20), nullable=False)
+    scope: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    evidence_correction_ids: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    cluster_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    created_rule_id: Mapped[str | None] = mapped_column(
+        Uuid, ForeignKey("rules.id", ondelete="SET NULL"), nullable=True
+    )
+    reviewed_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

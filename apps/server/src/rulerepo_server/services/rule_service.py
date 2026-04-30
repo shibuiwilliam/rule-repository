@@ -42,9 +42,7 @@ class RuleService:
         self._gemini_client = gemini_client
         self._session = session
 
-    async def create_rule(
-        self, data: RuleCreate, actor: str = "system", project_id: str | None = None
-    ) -> dict:
+    async def create_rule(self, data: RuleCreate, actor: str = "system", project_id: str | None = None) -> dict:
         """Create a new rule across all stores.
 
         Args:
@@ -291,6 +289,7 @@ class RuleService:
         try:
             es_doc = {
                 "rule_id": str(rule_id),
+                "project_id": str(model.project_id) if hasattr(model, "project_id") else None,
                 "statement": model.statement,
                 "modality": model.modality,
                 "severity": model.severity,
@@ -361,6 +360,7 @@ class RuleService:
                 rule_id,
                 {
                     "rule_id": str(rule_id),
+                    "project_id": str(model.project_id) if hasattr(model, "project_id") else None,
                     "statement": model.statement,
                     "modality": model.modality,
                     "severity": model.severity,
@@ -537,6 +537,7 @@ class RuleService:
         return {
             "id": str(model.id),
             "project_id": str(model.project_id),
+            "maturity_level": getattr(model, "maturity_level", "experimental"),
             "statement": model.statement,
             "modality": model.modality,
             "severity": model.severity,

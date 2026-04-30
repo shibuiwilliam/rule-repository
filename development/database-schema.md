@@ -1,7 +1,7 @@
 # Database Schema & ER Diagram
 
 > PostgreSQL 17 — source of truth for the Rule Repository.
-> 24 tables across 12 Alembic migrations.
+> 27+ tables across 16 Alembic migrations.
 
 ---
 
@@ -430,6 +430,12 @@ erDiagram
 | Table | Purpose | Key Relationships |
 |---|---|---|
 | **rule_test_cases** | Per-rule test cases (sample input + expected verdict) | `rule_id → rules.id` |
+
+### Evaluation Analytics (1 table)
+
+| Table | Purpose | Key Relationships |
+|---|---|---|
+| **evaluations** | Per-rule evaluation results for analytics (verdict, confidence, latency, model, cached) | `rule_id → rules.id`, `project_id → projects.id` |
 
 ### Snapshots & Deployment (2 tables)
 

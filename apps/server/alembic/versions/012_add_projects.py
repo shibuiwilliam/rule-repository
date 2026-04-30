@@ -4,8 +4,8 @@ Revision ID: 012
 Revises: 011
 """
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision = "012"
 down_revision = "011"
@@ -62,11 +62,7 @@ def upgrade() -> None:
         op.add_column(table, sa.Column("project_id", sa.Uuid(), nullable=True))
 
         # Backfill
-        op.execute(
-            sa.text(
-                f"UPDATE {table} SET project_id = '{DEFAULT_PROJECT_ID}'::uuid WHERE project_id IS NULL"
-            )
-        )
+        op.execute(sa.text(f"UPDATE {table} SET project_id = '{DEFAULT_PROJECT_ID}'::uuid WHERE project_id IS NULL"))
 
         # Set NOT NULL
         op.alter_column(table, "project_id", nullable=False)

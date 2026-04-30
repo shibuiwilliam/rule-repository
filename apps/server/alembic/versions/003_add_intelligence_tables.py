@@ -5,25 +5,23 @@ Revises: 002
 Create Date: 2026-04-26
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
 
 revision: str = "003"
-down_revision: Union[str, None] = "002"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "002"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     op.create_table(
         "rule_health_scores",
         sa.Column("id", sa.Uuid(), primary_key=True, server_default=sa.text("gen_random_uuid()")),
-        sa.Column(
-            "rule_id", sa.Uuid(), sa.ForeignKey("rules.id", ondelete="CASCADE"), nullable=False
-        ),
+        sa.Column("rule_id", sa.Uuid(), sa.ForeignKey("rules.id", ondelete="CASCADE"), nullable=False),
         sa.Column("overall_score", sa.Float(), nullable=False),
         sa.Column("completeness", sa.Float(), nullable=False),
         sa.Column("clarity", sa.Float(), nullable=False),
@@ -44,9 +42,7 @@ def upgrade() -> None:
     op.create_table(
         "rule_recommendations",
         sa.Column("id", sa.Uuid(), primary_key=True, server_default=sa.text("gen_random_uuid()")),
-        sa.Column(
-            "rule_id", sa.Uuid(), sa.ForeignKey("rules.id", ondelete="CASCADE"), nullable=False
-        ),
+        sa.Column("rule_id", sa.Uuid(), sa.ForeignKey("rules.id", ondelete="CASCADE"), nullable=False),
         sa.Column("type", sa.String(30), nullable=False),
         sa.Column("title", sa.String(255), nullable=False),
         sa.Column("description", sa.Text(), nullable=False),
@@ -69,9 +65,7 @@ def upgrade() -> None:
     op.create_table(
         "drift_alerts",
         sa.Column("id", sa.Uuid(), primary_key=True, server_default=sa.text("gen_random_uuid()")),
-        sa.Column(
-            "rule_id", sa.Uuid(), sa.ForeignKey("rules.id", ondelete="CASCADE"), nullable=False
-        ),
+        sa.Column("rule_id", sa.Uuid(), sa.ForeignKey("rules.id", ondelete="CASCADE"), nullable=False),
         sa.Column("alert_type", sa.String(30), nullable=False),
         sa.Column("description", sa.Text(), nullable=False),
         sa.Column("evidence", JSONB(), nullable=False),

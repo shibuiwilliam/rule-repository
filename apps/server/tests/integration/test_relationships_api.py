@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 from httpx import AsyncClient
-
 
 pytestmark = pytest.mark.asyncio
 

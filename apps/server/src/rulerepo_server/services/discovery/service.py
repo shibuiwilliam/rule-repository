@@ -14,6 +14,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rulerepo_server.adapters.postgres.models import (
+    DEFAULT_PROJECT_ID,
     DiscoveryCandidateModel,
     DiscoveryScanModel,
     RuleModel,
@@ -59,6 +60,7 @@ class DiscoveryService:
         sources: list[str],
         file_contents: dict[str, str],
         repository: str | None = None,
+        project_id: str | None = None,
     ) -> str:
         """Start a discovery scan and return the scan ID.
 
@@ -81,6 +83,7 @@ class DiscoveryService:
             status="running",
             sources={"types": sources},
             repository=repository,
+            project_id=project_id or DEFAULT_PROJECT_ID,
         )
         self._session.add(scan)
         await self._session.flush()
@@ -177,9 +180,7 @@ class DiscoveryService:
         Raises:
             ValueError: If the scan is not found.
         """
-        result = await self._session.execute(
-            select(DiscoveryScanModel).where(DiscoveryScanModel.id == UUID(scan_id))
-        )
+        result = await self._session.execute(select(DiscoveryScanModel).where(DiscoveryScanModel.id == UUID(scan_id)))
         scan = result.scalar_one_or_none()
         if scan is None:
             msg = f"Scan not found: {scan_id}"
@@ -209,9 +210,7 @@ class DiscoveryService:
         Returns:
             List of candidate dicts.
         """
-        query = select(DiscoveryCandidateModel).where(
-            DiscoveryCandidateModel.scan_id == UUID(scan_id)
-        )
+        query = select(DiscoveryCandidateModel).where(DiscoveryCandidateModel.scan_id == UUID(scan_id))
         if status is not None:
             query = query.where(DiscoveryCandidateModel.status == status)
 
@@ -261,10 +260,17 @@ class DiscoveryService:
             msg = f"Candidate already processed: {candidate.status}"
             raise ValueError(msg)
 
+        # Inherit project_id from the scan
+        scan_result = await self._session.execute(
+            select(DiscoveryScanModel).where(DiscoveryScanModel.id == candidate.scan_id)
+        )
+        scan = scan_result.scalar_one()
+
         # Create a rule from the candidate
         rule_id = uuid4()
         rule = RuleModel(
             id=rule_id,
+            project_id=scan.project_id,
             statement=candidate.statement,
             modality=candidate.modality,
             severity=candidate.severity,

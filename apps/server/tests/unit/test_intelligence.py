@@ -1,6 +1,6 @@
 """Unit tests for intelligence health scorer and recommender."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from rulerepo_server.services.intelligence.health_scorer import (
     compute_completeness,
@@ -43,17 +43,17 @@ class TestComputeCompleteness:
 
 class TestComputeFreshness:
     def test_recently_updated(self) -> None:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         rule = {"updated_at": now - timedelta(days=5)}
         assert compute_freshness(rule, now=now) == 100.0
 
     def test_old_rule(self) -> None:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         rule = {"updated_at": now - timedelta(days=400)}
         assert compute_freshness(rule, now=now) == 0.0
 
     def test_mid_age_rule(self) -> None:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         rule = {"updated_at": now - timedelta(days=180)}
         score = compute_freshness(rule, now=now)
         assert 0 < score < 100
@@ -72,7 +72,7 @@ class TestComputeHealthScore:
             "tags": ["code-review"],
             "source_refs": [{"document_id": "doc1"}],
             "governance": {"owner": "tech-lead"},
-            "updated_at": datetime.now(tz=timezone.utc),
+            "updated_at": datetime.now(tz=UTC),
         }
         result = compute_health_score(rule, evaluation_count_90d=15, owner_active=True)
         assert result["overall_score"] > 60
@@ -81,7 +81,7 @@ class TestComputeHealthScore:
     def test_dormant_rule(self) -> None:
         rule = {
             "statement": "Unused rule with no evaluations",
-            "updated_at": datetime.now(tz=timezone.utc) - timedelta(days=200),
+            "updated_at": datetime.now(tz=UTC) - timedelta(days=200),
         }
         result = compute_health_score(rule, evaluation_count_90d=0)
         all_issues = " ".join(result["issues"]).lower()
@@ -99,20 +99,35 @@ class TestRecommender:
     def test_ambiguous_rule_gets_clarify_suggestion(self) -> None:
         rule = {"id": "abc", "modality": "MUST"}
         health = {"completeness": 80}
-        analytics = {"total_evaluations": 20, "needs_confirmation_rate": 0.4, "deny_rate": 0.1, "allow_rate": 0.5}
+        analytics = {
+            "total_evaluations": 20,
+            "needs_confirmation_rate": 0.4,
+            "deny_rate": 0.1,
+            "allow_rate": 0.5,
+        }
         recs = generate_recommendations(rule, health, analytics)
         assert any(r["type"] == "clarify" for r in recs)
 
     def test_should_rule_with_full_compliance_gets_strengthen(self) -> None:
         rule = {"id": "abc", "modality": "SHOULD"}
         health = {"completeness": 80}
-        analytics = {"total_evaluations": 15, "allow_rate": 1.0, "deny_rate": 0, "needs_confirmation_rate": 0}
+        analytics = {
+            "total_evaluations": 15,
+            "allow_rate": 1.0,
+            "deny_rate": 0,
+            "needs_confirmation_rate": 0,
+        }
         recs = generate_recommendations(rule, health, analytics)
         assert any(r["type"] == "strengthen" for r in recs)
 
     def test_no_recommendations_for_healthy_rule(self) -> None:
         rule = {"id": "abc", "modality": "MUST"}
         health = {"completeness": 90}
-        analytics = {"total_evaluations": 10, "allow_rate": 0.8, "deny_rate": 0.1, "needs_confirmation_rate": 0.1}
+        analytics = {
+            "total_evaluations": 10,
+            "allow_rate": 0.8,
+            "deny_rate": 0.1,
+            "needs_confirmation_rate": 0.1,
+        }
         recs = generate_recommendations(rule, health, analytics)
         assert len(recs) == 0

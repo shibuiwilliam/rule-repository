@@ -121,10 +121,7 @@ async def _handle_pr(payload: dict[str, Any], session: AsyncSession) -> dict[str
                     "rule_statement": v.rule_statement,
                     "issue_description": v.issue_description,
                     "fix_suggestion": v.fix_suggestion,
-                    "locations": [
-                        {"file_path": loc.file_path, "start_line": loc.start_line}
-                        for loc in v.locations
-                    ],
+                    "locations": [{"file_path": loc.file_path, "start_line": loc.start_line} for loc in v.locations],
                 }
                 for v in eval_result.violations
             ],

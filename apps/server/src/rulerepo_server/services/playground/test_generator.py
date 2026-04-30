@@ -29,6 +29,78 @@ def _load_prompt() -> str:
     return (PROMPTS_DIR / "generate_test_cases.txt").read_text()
 
 
+async def suggest_test_input(
+    rule: dict[str, Any],
+    gemini_client: Any,
+    input_mode: str = "code",
+    violating: bool = True,
+) -> dict[str, Any]:
+    """Generate a suggested test input for a rule via the Gemini API.
+
+    Args:
+        rule: Dict with statement, modality, severity fields.
+        gemini_client: A google-genai Client instance.
+        input_mode: Either "code" or "scenario".
+        violating: If True, generate a violating input (DENY); otherwise compliant (ALLOW).
+
+    Returns:
+        Dict with sample_input and description.
+    """
+    config = get_default_config()
+    template = (PROMPTS_DIR / "suggest_input.txt").read_text()
+
+    if input_mode == "code":
+        mode_instructions = (
+            "Generate a realistic code snippet or unified diff that "
+            + ("VIOLATES" if violating else "COMPLIES with")
+            + " this rule. Use realistic function names, variable names, and patterns."
+        )
+    else:
+        mode_instructions = (
+            "Generate a realistic scenario description that "
+            + ("VIOLATES" if violating else "COMPLIES with")
+            + " this rule. Include specific facts, names, dates, and quantities."
+        )
+
+    prompt = template.format(
+        statement=rule["statement"],
+        modality=rule["modality"],
+        severity=rule["severity"],
+        input_mode=input_mode,
+        mode_instructions=mode_instructions,
+    )
+
+    _json_schema = {
+        "type": "object",
+        "properties": {
+            "sample_input": {"type": "string"},
+            "description": {"type": "string"},
+        },
+        "required": ["sample_input", "description"],
+    }
+
+    try:
+        response = await gemini_client.aio.models.generate_content(
+            model=config.model_id,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_json_schema=_json_schema,
+                thinking_config=types.ThinkingConfig(thinking_level="low"),
+            ),
+        )
+
+        data = json.loads(response.text or "{}") if response.text else {}
+        logger.info("test_input_suggested", input_mode=input_mode, violating=violating)
+        return {
+            "sample_input": data.get("sample_input", ""),
+            "description": data.get("description", ""),
+        }
+    except Exception as exc:
+        logger.warning("test_input_suggestion_failed", error=str(exc))
+        return {"sample_input": "", "description": f"Generation failed: {exc}"}
+
+
 async def generate_test_cases(
     rule: dict[str, Any],
     gemini_client: Any,

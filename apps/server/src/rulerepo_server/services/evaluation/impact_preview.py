@@ -111,7 +111,5 @@ async def preview_rule_impact(
         "allow_to_deny": allow_to_deny,
         "deny_to_allow": deny_to_allow,
         "affected_repositories": sorted(affected_repos),
-        "risk_level": (
-            "high" if verdict_changes > 10 else "medium" if verdict_changes > 3 else "low"
-        ),
+        "risk_level": ("high" if verdict_changes > 10 else "medium" if verdict_changes > 3 else "low"),
     }

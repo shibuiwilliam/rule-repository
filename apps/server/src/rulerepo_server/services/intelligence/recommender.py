@@ -88,11 +88,7 @@ def generate_recommendations(
 
     # Strengthen: 100% allow rate with SHOULD modality
     allow_rate = analytics.get("allow_rate", 0)
-    if (
-        allow_rate == 1.0
-        and analytics.get("total_evaluations", 0) >= 10
-        and rule.get("modality") == "SHOULD"
-    ):
+    if allow_rate == 1.0 and analytics.get("total_evaluations", 0) >= 10 and rule.get("modality") == "SHOULD":
         recommendations.append(
             {
                 "id": str(uuid4()),

@@ -2,10 +2,10 @@
 
 **YourExampleSoftware** — SNS Web Backend
 
-**Document ID:** ENG-006  
-**Version:** 2.0  
-**Effective Date:** 2025-04-01  
-**Owner:** Backend Engineering Team  
+**Document ID:** ENG-006
+**Version:** 2.0
+**Effective Date:** 2025-04-01
+**Owner:** Backend Engineering Team
 **Review Cycle:** Quarterly
 
 ---
@@ -86,7 +86,7 @@ class RateLimitError(AppError):
   ```python
   # CORRECT
   logger.info("post_created", user_id=uid, post_id=pid, latency_ms=42)
-  
+
   # WRONG
   logger.info(f"User {uid} created post {pid} in 42ms")
   ```

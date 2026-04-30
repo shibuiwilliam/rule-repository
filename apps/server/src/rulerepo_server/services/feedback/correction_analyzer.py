@@ -34,9 +34,7 @@ async def _search_existing_rules(
     for keyword in keywords:
         if len(keyword) < 3:
             continue
-        stmt = select(RuleModel.id, RuleModel.statement).where(
-            RuleModel.statement.ilike(f"%{keyword}%")
-        )
+        stmt = select(RuleModel.id, RuleModel.statement).where(RuleModel.statement.ilike(f"%{keyword}%"))
         result = await session.execute(stmt)
         for row in result.all():
             rule_id = str(row[0])

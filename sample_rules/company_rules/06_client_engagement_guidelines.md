@@ -2,11 +2,11 @@
 
 **YourExampleCompany** — IT Service Consultation
 
-**Document ID:** STD-005  
-**Version:** 2.5  
-**Effective Date:** 2025-02-01  
-**Owner:** Delivery Excellence Team  
-**Approved by:** VP of Delivery, VP of Sales  
+**Document ID:** STD-005
+**Version:** 2.5
+**Effective Date:** 2025-02-01
+**Owner:** Delivery Excellence Team
+**Approved by:** VP of Delivery, VP of Sales
 **Review Cycle:** Semi-annual
 
 ---

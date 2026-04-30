@@ -2,7 +2,6 @@
 
 from rulerepo_server.services.context_delivery.formatter import format_rules
 
-
 SAMPLE_RULES = [
     {
         "id": "abc12345-1111",
@@ -45,9 +44,7 @@ class TestFormatInstructions:
         assert "[Rule #abc12345" in result
 
     def test_includes_context_label(self) -> None:
-        result = format_rules(
-            SAMPLE_RULES, format_type="instructions", context_label="payment.py"
-        )
+        result = format_rules(SAMPLE_RULES, format_type="instructions", context_label="payment.py")
         assert "payment.py" in result
 
     def test_must_not_prefix(self) -> None:

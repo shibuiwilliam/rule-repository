@@ -50,9 +50,9 @@ def main(
     if diff is None:
         try:
             diff = subprocess.check_output(diff_cmd, shell=True, text=True)
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as exc:
             click.echo("Failed to generate diff", err=True)
-            raise SystemExit(2)
+            raise SystemExit(2) from exc
 
     if not diff.strip():
         click.echo("No changes to evaluate.")
@@ -70,7 +70,7 @@ def main(
         result = resp.json()
     except httpx.HTTPError as exc:
         click.echo(f"Evaluation failed: {exc}", err=True)
-        raise SystemExit(2)
+        raise SystemExit(2) from exc
 
     # Format output
     match output_format:

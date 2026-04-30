@@ -43,17 +43,37 @@ _SENTENCE_SPLIT = re.compile(r"(?<=[.!?;])\s+")
 # Normative keyword patterns with modality and base confidence
 _NORMATIVE_PATTERNS: list[tuple[re.Pattern[str], str, float]] = [
     # Prohibitions (strongest signal)
-    (re.compile(r"\b(?:must\s+not|shall\s+not|is\s+(?:not\s+)?prohibited)\b", re.I), "MUST_NOT", 0.90),
-    (re.compile(r"\b(?:never|under\s+no\s+circumstances|strictly\s+forbidden)\b", re.I), "MUST_NOT", 0.88),
-    (re.compile(r"\b(?:may\s+not|cannot|is\s+not\s+(?:allowed|permitted))\b", re.I), "MUST_NOT", 0.85),
+    (
+        re.compile(r"\b(?:must\s+not|shall\s+not|is\s+(?:not\s+)?prohibited)\b", re.I),
+        "MUST_NOT",
+        0.90,
+    ),
+    (
+        re.compile(r"\b(?:never|under\s+no\s+circumstances|strictly\s+forbidden)\b", re.I),
+        "MUST_NOT",
+        0.88,
+    ),
+    (
+        re.compile(r"\b(?:may\s+not|cannot|is\s+not\s+(?:allowed|permitted))\b", re.I),
+        "MUST_NOT",
+        0.85,
+    ),
     # Obligations
     (re.compile(r"\b(?:must|shall|is\s+required\s+to|are\s+required\s+to)\b", re.I), "MUST", 0.90),
     (re.compile(r"\b(?:is\s+mandatory|are\s+obligated|it\s+is\s+required)\b", re.I), "MUST", 0.85),
     (re.compile(r"\b(?:needs?\s+to|has?\s+to|are\s+expected\s+to)\b", re.I), "MUST", 0.80),
     # Recommendations
     (re.compile(r"\b(?:should\s+not|ought\s+not)\b", re.I), "SHOULD", 0.80),
-    (re.compile(r"\b(?:should|ought\s+to|is\s+recommended|are\s+encouraged)\b", re.I), "SHOULD", 0.80),
-    (re.compile(r"\b(?:it\s+is\s+advisable|best\s+practice|are\s+advised)\b", re.I), "SHOULD", 0.75),
+    (
+        re.compile(r"\b(?:should|ought\s+to|is\s+recommended|are\s+encouraged)\b", re.I),
+        "SHOULD",
+        0.80,
+    ),
+    (
+        re.compile(r"\b(?:it\s+is\s+advisable|best\s+practice|are\s+advised)\b", re.I),
+        "SHOULD",
+        0.75,
+    ),
     (re.compile(r"\b(?:always|at\s+all\s+times|in\s+every\s+case)\b", re.I), "SHOULD", 0.75),
     # Permissions
     (re.compile(r"\b(?:may|is\s+allowed|is\s+permitted|are\s+authorized)\b", re.I), "MAY", 0.70),
@@ -122,11 +142,21 @@ class PolicyDocumentAnalyzer(SourceAnalyzer):
             True if the file appears to be a text document.
         """
         text_extensions = (
-            ".md", ".markdown", ".txt", ".text", ".rst",
-            ".adoc", ".asciidoc", ".org",
-            ".html", ".htm",
-            ".csv", ".tsv",
-            ".policy", ".doc", ".docx",  # won't read binary, but won't crash
+            ".md",
+            ".markdown",
+            ".txt",
+            ".text",
+            ".rst",
+            ".adoc",
+            ".asciidoc",
+            ".org",
+            ".html",
+            ".htm",
+            ".csv",
+            ".tsv",
+            ".policy",
+            ".doc",
+            ".docx",  # won't read binary, but won't crash
         )
         lower = filename.lower()
         # Accept known text extensions or files without extension (often text)
@@ -202,9 +232,7 @@ class PolicyDocumentAnalyzer(SourceAnalyzer):
         sections.sort(key=lambda x: x[0])
         return sections
 
-    def _get_section_scope(
-        self, sentence: str, content: str, sections: list[tuple[int, str]]
-    ) -> list[str]:
+    def _get_section_scope(self, sentence: str, content: str, sections: list[tuple[int, str]]) -> list[str]:
         """Determine which section a sentence falls under.
 
         Args:

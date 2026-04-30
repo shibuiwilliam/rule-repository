@@ -50,9 +50,7 @@ class LLMCacheRepository:
         Returns:
             The cached response dict, or None if not found.
         """
-        result = await self._session.execute(
-            select(LLMCacheModel).where(LLMCacheModel.cache_key == cache_key)
-        )
+        result = await self._session.execute(select(LLMCacheModel).where(LLMCacheModel.cache_key == cache_key))
         model = result.scalar_one_or_none()
         if model is None:
             return None
@@ -114,7 +112,5 @@ class LLMCacheRepository:
         Returns:
             Number of entries deleted.
         """
-        result = await self._session.execute(
-            delete(LLMCacheModel).where(LLMCacheModel.model_id == model_id)
-        )
+        result = await self._session.execute(delete(LLMCacheModel).where(LLMCacheModel.model_id == model_id))
         return result.rowcount  # type: ignore[return-value]

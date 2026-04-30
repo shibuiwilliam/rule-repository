@@ -43,7 +43,7 @@ class TestSanitizeDict:
     def test_list_values(self) -> None:
         data = {"emails": ["a@example.com", "b@example.com"]}
         result = sanitize_dict(data)
-        assert all("[EMAIL_REDACTED]" == item for item in result["emails"])  # type: ignore[union-attr]
+        assert all(item == "[EMAIL_REDACTED]" for item in result["emails"])  # type: ignore[union-attr]
 
 
 class TestContainsPii:

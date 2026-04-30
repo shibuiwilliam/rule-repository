@@ -19,13 +19,18 @@ from rulerepo_server.core.logging import get_logger
 from rulerepo_server.schemas.playground import (
     PlaygroundEvalRequest,
     PlaygroundEvalResponse,
+    SuggestInputRequest,
+    SuggestInputResponse,
     TestCaseCreate,
     TestCaseResponse,
     TestGenerateRequest,
     TestRunResult,
 )
 from rulerepo_server.services.playground.service import PlaygroundService
-from rulerepo_server.services.playground.test_generator import generate_test_cases
+from rulerepo_server.services.playground.test_generator import (
+    generate_test_cases,
+    suggest_test_input,
+)
 from rulerepo_server.services.playground.test_runner import run_test_suite
 
 logger = get_logger(__name__)
@@ -218,3 +223,59 @@ async def generate_tests(
 
     await session.commit()
     return persisted
+
+
+# ---- Suggest test input via LLM ----
+
+
+@router.post("/suggest-input", response_model=SuggestInputResponse)
+async def suggest_input(
+    body: SuggestInputRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> SuggestInputResponse:
+    """Use Gemini to suggest a test input for a rule.
+
+    Accepts either a rule_id (to look up the rule) or inline rule fields.
+
+    Args:
+        body: Request with rule details and input preferences.
+        session: Injected database session.
+
+    Returns:
+        A suggested sample input and description.
+    """
+    gemini = _get_optional_gemini()
+    if gemini is None:
+        return SuggestInputResponse(
+            sample_input="",
+            description="LLM unavailable — cannot generate suggestions.",
+        )
+
+    # Build rule dict from rule_id or inline fields
+    if body.rule_id:
+        rule_result = await session.execute(select(RuleModel).where(RuleModel.id == body.rule_id))
+        rule_model = rule_result.scalar_one_or_none()
+        if rule_model is None:
+            return SuggestInputResponse(
+                sample_input="",
+                description=f"Rule {body.rule_id} not found.",
+            )
+        rule_dict: dict[str, Any] = {
+            "statement": rule_model.statement,
+            "modality": rule_model.modality,
+            "severity": rule_model.severity,
+        }
+    else:
+        rule_dict = {
+            "statement": body.rule_statement or "",
+            "modality": body.rule_modality or "MUST",
+            "severity": body.rule_severity or "MEDIUM",
+        }
+
+    result = await suggest_test_input(
+        rule_dict,
+        gemini,
+        input_mode=body.input_mode,
+        violating=body.violating,
+    )
+    return SuggestInputResponse(**result)

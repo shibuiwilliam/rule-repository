@@ -77,9 +77,7 @@ async def simulate_impact(
         }
 
     # Load current snapshot
-    current_snap_query = select(RuleSetSnapshotModel).where(
-        RuleSetSnapshotModel.id == current_deployment.snapshot_id
-    )
+    current_snap_query = select(RuleSetSnapshotModel).where(RuleSetSnapshotModel.id == current_deployment.snapshot_id)
     current_snap_result = await session.execute(current_snap_query)
     current_snapshot = current_snap_result.scalar_one_or_none()
 
@@ -121,13 +119,9 @@ async def simulate_impact(
             f"current '{compare_environment}' deployment."
         )
     if only_in_current:
-        risk_parts.append(
-            f"{len(only_in_current)} rule(s) currently in '{compare_environment}' would be removed."
-        )
+        risk_parts.append(f"{len(only_in_current)} rule(s) currently in '{compare_environment}' would be removed.")
     if not only_in_proposed and not only_in_current:
-        risk_parts.append(
-            "The proposed snapshot is identical to the current deployment. No impact expected."
-        )
+        risk_parts.append("The proposed snapshot is identical to the current deployment. No impact expected.")
     if total_replayed > 0:
         risk_parts.append(f"Analyzed {total_replayed} recent evaluation(s) from the last 30 days.")
     else:

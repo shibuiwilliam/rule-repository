@@ -180,9 +180,7 @@ class PostgresRuleRepository:
             The latest revision number, or 0 if no revisions exist.
         """
         result = await self._session.execute(
-            select(func.max(RuleRevisionModel.revision_number)).where(
-                RuleRevisionModel.rule_id == rule_id
-            )
+            select(func.max(RuleRevisionModel.revision_number)).where(RuleRevisionModel.rule_id == rule_id)
         )
         return result.scalar_one() or 0
 
@@ -217,15 +215,12 @@ class PostgresRuleRepository:
         """
         result = await self._session.execute(
             select(RuleRelationshipModel).where(
-                (RuleRelationshipModel.source_id == rule_id)
-                | (RuleRelationshipModel.target_id == rule_id)
+                (RuleRelationshipModel.source_id == rule_id) | (RuleRelationshipModel.target_id == rule_id)
             )
         )
         return list(result.scalars().all())
 
-    async def delete_relationship(
-        self, source_id: UUID, target_id: UUID, relationship_type: str
-    ) -> None:
+    async def delete_relationship(self, source_id: UUID, target_id: UUID, relationship_type: str) -> None:
         """Delete a specific relationship between two rules.
 
         Args:

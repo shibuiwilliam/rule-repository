@@ -31,7 +31,7 @@ async def get_graph_repo() -> Neo4jGraphRepository:
     return Neo4jGraphRepository(get_neo4j_driver())
 
 
-def _get_optional_gemini():  # noqa: ANN202
+def _get_optional_gemini():
     """Attempt to get Gemini client, returning None if unavailable.
 
     Logs a warning on failure rather than silently swallowing the error.

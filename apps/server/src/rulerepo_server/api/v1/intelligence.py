@@ -15,6 +15,19 @@ async def _get_intelligence_service(
     return IntelligenceService(session)
 
 
+@router.get("/summary")
+async def get_home_summary(
+    project_id: str | None = Query(default=None),
+    service: IntelligenceService = Depends(_get_intelligence_service),
+) -> dict:
+    """One-call summary for the outcome-oriented home dashboard.
+
+    Returns compliance rate, trend, rule counts by status, top violated rules,
+    recent corrections, and pending action counts.
+    """
+    return await service.get_home_summary(project_id=project_id)
+
+
 @router.get("/dashboard")
 async def get_dashboard(
     project_id: str | None = Query(default=None),

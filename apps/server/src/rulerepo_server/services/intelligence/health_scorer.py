@@ -42,11 +42,7 @@ def compute_completeness(rule: dict[str, Any]) -> tuple[float, list[str]]:
         "source_refs": (15, lambda r: bool(r.get("source_refs"))),
         "governance_owner": (
             10,
-            lambda r: bool(
-                r.get("governance", {}).get("owner")
-                if isinstance(r.get("governance"), dict)
-                else False
-            ),
+            lambda r: bool(r.get("governance", {}).get("owner") if isinstance(r.get("governance"), dict) else False),
         ),
     }
 

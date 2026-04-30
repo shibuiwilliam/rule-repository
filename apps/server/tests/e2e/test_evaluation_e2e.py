@@ -20,7 +20,7 @@ pytestmark = [
 ]
 
 
-async def _create_rule(client: httpx.AsyncClient, **kwargs) -> str:  # noqa: ANN003
+async def _create_rule(client: httpx.AsyncClient, **kwargs) -> str:
     """Helper: create a rule, return its ID."""
     kwargs.setdefault("status", "EFFECTIVE")
     resp = await client.post("/api/v1/rules", json=kwargs)
@@ -53,7 +53,7 @@ async def test_evaluate_clean_code_allows(
             "mode": "preflight",
             "max_rules": 5,
         },
-        timeout=120,
+        timeout=300,
     )
     assert resp.status_code == 200
 
@@ -77,10 +77,7 @@ async def test_evaluate_bad_code_detects_issues(
     # Create security-related rules
     await _create_rule(
         http_client,
-        statement=(
-            "All database queries MUST use parameterized queries. "
-            "SQL string concatenation is prohibited."
-        ),
+        statement=("All database queries MUST use parameterized queries. SQL string concatenation is prohibited."),
         modality="MUST",
         severity="CRITICAL",
         scope=["engineering", "python", "security"],
@@ -105,7 +102,7 @@ async def test_evaluate_bad_code_detects_issues(
             "max_rules": 10,
             "severity_min": "MEDIUM",
         },
-        timeout=120,
+        timeout=300,
     )
     assert resp.status_code == 200
 

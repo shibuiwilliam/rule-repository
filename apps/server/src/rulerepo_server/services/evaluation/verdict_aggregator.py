@@ -84,9 +84,7 @@ def _build_fix_summary(verdicts: list[RuleVerdict]) -> str | None:
     their fix_suggestion fields into a numbered list.
     """
     violations = [v for v in verdicts if v.verdict == Verdict.DENY and v.fix_suggestion]
-    warnings = [
-        v for v in verdicts if v.verdict == Verdict.NEEDS_CONFIRMATION and v.issue_description
-    ]
+    warnings = [v for v in verdicts if v.verdict == Verdict.NEEDS_CONFIRMATION and v.issue_description]
 
     if not violations and not warnings:
         return None

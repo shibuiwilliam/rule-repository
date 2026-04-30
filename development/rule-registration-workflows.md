@@ -92,7 +92,7 @@ sequenceDiagram
     API->>Storage: retrieve(document_id) → file_bytes
 
     API->>Pipeline: extract_from_document(file_bytes, mime_type, filename)
-    
+
     alt PDF > 50KB
         Pipeline->>Gemini: Files API upload(file_bytes)
         Gemini-->>Pipeline: file_uri
@@ -100,7 +100,7 @@ sequenceDiagram
     else PDF ≤ 50KB or text/markdown
         Pipeline->>Gemini: generate_content(inline_content + extract_rules.txt prompt)
     end
-    
+
     Gemini-->>Pipeline: JSON [{statement, modality, severity, scope, tags, confidence}, ...]
     Pipeline->>Audit: append(action="llm_extraction_call", model_id, latency_ms)
 

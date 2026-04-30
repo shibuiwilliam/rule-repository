@@ -22,9 +22,7 @@ logger = get_logger(__name__)
 _TEST_FILE_PATTERN = re.compile(r"(^|/)test_[^/]+\.py$")
 _PY_FILE_PATTERN = re.compile(r"\.py$")
 _PUBLIC_FUNC_PATTERN = re.compile(r"^def\s+([a-z_][a-zA-Z0-9_]*)\s*\(", re.MULTILINE)
-_DOCSTRING_AFTER_DEF = re.compile(
-    r"^def\s+[a-z_][a-zA-Z0-9_]*\s*\([^)]*\)[^:]*:\s*\n\s+\"\"\"", re.MULTILINE
-)
+_DOCSTRING_AFTER_DEF = re.compile(r"^def\s+[a-z_][a-zA-Z0-9_]*\s*\([^)]*\)[^:]*:\s*\n\s+\"\"\"", re.MULTILINE)
 _IMPORT_PATTERN = re.compile(r"^(?:from\s+(\S+)|import\s+(\S+))", re.MULTILINE)
 
 # Minimum number of files needed to detect a pattern
@@ -52,11 +50,7 @@ class CodePatternsAnalyzer(SourceAnalyzer):
         """
         patterns: list[RawPattern] = []
 
-        py_files = {
-            path: content
-            for path, content in context.file_contents.items()
-            if _PY_FILE_PATTERN.search(path)
-        }
+        py_files = {path: content for path, content in context.file_contents.items() if _PY_FILE_PATTERN.search(path)}
 
         if len(py_files) < _MIN_FILES_FOR_PATTERN:
             logger.debug("code_patterns_insufficient_files", count=len(py_files))
@@ -94,9 +88,7 @@ class CodePatternsAnalyzer(SourceAnalyzer):
                     scope=["python", "testing"],
                     tags=["naming", "testing"],
                     source_type="code_patterns",
-                    source_evidence=(
-                        f"{matching}/{len(test_files)} test files use test_*.py naming"
-                    ),
+                    source_evidence=(f"{matching}/{len(test_files)} test files use test_*.py naming"),
                     confidence=ratio * 0.9,
                 )
             ]
@@ -136,8 +128,7 @@ class CodePatternsAnalyzer(SourceAnalyzer):
                     tags=["documentation", "docstrings"],
                     source_type="code_patterns",
                     source_evidence=(
-                        f"{funcs_with_docstrings}/{total_public_funcs} public functions "
-                        f"have docstrings ({ratio:.0%})"
+                        f"{funcs_with_docstrings}/{total_public_funcs} public functions have docstrings ({ratio:.0%})"
                     ),
                     confidence=ratio * 0.9,
                 )
@@ -200,9 +191,7 @@ class CodePatternsAnalyzer(SourceAnalyzer):
                             scope=["python", dir_name],
                             tags=["imports", "conventions"],
                             source_type="code_patterns",
-                            source_evidence=(
-                                f"{count}/{file_count} files in {directory} import {module}"
-                            ),
+                            source_evidence=(f"{count}/{file_count} files in {directory} import {module}"),
                             confidence=ratio * 0.9,
                         )
                     )

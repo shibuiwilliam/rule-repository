@@ -2,11 +2,11 @@
 
 **YourExampleCompany** — IT Service Consultation
 
-**Document ID:** POL-001  
-**Version:** 2.0  
-**Effective Date:** 2025-01-01  
-**Owner:** People & Culture Department  
-**Approved by:** CEO, Board of Directors  
+**Document ID:** POL-001
+**Version:** 2.0
+**Effective Date:** 2025-01-01
+**Owner:** People & Culture Department
+**Approved by:** CEO, Board of Directors
 **Review Cycle:** Annual
 
 ---

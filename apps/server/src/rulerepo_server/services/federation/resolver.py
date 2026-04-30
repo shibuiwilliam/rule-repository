@@ -40,9 +40,7 @@ async def get_ancestor_chain(
     current_id: str | None = federation_id
 
     while current_id is not None:
-        result = await session.execute(
-            select(RuleFederationModel).where(RuleFederationModel.id == UUID(current_id))
-        )
+        result = await session.execute(select(RuleFederationModel).where(RuleFederationModel.id == UUID(current_id)))
         node = result.scalar_one_or_none()
         if node is None:
             break
@@ -76,9 +74,7 @@ async def resolve_effective_rules(
 
     for node in reversed(chain):
         result = await session.execute(
-            select(RuleFederationMembershipModel).where(
-                RuleFederationMembershipModel.federation_id == node.id
-            )
+            select(RuleFederationMembershipModel).where(RuleFederationMembershipModel.federation_id == node.id)
         )
         memberships = list(result.scalars().all())
 
@@ -88,9 +84,7 @@ async def resolve_effective_rules(
                 effective.pop(str(membership.override_parent_rule_id), None)
 
             # Fetch the actual rule
-            rule_result = await session.execute(
-                select(RuleModel).where(RuleModel.id == membership.rule_id)
-            )
+            rule_result = await session.execute(select(RuleModel).where(RuleModel.id == membership.rule_id))
             rule = rule_result.scalar_one_or_none()
             if rule is not None:
                 effective[str(membership.rule_id)] = {

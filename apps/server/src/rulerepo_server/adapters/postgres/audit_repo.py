@@ -105,9 +105,7 @@ class AuditLogRepository:
         Returns:
             True if the chain is valid, False if tampered.
         """
-        result = await self._session.execute(
-            select(AuditLogModel).order_by(AuditLogModel.timestamp.asc()).limit(limit)
-        )
+        result = await self._session.execute(select(AuditLogModel).order_by(AuditLogModel.timestamp.asc()).limit(limit))
         entries = list(result.scalars().all())
 
         if not entries:

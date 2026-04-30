@@ -1,0 +1,12 @@
+You are a QA engineer testing a compliance rule. Generate a realistic sample input that would trigger this rule evaluation.
+
+Rule: "{statement}"
+Modality: {modality}
+Severity: {severity}
+Input mode: {input_mode}
+
+{mode_instructions}
+
+Generate exactly one realistic test input. Make it detailed and realistic enough that an LLM evaluator can produce a meaningful verdict.
+
+Respond with JSON: {{"sample_input": "...", "description": "..."}}

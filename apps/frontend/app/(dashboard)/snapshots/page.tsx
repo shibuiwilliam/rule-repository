@@ -12,10 +12,12 @@ import {
   simulateSnapshot,
   getDeployments,
 } from "@/lib/api";
+import { useProject } from "@/lib/project-context";
 
 type DeployEnv = "production" | "staging" | "development";
 
 export default function SnapshotsPage() {
+  const { currentProject } = useProject();
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +39,7 @@ export default function SnapshotsPage() {
 
   const refresh = useCallback(async () => {
     try {
-      const [snaps, deps] = await Promise.all([getSnapshots(), getDeployments()]);
+      const [snaps, deps] = await Promise.all([getSnapshots(currentProject?.id), getDeployments()]);
       setSnapshots(snaps);
       setDeployments(deps);
     } catch (err) {
@@ -45,7 +47,7 @@ export default function SnapshotsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentProject?.id]);
 
   useEffect(() => {
     refresh();
@@ -68,6 +70,7 @@ export default function SnapshotsPage() {
         name,
         scope_filter: scopes.length > 0 ? scopes : undefined,
         description: description || undefined,
+        project_id: currentProject?.id,
       });
       setName("");
       setScopeFilter("");

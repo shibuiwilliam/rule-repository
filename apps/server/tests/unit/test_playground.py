@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -15,7 +13,6 @@ from rulerepo_server.services.snapshots.serializer import (
     deserialize_snapshot,
     serialize_rules,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers — Gemini mock

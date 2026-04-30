@@ -49,9 +49,7 @@ async def run_test_suite(
     }
 
     # Fetch test cases
-    tc_result = await session.execute(
-        select(RuleTestCaseModel).where(RuleTestCaseModel.rule_id == rule_id)
-    )
+    tc_result = await session.execute(select(RuleTestCaseModel).where(RuleTestCaseModel.rule_id == rule_id))
     test_cases = list(tc_result.scalars().all())
 
     if not test_cases:
@@ -75,9 +73,7 @@ async def run_test_suite(
             tc.passing = False
             tc.last_run_at = datetime.now(tz=UTC)
         else:
-            verdict_obj, _model_id, _latency = await evaluate_rule(
-                rule_dict, context, gemini, cache_repo=None
-            )
+            verdict_obj, _model_id, _latency = await evaluate_rule(rule_dict, context, gemini, cache_repo=None)
             tc.last_result = verdict_obj.verdict.value
             tc.passing = verdict_obj.verdict.value == tc.expected_verdict
             tc.last_run_at = datetime.now(tz=UTC)

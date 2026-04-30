@@ -14,7 +14,7 @@ Files changed: {file_paths}
 Task:
 1. Determine if the code change violates, complies with, or is unrelated to this rule.
 2. If it violates the rule, identify the specific location(s) in the diff.
-3. If it violates the rule, suggest a specific fix.
+3. If it violates the rule, provide machine-readable remediations that can be applied automatically.
 
 Respond with JSON:
 {{
@@ -22,7 +22,7 @@ Respond with JSON:
   "confidence": <float 0.0-1.0>,
   "reasoning": "<why this verdict>",
   "issue_description": "<what's wrong, empty string if ALLOW>",
-  "fix_suggestion": "<how to fix it, null if ALLOW>",
+  "fix_suggestion": "<human-readable summary of how to fix it, null if ALLOW>",
   "locations": [
     {{
       "file_path": "<file>",
@@ -30,6 +30,18 @@ Respond with JSON:
       "end_line": <int or null>,
       "function_name": "<name or null>",
       "snippet": "<relevant code fragment or null>"
+    }}
+  ],
+  "remediations": [
+    {{
+      "type": "replace" | "insert" | "delete",
+      "file_path": "<file>",
+      "start_line": <int>,
+      "end_line": <int or null>,
+      "original": "<current code, null for insert>",
+      "replacement": "<new code, null for delete>",
+      "description": "<what this remediation fixes>",
+      "auto_applicable": <boolean>
     }}
   ]
 }}
@@ -39,3 +51,5 @@ Rules:
 - DENY only when the violation is clear and specific. If you are unsure, return NEEDS_CONFIRMATION.
 - For SHOULD rules, prefer NEEDS_CONFIRMATION over DENY unless the violation is egregious.
 - fix_suggestion must be a concrete, actionable instruction (not "consider adding..." but "add X at line Y").
+- For each violation, provide at least one remediation with exact file path and line numbers.
+- Set auto_applicable=true only for SHOULD-level rules where the fix is unambiguous and low-risk.

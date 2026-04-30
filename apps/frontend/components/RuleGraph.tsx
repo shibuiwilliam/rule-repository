@@ -5,7 +5,6 @@
  * Renders rule nodes and their relationships (REFINES, OVERRIDES, etc.)
  */
 
-import { useCallback, useEffect, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,

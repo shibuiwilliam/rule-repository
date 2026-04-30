@@ -10,6 +10,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rulerepo_server.adapters.postgres.models import (
+    DEFAULT_PROJECT_ID,
     RuleModel,
     RuleSetDeploymentModel,
     RuleSetSnapshotModel,
@@ -41,6 +42,7 @@ class SnapshotService:
         scope_filter: list[str] | None = None,
         description: str | None = None,
         created_by: str = "system",
+        project_id: str | None = None,
     ) -> dict[str, Any]:
         """Create a new snapshot of active rules matching *scope_filter*.
 
@@ -60,6 +62,8 @@ class SnapshotService:
         query = select(RuleModel).where(
             RuleModel.status.in_(["APPROVED", "EFFECTIVE"]),
         )
+        if project_id:
+            query = query.where(RuleModel.project_id == project_id)
         result = await self._session.execute(query)
         all_rules: list[Any] = list(result.scalars().all())
 
@@ -81,6 +85,7 @@ class SnapshotService:
             rule_snapshot=rule_snapshot,
             rule_count=len(rule_snapshot),
             created_by=created_by,
+            project_id=project_id or DEFAULT_PROJECT_ID,
         )
         self._session.add(model)
         await self._session.flush()
@@ -102,9 +107,11 @@ class SnapshotService:
             "created_at": model.created_at.isoformat() if model.created_at else "",
         }
 
-    async def list_snapshots(self) -> list[dict[str, Any]]:
+    async def list_snapshots(self, project_id: str | None = None) -> list[dict[str, Any]]:
         """Return all snapshots ordered by created_at descending."""
         query = select(RuleSetSnapshotModel).order_by(RuleSetSnapshotModel.created_at.desc())
+        if project_id:
+            query = query.where(RuleSetSnapshotModel.project_id == project_id)
         result = await self._session.execute(query)
         rows = result.scalars().all()
         return [_snapshot_to_dict(r) for r in rows]

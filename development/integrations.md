@@ -349,13 +349,15 @@ The Rule Repository uses **arq** (async Redis queue) for background job processi
 
 ### Cron Jobs
 
-Three scheduled cron jobs are defined in `workers/settings.py`. All three have real implementations that query PostgreSQL and perform actual computation.
+Five scheduled cron jobs are defined in `workers/settings.py`. All have real implementations that query PostgreSQL and perform actual computation.
 
 | Job | Schedule | Description |
 |---|---|---|
-| `compute_health_scores` | Daily at 2:00 AM (`hour=2, minute=0`) | Recomputes health scores for all rules with status `APPROVED` or `EFFECTIVE`. |
-| `generate_recommendations_task` | Daily at 3:00 AM (`hour=3, minute=0`) | Analyzes rule health scores and correction patterns to produce improvement recommendations. |
-| `compute_correction_stats` | Hourly at minute 0 (`minute=0`) | Aggregates correction statistics by analysis_type and status from the corrections table. |
+| `compute_health_scores` | Daily at 2:00 AM | Recomputes health scores for all APPROVED/EFFECTIVE rules. Creates alerts for unhealthy/dormant rules. |
+| `generate_recommendations_task` | Daily at 3:00 AM | Analyzes rule health scores and correction patterns to produce improvement recommendations. |
+| `auto_promote_rules` | Daily at 4:00 AM | Promotes/demotes rules based on false-positive rate (experimental→stable→proven). |
+| `cluster_corrections` | Daily at 5:00 AM | Clusters similar corrections, auto-drafts rule proposals via Gemini (correction-to-rule flywheel). |
+| `compute_correction_stats` | Hourly at minute 0 | Aggregates correction statistics by analysis_type and status from the corrections table. |
 
 ### Cron Job Details
 
@@ -374,6 +376,21 @@ Three scheduled cron jobs are defined in `workers/settings.py`. All three have r
 3. Generates improvement recommendations via `intelligence/recommender.py`.
 4. Persists recommendations as `RuleRecommendationModel` rows.
 5. Creates `high_deny_rate` alerts when a rule's deny rate exceeds 50% with at least 10 evaluations.
+
+**`auto_promote_rules`**:
+1. Queries all APPROVED/EFFECTIVE rules with 20+ total evaluations (true + false positive counts).
+2. Calculates false-positive rate for each rule.
+3. Promotes: experimental → stable (30+ days, FP < 5%), stable → proven (60+ days, FP < 1%).
+4. Demotes: stable/proven → experimental if FP rate exceeds 10%.
+5. Logs each maturity level change with old/new level, FP rate, and rule age.
+
+**`cluster_corrections`**:
+1. Fetches unprocessed (pending) corrections from the last 14 days.
+2. Generates embeddings for each correction's delta summary using Gemini.
+3. Clusters corrections by cosine similarity (threshold 0.8).
+4. For clusters with 3+ corrections and average confidence > 0.8, calls Gemini to draft a rule statement.
+5. Creates `DraftRuleProposalModel` entries with status "pending" for human review.
+6. Proposals can be approved via `POST /api/v1/feedback/proposals/{id}/approve`, which creates a rule with `maturity_level=experimental`.
 
 **`compute_correction_stats`**:
 1. Aggregates corrections by `analysis_type` (e.g., `new_rule`, `improve`, `adjust_scope`).

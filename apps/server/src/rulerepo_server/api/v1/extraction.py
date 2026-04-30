@@ -16,8 +16,9 @@ from rulerepo_server.adapters.postgres.session import get_db_session
 from rulerepo_server.core.deps import get_rule_service
 from rulerepo_server.core.errors import NotFoundError
 from rulerepo_server.core.logging import get_logger
+from rulerepo_server.domain.rule import RuleStatus
 from rulerepo_server.schemas.extraction import CandidateReviewRequest
-from rulerepo_server.schemas.rule import RuleCreate
+from rulerepo_server.schemas.rule import RuleCreate, SourceRefSchema
 from rulerepo_server.services.extraction.pipeline import ExtractionPipeline
 from rulerepo_server.services.rule_service import RuleService
 
@@ -37,16 +38,17 @@ async def list_documents(
     from sqlalchemy import func
 
     offset = (page - 1) * page_size
-    query = (
-        select(DocumentModel)
-        .order_by(DocumentModel.uploaded_at.desc())
-        .offset(offset)
-        .limit(page_size)
-    )
+    query = select(DocumentModel).order_by(DocumentModel.uploaded_at.desc())
+    if project_id:
+        query = query.where(DocumentModel.project_id == project_id)
+    query = query.offset(offset).limit(page_size)
     result = await session.execute(query)
     docs = list(result.scalars().all())
 
-    count_result = await session.execute(select(func.count()).select_from(DocumentModel))
+    count_query = select(func.count()).select_from(DocumentModel)
+    if project_id:
+        count_query = count_query.where(DocumentModel.project_id == project_id)
+    count_result = await session.execute(count_query)
     total = count_result.scalar_one()
 
     return {
@@ -144,8 +146,11 @@ async def upload_document(
         except Exception:
             pass
 
+    from rulerepo_server.adapters.postgres.models import DEFAULT_PROJECT_ID
+
     doc_model = DocumentModel(
         id=UUID(doc_id),
+        project_id=project_id or DEFAULT_PROJECT_ID,
         filename=filename,
         mime_type=mime_type,
         size_bytes=len(file_bytes),
@@ -225,9 +230,7 @@ async def get_extraction(
     session: AsyncSession = Depends(get_db_session),
 ) -> dict:
     """Get extraction results by ID."""
-    result = await session.execute(
-        select(ExtractionModel).where(ExtractionModel.id == extraction_id)
-    )
+    result = await session.execute(select(ExtractionModel).where(ExtractionModel.id == extraction_id))
     extraction = result.scalar_one_or_none()
     if extraction is None:
         raise NotFoundError("Extraction", str(extraction_id))
@@ -250,15 +253,18 @@ async def review_extraction(
     rule_service: RuleService = Depends(get_rule_service),
 ) -> dict:
     """Review extraction results — approve or edit candidates to create rules."""
-    result = await session.execute(
-        select(ExtractionModel).where(ExtractionModel.id == extraction_id)
-    )
+    result = await session.execute(select(ExtractionModel).where(ExtractionModel.id == extraction_id))
     extraction = result.scalar_one_or_none()
     if extraction is None:
         raise NotFoundError("Extraction", str(extraction_id))
 
     candidates = extraction.candidates
     created_rules = []
+
+    # Load the document to inherit its project_id
+    doc_result = await session.execute(select(DocumentModel).where(DocumentModel.id == extraction.document_id))
+    document = doc_result.scalar_one_or_none()
+    doc_project_id = str(document.project_id) if document else None
 
     # Process approved candidates — mark as APPROVED since human explicitly approved
     for idx in review.approved_indices:
@@ -273,19 +279,19 @@ async def review_extraction(
                 statement=candidate["statement"],
                 modality=candidate.get("modality", "MUST"),
                 severity=candidate.get("severity", "MEDIUM"),
-                status="APPROVED",
+                status=RuleStatus.APPROVED,
                 scope=candidate.get("scope", []),
                 tags=candidate.get("tags", []),
                 rationale=candidate.get("rationale", ""),
-                source_refs=[source_ref],
+                source_refs=[SourceRefSchema(**source_ref)],
             )
-            rule = await rule_service.create_rule(rule_data, actor="extraction_pipeline")
+            rule = await rule_service.create_rule(rule_data, actor="extraction_pipeline", project_id=doc_project_id)
             created_rules.append(rule)
 
     # Process edited candidates — also mark as APPROVED
-    for idx_str, edit in review.edits.items():
-        edit.status = "APPROVED"
-        rule = await rule_service.create_rule(edit, actor="extraction_pipeline")
+    for _idx_str, edit in review.edits.items():
+        edit.status = RuleStatus.APPROVED  # type: ignore[assignment]
+        rule = await rule_service.create_rule(edit, actor="extraction_pipeline", project_id=doc_project_id)
         created_rules.append(rule)
 
     # Update extraction status

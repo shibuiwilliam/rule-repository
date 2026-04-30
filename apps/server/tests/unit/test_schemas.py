@@ -3,9 +3,9 @@
 import pytest
 from pydantic import ValidationError
 
-from rulerepo_server.schemas.rule import RuleCreate, RuleUpdate, RuleResponse
-from rulerepo_server.schemas.search import SearchQuery, CategorySearchQuery
 from rulerepo_server.schemas.intent import IntentRequest
+from rulerepo_server.schemas.rule import RuleCreate, RuleUpdate
+from rulerepo_server.schemas.search import SearchQuery
 
 
 class TestRuleCreate:

@@ -47,6 +47,7 @@ async def main() -> None:
     for rule in rules:
         es_doc = {
             "rule_id": str(rule.id),
+            "project_id": str(rule.project_id) if hasattr(rule, "project_id") and rule.project_id else None,
             "statement": rule.statement,
             "modality": rule.modality,
             "severity": rule.severity,

@@ -2,11 +2,11 @@
 
 **YourExampleCompany** — IT Service Consultation
 
-**Document ID:** STD-001  
-**Version:** 4.0  
-**Effective Date:** 2025-03-01  
-**Owner:** Engineering Excellence Team  
-**Approved by:** CTO, VP of Engineering  
+**Document ID:** STD-001
+**Version:** 4.0
+**Effective Date:** 2025-03-01
+**Owner:** Engineering Excellence Team
+**Approved by:** CTO, VP of Engineering
 **Review Cycle:** Quarterly
 
 ---

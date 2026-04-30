@@ -81,9 +81,7 @@ class ExtractionPipeline:
         # Prepare document for Gemini
         if mime_type == "application/pdf" and len(file_bytes) > 50_000:
             file_ref = await upload_to_files_api(self._client, file_bytes, mime_type, filename)
-            content_parts: list[types.Part] = [
-                types.Part.from_uri(file_uri=file_ref.uri, mime_type=mime_type)
-            ]
+            content_parts: list[types.Part] = [types.Part.from_uri(file_uri=file_ref.uri, mime_type=mime_type)]
         elif mime_type == "application/pdf":
             content_parts = [create_inline_part(file_bytes, mime_type)]
         else:
@@ -92,9 +90,7 @@ class ExtractionPipeline:
 
         # Stage 1: Extract rules
         extract_prompt = _load_prompt("extract_rules.txt")
-        candidates = await self._extract_rules(
-            content_parts, extract_prompt, extraction_id=str(extraction_id)
-        )
+        candidates = await self._extract_rules(content_parts, extract_prompt, extraction_id=str(extraction_id))
 
         latency_s = round(time.time() - start_time, 2)
         logger.info(

@@ -70,9 +70,7 @@ async def compute_health_scores(ctx: dict) -> None:
     logger.info("compute_health_scores_started")
     session = await _get_worker_session()
     try:
-        result = await session.execute(
-            select(RuleModel).where(RuleModel.status.in_(["APPROVED", "EFFECTIVE"]))
-        )
+        result = await session.execute(select(RuleModel).where(RuleModel.status.in_(["APPROVED", "EFFECTIVE"])))
         rules = list(result.scalars().all())
         logger.info("compute_health_scores_rules_found", count=len(rules))
 
@@ -120,6 +118,7 @@ async def compute_health_scores(ctx: dict) -> None:
                     ),
                     rule_id=rule.id,
                     status="active",
+                    project_id=rule.project_id,
                 )
                 session.add(alert)
 
@@ -136,6 +135,7 @@ async def compute_health_scores(ctx: dict) -> None:
                     ),
                     rule_id=rule.id,
                     status="active",
+                    project_id=rule.project_id,
                 )
                 session.add(alert)
 
@@ -167,9 +167,7 @@ async def generate_recommendations_task(ctx: dict) -> None:
     logger.info("generate_recommendations_started")
     session = await _get_worker_session()
     try:
-        result = await session.execute(
-            select(RuleModel).where(RuleModel.status.in_(["APPROVED", "EFFECTIVE"]))
-        )
+        result = await session.execute(select(RuleModel).where(RuleModel.status.in_(["APPROVED", "EFFECTIVE"])))
         rules = list(result.scalars().all())
         total_recs = 0
 
@@ -210,6 +208,7 @@ async def generate_recommendations_task(ctx: dict) -> None:
                     ),
                     rule_id=rule.id,
                     status="active",
+                    project_id=rule.project_id,
                 )
                 session.add(alert)
 
@@ -270,6 +269,96 @@ async def compute_correction_stats(ctx: dict) -> None:
         await session.close()
 
 
+async def auto_promote_rules(ctx: dict) -> None:
+    """Promote or demote rules based on false-positive rate.
+
+    - experimental → stable: 30+ days, 20+ evals, FP rate < 5%
+    - stable → proven: 60+ days, FP rate < 1%
+    - stable/proven → experimental: FP rate > 10% (demotion)
+    """
+    from rulerepo_server.adapters.postgres.models import RuleModel
+
+    session = await _get_worker_session()
+    try:
+        result = await session.execute(select(RuleModel).where(RuleModel.status.in_(["APPROVED", "EFFECTIVE"])))
+        rules = list(result.scalars().all())
+
+        promoted = 0
+        demoted = 0
+        now = datetime.now(tz=UTC)
+
+        for rule in rules:
+            total = rule.true_positive_count + rule.false_positive_count
+            if total < 20:
+                continue
+            fp_rate = rule.false_positive_count / max(total, 1)
+            days_old = (now - rule.created_at).days if rule.created_at else 0
+
+            old_level = rule.maturity_level
+
+            if rule.maturity_level == "experimental" and days_old >= 30 and fp_rate < 0.05:
+                rule.maturity_level = "stable"
+                promoted += 1
+            elif rule.maturity_level == "stable" and days_old >= 60 and fp_rate < 0.01:
+                rule.maturity_level = "proven"
+                promoted += 1
+            elif rule.maturity_level in ("stable", "proven") and fp_rate > 0.10:
+                rule.maturity_level = "experimental"
+                demoted += 1
+
+            if rule.maturity_level != old_level:
+                logger.info(
+                    "maturity_changed",
+                    rule_id=str(rule.id),
+                    old_level=old_level,
+                    new_level=rule.maturity_level,
+                    fp_rate=round(fp_rate, 3),
+                    days_old=days_old,
+                )
+
+        await session.commit()
+        logger.info(
+            "auto_promote_rules_complete",
+            total_evaluated=len(rules),
+            promoted=promoted,
+            demoted=demoted,
+        )
+    except Exception:
+        await session.rollback()
+        logger.exception("auto_promote_rules_failed")
+        raise
+    finally:
+        await session.close()
+
+
+async def cluster_corrections(ctx: dict) -> None:
+    """Cluster recent corrections and auto-draft rule proposals.
+
+    Per PROJECT_ENHANCE.md §3: the correction-to-rule flywheel.
+    """
+    session = await _get_worker_session()
+    try:
+        from rulerepo_server.services.feedback.auto_drafter import cluster_and_draft
+
+        gemini = None
+        try:
+            from rulerepo_server.adapters.gemini.client import get_gemini_client
+
+            gemini = get_gemini_client()
+        except Exception:
+            logger.warning("cluster_corrections_no_gemini")
+
+        proposals = await cluster_and_draft(session, gemini)
+        await session.commit()
+        logger.info("cluster_corrections_complete", proposals_created=proposals)
+    except Exception:
+        await session.rollback()
+        logger.exception("cluster_corrections_failed")
+        raise
+    finally:
+        await session.close()
+
+
 class WorkerSettings:
     """arq worker configuration."""
 
@@ -277,6 +366,8 @@ class WorkerSettings:
     cron_jobs = [
         cron(compute_health_scores, hour=2, minute=0),
         cron(generate_recommendations_task, hour=3, minute=0),
+        cron(auto_promote_rules, hour=4, minute=0),
+        cron(cluster_corrections, hour=5, minute=0),
         cron(compute_correction_stats, minute=0),
     ]
 

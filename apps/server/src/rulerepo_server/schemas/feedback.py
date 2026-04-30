@@ -13,9 +13,7 @@ class CorrectionRequest(BaseModel):
     file_paths: list[str] = Field(default_factory=list, description="Affected file paths.")
     repository: str | None = Field(default=None, description="Repository identifier.")
     pr_number: int | None = Field(default=None, description="Pull request number.")
-    evaluation_ids: list[str] = Field(
-        default_factory=list, description="IDs of related evaluations."
-    )
+    evaluation_ids: list[str] = Field(default_factory=list, description="IDs of related evaluations.")
 
 
 class CorrectionResponse(BaseModel):

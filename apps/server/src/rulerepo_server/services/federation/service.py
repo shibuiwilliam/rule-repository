@@ -95,9 +95,7 @@ class FederationService:
         Returns:
             List of root federation node dicts with nested children.
         """
-        result = await self._session.execute(
-            select(RuleFederationModel).order_by(RuleFederationModel.created_at)
-        )
+        result = await self._session.execute(select(RuleFederationModel).order_by(RuleFederationModel.created_at))
         all_nodes = list(result.scalars().all())
 
         # Build lookup and tree
@@ -156,9 +154,7 @@ class FederationService:
 
         rules: list[dict[str, Any]] = []
         for m in memberships:
-            rule_result = await self._session.execute(
-                select(RuleModel).where(RuleModel.id == m.rule_id)
-            )
+            rule_result = await self._session.execute(select(RuleModel).where(RuleModel.id == m.rule_id))
             rule = rule_result.scalar_one_or_none()
             if rule is not None:
                 rules.append(
@@ -204,9 +200,7 @@ class FederationService:
             raise ValueError(msg)
 
         # Verify rule exists
-        rule_result = await self._session.execute(
-            select(RuleModel).where(RuleModel.id == UUID(rule_id))
-        )
+        rule_result = await self._session.execute(select(RuleModel).where(RuleModel.id == UUID(rule_id)))
         if rule_result.scalar_one_or_none() is None:
             msg = f"Rule not found: {rule_id}"
             raise ValueError(msg)
@@ -214,9 +208,7 @@ class FederationService:
         membership = RuleFederationMembershipModel(
             rule_id=UUID(rule_id),
             federation_id=UUID(federation_id),
-            override_parent_rule_id=UUID(override_parent_rule_id)
-            if override_parent_rule_id
-            else None,
+            override_parent_rule_id=UUID(override_parent_rule_id) if override_parent_rule_id else None,
         )
         self._session.add(membership)
         await self._session.flush()
@@ -263,9 +255,7 @@ class FederationService:
             raise ValueError(msg)
 
         await self._session.execute(
-            delete(RuleFederationMembershipModel).where(
-                RuleFederationMembershipModel.id == membership.id
-            )
+            delete(RuleFederationMembershipModel).where(RuleFederationMembershipModel.id == membership.id)
         )
         await self._session.flush()
 

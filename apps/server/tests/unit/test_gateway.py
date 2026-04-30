@@ -85,11 +85,13 @@ class TestPolicyEngine:
     def test_exact_match(self) -> None:
         from rulerepo_server.gateway.schemas import NormalizedEvent
 
-        event = NormalizedEvent(
-            source="github", event_type="pull_request.opened", subject="test"
-        )
+        event = NormalizedEvent(source="github", event_type="pull_request.opened", subject="test")
         policies = [
-            {"event_source": "github", "event_type_pattern": "pull_request.opened", "enabled": True},
+            {
+                "event_source": "github",
+                "event_type_pattern": "pull_request.opened",
+                "enabled": True,
+            },
             {"event_source": "slack", "event_type_pattern": "*", "enabled": True},
         ]
         matched = match_policies(event, policies)
@@ -99,9 +101,7 @@ class TestPolicyEngine:
     def test_wildcard_match(self) -> None:
         from rulerepo_server.gateway.schemas import NormalizedEvent
 
-        event = NormalizedEvent(
-            source="github", event_type="pull_request.synchronize", subject="test"
-        )
+        event = NormalizedEvent(source="github", event_type="pull_request.synchronize", subject="test")
         policies = [
             {"event_source": "github", "event_type_pattern": "pull_request.*", "enabled": True},
         ]

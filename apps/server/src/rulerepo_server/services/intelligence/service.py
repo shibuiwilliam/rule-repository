@@ -12,6 +12,7 @@ from rulerepo_server.adapters.postgres.models import AlertModel, RuleModel
 from rulerepo_server.core.logging import get_logger
 from rulerepo_server.services.intelligence.analytics import (
     get_cache_stats,
+    get_compliance_trend,
     get_corpus_analytics,
     get_rule_analytics,
     get_top_violated_rules,
@@ -31,21 +32,27 @@ class IntelligenceService:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def get_dashboard(self) -> dict[str, Any]:
+    async def get_dashboard(self, project_id: str | None = None) -> dict[str, Any]:
         """Get corpus-wide intelligence dashboard summary.
 
         Returns:
             DashboardSummary-compatible dict.
         """
         # Total rules
-        result = await self._session.execute(select(func.count()).select_from(RuleModel))
+        count_query = select(func.count()).select_from(RuleModel)
+        if project_id:
+            count_query = count_query.where(RuleModel.project_id == project_id)
+        result = await self._session.execute(count_query)
         total_rules = result.scalar_one()
 
         # Analytics from audit log
         analytics = await get_corpus_analytics(self._session, period_days=30)
 
         # Compute average health (sample up to 100 rules for performance)
-        rules_result = await self._session.execute(select(RuleModel).limit(100))
+        rules_query = select(RuleModel).limit(100)
+        if project_id:
+            rules_query = rules_query.where(RuleModel.project_id == project_id)
+        rules_result = await self._session.execute(rules_query)
         rules = list(rules_result.scalars().all())
 
         health_scores = []
@@ -103,7 +110,12 @@ class IntelligenceService:
         }
 
     async def get_health_scores(
-        self, *, page: int = 1, page_size: int = 50, sort_by: str = "overall_score"
+        self,
+        *,
+        page: int = 1,
+        page_size: int = 50,
+        sort_by: str = "overall_score",
+        project_id: str | None = None,
     ) -> dict[str, Any]:
         """Get health scores for all rules.
 
@@ -116,10 +128,16 @@ class IntelligenceService:
             Paginated list of health scores.
         """
         offset = (page - 1) * page_size
-        result = await self._session.execute(select(RuleModel).offset(offset).limit(page_size))
+        health_rules_query = select(RuleModel).offset(offset).limit(page_size)
+        if project_id:
+            health_rules_query = health_rules_query.where(RuleModel.project_id == project_id)
+        result = await self._session.execute(health_rules_query)
         rules = list(result.scalars().all())
 
-        count_result = await self._session.execute(select(func.count()).select_from(RuleModel))
+        health_count_query = select(func.count()).select_from(RuleModel)
+        if project_id:
+            health_count_query = health_count_query.where(RuleModel.project_id == project_id)
+        count_result = await self._session.execute(health_count_query)
         total = count_result.scalar_one()
 
         scores = []
@@ -164,7 +182,7 @@ class IntelligenceService:
         health["rule_id"] = rule_id
         return health
 
-    async def get_analytics(self, period_days: int = 30) -> dict[str, Any]:
+    async def get_analytics(self, period_days: int = 30, project_id: str | None = None) -> dict[str, Any]:
         """Get corpus-wide evaluation analytics.
 
         Args:
@@ -175,9 +193,7 @@ class IntelligenceService:
         """
         return await get_corpus_analytics(self._session, period_days=period_days)
 
-    async def get_rule_analytics_detail(
-        self, rule_id: str, period_days: int = 30
-    ) -> dict[str, Any]:
+    async def get_rule_analytics_detail(self, rule_id: str, period_days: int = 30) -> dict[str, Any]:
         """Get per-rule evaluation analytics.
 
         Args:
@@ -190,7 +206,12 @@ class IntelligenceService:
         return await get_rule_analytics(self._session, rule_id, period_days=period_days)
 
     async def get_recommendations(
-        self, *, status: str = "open", page: int = 1, page_size: int = 50
+        self,
+        *,
+        status: str = "open",
+        page: int = 1,
+        page_size: int = 50,
+        project_id: str | None = None,
     ) -> dict[str, Any]:
         """Get improvement recommendations by computing health for all rules.
 
@@ -202,7 +223,10 @@ class IntelligenceService:
         Returns:
             Paginated list of recommendations.
         """
-        result = await self._session.execute(select(RuleModel).limit(100))
+        rec_rules_query = select(RuleModel).limit(100)
+        if project_id:
+            rec_rules_query = rec_rules_query.where(RuleModel.project_id == project_id)
+        result = await self._session.execute(rec_rules_query)
         rules = list(result.scalars().all())
 
         all_recs: list[dict[str, Any]] = []
@@ -227,6 +251,87 @@ class IntelligenceService:
             "total": len(all_recs),
             "page": page,
             "page_size": page_size,
+        }
+
+    async def get_home_summary(self, project_id: str | None = None) -> dict[str, Any]:
+        """Aggregate all data for the outcome-oriented home dashboard.
+
+        Returns compliance rate, trend, rule counts, top violations,
+        recent corrections, and pending action counts in a single call.
+
+        Args:
+            project_id: Optional project filter.
+
+        Returns:
+            Dashboard summary dict.
+        """
+        from rulerepo_server.adapters.postgres.models import (
+            CorrectionModel,
+        )
+
+        # Run queries sequentially (same session can't run concurrent queries)
+
+        # 1. Compliance rate + trend
+        analytics = await get_corpus_analytics(self._session, period_days=30)
+        trend = await get_compliance_trend(self._session, days=7)
+        total_evals = analytics.get("total_evaluations", 0)
+        dist = analytics.get("verdict_distribution", {})
+        allow_count = dist.get("ALLOW", 0)
+        compliance_rate = round(allow_count / max(total_evals, 1), 3) if total_evals > 0 else 0.0
+
+        # 2. Rules by status
+        status_result = await self._session.execute(
+            select(RuleModel.status, func.count(RuleModel.id)).group_by(RuleModel.status)
+        )
+        rules_by_status = {str(row[0]): row[1] for row in status_result.all()}
+        total_rules = sum(rules_by_status.values())
+
+        # 3. Top violated rules
+        top_violated = await get_top_violated_rules(self._session, period_days=30, limit=5)
+
+        # 4. Recent corrections
+        corr_result = await self._session.execute(
+            select(CorrectionModel).order_by(CorrectionModel.created_at.desc()).limit(5)
+        )
+        recent_corrections = [
+            {
+                "id": str(r.id),
+                "status": r.status,
+                "candidate_statement": r.candidate_statement,
+                "analysis_type": r.analysis_type,
+                "created_at": str(r.created_at),
+            }
+            for r in corr_result.scalars().all()
+        ]
+
+        # 5. Pending actions
+        draft_result = await self._session.execute(
+            select(func.count(RuleModel.id)).where(RuleModel.status.in_(["DRAFT", "REVIEW"]))
+        )
+        rules_pending = draft_result.scalar_one()
+
+        pending_corr_result = await self._session.execute(
+            select(func.count(CorrectionModel.id)).where(CorrectionModel.status == "pending")
+        )
+        corrections_pending = pending_corr_result.scalar_one()
+
+        alert_result = await self._session.execute(
+            select(func.count(AlertModel.id)).where(AlertModel.status == "active")
+        )
+        active_alerts = alert_result.scalar_one()
+
+        return {
+            "compliance_rate": compliance_rate,
+            "compliance_trend": trend,
+            "total_rules": total_rules,
+            "rules_by_status": rules_by_status,
+            "top_violated_rules": top_violated,
+            "recent_corrections": recent_corrections,
+            "pending_actions": {
+                "rules_pending_review": rules_pending,
+                "corrections_pending": corrections_pending,
+                "active_alerts": active_alerts,
+            },
         }
 
     @staticmethod

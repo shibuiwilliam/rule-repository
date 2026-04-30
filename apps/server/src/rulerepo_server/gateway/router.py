@@ -54,9 +54,7 @@ async def ingest_webhook(
     event = normalizer.normalize(payload)
 
     # Load enabled policies
-    result = await session.execute(
-        select(EnforcementPolicyModel).where(EnforcementPolicyModel.enabled.is_(True))
-    )
+    result = await session.execute(select(EnforcementPolicyModel).where(EnforcementPolicyModel.enabled.is_(True)))
     policies_raw = [
         {
             "id": str(p.id),
@@ -124,9 +122,7 @@ async def ingest_webhook(
                         url = action_cfg.get("url", "")
                         if url:
                             success = await send_webhook(url, verdict, eval_payload)
-                            actions_executed.append(
-                                {"type": "webhook", "url": url, "success": success}
-                            )
+                            actions_executed.append({"type": "webhook", "url": url, "success": success})
                     case _:
                         logger.info("gateway_action_skipped", type=action_type)
 
@@ -180,9 +176,7 @@ async def ingest_generic(
     # Same flow as source-specific ingestion
     from rulerepo_server.adapters.postgres.models import EnforcementPolicyModel
 
-    result = await session.execute(
-        select(EnforcementPolicyModel).where(EnforcementPolicyModel.enabled.is_(True))
-    )
+    result = await session.execute(select(EnforcementPolicyModel).where(EnforcementPolicyModel.enabled.is_(True)))
     policies_raw = [
         {
             "id": str(p.id),

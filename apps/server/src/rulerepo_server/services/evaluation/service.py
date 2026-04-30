@@ -6,7 +6,6 @@ All LLM calls are audited. Results are cached.
 
 from __future__ import annotations
 
-import asyncio
 import time
 from typing import Any
 
@@ -16,11 +15,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from rulerepo_server.adapters.postgres.audit_repo import AuditLogRepository
 from rulerepo_server.core.logging import get_logger
 from rulerepo_server.domain.evaluation import EvaluationResult
+from rulerepo_server.services.evaluation.batch_evaluator import evaluate_batch
 from rulerepo_server.services.evaluation.conflict_aggregator import (
     aggregate_with_conflicts,
 )
 from rulerepo_server.services.evaluation.context_assembler import assemble_context
-from rulerepo_server.services.evaluation.evaluation_core import evaluate_rule
 from rulerepo_server.services.evaluation.graph_resolver import resolve_evaluation_plan
 from rulerepo_server.services.evaluation.rule_selector import select_rules
 from rulerepo_server.services.evaluation.verdict_aggregator import aggregate_verdicts
@@ -144,20 +143,13 @@ class EvaluationService:
         except Exception:
             pass
 
-        tasks = [
-            evaluate_rule(rule, context, self._gemini_client, cache_repo=cache_repo)
-            for rule in rules
-        ]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        batch_results = await evaluate_batch(rules, context, self._gemini_client, cache_repo=cache_repo)
 
         verdicts = []
         model_ids: list[str] = []
         total_rule_latency = 0
 
-        for result_item in results:
-            if isinstance(result_item, Exception):
-                logger.warning("evaluation_task_failed", error=str(result_item))
-                continue
+        for result_item in batch_results:
             verdict, model_id, latency_ms = result_item
             verdicts.append(verdict)
             model_ids.append(model_id)
@@ -168,9 +160,7 @@ class EvaluationService:
 
         if plan.overrides or plan.conflicts or plan.skip_if_denied:
             rule_dict_map = {r["id"]: r for r in rules}
-            overall_verdict, conflict_resolutions = aggregate_with_conflicts(
-                verdicts, plan, rule_dict_map
-            )
+            overall_verdict, conflict_resolutions = aggregate_with_conflicts(verdicts, plan, rule_dict_map)
             eval_result = aggregate_verdicts(verdicts, model_ids, total_latency)
             eval_result.overall_verdict = overall_verdict
             eval_result.conflict_resolutions = [
@@ -187,7 +177,34 @@ class EvaluationService:
         else:
             eval_result = aggregate_verdicts(verdicts, model_ids, total_latency)
 
-        # 6. Audit log
+        # 6. Persist evaluation records
+        try:
+            from rulerepo_server.adapters.postgres.models import (
+                DEFAULT_PROJECT_ID,
+                EvaluationRecordModel,
+            )
+
+            input_type = "code" if diff else "facts"
+            eval_scope = scope or ""
+            latency_per_rule = [total_rule_latency // max(len(verdicts), 1)] * len(verdicts)
+            for i, (v, mid) in enumerate(zip(verdicts, model_ids, strict=False)):
+                record = EvaluationRecordModel(
+                    project_id=DEFAULT_PROJECT_ID,
+                    rule_id=v.rule_id,
+                    verdict=v.verdict.value,
+                    confidence=v.confidence,
+                    latency_ms=latency_per_rule[i] if i < len(latency_per_rule) else 0,
+                    scope=eval_scope,
+                    input_type=input_type,
+                    model_id=mid,
+                    cached=False,
+                )
+                self._session.add(record)
+            await self._session.flush()
+        except Exception as exc:
+            logger.warning("evaluation_persistence_failed", error=str(exc))
+
+        # 7. Audit log
         await self._audit_repo.append(
             action="evaluate",
             actor=actor or "system",

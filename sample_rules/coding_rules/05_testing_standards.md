@@ -2,10 +2,10 @@
 
 **YourExampleSoftware** — SNS Web Backend
 
-**Document ID:** ENG-005  
-**Version:** 2.0  
-**Effective Date:** 2025-04-01  
-**Owner:** Backend Engineering Team  
+**Document ID:** ENG-005
+**Version:** 2.0
+**Effective Date:** 2025-04-01
+**Owner:** Backend Engineering Team
 **Review Cycle:** Quarterly
 
 ---

@@ -1,7 +1,7 @@
 # YourExampleSoftware — Coding Rules & Engineering Standards
 
-**Project:** YourExampleSoftware — a social networking service (SNS) web backend  
-**Language:** Python 3.13 (FastAPI)  
+**Project:** YourExampleSoftware — a social networking service (SNS) web backend
+**Language:** Python 3.13 (FastAPI)
 **Team:** Backend Engineering Team
 
 ## Document Catalog

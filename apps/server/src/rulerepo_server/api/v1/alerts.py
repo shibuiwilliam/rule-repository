@@ -43,6 +43,10 @@ async def list_alerts(
     query = select(AlertModel)
     count_query = select(func.count()).select_from(AlertModel)
 
+    if project_id:
+        query = query.where(AlertModel.project_id == project_id)
+        count_query = count_query.where(AlertModel.project_id == project_id)
+
     if status is not None:
         query = query.where(AlertModel.status == status)
         count_query = count_query.where(AlertModel.status == status)

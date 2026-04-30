@@ -140,18 +140,14 @@ def _resolve_conflict(
     sev_b = _SEVERITY_ORDER.get(rule_b.get("severity", "LOW"), 0)
     if sev_a != sev_b:
         winner = rule_a_id if sev_a > sev_b else rule_b_id
-        return winner, (
-            f"Higher severity wins: {rule_a.get('severity')} vs {rule_b.get('severity')}"
-        )
+        return winner, (f"Higher severity wins: {rule_a.get('severity')} vs {rule_b.get('severity')}")
 
     # Modality comparison
     mod_a = _MODALITY_ORDER.get(rule_a.get("modality", "INFO"), 0)
     mod_b = _MODALITY_ORDER.get(rule_b.get("modality", "INFO"), 0)
     if mod_a != mod_b:
         winner = rule_a_id if mod_a > mod_b else rule_b_id
-        return winner, (
-            f"Stronger modality wins: {rule_a.get('modality')} vs {rule_b.get('modality')}"
-        )
+        return winner, (f"Stronger modality wins: {rule_a.get('modality')} vs {rule_b.get('modality')}")
 
     # Scope specificity: longer scope = more specific
     scope_a = rule_a.get("scope", [])

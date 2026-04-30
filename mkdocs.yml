@@ -25,6 +25,9 @@ nav:
     - Rule Playground: architecture/playground.md
     - Snapshots: architecture/snapshots.md
     - Federation: architecture/federation.md
+    - Batched Evaluation: architecture/batch-evaluation.md
+    - Rule Maturity Model: architecture/maturity-model.md
+    - Auto-Remediation: architecture/remediation.md
   - API Reference:
     - REST API: api/rest.md
     - Evaluate API: api/evaluate.md
@@ -51,6 +54,7 @@ nav:
     - Health Scoring: intelligence/health.md
     - Feedback Loop: intelligence/feedback.md
     - Correction Flywheel: intelligence/flywheel.md
+    - Compliance Dashboard: intelligence/compliance-dashboard.md
   - Development:
     - Contributing: dev/contributing.md
     - Testing: dev/testing.md

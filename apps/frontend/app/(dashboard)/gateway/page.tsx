@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useProject } from "@/lib/project-context";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
@@ -27,14 +28,16 @@ interface Evaluation {
 }
 
 export default function GatewayPage() {
+  const { currentProject } = useProject();
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const projectParam = currentProject?.id ? `?project_id=${currentProject.id}` : "";
     Promise.all([
-      fetch(`${API_BASE}/api/v1/gateway/policies`).then((r) => r.json()),
-      fetch(`${API_BASE}/api/v1/gateway/evaluations`).then((r) => r.json()),
+      fetch(`${API_BASE}/api/v1/gateway/policies${projectParam}`).then((r) => r.json()),
+      fetch(`${API_BASE}/api/v1/gateway/evaluations${projectParam}`).then((r) => r.json()),
     ])
       .then(([pols, evals]) => {
         setPolicies(pols);
@@ -42,7 +45,7 @@ export default function GatewayPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [currentProject?.id]);
 
   const verdictColor = (v: string) => {
     if (v === "ALLOW") return "bg-green-100 text-green-800";

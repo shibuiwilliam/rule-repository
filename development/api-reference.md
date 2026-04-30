@@ -162,17 +162,19 @@ Endpoints in `api/v1/intelligence.py`. Router prefix: `/api/v1/intelligence`.
 
 | Method | Path | Description |
 |---|---|---|
+| GET | `/api/v1/intelligence/summary` | One-call home dashboard summary. Returns compliance rate, 7-day trend, total rules, rules by status, top 5 violated rules, recent corrections, and pending action counts. |
 | GET | `/api/v1/intelligence/dashboard` | Corpus-wide intelligence dashboard. Returns health summary, evaluation volume, verdict distribution. |
-| GET | `/api/v1/intelligence/health` | Paginated rule health scores. Query params: `page`, `page_size` (max 200), `sort_by` (default `overall_score`). Health dimensions: completeness, freshness, activity. Note: `clarity` and `test_coverage` dimensions are currently hardcoded to 50.0. |
+| GET | `/api/v1/intelligence/health` | Paginated rule health scores. Query params: `page`, `page_size` (max 200), `sort_by` (default `overall_score`). |
 | GET | `/api/v1/intelligence/health/{rule_id}` | Detailed health breakdown for a single rule. Returns per-dimension scores. |
-| GET | `/api/v1/intelligence/analytics` | Corpus-wide evaluation analytics for a given period. Query param: `period_days` (default 30, max 365). |
+| GET | `/api/v1/intelligence/analytics` | Corpus-wide evaluation analytics for a given period. Query param: `period_days` (default 30, max 365). Uses `evaluations` table with audit_log fallback. |
 | GET | `/api/v1/intelligence/analytics/{rule_id}` | Per-rule evaluation analytics. Fire rate, deny rate, trends over time. Query param: `period_days`. |
 | GET | `/api/v1/intelligence/recommendations` | Active improvement recommendations, prioritized. Query params: `status` (default `open`), `page`, `page_size`. |
 
 ### Implementation Notes
 
-- Health scoring works for `completeness`, `freshness`, and `activity` dimensions.
-- `clarity` and `test_coverage` dimensions are **hardcoded to 50.0** -- not yet implemented.
+- Health scoring works for `completeness`, `freshness`, and `activity` dimensions. `clarity` defaults to 50.0 (not yet LLM-assessed).
+- Analytics queries use the `evaluations` table (migration 014) with automatic fallback to `audit_log` JSON parsing during the transition period.
+- The `/summary` endpoint runs 5 sequential queries and returns all home dashboard data in a single response.
 - Drift detection is **not implemented**.
 
 ---
@@ -279,10 +281,13 @@ Endpoints in `api/v1/playground.py`. Router prefix: `/api/v1/playground`.
 | DELETE | `/api/v1/playground/rules/{rule_id}/test-cases/{test_case_id}` | Delete a test case. Returns status confirmation. |
 | POST | `/api/v1/playground/rules/{rule_id}/test-cases/run` | Run all test cases for a rule and return results. Returns `TestRunResult` with total, passing, failing counts and per-case results. |
 | POST | `/api/v1/playground/rules/{rule_id}/test-cases/generate` | Generate test cases via Gemini and persist them. Body: `TestGenerateRequest` with `count`. Returns list of generated `TestCaseResponse`. |
+| POST | `/api/v1/playground/suggest-input` | Use Gemini to suggest a test input for a rule. Body: `SuggestInputRequest` with `rule_id` or inline `rule_statement`/`rule_modality`/`rule_severity`, `input_mode` (code/scenario), `violating` (true/false). Returns `SuggestInputResponse` with `sample_input` and `description`. |
 
 ### Playground Concepts
 
 - **Sandbox evaluation**: Runs a rule statement against sample code or facts through the LLM-as-Judge without creating any database records. Useful for drafting and iterating on rules before committing them.
+- **Pick registered rules**: The playground frontend lets you search for and select one or more existing rules from the database, instead of manually typing a rule statement.
+- **Suggest by LLM**: Generates a realistic test input (violating or compliant) for the selected rule via Gemini. Two buttons: "Violating Input" (generates code/scenario that triggers DENY) and "Compliant Input" (generates code/scenario that should ALLOW).
 - **Test cases**: Persistent test inputs attached to a rule. Each has an expected verdict (ALLOW/DENY/NEEDS_CONFIRMATION). Running tests compares the LLM verdict against expectations to measure rule quality.
 - **Test generation**: Uses Gemini to automatically generate test cases for a given rule, producing both positive (should ALLOW) and negative (should DENY) examples.
 

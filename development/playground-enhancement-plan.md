@@ -73,7 +73,7 @@ Considered separating "Narrative" and "Structured Facts" into separate tabs, but
 
 ### Scenario Tab (new)
 - **Narrative** section: regular textarea with placeholder "Describe the situation... e.g., An employee submitted 52 hours of overtime for April 2026."
-- **Facts** section below: 
+- **Facts** section below:
   - Header "Structured Facts (optional)" with an "Add Fact" button
   - Each fact is a row: key input + value input + remove button
   - Empty by default (facts are optional)

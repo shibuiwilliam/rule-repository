@@ -69,9 +69,7 @@ async def select_rules(
         deploy_result = await session.execute(deploy_query)
         deployment = deploy_result.scalar_one_or_none()
         if deployment is not None:
-            snap_query = select(RuleSetSnapshotModel).where(
-                RuleSetSnapshotModel.id == deployment.snapshot_id
-            )
+            snap_query = select(RuleSetSnapshotModel).where(RuleSetSnapshotModel.id == deployment.snapshot_id)
             snap_result = await session.execute(snap_query)
             snapshot = snap_result.scalar_one_or_none()
             if snapshot is not None:
@@ -219,4 +217,5 @@ def _rule_to_dict(rule: Any) -> dict[str, Any]:
         "scope": rule.scope,
         "tags": rule.tags,
         "rationale": rule.rationale,
+        "maturity_level": getattr(rule, "maturity_level", "proven"),
     }

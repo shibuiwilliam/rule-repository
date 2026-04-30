@@ -228,10 +228,11 @@ src/rulerepo_server/
 ├── services/
 │   ├── evaluation/             # Code-Aware Evaluation Engine
 │   │   ├── service.py          #   Orchestrator (context→select→evaluate→aggregate)
+│   │   ├── batch_evaluator.py  #   Batched multi-rule evaluation (single LLM call, fallback to per-rule)
+│   │   ├── evaluation_core.py  #   LLM-as-Judge per rule (with cache)
 │   │   ├── diff_parser.py      #   Unified diff parser
 │   │   ├── context_assembler.py#   Normalize inputs into EvaluationContext
 │   │   ├── rule_selector.py    #   Narrow corpus (scope+severity+effective_period)
-│   │   ├── evaluation_core.py  #   LLM-as-Judge per rule (with cache)
 │   │   ├── graph_resolver.py   #   Neo4j relationship resolution (OVERRIDES/DEPENDS_ON)
 │   │   ├── conflict_aggregator.py # Conflict-aware verdict aggregation
 │   │   ├── verdict_aggregator.py  # Simple verdict aggregation (fallback)
@@ -429,7 +430,61 @@ These are non-negotiable. Violating them breaks the system or wastes review time
 
 ---
 
-## 14. References
+## 14. Phase 5 Implementation Guidance
+
+These are architecture decisions and patterns for ongoing Phase 5 work. Read before implementing any improvement.
+
+### 14.1 Batched Evaluation Architecture
+- `batch_evaluator.py` sends all selected rules in a single Gemini call. The service.py orchestrator calls `evaluate_batch()` instead of `asyncio.gather()` on individual rules.
+- **Fallback**: If the batch call fails for any reason, `evaluate_batch()` transparently falls back to per-rule `evaluate_rule()` via `asyncio.gather()`. No caller code changes.
+- **Tiered**: Flash for the batch, Pro confirmation only for DENY + CRITICAL rules. Never send all rules to Pro.
+- **Token budget**: If the combined prompt exceeds 30K chars, the batch raises ValueError and the fallback kicks in.
+- Prompts: `evaluate_batch.txt` (code diffs) and `evaluate_batch_facts.txt` (scenarios) in `services/evaluation/prompts/`.
+
+### 14.2 Evaluation Persistence
+- The `evaluations` table stores one row per rule per evaluation (not per overall evaluation). This enables per-rule analytics.
+- The intelligence analytics module has dual-path queries: `evaluations` table when it has data, `audit_log` JSON parsing as fallback. Remove the fallback once all historical data is backfilled.
+- `get_compliance_trend(session, days)` returns daily compliance rates for sparkline charts.
+
+### 14.3 Dashboard Summary API
+- `GET /api/v1/intelligence/summary` returns all home dashboard data in one call. Queries run sequentially (SQLAlchemy async sessions do not support concurrent queries on the same connection).
+- The frontend home page (`app/page.tsx`) is a Server Component that SSR-fetches from this endpoint. Graceful degradation: if API is unreachable, renders the minimal health-check page.
+
+### 14.4 Rule Maturity Model (Implemented)
+- `domain/rule.py` has `MaturityLevel` enum: EXPERIMENTAL, STABLE, PROVEN.
+- `models.py` has `maturity_level`, `false_positive_count`, `true_positive_count` columns on RuleModel (migration 015).
+- `evaluation_core.py` implements shadow mode: experimental rules with DENY verdict are downgraded to NEEDS_CONFIRMATION with `[SHADOW]` prefix.
+- `rule_selector.py` includes `maturity_level` in the dict passed to evaluation core.
+- `workers/settings.py` has `auto_promote_rules` cron job (4am daily): experimental→stable (30d, <5% FP), stable→proven (60d, <1% FP), demotion if FP >10%.
+- New rules default to `experimental`. Existing rules backfilled as `proven` by migration.
+- `RuleResponse` schema includes `maturity_level`.
+
+### 14.5 Structured Auto-Remediation (Implemented)
+- `domain/evaluation.py` has `Remediation` frozen dataclass: type, file_path, start_line, end_line, original, replacement, description, auto_applicable.
+- `RuleVerdict` has `remediations: list[Remediation]` field.
+- `evaluate_code_change.txt` prompt requests structured remediations in JSON schema.
+- `_VERDICT_SCHEMA` in `evaluation_core.py` includes `remediations` array.
+- `evaluation_core.py` parses `remediations` from LLM response and constructs `Remediation` objects.
+- `schemas/evaluation.py` has `RemediationResponse` model; `EvaluateResponse` includes `remediations` and `auto_fixable_count`.
+- `auto_applicable=true` only for SHOULD-level rules where fix is unambiguous.
+
+### 14.6 Correction-to-Rule Flywheel (Implemented)
+- `services/feedback/auto_drafter.py` implements `cluster_and_draft()`: cosine similarity clustering of corrections, Gemini-powered rule drafting.
+- `models.py` has `DraftRuleProposalModel` (migration 016): statement, modality, severity, scope, evidence_correction_ids, confidence, status.
+- `workers/settings.py` has `cluster_corrections` cron job (5am daily).
+- `api/v1/feedback.py` has proposal endpoints: `GET /proposals`, `POST /proposals/{id}/approve` (creates rule with experimental maturity), `POST /proposals/{id}/dismiss`.
+- Configuration: CLUSTER_WINDOW_DAYS=14, MIN_CLUSTER_SIZE=3, MIN_CONFIDENCE=0.8, SIMILARITY_THRESHOLD=0.8.
+
+### 14.7 Future Implementation Notes
+- **Active rule injection** (hooks): Enhance `packages/cli/src/rulerepo_cli/hook.py` preflight/posthoc commands. Wire scope detection from file paths.
+- **Zero-config init**: Create `packages/cli/src/rulerepo_cli/init.py` that wraps the existing discovery analyzers for local execution without the server.
+- **CLI auto-fix**: Add `--auto-fix` flag to `rulerepo-check` that applies `auto_applicable` remediations and re-evaluates.
+- **Infrastructure tiers**: Add `ELASTICSEARCH_ENABLED`, `NEO4J_ENABLED`, `REDIS_ENABLED` flags to Settings. Implement Postgres FTS fallback in search service.
+- **Generated TypeScript client**: Export OpenAPI spec and use `openapi-typescript` + `openapi-fetch` to replace hand-written `lib/api.ts`.
+
+---
+
+## 15. References
 
 - Gemini 3 developer guide: https://ai.google.dev/gemini-api/docs/gemini-3
 - Gemini document processing: https://ai.google.dev/gemini-api/docs/document-processing

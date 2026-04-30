@@ -58,6 +58,19 @@ class CodeLocationResponse(BaseModel):
     snippet: str | None = None
 
 
+class RemediationResponse(BaseModel):
+    """A machine-readable fix that agents or CI can apply automatically."""
+
+    type: str
+    file_path: str
+    start_line: int
+    end_line: int | None = None
+    original: str | None = None
+    replacement: str | None = None
+    description: str = ""
+    auto_applicable: bool = False
+
+
 class RuleVerdictResponse(BaseModel):
     """Per-rule evaluation verdict."""
 
@@ -69,6 +82,7 @@ class RuleVerdictResponse(BaseModel):
     issue_description: str = ""
     fix_suggestion: str | None = None
     locations: list[CodeLocationResponse] = Field(default_factory=list)
+    remediations: list[RemediationResponse] = Field(default_factory=list)
 
 
 class ConflictResolutionResponse(BaseModel):
@@ -96,6 +110,8 @@ class EvaluateResponse(BaseModel):
     rules_violated: int = 0
     rules_uncertain: int = 0
     fix_summary: str | None = None
+    remediations: list[RemediationResponse] = Field(default_factory=list)
+    auto_fixable_count: int = 0
     model_ids_used: list[str] = Field(default_factory=list)
     total_latency_ms: int = 0
     timestamp: datetime | None = None

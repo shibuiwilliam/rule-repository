@@ -2,11 +2,11 @@
 
 **YourExampleCompany** — IT Service Consultation
 
-**Document ID:** POL-015  
-**Version:** 1.5  
-**Effective Date:** 2025-01-01  
-**Owner:** Finance Department  
-**Approved by:** CFO  
+**Document ID:** POL-015
+**Version:** 1.5
+**Effective Date:** 2025-01-01
+**Owner:** Finance Department
+**Approved by:** CFO
 **Review Cycle:** Annual
 
 ---

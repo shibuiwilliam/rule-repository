@@ -19,15 +19,36 @@ Both services are included in `docker-compose.yml` and start automatically with 
 
 ## Scheduled Jobs
 
-The arq worker runs three cron jobs. These are fully implemented and produce real, persisted outputs.
+The arq worker runs five cron jobs. All are fully implemented with real database operations.
 
 | Job | Schedule | Description |
 |---|---|---|
-| **Health score refresh** | Periodic | Recalculates rule health scores across the corpus based on recent evaluation data. Creates proactive alerts (`dormant_rule`, `high_deny_rate`, `health_decline`) when thresholds are exceeded. Alerts are written to the alerts table and surfaced on the dashboard. |
-| **Recommendation generation** | Periodic | Analyzes rule usage patterns and persists improvement recommendations to PostgreSQL. Recommendations are queryable via `GET /api/v1/intelligence/recommendations` and appear on the dashboard. |
-| **Feedback analysis** | Periodic | Aggregates correction statistics, computes per-rule correction rates, and identifies patterns. Results feed into the health scoring dimensions and the recommendation engine. |
+| `compute_health_scores` | 2:00 AM daily | Recomputes rule health scores. Creates alerts for unhealthy (score < 40) and dormant (0 evaluations) rules. |
+| `generate_recommendations_task` | 3:00 AM daily | Analyzes rule usage patterns, generates improvement recommendations. Alerts on high deny rate (> 50%). |
+| `auto_promote_rules` | 4:00 AM daily | Promotes rules through maturity levels (experimental → stable → proven) based on false-positive rate. Demotes if FP exceeds 10%. |
+| `cluster_corrections` | 5:00 AM daily | Clusters similar corrections by embedding similarity, auto-drafts rule proposals via Gemini. Creates `DraftRuleProposalModel` entries for human review. |
+| `compute_correction_stats` | Every hour | Aggregates correction statistics by analysis_type and status. |
 
 Jobs are idempotent and safe to run concurrently with API requests.
+
+### auto_promote_rules
+
+The maturity promotion worker implements progressive enforcement:
+
+- **experimental → stable**: rule is 30+ days old, has 20+ evaluations, and false-positive rate < 5%
+- **stable → proven**: rule is 60+ days old and false-positive rate < 1%
+- **demotion**: any stable/proven rule with FP rate > 10% is demoted back to experimental
+
+### cluster_corrections (Flywheel)
+
+The correction-to-rule flywheel worker:
+
+1. Fetches unprocessed corrections from the last 14 days
+2. Generates embeddings for each correction's delta summary
+3. Clusters by cosine similarity (threshold 0.8)
+4. For clusters with 3+ corrections and average confidence > 0.8, drafts a rule via Gemini
+5. Stores proposals as `DraftRuleProposalModel` entries with status "pending"
+6. Proposals are reviewed at `GET /api/v1/feedback/proposals` and approved/dismissed via the API
 
 ## Docker Compose Services
 
@@ -66,3 +87,4 @@ The worker shares the same Docker image as the backend server but runs the arq e
 - [Docker Compose](../getting-started/docker-compose.md) -- full service reference
 - [Health Scoring](../intelligence/health.md) -- health scores computed by the worker
 - [Feedback Loop](../intelligence/feedback.md) -- feedback analysis job details
+- [Correction Flywheel](../intelligence/flywheel.md) -- the self-improving rule loop

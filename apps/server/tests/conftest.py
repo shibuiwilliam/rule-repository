@@ -7,10 +7,9 @@ so integration tests can run without Docker infrastructure.
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 import pytest
 from fastapi import FastAPI
@@ -21,7 +20,6 @@ from rulerepo_server.adapters.elasticsearch.rule_index import ElasticsearchRuleI
 from rulerepo_server.adapters.neo4j.graph_repo import Neo4jGraphRepository
 from rulerepo_server.adapters.postgres.audit_repo import AuditLogRepository
 from rulerepo_server.adapters.postgres.rule_repo import PostgresRuleRepository
-
 
 # ---------------------------------------------------------------------------
 # In-memory store to back the mocked repositories
@@ -152,13 +150,11 @@ def _build_mock_rule_repo() -> MagicMock:
     async def _get_relationships(rule_id: Any) -> list[_Obj]:
         key = str(rule_id)
         return [
-            _Obj(**r)
-            for r in _store.relationships
-            if str(r.get("source_id")) == key or str(r.get("target_id")) == key
+            _Obj(**r) for r in _store.relationships if str(r.get("source_id")) == key or str(r.get("target_id")) == key
         ]
 
     async def _create_relationship(data: dict[str, Any]) -> _Obj:
-        data.setdefault("created_at", datetime.now(tz=timezone.utc))
+        data.setdefault("created_at", datetime.now(tz=UTC))
         _store.relationships.append(data)
         return _Obj(**data)
 
@@ -182,7 +178,12 @@ def _build_mock_rule_repo() -> MagicMock:
 @pytest.fixture
 def app() -> FastAPI:
     """Create a FastAPI app with mocked dependencies for testing."""
-    from rulerepo_server.core.deps import get_es_index, get_graph_repo, get_rule_service, get_search_service
+    from rulerepo_server.core.deps import (
+        get_es_index,
+        get_graph_repo,
+        get_rule_service,
+        get_search_service,
+    )
     from rulerepo_server.main import create_app
     from rulerepo_server.services.rule_service import RuleService
     from rulerepo_server.services.search import SearchService

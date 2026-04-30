@@ -29,8 +29,12 @@ PostgreSQL 17 holds the canonical data. All writes go through PostgreSQL first. 
 | `rule_recommendations` | Automated improvement recommendations for rules. |
 | `rule_set_snapshots` | Immutable versioned captures of the rule corpus. |
 | `rule_set_deployments` | Snapshot-to-environment deployment tracking. |
+| `evaluations` | Persistent per-rule evaluation records for analytics. |
+| `draft_rule_proposals` | Rule proposals auto-drafted from correction clusters (flywheel). |
 
-21 ORM models total across 23 tables. Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
+27+ tables across 16 Alembic migrations. Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
+
+Note: The `rules` table includes `maturity_level` (experimental/stable/proven), `false_positive_count`, and `true_positive_count` columns for the progressive enforcement model.
 
 Migrations are managed by **Alembic**.
 

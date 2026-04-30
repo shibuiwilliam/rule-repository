@@ -5,11 +5,11 @@ import Badge from "@/components/Badge";
 import {
   type DiscoveryCandidate,
   startDiscoveryScan,
-  getScanStatus,
   getDiscoveryCandidates,
   approveCandidate,
   dismissCandidate,
 } from "@/lib/api";
+import { useProject } from "@/lib/project-context";
 
 /* ---------- Constants ---------- */
 
@@ -46,6 +46,7 @@ interface FileEntry {
 /* ---------- Component ---------- */
 
 export default function DiscoverPage() {
+  const { currentProject } = useProject();
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
     new Set(["policy_document", "claude_md"]),
   );
@@ -57,7 +58,6 @@ export default function DiscoverPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [dragging, setDragging] = useState(false);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /* ---- Source selection ---- */
@@ -102,13 +102,6 @@ export default function DiscoverPage() {
   };
 
   /* ---- Scan ---- */
-  const stopPolling = useCallback(() => {
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current);
-      pollingRef.current = null;
-    }
-  }, []);
-
   const handleScan = async () => {
     if (selectedSources.size === 0) {
       setError("Select at least one source type.");
@@ -131,34 +124,23 @@ export default function DiscoverPage() {
         fileContents[f.name] = f.content;
       }
 
+      setMessage(`Scanning ${files.length} file(s) — this may take a minute...`);
+
+      // The backend runs the scan synchronously: when the POST returns,
+      // the scan is already completed with all candidates in the database.
       const { scan_id } = await startDiscoveryScan(
         Array.from(selectedSources),
         fileContents,
         repository || undefined,
+        currentProject?.id,
       );
 
-      setMessage(`Scanning ${files.length} file(s)...`);
-
-      pollingRef.current = setInterval(async () => {
-        try {
-          const status = await getScanStatus(scan_id);
-          if (status.status === "completed") {
-            stopPolling();
-            const data = await getDiscoveryCandidates(scan_id);
-            setCandidates(data);
-            setPhase("completed");
-            setMessage(`Found ${data.length} candidate rule(s).`);
-          } else if (status.status === "failed") {
-            stopPolling();
-            setPhase("failed");
-            setError("Scan failed.");
-          }
-        } catch {
-          stopPolling();
-          setPhase("failed");
-          setError("Lost connection while scanning.");
-        }
-      }, 2000);
+      // Fetch the candidates directly — no polling needed since the scan
+      // completed during the POST request.
+      const data = await getDiscoveryCandidates(scan_id);
+      setCandidates(data);
+      setPhase("completed");
+      setMessage(`Found ${data.length} candidate rule(s).`);
     } catch (err) {
       setPhase("failed");
       setError(err instanceof Error ? err.message : "Failed to start scan.");

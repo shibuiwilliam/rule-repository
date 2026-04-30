@@ -28,9 +28,7 @@ class TestRaiseForStatus:
 class TestRuleClient:
     @respx.mock
     async def test_health(self) -> None:
-        respx.get("http://test:8000/healthz").mock(
-            return_value=Response(200, json={"status": "ok"})
-        )
+        respx.get("http://test:8000/healthz").mock(return_value=Response(200, json={"status": "ok"}))
         async with RuleClient("http://test:8000") as client:
             result = await client.health()
             assert result["status"] == "ok"

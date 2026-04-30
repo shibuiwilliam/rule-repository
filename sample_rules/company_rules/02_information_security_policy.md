@@ -2,11 +2,11 @@
 
 **YourExampleCompany** — IT Service Consultation
 
-**Document ID:** POL-005  
-**Version:** 3.1  
-**Effective Date:** 2025-01-01  
-**Owner:** Information Security Office  
-**Approved by:** CTO, CISO  
+**Document ID:** POL-005
+**Version:** 3.1
+**Effective Date:** 2025-01-01
+**Owner:** Information Security Office
+**Approved by:** CTO, CISO
 **Review Cycle:** Semi-annual
 
 ---

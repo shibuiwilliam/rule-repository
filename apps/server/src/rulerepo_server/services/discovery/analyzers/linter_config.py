@@ -198,11 +198,7 @@ class LinterConfigAnalyzer(SourceAnalyzer):
         error_rules: list[str] = []
         for rule_name, rule_value in rules.items():
             # ESLint rules: "error" or 2 means enforced
-            is_list_error = (
-                isinstance(rule_value, list)
-                and len(rule_value) > 0
-                and rule_value[0] in ("error", 2)
-            )
+            is_list_error = isinstance(rule_value, list) and len(rule_value) > 0 and rule_value[0] in ("error", 2)
             if rule_value == "error" or rule_value == 2 or is_list_error:
                 error_rules.append(rule_name)
 

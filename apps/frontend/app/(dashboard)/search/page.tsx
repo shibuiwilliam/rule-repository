@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Badge from "@/components/Badge";
+import { useProject } from "@/lib/project-context";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
@@ -51,12 +52,25 @@ interface SourceDocInfo {
   uploaded_at: string;
 }
 
+const ALL_PROJECTS = "__all__";
+
 /* ---------- Component ---------- */
 
 export default function SearchPage() {
+  const { currentProject, projects, loading: projectsLoading } = useProject();
   const [tab, setTab] = useState<SearchTab>("rules");
   const [query, setQuery] = useState("");
   const [ruleMode, setRuleMode] = useState<RuleSearchMode>("hybrid");
+
+  // Project filter for search — independent of sidebar selector
+  const [searchProjectId, setSearchProjectId] = useState<string>(ALL_PROJECTS);
+
+  // Sync with sidebar project on initial load
+  useEffect(() => {
+    if (currentProject?.id) {
+      setSearchProjectId(currentProject.id);
+    }
+  }, [currentProject?.id]);
 
   const [ruleResults, setRuleResults] = useState<RuleResult[]>([]);
   const [docResults, setDocResults] = useState<DocResult[]>([]);
@@ -70,6 +84,12 @@ export default function SearchPage() {
   const [sourceRules, setSourceRules] = useState<RuleResult[]>([]);
   const [sourceTotal, setSourceTotal] = useState(0);
 
+  /* ---- Build query param for project_id ---- */
+  const projectParam =
+    searchProjectId !== ALL_PROJECTS
+      ? `?project_id=${searchProjectId}`
+      : "";
+
   /* ---- Rule search ---- */
   const searchRules = async () => {
     if (!query.trim()) return;
@@ -79,11 +99,14 @@ export default function SearchPage() {
     setSourceDoc(null);
     setSourceRules([]);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/search/${ruleMode}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, page: 1, page_size: 30 }),
-      });
+      const res = await fetch(
+        `${API_BASE}/api/v1/search/${ruleMode}${projectParam}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, page: 1, page_size: 30 }),
+        },
+      );
       if (!res.ok) throw new Error(`Search failed: ${res.status}`);
       const data = await res.json();
       setRuleResults(data.items ?? []);
@@ -105,11 +128,14 @@ export default function SearchPage() {
     setSourceDoc(null);
     setSourceRules([]);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/search/documents`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, page: 1, page_size: 30 }),
-      });
+      const res = await fetch(
+        `${API_BASE}/api/v1/search/documents${projectParam}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, page: 1, page_size: 30 }),
+        },
+      );
       if (!res.ok) throw new Error(`Search failed: ${res.status}`);
       const data = await res.json();
       setDocResults(data.items ?? []);
@@ -127,11 +153,14 @@ export default function SearchPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE}/api/v1/search/by-source-document`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ document_id: docId, page: 1, page_size: 50 }),
-      });
+      const res = await fetch(
+        `${API_BASE}/api/v1/search/by-source-document${projectParam}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ document_id: docId, page: 1, page_size: 50 }),
+        },
+      );
       if (!res.ok) throw new Error(`Search failed: ${res.status}`);
       const data = await res.json();
       setSourceDoc(data.source_document ?? null);
@@ -154,6 +183,11 @@ export default function SearchPage() {
     tab === "rules"
       ? "Search rules by statement, scope, or keyword..."
       : "Search documents by filename or content...";
+
+  const selectedProjectName =
+    searchProjectId === ALL_PROJECTS
+      ? "All Projects"
+      : projects.find((p) => p.id === searchProjectId)?.name ?? "Unknown";
 
   return (
     <div>
@@ -212,6 +246,22 @@ export default function SearchPage() {
               <option value="vector">Semantic</option>
             </select>
           )}
+
+          {/* Project filter */}
+          <select
+            value={searchProjectId}
+            onChange={(e) => setSearchProjectId(e.target.value)}
+            disabled={projectsLoading}
+            className="rounded-md border px-3 py-2 text-sm"
+          >
+            <option value={ALL_PROJECTS}>All Projects</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+
           <button
             type="submit"
             disabled={loading || !query.trim()}
@@ -270,6 +320,11 @@ export default function SearchPage() {
       {searched && !sourceDoc && (
         <p className="mb-4 text-sm text-gray-600">
           {total} result{total !== 1 ? "s" : ""} for &ldquo;{query}&rdquo;
+          {searchProjectId !== ALL_PROJECTS && (
+            <span className="ml-1 text-gray-400">
+              in {selectedProjectName}
+            </span>
+          )}
         </p>
       )}
 

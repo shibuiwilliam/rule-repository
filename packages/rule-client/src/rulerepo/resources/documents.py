@@ -17,9 +17,7 @@ class DocumentsResource:
     def __init__(self, client: httpx.AsyncClient) -> None:
         self._client = client
 
-    async def upload(
-        self, file_path_or_bytes: str | bytes, filename: str | None = None
-    ) -> UploadResult:
+    async def upload(self, file_path_or_bytes: str | bytes, filename: str | None = None) -> UploadResult:
         """Upload a document for rule extraction.
 
         Args:

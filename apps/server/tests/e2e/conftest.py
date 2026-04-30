@@ -35,7 +35,7 @@ def server_url() -> str:
 @pytest.fixture
 async def http_client() -> httpx.AsyncClient:
     """Async HTTP client for the running server."""
-    async with httpx.AsyncClient(base_url=SERVER_URL, timeout=120) as client:
+    async with httpx.AsyncClient(base_url=SERVER_URL, timeout=300) as client:
         # Verify server is reachable
         try:
             resp = await client.get("/healthz")

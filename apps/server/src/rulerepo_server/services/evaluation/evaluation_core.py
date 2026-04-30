@@ -21,6 +21,7 @@ from rulerepo_server.core.logging import get_logger
 from rulerepo_server.domain.evaluation import (
     CodeLocation,
     EvaluationContext,
+    Remediation,
     RuleVerdict,
     Verdict,
 )
@@ -48,6 +49,22 @@ _VERDICT_SCHEMA = {
                     "end_line": {"type": "integer"},
                     "function_name": {"type": "string"},
                     "snippet": {"type": "string"},
+                },
+            },
+        },
+        "remediations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {"type": "string"},
+                    "file_path": {"type": "string"},
+                    "start_line": {"type": "integer"},
+                    "end_line": {"type": "integer"},
+                    "original": {"type": "string"},
+                    "replacement": {"type": "string"},
+                    "description": {"type": "string"},
+                    "auto_applicable": {"type": "boolean"},
                 },
             },
         },
@@ -180,15 +197,47 @@ async def evaluate_rule(
                     )
                 )
 
+        # Parse remediations
+        remediations = []
+        for rem in result.get("remediations", []):
+            if isinstance(rem, dict) and rem.get("file_path"):
+                remediations.append(
+                    Remediation(
+                        type=rem.get("type", "replace"),
+                        file_path=rem.get("file_path", ""),
+                        start_line=rem.get("start_line", 0),
+                        end_line=rem.get("end_line"),
+                        original=rem.get("original"),
+                        replacement=rem.get("replacement"),
+                        description=rem.get("description", ""),
+                        auto_applicable=rem.get("auto_applicable", False),
+                    )
+                )
+
+        raw_verdict = Verdict(result.get("verdict", "NEEDS_CONFIRMATION"))
+        reasoning = result.get("reasoning", "")
+
+        # Shadow mode: experimental rules observe but don't block
+        maturity = rule.get("maturity_level", "proven")
+        if maturity == "experimental" and raw_verdict == Verdict.DENY:
+            raw_verdict = Verdict.NEEDS_CONFIRMATION
+            reasoning = f"[SHADOW] {reasoning}"
+            logger.info(
+                "shadow_mode_downgrade",
+                rule_id=rule["id"],
+                original_verdict="DENY",
+            )
+
         verdict = RuleVerdict(
             rule_id=rule["id"],
             rule_statement=rule["statement"],
-            verdict=Verdict(result.get("verdict", "NEEDS_CONFIRMATION")),
+            verdict=raw_verdict,
             confidence=result.get("confidence", 0.5),
-            reasoning=result.get("reasoning", ""),
+            reasoning=reasoning,
             issue_description=result.get("issue_description", ""),
             fix_suggestion=result.get("fix_suggestion"),
             locations=locations,
+            remediations=remediations,
         )
 
         # Store in cache for future use

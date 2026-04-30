@@ -34,9 +34,7 @@ async def fulltext_search(
     filters = _build_filters(query)
     if project_id:
         filters["project_id"] = project_id
-    return await service.fulltext_search(
-        query.query, filters=filters, page=query.page, page_size=query.page_size
-    )
+    return await service.fulltext_search(query.query, filters=filters, page=query.page, page_size=query.page_size)
 
 
 @router.post("/vector")
@@ -49,9 +47,7 @@ async def vector_search(
     filters = _build_filters(query)
     if project_id:
         filters["project_id"] = project_id
-    return await service.vector_search(
-        query.query, filters=filters, page=query.page, page_size=query.page_size
-    )
+    return await service.vector_search(query.query, filters=filters, page=query.page, page_size=query.page_size)
 
 
 @router.post("/hybrid")
@@ -64,9 +60,7 @@ async def hybrid_search(
     filters = _build_filters(query)
     if project_id:
         filters["project_id"] = project_id
-    return await service.hybrid_search(
-        query.query, filters=filters, page=query.page, page_size=query.page_size
-    )
+    return await service.hybrid_search(query.query, filters=filters, page=query.page, page_size=query.page_size)
 
 
 @router.post("/category")
@@ -89,9 +83,7 @@ async def category_search(
         filters["tags"] = query.tags
     if project_id:
         filters["project_id"] = project_id
-    return await service.category_search(
-        filters=filters, page=query.page, page_size=query.page_size
-    )
+    return await service.category_search(filters=filters, page=query.page, page_size=query.page_size)
 
 
 @router.post("/context")
@@ -124,10 +116,6 @@ async def document_search(
     Uses ts_rank over a tsvector of (filename || content_text) for relevance scoring.
     Falls back to ILIKE on filename if the full-text index misses.
     """
-    from sqlalchemy import text as sa_text
-    from sqlalchemy.orm import aliased
-
-    from rulerepo_server.adapters.postgres.models import ExtractionModel
 
     search_term = query.query.strip()
     tsquery = " & ".join(search_term.split())  # "code conduct" → "code & conduct"
@@ -136,29 +124,29 @@ async def document_search(
     rank_expr = func.ts_rank(
         func.to_tsvector(
             "english",
-            func.coalesce(DocumentModel.filename, "")
-            + " "
-            + func.coalesce(DocumentModel.content_text, ""),
+            func.coalesce(DocumentModel.filename, "") + " " + func.coalesce(DocumentModel.content_text, ""),
         ),
         func.to_tsquery("english", tsquery),
     )
 
     # Also match via ILIKE as fallback (catches partial matches ts misses)
     ilike_pattern = f"%{search_term}%"
-    where_clause = sa.or_(
+    search_conditions = sa.or_(
         func.to_tsvector(
             "english",
-            func.coalesce(DocumentModel.filename, "")
-            + " "
-            + func.coalesce(DocumentModel.content_text, ""),
+            func.coalesce(DocumentModel.filename, "") + " " + func.coalesce(DocumentModel.content_text, ""),
         ).op("@@")(func.to_tsquery("english", tsquery)),
         DocumentModel.filename.ilike(ilike_pattern),
         DocumentModel.content_text.ilike(ilike_pattern) if True else sa.false(),
     )
 
-    count_result = await session.execute(
-        select(func.count()).select_from(DocumentModel).where(where_clause)
-    )
+    # Build final where clause with optional project_id filter
+    conditions = [search_conditions]
+    if project_id:
+        conditions.append(DocumentModel.project_id == project_id)
+    where_clause = sa.and_(*conditions)
+
+    count_result = await session.execute(select(func.count()).select_from(DocumentModel).where(where_clause))
     total = count_result.scalar_one()
 
     offset = (query.page - 1) * query.page_size
@@ -230,9 +218,7 @@ async def search_rules_by_source_document(
     containment = [{"document_id": query.document_id}]
 
     # Fetch the source document info
-    doc_result = await session.execute(
-        select(DocumentModel).where(DocumentModel.id == UUID(query.document_id))
-    )
+    doc_result = await session.execute(select(DocumentModel).where(DocumentModel.id == UUID(query.document_id)))
     source_doc = doc_result.scalar_one_or_none()
     doc_info = None
     if source_doc:
@@ -244,20 +230,18 @@ async def search_rules_by_source_document(
             "uploaded_at": source_doc.uploaded_at,
         }
 
-    count_result = await session.execute(
-        select(func.count())
-        .select_from(RuleModel)
-        .where(RuleModel.source_refs.contains(containment))
-    )
+    # Build filter conditions
+    conditions = [RuleModel.source_refs.contains(containment)]
+    if project_id:
+        conditions.append(RuleModel.project_id == project_id)
+    where = sa.and_(*conditions)
+
+    count_result = await session.execute(select(func.count()).select_from(RuleModel).where(where))
     total = count_result.scalar_one()
 
     offset = (query.page - 1) * query.page_size
     result = await session.execute(
-        select(RuleModel)
-        .where(RuleModel.source_refs.contains(containment))
-        .order_by(RuleModel.created_at.desc())
-        .offset(offset)
-        .limit(query.page_size)
+        select(RuleModel).where(where).order_by(RuleModel.created_at.desc()).offset(offset).limit(query.page_size)
     )
     rules = list(result.scalars().all())
 

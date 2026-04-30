@@ -1,11 +1,12 @@
 """Unit tests for domain models — pure Python, no external deps."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
 
 from rulerepo_server.domain.audit import GENESIS_HASH, AuditEntry
+from rulerepo_server.domain.revision import RuleRevision
 from rulerepo_server.domain.rule import (
     VALID_STATUS_TRANSITIONS,
     EffectivePeriod,
@@ -19,7 +20,6 @@ from rulerepo_server.domain.rule import (
     SourceRef,
     validate_status_transition,
 )
-from rulerepo_server.domain.revision import RuleRevision
 from rulerepo_server.domain.verdict import Verdict, VerdictType
 
 
@@ -52,8 +52,12 @@ class TestRelationshipType:
     def test_all_types(self) -> None:
         types = {t.value for t in RelationshipType}
         assert types == {
-            "REFINES", "OVERRIDES", "CONFLICTS_WITH",
-            "DEPENDS_ON", "DERIVES_FROM", "SUCCEEDS",
+            "REFINES",
+            "OVERRIDES",
+            "CONFLICTS_WITH",
+            "DEPENDS_ON",
+            "DERIVES_FROM",
+            "SUCCEEDS",
         }
 
 
@@ -64,7 +68,7 @@ class TestEffectivePeriod:
         assert ep.valid_until is None
 
     def test_with_dates(self) -> None:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         ep = EffectivePeriod(valid_from=now)
         assert ep.valid_from == now
         assert ep.valid_until is None
@@ -131,6 +135,7 @@ class TestStatusTransitions:
 class TestRuleRelationship:
     def test_creation(self) -> None:
         from uuid import uuid4
+
         rel = RuleRelationship(
             source_id=uuid4(),
             target_id=uuid4(),

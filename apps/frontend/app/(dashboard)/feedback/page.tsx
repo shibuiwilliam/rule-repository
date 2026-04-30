@@ -11,6 +11,7 @@ import {
   dismissCorrection,
   submitCorrection,
 } from "@/lib/api";
+import { useProject } from "@/lib/project-context";
 
 type StatusFilter = "all" | "pending" | "approved" | "dismissed";
 
@@ -33,6 +34,7 @@ const ANALYSIS_LABELS: Record<string, { label: string; style: string; descriptio
 };
 
 export default function FeedbackPage() {
+  const { currentProject } = useProject();
   const [stats, setStats] = useState<FeedbackStats | null>(null);
   const [corrections, setCorrections] = useState<Correction[]>([]);
   const [total, setTotal] = useState(0);
@@ -55,19 +57,19 @@ export default function FeedbackPage() {
 
   const loadStats = useCallback(async () => {
     try {
-      const data = await getFeedbackStats();
+      const data = await getFeedbackStats(currentProject?.id);
       setStats(data);
     } catch {
       /* non-critical */
     }
-  }, []);
+  }, [currentProject?.id]);
 
   const loadCorrections = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       const status = filter === "all" ? undefined : filter;
-      const data = await getCorrections(status, page);
+      const data = await getCorrections(status, page, 20, currentProject?.id);
       setCorrections(data.items);
       setTotal(data.total);
     } catch (err) {
@@ -75,7 +77,7 @@ export default function FeedbackPage() {
     } finally {
       setLoading(false);
     }
-  }, [filter, page]);
+  }, [filter, page, currentProject?.id]);
 
   useEffect(() => {
     loadStats();

@@ -108,6 +108,9 @@ See [Discovery API](discovery.md) for detailed request/response documentation.
 | POST | `/api/v1/feedback/corrections/{correction_id}/approve` | Approve a correction, applying its suggestion. |
 | POST | `/api/v1/feedback/corrections/{correction_id}/dismiss` | Dismiss a correction. |
 | GET | `/api/v1/feedback/stats` | Feedback statistics (totals, by type/status, rules created, top violated rules). |
+| GET | `/api/v1/feedback/proposals` | List draft rule proposals from the correction-to-rule flywheel. |
+| POST | `/api/v1/feedback/proposals/{proposal_id}/approve` | Approve a proposal — creates a rule with experimental maturity (shadow mode). |
+| POST | `/api/v1/feedback/proposals/{proposal_id}/dismiss` | Dismiss a proposal. |
 
 See [Feedback API](feedback.md) for detailed request/response documentation.
 

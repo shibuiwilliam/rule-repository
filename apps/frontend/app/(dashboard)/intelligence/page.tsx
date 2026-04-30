@@ -14,6 +14,7 @@ import {
   getCorpusAnalytics,
   getIntelligenceRecommendations,
 } from "@/lib/api";
+import { useProject } from "@/lib/project-context";
 
 /* ---------- Constants ---------- */
 
@@ -101,6 +102,7 @@ function scoreBar(score: number, maxWidth = 100): { width: string; bg: string } 
 /* ---------- Component ---------- */
 
 export default function IntelligencePage() {
+  const { currentProject } = useProject();
   const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
   const [health, setHealth] = useState<HealthScoreList | null>(null);
   const [analytics, setAnalytics] = useState<CorpusAnalytics | null>(null);
@@ -122,39 +124,39 @@ export default function IntelligencePage() {
 
   const loadDashboard = useCallback(async () => {
     try {
-      const data = await getIntelligenceDashboard();
+      const data = await getIntelligenceDashboard(currentProject?.id);
       setDashboard(data);
     } catch {
       setError("Failed to load dashboard data.");
     }
-  }, []);
+  }, [currentProject?.id]);
 
   const loadHealth = useCallback(async () => {
     try {
-      const data = await getHealthScores(healthPage, PAGE_SIZE, healthSort);
+      const data = await getHealthScores(healthPage, PAGE_SIZE, healthSort, currentProject?.id);
       setHealth(data);
     } catch {
       // non-critical, dashboard still usable
     }
-  }, [healthPage, healthSort]);
+  }, [healthPage, healthSort, currentProject?.id]);
 
   const loadAnalytics = useCallback(async () => {
     try {
-      const data = await getCorpusAnalytics(analyticsPeriod);
+      const data = await getCorpusAnalytics(analyticsPeriod, currentProject?.id);
       setAnalytics(data);
     } catch {
       // non-critical
     }
-  }, [analyticsPeriod]);
+  }, [analyticsPeriod, currentProject?.id]);
 
   const loadRecs = useCallback(async () => {
     try {
-      const data = await getIntelligenceRecommendations("open", recsPage, RECS_PAGE_SIZE);
+      const data = await getIntelligenceRecommendations("open", recsPage, RECS_PAGE_SIZE, currentProject?.id);
       setRecs(data);
     } catch {
       // non-critical
     }
-  }, [recsPage]);
+  }, [recsPage, currentProject?.id]);
 
   // Initial load
   useEffect(() => {
@@ -451,7 +453,7 @@ export default function IntelligencePage() {
               </div>
               <div>
                 <p className="text-xs text-gray-500">Avg Latency</p>
-                <p className="text-2xl font-bold">{analytics.avg_latency_ms.toFixed(0)}</p>
+                <p className="text-2xl font-bold">{Number(analytics.avg_latency_ms || 0).toFixed(0)}</p>
                 <p className="text-xs text-gray-400">ms</p>
               </div>
               <div>

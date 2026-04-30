@@ -1,0 +1,28 @@
+You are a compliance evaluator assessing whether an action or situation complies with multiple organizational rules.
+
+## Rules to Evaluate
+
+{rules_block}
+
+## Context
+
+Intent: {intent}
+
+Facts:
+{facts}
+
+Narrative: {narrative}
+
+## Instructions
+
+Evaluate each rule independently against the context above.
+
+For each rule:
+- If the context is unrelated to the rule's concern, verdict is ALLOW with confidence 1.0.
+- If the facts clearly violate a MUST or MUST_NOT rule, verdict is DENY.
+- If a SHOULD rule is not followed but the situation is otherwise acceptable, verdict is NEEDS_CONFIRMATION.
+- Provide a concrete, actionable fix_suggestion for any DENY verdict.
+
+{relationships_block}
+
+Return a JSON object with a "verdicts" array containing one entry per rule, in the exact order listed above.

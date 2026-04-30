@@ -53,9 +53,7 @@ def register_tools(mcp: FastMCP) -> None:
         if severity:
             filters["severity"] = severity
 
-        hits, total = await es_index.search_fulltext(
-            query, filters=filters, page=1, page_size=top_k
-        )
+        hits, total = await es_index.search_fulltext(query, filters=filters, page=1, page_size=top_k)
 
         # Hydrate from Postgres
         if not hits:
@@ -207,10 +205,7 @@ def register_tools(mcp: FastMCP) -> None:
         if rule_id:
             hits = [(h, s) for h, s in hits if h != rule_id]
 
-        return [
-            {"rule_id": h, "similarity_score": round(s, 3), "potential_conflict": True}
-            for h, s in hits[:10]
-        ]
+        return [{"rule_id": h, "similarity_score": round(s, 3), "potential_conflict": True} for h, s in hits[:10]]
 
     @mcp.tool()
     async def evaluate_compliance(

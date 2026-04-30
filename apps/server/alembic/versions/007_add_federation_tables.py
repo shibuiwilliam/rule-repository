@@ -5,15 +5,15 @@ Revises: 006
 Create Date: 2026-04-26
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 
 revision: str = "007"
-down_revision: Union[str, None] = "006"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "006"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -30,9 +30,7 @@ def upgrade() -> None:
         ),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("default_scope", sa.ARRAY(sa.String()), server_default="{}"),
-        sa.Column(
-            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
     op.create_index("ix_rule_federations_parent_id", "rule_federations", ["parent_id"])
     op.create_index("ix_rule_federations_level", "rule_federations", ["level"])
@@ -58,9 +56,7 @@ def upgrade() -> None:
             sa.ForeignKey("rules.id", ondelete="SET NULL"),
             nullable=True,
         ),
-        sa.Column(
-            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
     op.create_index(
         "ix_federation_memberships_federation_id",

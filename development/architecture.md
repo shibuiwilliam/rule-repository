@@ -8,8 +8,8 @@ The Rule Repository is a monorepo with 10+ services orchestrated via Docker Comp
 |---|---|---|---|
 | Backend API | Python 3.13 + FastAPI | 8000 | REST, Evaluate, Intent, Gateway, Intelligence, Discovery, Feedback, Federation, Playground, Alerts, Snapshots APIs |
 | MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 6 tools) |
-| Frontend | TypeScript + Next.js 15 | 3000 | Operator console (11 pages) |
-| PostgreSQL | 17-alpine | 5432 | System of record (rules, revisions, audit log, 21 ORM models) |
+| Frontend | TypeScript + Next.js 15 | 3000 | Compliance dashboard + 15 operator pages |
+| PostgreSQL | 17-alpine | 5432 | System of record (rules, revisions, audit log, evaluations, 24 ORM models) |
 | Elasticsearch | 8.17 | 9200 | Full-text + vector search |
 | Neo4j | 5-community | 7474/7687 | Rule relationship graph |
 | Redis | 7-alpine | 6379 | Job queue for arq background worker |
@@ -25,13 +25,13 @@ The Rule Repository is a monorepo with 10+ services orchestrated via Docker Comp
 src/rulerepo_server/
 ├── main.py                         # FastAPI app factory, router registration
 ├── api/
-│   └── v1/                         # 13 API routers
+│   └── v1/                         # 14 API routers
 │       ├── rules.py                #   CRUD, retire, revisions, relationships, graph
 │       ├── search.py               #   fulltext, vector, hybrid, category, context
 │       ├── evaluation.py           #   evaluate, quick, applicable-rules, get by ID
 │       ├── extraction.py           #   document upload, extract, review
 │       ├── intent.py               #   NL intent classification + routing
-│       ├── intelligence.py         #   dashboard, health scores, analytics, recommendations
+│       ├── intelligence.py         #   summary, dashboard, health scores, analytics, recommendations
 │       ├── relationships.py        #   create/delete rule relationships
 │       ├── discovery.py            #   scan, candidates, approve/dismiss
 │       ├── feedback.py             #   corrections, approve/dismiss, stats
@@ -58,15 +58,16 @@ src/rulerepo_server/
 │   ├── intent_prompts/             # Prompt templates for intent service
 │   ├── evaluation/                 # 5-stage evaluation pipeline
 │   │   ├── service.py              #   EvaluationService (orchestrator, accepts environment param)
+│   │   ├── batch_evaluator.py      #   Batched multi-rule evaluation (single LLM call, fallback to per-rule)
+│   │   ├── evaluation_core.py      #   LLM-as-Judge per rule (with LLM cache, severity-tiered model)
 │   │   ├── context_assembler.py    #   Stage 1: normalize inputs
 │   │   ├── rule_selector.py        #   Stage 2: narrow rule corpus (supports environment + federation)
 │   │   ├── graph_resolver.py       #   Stage 3: resolve Neo4j relationships (OVERRIDES/DEPENDS_ON)
-│   │   ├── evaluation_core.py      #   Stage 4: LLM-as-Judge per rule (with LLM cache)
 │   │   ├── conflict_aggregator.py  #   Stage 5a: conflict-aware aggregation
 │   │   ├── verdict_aggregator.py   #   Stage 5b: simple aggregation (fallback)
 │   │   ├── diff_parser.py          #   Unified diff parser (no deps, state machine)
 │   │   ├── impact_preview.py       #   Rule change impact analysis (replay past evaluations)
-│   │   └── prompts/                #   Evaluation prompt templates
+│   │   └── prompts/                #   Evaluation prompt templates (single + batch)
 │   ├── extraction/                 # Document ingestion + rule extraction
 │   ├── intelligence/               # Health scoring, analytics (cache stats, top violations), recommendations
 │   ├── context_delivery/           # Rule formatting for agent context injection
@@ -263,7 +264,7 @@ If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.
 
 ## Alembic Migrations
 
-12 migrations in `apps/server/alembic/versions/`:
+16 migrations in `apps/server/alembic/versions/`:
 
 | Migration | Description |
 |---|---|
@@ -279,6 +280,10 @@ If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.
 | `010_add_snapshot_tables` | Rule set snapshots and deployments |
 | `011_add_document_content_text` | Document content text storage for extraction |
 | `012_add_projects` | Projects table + project_id FK on 7 resource tables |
+| `013_update_corrections_table` | Additional columns on corrections table |
+| `014_add_evaluations_table` | Persistent per-rule evaluation records |
+| `015_add_maturity_level` | Rule maturity model: maturity_level + accuracy tracking |
+| `016_add_draft_proposals` | Draft rule proposals for correction-to-rule flywheel |
 
 ---
 

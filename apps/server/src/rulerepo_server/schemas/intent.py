@@ -9,9 +9,7 @@ class IntentRequest(BaseModel):
     """Natural-language query to the Intent API."""
 
     query: str = Field(..., min_length=1, max_length=5000, description="Natural-language question")
-    context: dict[str, Any] | None = Field(
-        default=None, description="Optional context for the query"
-    )
+    context: dict[str, Any] | None = Field(default=None, description="Optional context for the query")
 
 
 class IntentResponse(BaseModel):

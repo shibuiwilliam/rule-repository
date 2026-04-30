@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from rulerepo_server.services.discovery.analyzers.base import (
     DiscoveryContext,
     RawPattern,
@@ -17,7 +15,6 @@ from rulerepo_server.services.discovery.analyzers.linter_config import (
 )
 from rulerepo_server.services.discovery.pattern_detector import deduplicate_and_score
 
-
 # ---------------------------------------------------------------------------
 # ClaudeMdAnalyzer
 # ---------------------------------------------------------------------------
@@ -25,11 +22,7 @@ from rulerepo_server.services.discovery.pattern_detector import deduplicate_and_
 
 class TestClaudeMdAnalyzerMustRules:
     async def test_parse_must_rules(self) -> None:
-        content = (
-            "# Rules\n"
-            "- All code MUST be reviewed before merging.\n"
-            "- Deployments MUST go through staging first.\n"
-        )
+        content = "# Rules\n- All code MUST be reviewed before merging.\n- Deployments MUST go through staging first.\n"
         ctx = DiscoveryContext(
             file_paths=["CLAUDE.md"],
             file_contents={"CLAUDE.md": content},
@@ -64,11 +57,7 @@ class TestClaudeMdAnalyzerShouldRules:
 
 class TestClaudeMdAnalyzerMustNotRules:
     async def test_parse_must_not_rules(self) -> None:
-        content = (
-            "# Constraints\n"
-            "- You must not commit secrets to the repo.\n"
-            "- Never use print() in production code.\n"
-        )
+        content = "# Constraints\n- You must not commit secrets to the repo.\n- Never use print() in production code.\n"
         ctx = DiscoveryContext(
             file_paths=["CLAUDE.md"],
             file_contents={"CLAUDE.md": content},
@@ -83,10 +72,7 @@ class TestClaudeMdAnalyzerMustNotRules:
 
 class TestClaudeMdAnalyzerHeadingScope:
     async def test_heading_as_scope(self) -> None:
-        content = (
-            "## Python Rules\n"
-            "- All functions MUST have type hints.\n"
-        )
+        content = "## Python Rules\n- All functions MUST have type hints.\n"
         ctx = DiscoveryContext(
             file_paths=["CLAUDE.md"],
             file_contents={"CLAUDE.md": content},
@@ -129,12 +115,7 @@ class TestClaudeMdAnalyzerNonClaudeFile:
 
 class TestLinterConfigRuffToml:
     async def test_parse_ruff_toml(self) -> None:
-        content = (
-            'line-length = 120\n'
-            '\n'
-            '[lint]\n'
-            'select = ["E", "F", "I"]\n'
-        )
+        content = 'line-length = 120\n\n[lint]\nselect = ["E", "F", "I"]\n'
         ctx = DiscoveryContext(
             file_paths=["ruff.toml"],
             file_contents={"ruff.toml": content},
@@ -198,19 +179,12 @@ class TestLinterConfigEmptyConfig:
 
 def _make_py_file_with_docstring(name: str) -> str:
     """Return a small Python file with a public function that has a docstring."""
-    return (
-        f'def {name}(x: int) -> int:\n'
-        f'    """Do something."""\n'
-        f'    return x + 1\n'
-    )
+    return f'def {name}(x: int) -> int:\n    """Do something."""\n    return x + 1\n'
 
 
 def _make_py_file_without_docstring(name: str) -> str:
     """Return a small Python file with a public function lacking a docstring."""
-    return (
-        f'def {name}(x: int) -> int:\n'
-        f'    return x + 1\n'
-    )
+    return f"def {name}(x: int) -> int:\n    return x + 1\n"
 
 
 class TestCodePatternsTestNaming:
@@ -236,10 +210,7 @@ class TestCodePatternsTestNaming:
 class TestCodePatternsDocstrings:
     async def test_detect_docstrings(self) -> None:
         # 4 files, each with a public function that has a docstring (>80% coverage)
-        files = {
-            f"src/mod_{i}.py": _make_py_file_with_docstring(f"func_{i}")
-            for i in range(4)
-        }
+        files = {f"src/mod_{i}.py": _make_py_file_with_docstring(f"func_{i}") for i in range(4)}
         ctx = DiscoveryContext(
             file_paths=list(files.keys()),
             file_contents=files,

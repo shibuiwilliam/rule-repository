@@ -46,9 +46,7 @@ async def test_extract_python_style_guide(
     coding_rules_dir: Path,
 ) -> None:
     """Extract rules from the Python Style Guide — should find type hint and naming rules."""
-    _, candidates = await _upload_and_extract(
-        http_client, coding_rules_dir / "01_python_style_guide.md"
-    )
+    _, candidates = await _upload_and_extract(http_client, coding_rules_dir / "01_python_style_guide.md")
 
     assert len(candidates) >= 5, f"Expected at least 5 rules, got {len(candidates)}"
     print(f"  Python Style Guide: {len(candidates)} candidates")
@@ -65,9 +63,7 @@ async def test_extract_security_standards(
     coding_rules_dir: Path,
 ) -> None:
     """Extract rules from Security Standards — should find OWASP/injection/auth rules."""
-    _, candidates = await _upload_and_extract(
-        http_client, coding_rules_dir / "08_security_standards.md"
-    )
+    _, candidates = await _upload_and_extract(http_client, coding_rules_dir / "08_security_standards.md")
 
     assert len(candidates) >= 5
     print(f"  Security Standards: {len(candidates)} candidates")
@@ -83,9 +79,7 @@ async def test_extract_company_code_of_conduct(
     company_rules_dir: Path,
 ) -> None:
     """Extract rules from the Code of Conduct — should find behavioral/ethics rules."""
-    _, candidates = await _upload_and_extract(
-        http_client, company_rules_dir / "01_code_of_conduct.md"
-    )
+    _, candidates = await _upload_and_extract(http_client, company_rules_dir / "01_code_of_conduct.md")
 
     assert len(candidates) >= 3
     print(f"  Code of Conduct: {len(candidates)} candidates")
@@ -101,9 +95,7 @@ async def test_extract_expense_policy(
     company_rules_dir: Path,
 ) -> None:
     """Extract rules from the Expense & Travel Policy — should find approval thresholds."""
-    _, candidates = await _upload_and_extract(
-        http_client, company_rules_dir / "05_expense_and_travel_policy.md"
-    )
+    _, candidates = await _upload_and_extract(http_client, company_rules_dir / "05_expense_and_travel_policy.md")
 
     assert len(candidates) >= 3
     print(f"  Expense Policy: {len(candidates)} candidates")

@@ -49,6 +49,19 @@ class RuleStatus(str, enum.Enum):
     RETIRED = "RETIRED"
 
 
+class MaturityLevel(str, enum.Enum):
+    """Progressive enforcement level for rules (PROJECT_ENHANCE.md §2).
+
+    experimental: shadow mode — DENY verdicts downgraded to NEEDS_CONFIRMATION.
+    stable: warning mode — verdicts enforced, owner notified on DENY.
+    proven: full enforcement — verdicts trusted, no notifications.
+    """
+
+    EXPERIMENTAL = "experimental"
+    STABLE = "stable"
+    PROVEN = "proven"
+
+
 class RelationshipType(str, enum.Enum):
     """Types of relationships between rules (PROJECT.md §5.2)."""
 

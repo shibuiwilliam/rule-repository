@@ -464,27 +464,65 @@ The project is structured in four phases, each delivering independent value.
 
 **Value delivered:** "Rules can be tested before deployment, the system alerts on problems, and rule sets deploy safely."
 
-### Phase 5 — Self-Improving Governance [PLANNED]
+### Phase 5 — Self-Improving Governance [IN PROGRESS]
 
-#### 5a. Correction-to-Rule Flywheel
-- Automatic rule drafting: when 3+ corrections in the same pattern accumulate within 14 days with confidence > 0.8, auto-create a DRAFT rule with linked evidence
-- Smart batching: cluster corrections by semantic similarity before drafting (avoid 50 individual draft rules)
-- Maintainer routing: auto-notify the scope's rule owner with evidence, confidence score, and approve/edit/dismiss actions
-- Effectiveness tracking: measure correction rate before vs after rule activation to prove ROI
+#### 5a. Batched Evaluation [IMPLEMENTED]
+- Single LLM call evaluates all selected rules at once (5-20x fewer API calls)
+- Rules listed with index, statement, modality, severity in batch prompt
+- Per-rule structured JSON verdicts returned in one response
+- Tiered strategy: Flash for the batch, Pro confirmation only for DENY+CRITICAL rules
+- Automatic fallback to per-rule evaluation if batch fails
+- Cache key = hash(sorted rule IDs + context hash)
 
-#### 5b. Structured Remediation
-- Machine-readable `Remediation` objects in evaluation response (type, file, line, action, original, replacement)
-- Agents can auto-apply fixes for low-severity rules without human intervention
-- `--auto-fix` flag for `rulerepo-check` CLI that applies remediations and re-evaluates
-- CI pipelines that self-heal: fix → commit → re-check → pass
+#### 5b. Evaluation Result Persistence [IMPLEMENTED]
+- Dedicated `evaluations` table with rule_id, verdict, confidence, latency_ms, model_id, cached, created_at
+- Evaluation service persists one record per rule verdict after aggregation
+- Intelligence analytics rewritten to query `evaluations` table (with audit_log fallback for transition)
+- Daily compliance trend query for dashboard sparklines
 
-#### 5c. Rule Maturity Model
-- Three maturity levels: `experimental` → `stable` → `proven`
-- Experimental rules (< 30 days) produce NEEDS_CONFIRMATION instead of DENY (shadow mode)
-- Auto-promotion based on false positive rate: < 5% → stable, < 1% → proven
-- Progressive enforcement: observe → warn → enforce pipeline visible on dashboard
+#### 5c. Outcome-Oriented Dashboard [IMPLEMENTED]
+- `GET /api/v1/intelligence/summary` returns all dashboard data in one call: compliance rate, 7-day trend, rule counts by status, top 5 violated rules, recent corrections, pending actions
+- Home page rewritten as executive dashboard with compliance hero metric, rules status bar, pending actions cards, top violated rules table, recent corrections list
+- Graceful degradation if API is unreachable
 
-#### 5d. Advanced Intelligence
+#### 5d. Correction-to-Rule Flywheel [IMPLEMENTED]
+- **Clustering**: `cluster_corrections` worker (daily, 5am) fetches pending corrections from the last 14 days, generates embeddings, clusters by cosine similarity (threshold 0.8)
+- **Auto-drafting**: clusters with 3+ corrections and avg confidence > 0.8 trigger Gemini to draft a structured rule (statement, modality, severity, scope, rationale)
+- **Proposals**: drafted rules stored as `DraftRuleProposalModel` with status "pending"; reviewable via `GET /api/v1/feedback/proposals`
+- **One-click approval**: `POST /api/v1/feedback/proposals/{id}/approve` creates a rule with `maturity_level=experimental` (shadow mode — doesn't block CI)
+- **Effectiveness tracking**: false_positive_count/true_positive_count on RuleModel track accuracy; auto_promote_rules worker graduates rules automatically
+- **Database**: migration 016 adds `draft_rule_proposals` table; `services/feedback/auto_drafter.py` implements clustering + drafting
+
+#### 5e. Active Rule Injection [PLANNED]
+- Claude Code hooks integration: `PreToolUse` (before file write) fetches applicable rules, `PostToolUse` (after file write) evaluates changes
+- Installable via `rulerepo hooks install` (writes to `.claude/hooks.json`)
+- Scope-based file matching: file glob patterns mapped to rule scopes
+- `.rules` context file generation for agents
+
+#### 5f. Zero-Config Bootstrapping [PLANNED]
+- `rulerepo init` command: scans repository for CLAUDE.md, linter configs, code patterns → generates `rules.yaml`
+- `rules.yaml` as first-class format: portable, version-controllable rule definitions
+- Server import endpoint: `POST /api/v1/rules/import/yaml`
+- Rule templates library: curated templates for Python, TypeScript, API design, security, testing
+
+#### 5g. Structured Remediation [IMPLEMENTED]
+- **`Remediation` dataclass** in `domain/evaluation.py`: type (replace/insert/delete), file_path, start_line, end_line, original, replacement, description, auto_applicable
+- **LLM prompt updated**: `evaluate_code_change.txt` requests structured remediations in JSON schema; each violation includes at least one remediation
+- **Parsing**: `evaluation_core.py` extracts remediations from Gemini response, constructs `Remediation` objects on `RuleVerdict`
+- **API response**: `RemediationResponse` schema; `EvaluateResponse` includes `remediations` array and `auto_fixable_count`
+- **auto_applicable flag**: set to `true` only for SHOULD-level rules where the fix is unambiguous — agents can apply these without human review
+- `--auto-fix` flag for `rulerepo-check` CLI [PLANNED]: applies auto_applicable remediations and re-evaluates
+
+#### 5h. Rule Maturity Model [IMPLEMENTED]
+- **Three maturity levels**: `experimental` → `stable` → `proven` (migration 015 adds `maturity_level`, `false_positive_count`, `true_positive_count` to rules table)
+- **Shadow mode**: experimental rules produce NEEDS_CONFIRMATION instead of DENY in `evaluation_core.py`; reasoning prefixed with `[SHADOW]`
+- **Auto-promotion**: `auto_promote_rules` worker (daily, 4am) promotes experimental→stable (30+ days, <5% FP rate), stable→proven (60+ days, <1% FP rate)
+- **Auto-demotion**: rules with FP rate >10% are demoted back to experimental
+- **New rules default to experimental**: all newly created rules start in shadow mode
+- **Existing rules backfilled as proven**: migration sets APPROVED/EFFECTIVE rules to proven
+
+#### 5i. Advanced Intelligence [PLANNED]
+- Rule effectiveness score: precision, recall, impact metrics
 - Conflict detector (continuous scanning)
 - Verdict drift detection (temporal, model, semantic)
 - Agent performance dashboard (compliance rate per agent, top violations, trends)
@@ -492,7 +530,13 @@ The project is structured in four phases, each delivering independent value.
 - Weekly governance digest (new drafts, promotions, top violations, pending actions)
 - Provenance lineage propagation, polyglot rule sync, Rule Tutor
 
-**Value delivered:** "Our rules improve themselves — every correction teaches the system."
+#### 5j. Infrastructure Tiers [PLANNED]
+- Tier 1 (Starter): Server + Postgres only, Postgres FTS fallback, inline job execution
+- Tier 2 (Standard): Add Elasticsearch for search quality, Redis for background jobs
+- Tier 3 (Full): Add Neo4j for graph features, MCP server, arq-worker
+- Graceful degradation: detect available services at startup
+
+**Value delivered:** "Our rules improve themselves — every correction teaches the system, evaluation is fast and holistic, and the dashboard shows impact."
 
 ---
 
@@ -504,6 +548,10 @@ The project is structured in four phases, each delivering independent value.
 - **Adoption**: number of integrated systems and active rules; volume of evaluation requests per day.
 - **Governance health**: percentage of rules with complete metadata, current rationale, and active owners.
 - **Time-to-comply on regulatory change**: median time between a source-law amendment and the corresponding internal rule revision being approved.
+- **Shadow-to-enforcement rate**: >70% of experimental rules reach stable within 60 days (auto-promotion worker).
+- **Auto-fix rate**: >40% of SHOULD violations auto-fixed via structured remediations.
+- **Flywheel throughput**: >5 rules/month auto-drafted from correction clusters; correction rate decreases >30% after flywheel rule activation.
+- **Time-to-rule**: <1 week from correction pattern detection to approved rule (proposal lifecycle).
 
 ---
 

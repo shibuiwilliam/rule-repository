@@ -72,15 +72,21 @@ The `POST /api/v1/evaluate` endpoint accepts:
 | Field | Description |
 |---|---|
 | `overall_verdict` | ALLOW, DENY, or NEEDS_CONFIRMATION |
-| `rule_verdicts` | Per-rule verdicts with confidence, reasoning, and code locations |
+| `rule_verdicts` | Per-rule verdicts with confidence, reasoning, code locations, and remediations |
 | `violations` | Subset of rule_verdicts where verdict is DENY |
 | `warnings` | Subset of rule_verdicts where verdict is NEEDS_CONFIRMATION |
+| `remediations` | Machine-readable fix objects (type, file_path, start_line, original, replacement, auto_applicable) |
+| `auto_fixable_count` | Number of remediations safe for automatic application |
 | `fix_summary` | Consolidated fix suggestions across all violations |
 | `evaluation_id` | Unique ID for audit trail lookup |
 | `rules_evaluated` | Count of rules evaluated |
 | `rules_passed` / `rules_violated` / `rules_uncertain` | Verdict counts |
 | `model_ids_used` | Which Gemini models were invoked |
 | `total_latency_ms` | End-to-end evaluation latency |
+
+## Shadow Mode (Rule Maturity)
+
+Rules with `maturity_level=experimental` operate in shadow mode: if the LLM returns DENY, the evaluation engine downgrades the verdict to NEEDS_CONFIRMATION and prefixes the reasoning with `[SHADOW]`. This means experimental rules observe but never block. Rules automatically promote to `stable` and then `proven` based on their false-positive rate (managed by the `auto_promote_rules` background worker).
 
 ## Additional Endpoints
 

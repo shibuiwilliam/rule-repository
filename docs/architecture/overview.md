@@ -55,10 +55,13 @@ api/  -->  services/  -->  domain/
 1. Client sends a diff, file list, or free-form facts to `POST /api/v1/evaluate`.
 2. The evaluation engine selects relevant rules (metadata filtering + effective_period enforcement + semantic ranking).
 3. The graph resolver fetches Neo4j relationships (OVERRIDES, CONFLICTS_WITH, DEPENDS_ON) between selected rules and builds an evaluation plan.
-4. Each selected rule is judged against the context by Gemini (model tier based on rule severity). LLM cache is checked first.
-5. The conflict-aware aggregator applies overrides, resolves conflicts (severity > modality > specificity tiebreak), and skips rules whose prerequisite was denied.
-6. The response includes violations, warnings, code locations, fix suggestions, and `conflict_resolutions[]` explaining any relationship-based decisions.
-7. The full evaluation is logged to the audit trail.
+4. The **batched evaluator** sends all selected rules to Gemini in a single API call with structured JSON output requesting per-rule verdicts. For DENY + CRITICAL rules, a Pro model confirmation pass re-evaluates those specific rules. If the batch call fails, the system falls back to per-rule concurrent evaluation.
+5. Each evaluation result is persisted to the `evaluations` table for analytics.
+6. The conflict-aware aggregator applies overrides, resolves conflicts (severity > modality > specificity tiebreak), and skips rules whose prerequisite was denied.
+7. The response includes violations, warnings, code locations, fix suggestions, and `conflict_resolutions[]` explaining any relationship-based decisions.
+8. The full evaluation is logged to the audit trail.
+
+See [Batched Evaluation](batch-evaluation.md) for the detailed architecture.
 
 ### Context Delivery (MCP)
 

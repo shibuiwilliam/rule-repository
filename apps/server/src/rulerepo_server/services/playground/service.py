@@ -85,9 +85,7 @@ class PlaygroundService:
                 "locations": [],
             }
 
-        verdict_obj, _model_id, _latency = await evaluate_rule(
-            rule_dict, context, self._gemini, cache_repo=None
-        )
+        verdict_obj, _model_id, _latency = await evaluate_rule(rule_dict, context, self._gemini, cache_repo=None)
 
         return {
             "verdict": verdict_obj.verdict.value,

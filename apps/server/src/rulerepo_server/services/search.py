@@ -50,9 +50,7 @@ class SearchService:
         Returns:
             Search results with rule data and scores.
         """
-        hits, total = await self._es_index.search_fulltext(
-            query, filters=filters, page=page, page_size=page_size
-        )
+        hits, total = await self._es_index.search_fulltext(query, filters=filters, page=page, page_size=page_size)
         return await self._hydrate_results(hits, total, page, page_size, query)
 
     async def vector_search(
@@ -82,9 +80,7 @@ class SearchService:
             logger.warning("vector_search_no_embedding", query=query[:100])
             return {"items": [], "total": 0, "page": page, "page_size": page_size, "query": query}
 
-        hits, total = await self._es_index.search_vector(
-            embedding, filters=filters, page=page, page_size=page_size
-        )
+        hits, total = await self._es_index.search_vector(embedding, filters=filters, page=page, page_size=page_size)
         return await self._hydrate_results(hits, total, page, page_size, query)
 
     async def hybrid_search(
@@ -119,9 +115,7 @@ class SearchService:
             )
         else:
             # Fall back to fulltext if embedding unavailable
-            hits, total = await self._es_index.search_fulltext(
-                query, filters=filters, page=page, page_size=page_size
-            )
+            hits, total = await self._es_index.search_fulltext(query, filters=filters, page=page, page_size=page_size)
 
         return await self._hydrate_results(hits, total, page, page_size, query)
 
@@ -142,9 +136,7 @@ class SearchService:
         Returns:
             Search results with rule data.
         """
-        hits, total = await self._es_index.search_category(
-            filters=filters, page=page, page_size=page_size
-        )
+        hits, total = await self._es_index.search_category(filters=filters, page=page, page_size=page_size)
         return await self._hydrate_results(hits, total, page, page_size, "")
 
     async def context_search(
@@ -154,6 +146,7 @@ class SearchService:
         scope: list[str] | None = None,
         page: int = 1,
         page_size: int = 20,
+        project_id: str | None = None,
     ) -> dict[str, object]:
         """Context search — given a body of facts, return applicable rules.
 
@@ -177,6 +170,8 @@ class SearchService:
         filters: dict[str, object] = {}
         if scope:
             filters["scope"] = scope
+        if project_id:
+            filters["project_id"] = project_id
 
         return await self.hybrid_search(query, filters=filters, page=page, page_size=page_size)
 

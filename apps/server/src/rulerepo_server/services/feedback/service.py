@@ -8,7 +8,7 @@ from uuid import uuid4
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rulerepo_server.adapters.postgres.models import CorrectionModel, RuleModel
+from rulerepo_server.adapters.postgres.models import DEFAULT_PROJECT_ID, CorrectionModel, RuleModel
 from rulerepo_server.core.errors import NotFoundError
 from rulerepo_server.core.logging import get_logger
 from rulerepo_server.services.feedback.capture import extract_correction_delta
@@ -35,6 +35,7 @@ class FeedbackService:
         repository: str | None,
         pr_number: int | None,
         evaluation_ids: list[str],
+        project_id: str | None = None,
     ) -> dict[str, Any]:
         """Submit a correction and run analysis.
 
@@ -65,6 +66,7 @@ class FeedbackService:
             pr_number=pr_number,
             evaluation_ids=evaluation_ids,
             status="pending",
+            project_id=project_id or DEFAULT_PROJECT_ID,
         )
         self._session.add(correction)
 
@@ -102,6 +104,7 @@ class FeedbackService:
         status: str | None,
         page: int,
         page_size: int,
+        project_id: str | None = None,
     ) -> dict[str, Any]:
         """Return a paginated list of corrections.
 
@@ -115,6 +118,10 @@ class FeedbackService:
         """
         query = select(CorrectionModel).order_by(CorrectionModel.created_at.desc())
         count_query = select(func.count(CorrectionModel.id))
+
+        if project_id:
+            query = query.where(CorrectionModel.project_id == project_id)
+            count_query = count_query.where(CorrectionModel.project_id == project_id)
 
         if status:
             query = query.where(CorrectionModel.status == status)
@@ -166,9 +173,7 @@ class FeedbackService:
         Raises:
             NotFoundError: If the correction does not exist.
         """
-        result = await self._session.execute(
-            select(CorrectionModel).where(CorrectionModel.id == correction_id)
-        )
+        result = await self._session.execute(select(CorrectionModel).where(CorrectionModel.id == correction_id))
         correction = result.scalar_one_or_none()
         if correction is None:
             raise NotFoundError("Correction", correction_id)
@@ -219,9 +224,7 @@ class FeedbackService:
         Raises:
             NotFoundError: If the correction does not exist.
         """
-        result = await self._session.execute(
-            select(CorrectionModel).where(CorrectionModel.id == correction_id)
-        )
+        result = await self._session.execute(select(CorrectionModel).where(CorrectionModel.id == correction_id))
         correction = result.scalar_one_or_none()
         if correction is None:
             raise NotFoundError("Correction", correction_id)
@@ -254,25 +257,19 @@ class FeedbackService:
 
         # By status
         status_result = await self._session.execute(
-            select(CorrectionModel.status, func.count(CorrectionModel.id)).group_by(
-                CorrectionModel.status
-            )
+            select(CorrectionModel.status, func.count(CorrectionModel.id)).group_by(CorrectionModel.status)
         )
         by_status: dict[str, int] = {str(row[0]): row[1] for row in status_result.all()}
 
         # Rules created from corrections
         rules_created_result = await self._session.execute(
-            select(func.count(CorrectionModel.id)).where(
-                CorrectionModel.created_rule_id.isnot(None)
-            )
+            select(func.count(CorrectionModel.id)).where(CorrectionModel.created_rule_id.isnot(None))
         )
         rules_created = rules_created_result.scalar_one()
 
         # Top violated rules: frequency of matched_rule_ids across all corrections
         all_corrections_result = await self._session.execute(
-            select(CorrectionModel.matched_rule_ids).where(
-                CorrectionModel.matched_rule_ids.isnot(None)
-            )
+            select(CorrectionModel.matched_rule_ids).where(CorrectionModel.matched_rule_ids.isnot(None))
         )
         rule_freq: dict[str, int] = {}
         for (matched_ids,) in all_corrections_result.all():

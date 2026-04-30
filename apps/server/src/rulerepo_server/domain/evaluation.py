@@ -71,6 +71,24 @@ class EvaluationContext:
 
 
 @dataclass(frozen=True)
+class Remediation:
+    """A machine-readable fix for a rule violation.
+
+    Agents and CI pipelines can apply auto_applicable remediations without human
+    review. Non-auto remediations require human approval before application.
+    """
+
+    type: str  # "replace", "insert", "delete", "add_import", "rename"
+    file_path: str
+    start_line: int
+    end_line: int | None = None
+    original: str | None = None
+    replacement: str | None = None
+    description: str = ""
+    auto_applicable: bool = False
+
+
+@dataclass(frozen=True)
 class RuleVerdict:
     """The result of evaluating a single rule against the context."""
 
@@ -82,6 +100,7 @@ class RuleVerdict:
     issue_description: str = ""
     fix_suggestion: str | None = None
     locations: list[CodeLocation] = field(default_factory=list)
+    remediations: list[Remediation] = field(default_factory=list)
 
 
 @dataclass

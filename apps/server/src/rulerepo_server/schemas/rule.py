@@ -87,6 +87,7 @@ class RuleResponse(BaseModel):
 
     id: UUID
     project_id: str | None = None
+    maturity_level: str = "experimental"
     statement: str
     modality: Modality
     severity: Severity

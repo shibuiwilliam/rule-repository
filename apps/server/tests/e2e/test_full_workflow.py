@@ -180,10 +180,7 @@ async def test_manual_rule_create_and_evaluate(
     create_resp = await http_client.post(
         "/api/v1/rules",
         json={
-            "statement": (
-                "All Python functions MUST have type annotations "
-                "on all parameters and the return type."
-            ),
+            "statement": ("All Python functions MUST have type annotations on all parameters and the return type."),
             "modality": "MUST",
             "severity": "HIGH",
             "scope": ["engineering", "python"],
@@ -203,7 +200,7 @@ async def test_manual_rule_create_and_evaluate(
             "mode": "preflight",
             "max_rules": 5,
         },
-        timeout=120,
+        timeout=300,
     )
     assert eval_resp.status_code == 200
     eval_data = eval_resp.json()

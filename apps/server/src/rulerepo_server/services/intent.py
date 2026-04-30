@@ -131,9 +131,7 @@ class IntentRouter:
             case "lookup_rule" | "search_rules":
                 search_query = " ".join(keywords) if keywords else query
                 filters = {"scope": scope} if scope else {}
-                result = await self._search.hybrid_search(
-                    search_query, filters=filters, page=1, page_size=10
-                )
+                result = await self._search.hybrid_search(search_query, filters=filters, page=1, page_size=10)
             case "find_conflicts":
                 search_query = " ".join(keywords) if keywords else query
                 result = await self._search.fulltext_search(search_query, page=1, page_size=20)
@@ -141,13 +139,9 @@ class IntentRouter:
                 # Route to the evaluation engine
                 result = {
                     "evaluation_endpoint": "/api/v1/evaluate",
-                    "suggestion": (
-                        "Use POST /api/v1/evaluate with your context for a full compliance check."
-                    ),
+                    "suggestion": ("Use POST /api/v1/evaluate with your context for a full compliance check."),
                     "quick_search": (
-                        await self._search.hybrid_search(
-                            " ".join(keywords) if keywords else query, page=1, page_size=5
-                        )
+                        await self._search.hybrid_search(" ".join(keywords) if keywords else query, page=1, page_size=5)
                     ),
                 }
             case "explain_rule" | "simulate_change":

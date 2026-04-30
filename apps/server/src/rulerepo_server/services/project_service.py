@@ -57,17 +57,13 @@ class ProjectService:
         Raises:
             NotFoundError: If project does not exist.
         """
-        result = await self._session.execute(
-            select(ProjectModel).where(ProjectModel.id == UUID(project_id))
-        )
+        result = await self._session.execute(select(ProjectModel).where(ProjectModel.id == UUID(project_id)))
         project = result.scalar_one_or_none()
         if project is None:
             raise NotFoundError("Project", project_id)
         return self._to_dict(project)
 
-    async def list_projects(
-        self, *, page: int = 1, page_size: int = 50
-    ) -> dict[str, Any]:
+    async def list_projects(self, *, page: int = 1, page_size: int = 50) -> dict[str, Any]:
         """List all projects with pagination.
 
         Args:
@@ -83,9 +79,7 @@ class ProjectService:
         )
         projects = list(result.scalars().all())
 
-        count_result = await self._session.execute(
-            select(func.count()).select_from(ProjectModel)
-        )
+        count_result = await self._session.execute(select(func.count()).select_from(ProjectModel))
         total = count_result.scalar_one()
 
         return {
@@ -95,9 +89,7 @@ class ProjectService:
             "page_size": page_size,
         }
 
-    async def update_project(
-        self, project_id: str, **updates: Any
-    ) -> dict[str, Any]:
+    async def update_project(self, project_id: str, **updates: Any) -> dict[str, Any]:
         """Update a project's fields.
 
         Args:
@@ -110,9 +102,7 @@ class ProjectService:
         Raises:
             NotFoundError: If project does not exist.
         """
-        result = await self._session.execute(
-            select(ProjectModel).where(ProjectModel.id == UUID(project_id))
-        )
+        result = await self._session.execute(select(ProjectModel).where(ProjectModel.id == UUID(project_id)))
         project = result.scalar_one_or_none()
         if project is None:
             raise NotFoundError("Project", project_id)

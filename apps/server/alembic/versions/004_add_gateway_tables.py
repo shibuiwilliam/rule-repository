@@ -5,16 +5,16 @@ Revises: 003
 Create Date: 2026-04-26
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
 
 revision: str = "004"
-down_revision: Union[str, None] = "003"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "003"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -33,12 +33,8 @@ def upgrade() -> None:
         sa.Column("response_actions", JSONB(), nullable=False, server_default="[]"),
         sa.Column("on_deny", sa.String(20), nullable=False, server_default="'notify'"),
         sa.Column("enabled", sa.Boolean(), nullable=False, server_default=sa.true()),
-        sa.Column(
-            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
-        ),
-        sa.Column(
-            "updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
 
     op.create_table(
@@ -59,9 +55,7 @@ def upgrade() -> None:
         sa.Column("violations", JSONB(), nullable=True),
         sa.Column("actions_taken", JSONB(), nullable=False, server_default="[]"),
         sa.Column("latency_ms", sa.Integer(), nullable=True),
-        sa.Column(
-            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
     op.create_index("ix_gateway_evaluations_policy_id", "gateway_evaluations", ["policy_id"])
     op.create_index("ix_gateway_evaluations_created_at", "gateway_evaluations", ["created_at"])

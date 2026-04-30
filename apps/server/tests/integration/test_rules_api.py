@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 from httpx import AsyncClient
 
-
 pytestmark = pytest.mark.asyncio
 
 
@@ -64,9 +63,7 @@ async def test_list_rules_empty(client: AsyncClient) -> None:
     assert body["total"] == 0
 
 
-async def test_list_rules_with_data(
-    client: AsyncClient, sample_rule_data_list: list[dict[str, Any]]
-) -> None:
+async def test_list_rules_with_data(client: AsyncClient, sample_rule_data_list: list[dict[str, Any]]) -> None:
     for data in sample_rule_data_list:
         await client.post("/api/v1/rules", json=data)
 
@@ -77,9 +74,7 @@ async def test_list_rules_with_data(
     assert len(body["items"]) == len(sample_rule_data_list)
 
 
-async def test_list_rules_pagination(
-    client: AsyncClient, sample_rule_data_list: list[dict[str, Any]]
-) -> None:
+async def test_list_rules_pagination(client: AsyncClient, sample_rule_data_list: list[dict[str, Any]]) -> None:
     for data in sample_rule_data_list:
         await client.post("/api/v1/rules", json=data)
 

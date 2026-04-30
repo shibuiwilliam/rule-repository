@@ -108,9 +108,7 @@ def create_app() -> FastAPI:
         )
         return JSONResponse(
             status_code=500,
-            content={
-                "error": {"code": "INTERNAL_ERROR", "message": "An unexpected error occurred"}
-            },
+            content={"error": {"code": "INTERNAL_ERROR", "message": "An unexpected error occurred"}},
         )
 
     # --- Health checks ---

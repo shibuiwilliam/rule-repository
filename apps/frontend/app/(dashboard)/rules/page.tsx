@@ -1,5 +1,9 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { getRules } from "@/lib/api";
+import { type RuleList, getRules } from "@/lib/api";
+import { useProject } from "@/lib/project-context";
 
 const MODALITY_COLORS: Record<string, string> = {
   MUST: "bg-red-100 text-red-800",
@@ -16,20 +20,32 @@ const SEVERITY_COLORS: Record<string, string> = {
   LOW: "bg-gray-400 text-white",
 };
 
-export default async function RulesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string; project_id?: string }>;
-}) {
-  const params = await searchParams;
-  const page = Number(params.page) || 1;
-  const projectId = params.project_id;
-  let data;
-  try {
-    data = await getRules(page, 20, projectId);
-  } catch {
-    data = null;
-  }
+export default function RulesPage() {
+  const { currentProject } = useProject();
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState<RuleList | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadRules = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await getRules(page, 20, currentProject?.id);
+      setData(result);
+    } catch {
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, currentProject?.id]);
+
+  useEffect(() => {
+    loadRules();
+  }, [loadRules]);
+
+  // Reset to page 1 when project changes
+  useEffect(() => {
+    setPage(1);
+  }, [currentProject?.id]);
 
   return (
     <div>
@@ -43,12 +59,18 @@ export default async function RulesPage({
         </Link>
       </div>
 
-      {!data ? (
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-lg border bg-gray-100" />
+          ))}
+        </div>
+      ) : !data ? (
         <p className="text-gray-500">
           Unable to connect to the backend. Is the server running?
         </p>
       ) : data.items.length === 0 ? (
-        <p className="text-gray-500">No rules found. Create your first rule.</p>
+        <p className="text-gray-500">No rules found in this project. Create your first rule.</p>
       ) : (
         <>
           <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
@@ -121,30 +143,33 @@ export default async function RulesPage({
           </div>
 
           {/* Pagination */}
-          <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-            <span>
-              Showing {(page - 1) * data.page_size + 1}–
-              {Math.min(page * data.page_size, data.total)} of {data.total}
-            </span>
-            <div className="flex gap-2">
-              {page > 1 && (
-                <Link
-                  href={`/rules?page=${page - 1}`}
-                  className="rounded border px-3 py-1 hover:bg-gray-100"
+          {data.total > data.page_size && (
+            <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+              <span>
+                Showing {(page - 1) * data.page_size + 1}–
+                {Math.min(page * data.page_size, data.total)} of {data.total}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="rounded border px-3 py-1 hover:bg-gray-100 disabled:opacity-40"
                 >
                   Previous
-                </Link>
-              )}
-              {page * data.page_size < data.total && (
-                <Link
-                  href={`/rules?page=${page + 1}`}
-                  className="rounded border px-3 py-1 hover:bg-gray-100"
+                </button>
+                <span className="px-2 py-1 text-gray-400">
+                  {page} / {Math.ceil(data.total / data.page_size)}
+                </span>
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page * data.page_size >= data.total}
+                  className="rounded border px-3 py-1 hover:bg-gray-100 disabled:opacity-40"
                 >
                   Next
-                </Link>
-              )}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </>
       )}
     </div>
