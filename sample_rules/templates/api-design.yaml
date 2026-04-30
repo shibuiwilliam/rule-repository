@@ -1,0 +1,77 @@
+# Rule Template: API Design Conventions
+# Apply with: rulerepo templates apply api-design
+version: 1
+template:
+  name: api-design
+  description: "REST API design conventions — versioning, naming, error handling, pagination, and documentation"
+  tags: ["api", "rest", "design"]
+rules:
+  - statement: "All API endpoints MUST be versioned under a /api/v{N}/ prefix. Breaking changes require a new major version"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/api"]
+    tags: ["versioning"]
+    rationale: "Unversioned APIs break existing clients when changes are made"
+
+  - statement: "REST resource names MUST use plural nouns (e.g., /users, /orders) not verbs or singular forms"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/api"]
+    tags: ["naming"]
+    rationale: "Consistent plural nouns follow REST conventions and improve API discoverability"
+
+  - statement: "List endpoints MUST support pagination with page and page_size query parameters. Default page_size MUST be between 10 and 100"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/api"]
+    tags: ["pagination"]
+    rationale: "Unpaginated endpoints cause memory issues and timeout errors as data grows"
+
+  - statement: "Error responses MUST use a consistent JSON schema with at least 'error.code' (machine-readable) and 'error.message' (human-readable) fields"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/api"]
+    tags: ["error-handling"]
+    rationale: "Inconsistent error formats force clients to handle errors differently per endpoint"
+
+  - statement: "API endpoints MUST return appropriate HTTP status codes: 201 for creation, 204 for deletion, 400 for validation errors, 404 for not found, 409 for conflicts"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/api"]
+    tags: ["http-status"]
+    rationale: "Correct status codes enable proper client-side error handling and caching"
+
+  - statement: "All POST and PATCH endpoints MUST validate request bodies and return 422 with field-level error details for invalid input"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/api"]
+    tags: ["validation"]
+    rationale: "Field-level validation errors help clients display specific error messages to users"
+
+  - statement: "Collection responses MUST include total count and pagination metadata alongside the items array"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/api"]
+    tags: ["pagination"]
+    rationale: "Without total count, clients cannot show pagination controls or progress indicators"
+
+  - statement: "API endpoints SHOULD include request ID tracking via a X-Request-ID header for debugging and log correlation"
+    modality: SHOULD
+    severity: LOW
+    scope: ["engineering/api"]
+    tags: ["observability"]
+    rationale: "Request IDs enable tracing a single request across services and log entries"
+
+  - statement: "DELETE endpoints MUST be idempotent. Deleting a resource that does not exist SHOULD return 204, not 404"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/api"]
+    tags: ["idempotency"]
+    rationale: "Non-idempotent deletes cause retry failures and require complex client-side logic"
+
+  - statement: "Sensitive data MUST NOT appear in URL query parameters. Use request body or headers for tokens, passwords, and PII"
+    modality: MUST_NOT
+    severity: HIGH
+    scope: ["engineering/api", "security"]
+    tags: ["security"]
+    rationale: "URLs are logged in server access logs, browser history, and proxy caches"

@@ -31,6 +31,10 @@ class EvaluateRequest(BaseModel):
         default=None,
         description="Deployment environment for snapshot-based evaluation",
     )
+    agent_id: str | None = Field(
+        default=None,
+        description="AI agent identifier (e.g., 'claude-code', 'cursor', 'copilot')",
+    )
 
 
 class QuickEvaluateRequest(BaseModel):

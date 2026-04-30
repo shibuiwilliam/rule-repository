@@ -1,0 +1,91 @@
+# Rule Template: TypeScript + React
+# Apply with: rulerepo templates apply typescript-react
+version: 1
+template:
+  name: typescript-react
+  description: "Type safety, component patterns, state management, and React best practices"
+  tags: ["typescript", "react", "frontend"]
+rules:
+  - statement: "TypeScript strict mode MUST be enabled in tsconfig.json. The 'any' type MUST NOT be used without a justifying comment"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/typescript"]
+    tags: ["type-safety", "typescript"]
+    rationale: "Strict mode catches null errors, implicit any, and other common bugs at compile time"
+
+  - statement: "React components MUST be function components, not class components"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/typescript/react"]
+    tags: ["react", "components"]
+    rationale: "Function components are simpler, support hooks, and are the modern React pattern"
+
+  - statement: "Each React component MUST be in its own file, named in PascalCase matching the component name"
+    modality: MUST
+    severity: LOW
+    scope: ["engineering/typescript/react"]
+    tags: ["organization", "naming"]
+    rationale: "One-component-per-file improves discoverability and reduces merge conflicts"
+
+  - statement: "React hooks MUST follow the Rules of Hooks: only called at the top level, only called from React functions"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/typescript/react"]
+    tags: ["react", "hooks"]
+    rationale: "Violating hook rules causes unpredictable behavior and state corruption"
+
+  - statement: "Side effects MUST be handled in useEffect hooks with proper dependency arrays and cleanup functions"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/typescript/react"]
+    tags: ["react", "hooks"]
+    rationale: "Missing cleanup functions cause memory leaks; incorrect dependencies cause stale closures"
+
+  - statement: "Error boundaries SHOULD wrap major UI sections to prevent full-page crashes from component errors"
+    modality: SHOULD
+    severity: MEDIUM
+    scope: ["engineering/typescript/react"]
+    tags: ["error-handling", "reliability"]
+    rationale: "Without error boundaries, a single component crash unmounts the entire application"
+
+  - statement: "API response types SHOULD be generated from the backend OpenAPI spec, not hand-written"
+    modality: SHOULD
+    severity: MEDIUM
+    scope: ["engineering/typescript"]
+    tags: ["type-safety", "api"]
+    rationale: "Hand-written types drift from the backend schema, causing runtime errors"
+
+  - statement: "State that derives from props MUST be computed during render, not stored in useState"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/typescript/react"]
+    tags: ["react", "state"]
+    rationale: "Derived state in useState causes stale data bugs and unnecessary re-renders"
+
+  - statement: "Lists rendered with .map() MUST use stable, unique keys. Array index SHOULD NOT be used as key when list items can be reordered or deleted"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/typescript/react"]
+    tags: ["react", "performance"]
+    rationale: "Incorrect keys cause incorrect DOM updates, lost state, and visual glitches"
+
+  - statement: "Tailwind CSS utility classes SHOULD be preferred over custom CSS files for styling"
+    modality: SHOULD
+    severity: LOW
+    scope: ["engineering/typescript/react"]
+    tags: ["css", "tailwind"]
+    rationale: "Utility classes are co-located with markup, reducing context switching and dead CSS"
+
+  - statement: "Form state SHOULD be managed with controlled components or a form library (react-hook-form), not uncontrolled refs for complex forms"
+    modality: SHOULD
+    severity: LOW
+    scope: ["engineering/typescript/react"]
+    tags: ["forms", "state"]
+    rationale: "Controlled forms enable validation, conditional fields, and predictable behavior"
+
+  - statement: "Server-state caching SHOULD use @tanstack/react-query or similar, not manual useEffect + useState patterns"
+    modality: SHOULD
+    severity: MEDIUM
+    scope: ["engineering/typescript/react"]
+    tags: ["data-fetching", "caching"]
+    rationale: "Manual data fetching lacks caching, deduplication, background refresh, and error retry"

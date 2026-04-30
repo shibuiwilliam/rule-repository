@@ -475,10 +475,25 @@ These are architecture decisions and patterns for ongoing Phase 5 work. Read bef
 - `api/v1/feedback.py` has proposal endpoints: `GET /proposals`, `POST /proposals/{id}/approve` (creates rule with experimental maturity), `POST /proposals/{id}/dismiss`.
 - Configuration: CLUSTER_WINDOW_DAYS=14, MIN_CLUSTER_SIZE=3, MIN_CONFIDENCE=0.8, SIMILARITY_THRESHOLD=0.8.
 
-### 14.7 Future Implementation Notes
-- **Active rule injection** (hooks): Enhance `packages/cli/src/rulerepo_cli/hook.py` preflight/posthoc commands. Wire scope detection from file paths.
+### 14.7 Agent Performance Tracking (Implemented)
+- `EvaluateRequest` schema has `agent_id: str | None` field. CLI hook has `--agent-id` option with `RULEREPO_AGENT_ID` env var.
+- `EvaluationRecordModel` has `agent_id` column (migration 017). Each evaluation record persists the agent identity.
+- `services/intelligence/agent_analytics.py` provides: `get_agent_list()`, `get_agent_detail()`, `get_agent_top_violations()`.
+- API: `GET /intelligence/agents` (list agents with compliance rates), `GET /intelligence/agents/{agent_id}` (trend + violations).
+- `rule_selector.py` boosts rules the agent historically violates by +20 relevance points when `agent_id` is provided.
+- Flow: CLI `--agent-id` → request → service → select_rules (boost) → persist record → analytics queries.
+
+### 14.8 Rules-as-Code SDK (Partially Implemented)
+- `packages/cli/src/rulerepo_cli/rules_yaml.py` defines `RulesYaml` and `RuleEntry` dataclasses with `load_rules_yaml()` and `save_rules_yaml()`.
+- `packages/cli/src/rulerepo_cli/export.py` implements `rulerepo-export`: fetches rules from server, writes `rules.yaml`.
+- `pyyaml>=6.0` added as CLI dependency.
+- Entry point: `rulerepo-export` registered in `packages/cli/pyproject.toml`.
+
+### 14.9 Future Implementation Notes
+- **Task-start hook**: Add `task-start` mode to `rulerepo-hook` with `--prompt` option. Create `POST /api/v1/context/rules` endpoint for task-aware rule injection.
 - **Zero-config init**: Create `packages/cli/src/rulerepo_cli/init.py` that wraps the existing discovery analyzers for local execution without the server.
 - **CLI auto-fix**: Add `--auto-fix` flag to `rulerepo-check` that applies `auto_applicable` remediations and re-evaluates.
+- **Agent dashboard frontend**: Create `/agents` page showing compliance leaderboard, per-agent trends, top violations.
 - **Infrastructure tiers**: Add `ELASTICSEARCH_ENABLED`, `NEO4J_ENABLED`, `REDIS_ENABLED` flags to Settings. Implement Postgres FTS fallback in search service.
 - **Generated TypeScript client**: Export OpenAPI spec and use `openapi-typescript` + `openapi-fetch` to replace hand-written `lib/api.ts`.
 

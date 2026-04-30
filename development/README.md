@@ -8,7 +8,7 @@ Technical documentation for developing and extending the Rule Repository.
 
 | Document | Description |
 |---|---|
-| [architecture.md](architecture.md) | System architecture: 11 deployable services, server module map (14 routers, 11 service areas), layering rules, data flows, 16 migrations, 24 ORM models |
+| [architecture.md](architecture.md) | System architecture: 10 deployable services, server module map (15 routers, 11 service areas), layering rules, data flows, 17 migrations, 25 ORM models |
 | [evaluation-engine.md](evaluation-engine.md) | How the Code-Aware Evaluation Engine works: batched evaluation, diff parsing, context assembly, rule selection (with project + environment scoping), verdict aggregation, shadow mode, structured remediations |
 | [api-reference.md](api-reference.md) | All API endpoints (14 routers): rules, search, evaluation, extraction, intent, intelligence (including /summary), relationships, discovery, feedback, federation, playground (including suggest-input), alerts, snapshots, projects |
 | [mcp-server.md](mcp-server.md) | MCP tools (6 tools), resources, prompts, and transport configuration (stdio + HTTP) |
@@ -16,7 +16,7 @@ Technical documentation for developing and extending the Rule Repository.
 | [testing.md](testing.md) | Test strategy (20 test files), running tests, writing new tests, LLM mocking, and linting |
 | [feedback-flywheel.md](feedback-flywheel.md) | Correction capture → analysis → auto-drafting → rule improvement loop (flywheel implemented with clustering + proposals) |
 | [rule-registration-workflows.md](rule-registration-workflows.md) | Sequence diagrams for all 4 rule registration paths: manual, extraction, discovery, feedback. Data store sync matrix |
-| [database-schema.md](database-schema.md) | Database schema: 24 ORM models across 16 migrations, ER diagram, design decisions |
+| [database-schema.md](database-schema.md) | Database schema: 25 ORM models across 17 migrations, ER diagram, design decisions |
 | [intelligence-dashboard-plan.md](intelligence-dashboard-plan.md) | Intelligence Dashboard implementation plan (completed) |
 | [playground-enhancement-plan.md](playground-enhancement-plan.md) | Playground multi-mode input support (completed) — Code + Scenario evaluation, rule picker, suggest-by-LLM |
 | [project-entity-plan.md](project-entity-plan.md) | Project entity as top-level organizational boundary (completed) |

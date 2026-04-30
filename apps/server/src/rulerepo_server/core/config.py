@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     github_app_private_key: str = ""
     github_webhook_secret: str = ""
 
+    # Weekly digest
+    digest_webhook_url: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

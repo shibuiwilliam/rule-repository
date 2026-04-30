@@ -101,6 +101,7 @@ rulerepo-hook posthot --file src/main.py --diff "..." --server-url http://localh
 | `--diff TEXT` | Diff content (posthot only) | Auto-generated if omitted |
 | `--format TEXT` | Output format: `text`, `json` | `text` |
 | `--server-url URL` | Rule Repository server URL | `$RULEREPO_SERVER_URL` |
+| `--agent-id TEXT` | Agent identifier for tracking | `$RULEREPO_AGENT_ID` |
 
 ### Error Behavior
 
@@ -142,9 +143,45 @@ Extraction complete: 15 candidate rules found
 
 Candidates must be reviewed and approved through the frontend or API before they become active rules.
 
+## rulerepo-export
+
+Exports rules from the server to a portable `rules.yaml` file.
+
+### Usage
+
+```bash
+rulerepo-export --output rules.yaml --project-id abc-123
+```
+
+### Options
+
+| Option | Description | Default |
+|---|---|---|
+| `--output PATH` | Output file path | `rules.yaml` |
+| `--project-id TEXT` | Filter by project | All projects |
+| `--scope TEXT` | Filter by scope tag | All scopes |
+| `--server-url URL` | Rule Repository server URL | `$RULEREPO_SERVER_URL` |
+
+### Output Format
+
+```yaml
+version: 1
+project: abc-123
+rules:
+  - id: rule-abc
+    statement: "All API endpoints MUST validate input with Pydantic models"
+    modality: MUST
+    severity: HIGH
+    scope: [src/api/**]
+```
+
+The `rules.yaml` file is version-controllable and works with the planned `rulerepo-lite` local evaluator.
+
+---
+
 ## Environment
 
-All three commands read `RULEREPO_SERVER_URL` from the environment if `--server-url` is not provided.
+All commands read `RULEREPO_SERVER_URL` from the environment if `--server-url` is not provided. `rulerepo-hook` also reads `RULEREPO_AGENT_ID` for agent identity tracking.
 
 ## See Also
 

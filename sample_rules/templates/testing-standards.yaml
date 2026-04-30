@@ -1,0 +1,77 @@
+# Rule Template: Testing Standards
+# Apply with: rulerepo templates apply testing-standards
+version: 1
+template:
+  name: testing-standards
+  description: "Test organization, coverage, mocking, assertions, and CI integration standards"
+  tags: ["testing", "quality"]
+rules:
+  - statement: "Every public function or API endpoint MUST have at least one test covering the happy path"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/testing"]
+    tags: ["coverage"]
+    rationale: "Untested code breaks silently. Happy-path tests catch the most common regressions"
+
+  - statement: "Tests MUST be independent and not rely on execution order or shared mutable state between test functions"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/testing"]
+    tags: ["test-isolation"]
+    rationale: "Order-dependent tests produce flaky CI results and mask real failures"
+
+  - statement: "External service calls (APIs, databases, message queues) MUST be mocked in unit tests. Integration tests may use real services"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/testing"]
+    tags: ["mocking"]
+    rationale: "External dependencies make tests slow, flaky, and environment-dependent"
+
+  - statement: "Test function names MUST describe the scenario and expected outcome, e.g., test_create_order_returns_201_when_valid"
+    modality: MUST
+    severity: LOW
+    scope: ["engineering/testing"]
+    tags: ["naming"]
+    rationale: "Descriptive test names serve as documentation and make failure reports understandable"
+
+  - statement: "Tests SHOULD use fixtures or factories for test data setup instead of inline object construction"
+    modality: SHOULD
+    severity: LOW
+    scope: ["engineering/testing"]
+    tags: ["test-data"]
+    rationale: "Fixtures reduce duplication and ensure consistent test data across test functions"
+
+  - statement: "Assertions MUST check specific values or behaviors, not just 'no exception was raised'. Assert the response body, status code, or side effects"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/testing"]
+    tags: ["assertions"]
+    rationale: "Tests that only check for exceptions pass even when the function returns wrong results"
+
+  - statement: "LLM and AI model calls MUST be mocked in all tests except dedicated evaluation test suites gated behind an environment flag"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/testing"]
+    tags: ["mocking", "llm"]
+    rationale: "Real LLM calls are slow, expensive, non-deterministic, and require API keys in CI"
+
+  - statement: "Tests SHOULD cover error paths and edge cases (empty input, null values, boundary conditions), not just the happy path"
+    modality: SHOULD
+    severity: MEDIUM
+    scope: ["engineering/testing"]
+    tags: ["coverage"]
+    rationale: "Most production bugs occur in edge cases that happy-path tests don't exercise"
+
+  - statement: "CI MUST run all tests on every pull request. PRs with failing tests MUST NOT be merged"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/testing"]
+    tags: ["ci"]
+    rationale: "Merging untested or failing code accumulates technical debt and causes production incidents"
+
+  - statement: "Test files SHOULD mirror the source directory structure for discoverability (e.g., src/services/auth.py → tests/unit/test_auth.py)"
+    modality: SHOULD
+    severity: LOW
+    scope: ["engineering/testing"]
+    tags: ["organization"]
+    rationale: "Mirrored structure makes it easy to find tests for any source file"

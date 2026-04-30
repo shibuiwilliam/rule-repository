@@ -433,6 +433,7 @@ class EvaluationRecordModel(Base):
     input_type: Mapped[str] = mapped_column(String(20), nullable=False, default="code")
     model_id: Mapped[str] = mapped_column(String(100), nullable=False, default="unknown")
     cached: Mapped[bool] = mapped_column(default=False)
+    agent_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 

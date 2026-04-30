@@ -359,6 +359,43 @@ async def cluster_corrections(ctx: dict) -> None:
         await session.close()
 
 
+async def send_weekly_digest(ctx: dict) -> None:
+    """Generate and optionally deliver the weekly governance digest.
+
+    Runs every Monday at 9am. Generates the digest and sends it to the
+    configured DIGEST_WEBHOOK_URL if set.
+    """
+    session = await _get_worker_session()
+    try:
+        from rulerepo_server.services.intelligence.digest import generate_weekly_digest
+
+        digest = await generate_weekly_digest(session)
+        logger.info(
+            "weekly_digest_generated",
+            compliance_rate=digest["compliance"]["current_rate"],
+            rules_total=digest["rules"]["total"],
+        )
+
+        # Send to webhook if configured
+        webhook_url = get_settings().digest_webhook_url
+        if webhook_url:
+            import httpx
+
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    webhook_url,
+                    json=digest,
+                    timeout=30,
+                )
+                logger.info("weekly_digest_sent", status=resp.status_code)
+    except Exception:
+        await session.rollback()
+        logger.exception("weekly_digest_failed")
+        raise
+    finally:
+        await session.close()
+
+
 class WorkerSettings:
     """arq worker configuration."""
 
@@ -369,6 +406,7 @@ class WorkerSettings:
         cron(auto_promote_rules, hour=4, minute=0),
         cron(cluster_corrections, hour=5, minute=0),
         cron(compute_correction_stats, minute=0),
+        cron(send_weekly_digest, weekday=0, hour=9, minute=0),  # Monday 9am
     ]
 
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)

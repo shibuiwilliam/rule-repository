@@ -5,8 +5,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 
 from rulerepo_server.core.deps import get_rule_service
-from rulerepo_server.schemas.rule import RuleCreate, RuleUpdate
+from rulerepo_server.core.logging import get_logger
+from rulerepo_server.schemas.rule import RuleCreate, RulesImportRequest, RuleUpdate
 from rulerepo_server.services.rule_service import RuleService
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/rules", tags=["rules"])
 
@@ -40,6 +43,64 @@ async def list_rules(
         severity=severity,
         status=status,
     )
+
+
+@router.get("/context")
+async def get_session_context(
+    files: str = Query(description="Comma-separated file paths"),
+    format: str = Query(default="instructions", description="Output format: instructions, checklist, detailed"),
+    project_id: str | None = Query(default=None),
+    service: RuleService = Depends(get_rule_service),
+) -> dict:
+    """Lightweight endpoint for agent session startup.
+
+    Resolves scopes from file paths, fetches matching rules,
+    and returns formatted context optimized for LLM consumption.
+    """
+    from rulerepo_server.services.context_delivery.formatter import format_rules
+    from rulerepo_server.services.context_delivery.scope_registry import (
+        ScopeRegistry,
+        resolve_scopes,
+    )
+
+    file_list = [f.strip() for f in files.split(",") if f.strip()]
+
+    # Resolve scopes from file paths
+    all_scopes: list[str] = []
+    for fp in file_list:
+        all_scopes.extend(resolve_scopes(fp))
+    scopes = list(dict.fromkeys(all_scopes))
+
+    # Load rules and match
+    registry = ScopeRegistry()
+    await registry.load(service._session)
+
+    ext_to_lang = {
+        ".py": "python",
+        ".ts": "typescript",
+        ".tsx": "typescript",
+        ".js": "javascript",
+        ".jsx": "javascript",
+        ".go": "go",
+        ".rs": "rust",
+        ".java": "java",
+        ".rb": "ruby",
+    }
+    languages: list[str] = []
+    for fp in file_list:
+        for ext, lang in ext_to_lang.items():
+            if fp.endswith(ext) and lang not in languages:
+                languages.append(lang)
+
+    matched_rules = registry.get_rules_for_paths(file_list, languages=languages, max_rules=20)
+    rules_text = format_rules(matched_rules, format_type=format) if matched_rules else ""
+
+    return {
+        "rules_text": rules_text,
+        "rule_count": len(matched_rules),
+        "scopes_resolved": scopes,
+        "files_analyzed": len(file_list),
+    }
 
 
 @router.get("/{rule_id}")
@@ -96,3 +157,47 @@ async def get_graph(
 ) -> dict:
     """Get the relationship subgraph around a rule."""
     return await service.get_graph(rule_id, depth=depth)
+
+
+@router.post("/import", status_code=201)
+async def import_rules(
+    body: RulesImportRequest,
+    project_id: str | None = Query(default=None),
+    service: RuleService = Depends(get_rule_service),
+) -> dict:
+    """Bulk import rules from a rules.yaml-style payload.
+
+    Creates multiple rules at once. Each rule starts in DRAFT status
+    with experimental maturity (shadow mode).
+    """
+    created = 0
+    errors = 0
+    rule_ids: list[str] = []
+
+    for item in body.rules:
+        try:
+            data = RuleCreate(
+                statement=item.statement,
+                modality=item.modality,
+                severity=item.severity,
+                scope=item.scope,
+                tags=item.tags + (["imported"] if "imported" not in item.tags else []),
+                rationale=item.rationale or "",
+            )
+            result = await service.create_rule(data, project_id=project_id)
+            rule_ids.append(str(result["id"]))
+            created += 1
+        except Exception as exc:
+            logger.warning(
+                "import_rule_failed",
+                statement=item.statement[:80],
+                error=str(exc),
+            )
+            errors += 1
+
+    logger.info("rules_imported", created=created, errors=errors)
+    return {
+        "created": created,
+        "errors": errors,
+        "rule_ids": rule_ids,
+    }

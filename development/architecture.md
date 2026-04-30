@@ -284,6 +284,7 @@ If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.
 | `014_add_evaluations_table` | Persistent per-rule evaluation records |
 | `015_add_maturity_level` | Rule maturity model: maturity_level + accuracy tracking |
 | `016_add_draft_proposals` | Draft rule proposals for correction-to-rule flywheel |
+| `017_add_agent_id_to_evaluations` | Agent identity tracking on evaluation records |
 
 ---
 

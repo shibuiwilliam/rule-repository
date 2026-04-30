@@ -55,6 +55,7 @@ nav:
     - Feedback Loop: intelligence/feedback.md
     - Correction Flywheel: intelligence/flywheel.md
     - Compliance Dashboard: intelligence/compliance-dashboard.md
+    - Agent Performance: intelligence/agent-tracking.md
   - Development:
     - Contributing: dev/contributing.md
     - Testing: dev/testing.md

@@ -1,0 +1,77 @@
+# Rule Template: Security (OWASP Top 10)
+# Apply with: rulerepo templates apply security-owasp
+version: 1
+template:
+  name: security-owasp
+  description: "Security rules derived from OWASP Top 10 — injection, auth, data exposure, CSRF, and more"
+  tags: ["security", "owasp"]
+rules:
+  - statement: "All user input MUST be validated and sanitized before use in SQL queries, shell commands, or file paths. Parameterized queries or ORM methods are required"
+    modality: MUST
+    severity: CRITICAL
+    scope: ["security"]
+    tags: ["injection", "owasp-a03"]
+    rationale: "OWASP A03:2021 Injection — unsanitized input enables SQL injection, command injection, and path traversal"
+
+  - statement: "Authentication tokens MUST NOT be stored in localStorage. Use httpOnly cookies or secure session management"
+    modality: MUST_NOT
+    severity: HIGH
+    scope: ["security"]
+    tags: ["auth", "owasp-a07"]
+    rationale: "OWASP A07:2021 — localStorage is accessible to XSS attacks; httpOnly cookies are not"
+
+  - statement: "Passwords MUST be hashed with bcrypt, argon2, or scrypt with appropriate cost factors. Plain-text or reversible password storage is forbidden"
+    modality: MUST
+    severity: CRITICAL
+    scope: ["security"]
+    tags: ["auth", "owasp-a02"]
+    rationale: "OWASP A02:2021 Cryptographic Failures — weak password storage enables credential stuffing"
+
+  - statement: "API endpoints that modify data MUST verify the authenticated user has authorization for the specific resource, not just authentication"
+    modality: MUST
+    severity: CRITICAL
+    scope: ["security"]
+    tags: ["authorization", "owasp-a01"]
+    rationale: "OWASP A01:2021 Broken Access Control — authentication alone does not prevent unauthorized data access"
+
+  - statement: "Sensitive data (API keys, passwords, tokens, PII) MUST NOT be logged, included in error messages, or returned in API responses"
+    modality: MUST_NOT
+    severity: HIGH
+    scope: ["security"]
+    tags: ["data-exposure", "owasp-a02"]
+    rationale: "OWASP A02:2021 — sensitive data in logs or responses is exploitable if the system is compromised"
+
+  - statement: "All API endpoints MUST validate Content-Type headers and reject unexpected content types"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["security"]
+    tags: ["input-validation", "owasp-a03"]
+    rationale: "Content-type confusion enables request smuggling and deserialization attacks"
+
+  - statement: "Security-critical dependencies MUST be kept up to date. Known-vulnerable dependency versions MUST NOT be used in production"
+    modality: MUST
+    severity: HIGH
+    scope: ["security"]
+    tags: ["dependencies", "owasp-a06"]
+    rationale: "OWASP A06:2021 Vulnerable and Outdated Components — known CVEs are actively exploited"
+
+  - statement: "Rate limiting MUST be applied to authentication endpoints, password reset, and any endpoint that sends emails or SMS"
+    modality: MUST
+    severity: HIGH
+    scope: ["security"]
+    tags: ["rate-limiting", "owasp-a07"]
+    rationale: "Without rate limiting, brute-force attacks and credential stuffing are trivial"
+
+  - statement: "Cross-Site Request Forgery (CSRF) protection MUST be enabled for all state-changing endpoints accessed via browsers"
+    modality: MUST
+    severity: HIGH
+    scope: ["security"]
+    tags: ["csrf", "owasp-a01"]
+    rationale: "OWASP A01:2021 — CSRF allows attackers to perform actions on behalf of authenticated users"
+
+  - statement: "HTTP security headers (Content-Security-Policy, X-Content-Type-Options, Strict-Transport-Security) SHOULD be set on all responses"
+    modality: SHOULD
+    severity: MEDIUM
+    scope: ["security"]
+    tags: ["headers", "owasp-a05"]
+    rationale: "OWASP A05:2021 Security Misconfiguration — missing headers enable XSS, clickjacking, and MIME-type attacks"

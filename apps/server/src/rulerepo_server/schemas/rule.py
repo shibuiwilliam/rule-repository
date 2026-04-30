@@ -149,3 +149,29 @@ class RelationshipCreate(BaseModel):
     source_id: UUID
     target_id: UUID
     relationship_type: str
+
+
+# ---------------------------------------------------------------------------
+# Bulk import
+# ---------------------------------------------------------------------------
+
+
+class RuleImportItem(BaseModel):
+    """A single rule in a bulk import payload."""
+
+    statement: str = Field(..., min_length=1, max_length=10000)
+    modality: str = "MUST"
+    severity: str = "MEDIUM"
+    scope: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    rationale: str = ""
+    source: str | None = None
+    confidence: float | None = None
+
+
+class RulesImportRequest(BaseModel):
+    """Bulk import payload matching the rules.yaml format."""
+
+    version: int = 1
+    project: str | None = None
+    rules: list[RuleImportItem] = Field(..., min_length=1)

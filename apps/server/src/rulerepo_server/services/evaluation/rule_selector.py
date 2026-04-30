@@ -32,6 +32,7 @@ async def select_rules(
     scope: str | None = None,
     federation_id: str | None = None,
     environment: str | None = None,
+    agent_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Select rules applicable to the given evaluation context.
 
@@ -162,6 +163,29 @@ async def select_rules(
             scored.append((rule, score))
         scored.sort(key=lambda x: x[1], reverse=True)
         filtered = [r for r, _ in scored]
+
+    # Stage 3b: Agent-specific boosting (PROJECT_IMPROVEMENT.md §2.4)
+    # Boost rules this agent historically violates so they appear more prominently
+    if agent_id:
+        try:
+            from rulerepo_server.services.intelligence.agent_analytics import (
+                get_agent_top_violations,
+            )
+
+            agent_violations = await get_agent_top_violations(session, agent_id, limit=10)
+            violation_ids = {v["rule_id"] for v in agent_violations}
+            if violation_ids:
+                boosted: list[tuple[Any, float]] = []
+                for rule in filtered:
+                    score = _compute_relevance(rule, context) if (context.file_paths or context.languages) else 0.0
+                    if str(rule.id) in violation_ids:
+                        score += 20.0
+                    boosted.append((rule, score))
+                boosted.sort(key=lambda x: x[1], reverse=True)
+                filtered = [r for r, _ in boosted]
+                logger.info("rule_selector_agent_boost", agent_id=agent_id, boosted_rules=len(violation_ids))
+        except Exception:
+            logger.warning("rule_selector_agent_boost_failed", agent_id=agent_id, exc_info=True)
 
     # Stage 4: Cap at max_rules
     selected = filtered[:max_rules]

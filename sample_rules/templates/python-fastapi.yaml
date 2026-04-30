@@ -1,0 +1,112 @@
+# Rule Template: Python + FastAPI
+# Apply with: rulerepo templates apply python-fastapi
+version: 1
+template:
+  name: python-fastapi
+  description: "Type safety, async patterns, Pydantic models, and API conventions for Python/FastAPI projects"
+  tags: ["python", "fastapi", "api"]
+rules:
+  - statement: "All Python functions MUST have type annotations on all parameters and the return type"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/python"]
+    tags: ["type-safety"]
+    rationale: "Type annotations enable mypy, IDE support, and auto-generated documentation"
+
+  - statement: "All API request bodies MUST be validated using Pydantic BaseModel subclasses, not raw dicts"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/python/api"]
+    tags: ["validation", "pydantic"]
+    rationale: "Pydantic models provide automatic validation, serialization, and OpenAPI schema generation"
+
+  - statement: "All API endpoints MUST return structured error responses with a consistent schema including error code and message"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/python/api"]
+    tags: ["error-handling", "api"]
+    rationale: "Consistent error responses enable client-side error handling and debugging"
+
+  - statement: "Database operations MUST use async drivers (asyncpg, aiosqlite) and async SQLAlchemy sessions"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/python/database"]
+    tags: ["async", "database"]
+    rationale: "Sync database calls block the event loop and degrade API throughput"
+
+  - statement: "All database queries MUST use parameterized queries or ORM methods. Raw string interpolation in SQL is forbidden"
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: ["engineering/python/database"]
+    tags: ["security", "sql-injection"]
+    rationale: "String-interpolated SQL enables SQL injection attacks"
+
+  - statement: "FastAPI dependency injection SHOULD be used for database sessions, auth, and service instances instead of module-level singletons"
+    modality: SHOULD
+    severity: MEDIUM
+    scope: ["engineering/python/api"]
+    tags: ["dependency-injection", "testability"]
+    rationale: "Dependency injection enables testing with mocks and per-request resource management"
+
+  - statement: "All public functions and classes MUST have docstrings in Google style format"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/python"]
+    tags: ["documentation"]
+    rationale: "Docstrings are the primary documentation for developers and auto-generated API docs"
+
+  - statement: "Exception handling MUST use project-specific exception classes, not bare Exception or generic HTTPException"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/python"]
+    tags: ["error-handling"]
+    rationale: "Custom exceptions enable consistent error handling and meaningful error messages"
+
+  - statement: "Environment-specific configuration MUST be loaded via Pydantic Settings (BaseSettings), not hardcoded or read from os.environ directly"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/python"]
+    tags: ["configuration"]
+    rationale: "Pydantic Settings provides validation, type coercion, and .env file support"
+
+  - statement: "All API endpoints SHOULD include OpenAPI metadata (summary, description, response_model) for auto-generated documentation"
+    modality: SHOULD
+    severity: LOW
+    scope: ["engineering/python/api"]
+    tags: ["documentation", "openapi"]
+    rationale: "Complete OpenAPI metadata enables better Swagger UI and client code generation"
+
+  - statement: "Background tasks SHOULD use a task queue (arq, Celery) instead of FastAPI BackgroundTasks for operations that may fail or take more than 30 seconds"
+    modality: SHOULD
+    severity: MEDIUM
+    scope: ["engineering/python"]
+    tags: ["async", "reliability"]
+    rationale: "BackgroundTasks lack retry, monitoring, and persistence; task queues provide all three"
+
+  - statement: "Logging MUST use structured logging (structlog or similar) with JSON output, not print() statements"
+    modality: MUST
+    severity: MEDIUM
+    scope: ["engineering/python"]
+    tags: ["logging", "observability"]
+    rationale: "Structured logs are machine-parseable and integrate with log aggregation systems"
+
+  - statement: "Alembic database migrations MUST be reversible with a working downgrade() function"
+    modality: MUST
+    severity: HIGH
+    scope: ["engineering/python/database"]
+    tags: ["database", "migrations"]
+    rationale: "Irreversible migrations prevent safe rollbacks during deployment failures"
+
+  - statement: "CORS configuration MUST explicitly list allowed origins. Wildcard ('*') origins MUST NOT be used in production"
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: ["engineering/python/api", "security"]
+    tags: ["security", "cors"]
+    rationale: "Wildcard CORS allows any website to make authenticated requests to the API"
+
+  - statement: "API responses SHOULD use pagination for list endpoints returning potentially unbounded result sets"
+    modality: SHOULD
+    severity: MEDIUM
+    scope: ["engineering/python/api"]
+    tags: ["api", "performance"]
+    rationale: "Unpaginated list endpoints cause memory issues and slow responses as data grows"

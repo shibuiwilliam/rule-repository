@@ -18,6 +18,64 @@ from rulerepo_server.core.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Default file-path → scope mapping for common project structures.
+# Teams can override this via project metadata or rules.yaml scope_map.
+DEFAULT_SCOPE_MAP: dict[str, list[str]] = {
+    "**/*.py": ["engineering/python"],
+    "src/api/**/*.py": ["engineering/python/api"],
+    "src/api/**": ["engineering/api"],
+    "tests/**": ["engineering/testing"],
+    "test/**": ["engineering/testing"],
+    "migrations/**": ["engineering/database/migrations"],
+    "alembic/**": ["engineering/database/migrations"],
+    "**/*.ts": ["engineering/typescript"],
+    "**/*.tsx": ["engineering/typescript/react"],
+    "**/*.js": ["engineering/javascript"],
+    "**/*.jsx": ["engineering/javascript/react"],
+    "**/*.go": ["engineering/go"],
+    "**/*.rs": ["engineering/rust"],
+    "**/*.java": ["engineering/java"],
+    "*.md": ["engineering/documentation"],
+    "docs/**": ["engineering/documentation"],
+    "Dockerfile*": ["engineering/docker"],
+    "docker-compose*": ["engineering/docker"],
+    ".github/**": ["engineering/ci"],
+}
+
+
+def resolve_scopes(
+    file_path: str,
+    custom_map: dict[str, list[str]] | None = None,
+) -> list[str]:
+    """Resolve all matching scopes for a file path using fnmatch.
+
+    Checks the custom scope map first (if provided), then the default map.
+    Returns deduplicated list of scopes ordered from most specific to general.
+
+    Args:
+        file_path: Relative file path (e.g., "src/api/payments.py").
+        custom_map: Optional project-specific scope overrides.
+
+    Returns:
+        List of matching scope strings.
+    """
+    scope_map = {**(DEFAULT_SCOPE_MAP), **(custom_map or {})}
+    matched: list[str] = []
+
+    for pattern, scopes in scope_map.items():
+        if fnmatch(file_path, pattern) or fnmatch(file_path.lower(), pattern.lower()):
+            matched.extend(scopes)
+
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    result: list[str] = []
+    for s in matched:
+        if s not in seen:
+            seen.add(s)
+            result.append(s)
+
+    return result
+
 
 class ScopeRegistry:
     """Fast file-path-to-rules lookup, cached in memory.

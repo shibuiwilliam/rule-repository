@@ -121,6 +121,7 @@ async def evaluate(
         max_rules=request.max_rules,
         severity_min=request.severity_min,
         environment=request.environment,
+        agent_id=request.agent_id,
     )
     return _result_to_response(result)
 

@@ -493,17 +493,20 @@ The project is structured in four phases, each delivering independent value.
 - **Effectiveness tracking**: false_positive_count/true_positive_count on RuleModel track accuracy; auto_promote_rules worker graduates rules automatically
 - **Database**: migration 016 adds `draft_rule_proposals` table; `services/feedback/auto_drafter.py` implements clustering + drafting
 
-#### 5e. Active Rule Injection [PLANNED]
+#### 5e. Active Rule Injection [PARTIALLY IMPLEMENTED]
 - Claude Code hooks integration: `PreToolUse` (before file write) fetches applicable rules, `PostToolUse` (after file write) evaluates changes
-- Installable via `rulerepo hooks install` (writes to `.claude/hooks.json`)
-- Scope-based file matching: file glob patterns mapped to rule scopes
-- `.rules` context file generation for agents
+- `--agent-id` option on `rulerepo-hook` with `RULEREPO_AGENT_ID` env var auto-detection [IMPLEMENTED]
+- Installable via `rulerepo hooks install` (writes to `.claude/hooks.json`) [PLANNED]
+- Scope-based file matching: file glob patterns mapped to rule scopes [PLANNED]
+- `.rules` context file generation for agents [PLANNED]
+- Task-start hook mode: `UserPromptSubmit` hook that injects rules before agent starts a task [PLANNED]
 
-#### 5f. Zero-Config Bootstrapping [PLANNED]
-- `rulerepo init` command: scans repository for CLAUDE.md, linter configs, code patterns → generates `rules.yaml`
-- `rules.yaml` as first-class format: portable, version-controllable rule definitions
-- Server import endpoint: `POST /api/v1/rules/import/yaml`
-- Rule templates library: curated templates for Python, TypeScript, API design, security, testing
+#### 5f. Zero-Config Bootstrapping [PARTIALLY IMPLEMENTED]
+- `rules.yaml` as first-class format: portable, version-controllable rule definitions with `RulesYaml` schema [IMPLEMENTED]
+- `rulerepo-export` command: fetches rules from server → writes `rules.yaml` with project/scope filtering [IMPLEMENTED]
+- `rulerepo init` command: scans repository for CLAUDE.md, linter configs, code patterns → generates `rules.yaml` [PLANNED]
+- Server import endpoint: `POST /api/v1/rules/import/yaml` [PLANNED]
+- Rule templates library: curated templates for Python, TypeScript, API design, security, testing [PLANNED]
 
 #### 5g. Structured Remediation [IMPLEMENTED]
 - **`Remediation` dataclass** in `domain/evaluation.py`: type (replace/insert/delete), file_path, start_line, end_line, original, replacement, description, auto_applicable
@@ -521,14 +524,14 @@ The project is structured in four phases, each delivering independent value.
 - **New rules default to experimental**: all newly created rules start in shadow mode
 - **Existing rules backfilled as proven**: migration sets APPROVED/EFFECTIVE rules to proven
 
-#### 5i. Advanced Intelligence [PLANNED]
-- Rule effectiveness score: precision, recall, impact metrics
-- Conflict detector (continuous scanning)
-- Verdict drift detection (temporal, model, semantic)
-- Agent performance dashboard (compliance rate per agent, top violations, trends)
-- Webhook subscriptions for rule change notifications
-- Weekly governance digest (new drafts, promotions, top violations, pending actions)
-- Provenance lineage propagation, polyglot rule sync, Rule Tutor
+#### 5i. Advanced Intelligence [PARTIALLY IMPLEMENTED]
+- **Agent performance tracking** [IMPLEMENTED]: `agent_id` field on evaluations (migration 017), `agent_analytics.py` service with `get_agent_list`, `get_agent_detail`, `get_agent_top_violations`; API at `GET /intelligence/agents` and `GET /intelligence/agents/{agent_id}`
+- **Targeted rule delivery** [IMPLEMENTED]: `select_rules()` boosts rules an agent historically violates by +20 relevance points, using `get_agent_top_violations()`
+- Rule effectiveness score: precision, recall, impact metrics [PLANNED]
+- Conflict detector (continuous scanning) [PLANNED]
+- Verdict drift detection (temporal, model, semantic) [PLANNED]
+- Webhook subscriptions for rule change notifications [PLANNED]
+- Weekly governance digest (new drafts, promotions, top violations, pending actions) [PLANNED]
 
 #### 5j. Infrastructure Tiers [PLANNED]
 - Tier 1 (Starter): Server + Postgres only, Postgres FTS fallback, inline job execution

@@ -7,12 +7,14 @@ dependencies = [
     "httpx>=0.28",
     "click>=8.1",
     "rich>=13.0",
+    "pyyaml>=6.0",
 ]
 
 [project.scripts]
 rulerepo-check = "rulerepo_cli.check:main"
 rulerepo-hook = "rulerepo_cli.hook:main"
 rulerepo-ingest = "rulerepo_cli.ingest:main"
+rulerepo-export = "rulerepo_cli.export:main"
 
 [build-system]
 requires = ["hatchling"]

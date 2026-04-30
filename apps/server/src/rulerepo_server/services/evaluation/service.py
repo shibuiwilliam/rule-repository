@@ -56,6 +56,7 @@ class EvaluationService:
         severity_min: str = "MEDIUM",
         actor: str | None = None,
         environment: str | None = None,
+        agent_id: str | None = None,
     ) -> EvaluationResult:
         """Run the full evaluation pipeline.
 
@@ -101,6 +102,7 @@ class EvaluationService:
             modality_filter=modality_filter,
             scope=scope,
             environment=environment,
+            agent_id=agent_id,
         )
 
         logger.info(
@@ -198,6 +200,7 @@ class EvaluationService:
                     input_type=input_type,
                     model_id=mid,
                     cached=False,
+                    agent_id=agent_id,
                 )
                 self._session.add(record)
             await self._session.flush()

@@ -43,7 +43,7 @@ jobs:
           cd apps/server && uv run --directory ../.. mypy --config-file ../../pyproject.toml src/ || true
 
       - name: Unit tests
-        run: cd apps/server && uv run --directory ../.. pytest tests/unit/ -v --tb=short
+        run: uv run pytest apps/server/tests/unit/ -v --tb=short
 
   # ---------------------------------------------------------------------------
   # Frontend: lint + type check
@@ -77,7 +77,10 @@ jobs:
         run: pnpm lint
 
       - name: TypeScript check
-        run: pnpm typecheck
+        run: |
+          # Generate next-env.d.ts (gitignored but needed for tsc path resolution)
+          printf '/// <reference types="next" />\n/// <reference types="next/image-types/global" />\n' > next-env.d.ts
+          pnpm typecheck
 
   # ---------------------------------------------------------------------------
   # SDK: tests

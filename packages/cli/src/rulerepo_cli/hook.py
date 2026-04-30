@@ -31,12 +31,19 @@ import httpx
     envvar="RULEREPO_SERVER_URL",
     default="http://localhost:8000",
 )
+@click.option(
+    "--agent-id",
+    envvar="RULEREPO_AGENT_ID",
+    default=None,
+    help="Agent identifier (e.g., 'claude-code', 'cursor')",
+)
 def main(
     mode: str,
     file_path: str | None,
     diff: str | None,
     output_format: str,
     server_url: str,
+    agent_id: str | None,
 ) -> None:
     """Hook for coding agent integration (preflight or posthoc)."""
     if mode == "preflight":
@@ -62,12 +69,14 @@ def main(
     elif mode == "posthoc":
         if not diff:
             return
-        body = {
+        body: dict = {
             "diff": diff,
             "mode": "posthoc",
         }
         if file_path:
             body["files"] = [{"path": file_path}]
+        if agent_id:
+            body["agent_id"] = agent_id
 
         try:
             resp = httpx.post(f"{server_url}/api/v1/evaluate", json=body, timeout=30)
