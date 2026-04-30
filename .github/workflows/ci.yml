@@ -51,9 +51,6 @@ jobs:
   frontend:
     name: Frontend (Node 22)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/frontend
 
     steps:
       - uses: actions/checkout@v4
@@ -74,11 +71,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: ESLint
+        working-directory: apps/frontend
         run: pnpm lint
 
       - name: TypeScript check
+        working-directory: apps/frontend
         run: |
-          # Generate next-env.d.ts (gitignored but needed for tsc path resolution)
           printf '/// <reference types="next" />\n/// <reference types="next/image-types/global" />\n' > next-env.d.ts
           pnpm typecheck
 
