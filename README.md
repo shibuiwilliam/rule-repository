@@ -18,9 +18,9 @@ Whether the rules come from legal regulations, HR policies, engineering standard
 ### Run the full stack
 
 ```bash
-git clone <repo-url> && cd rule-repository
+git clone https://github.com/shibuiwilliam/rule-repository.git && cd rule-repository
 cp .env.example .env          # add your GEMINI_API_KEY
-docker compose up --build     # starts all services
+make up                       # or: docker compose up --build -d
 ```
 
 After about a minute:
@@ -31,7 +31,7 @@ After about a minute:
 | Swagger UI | http://localhost:8000/docs | Interactive API explorer |
 | Frontend | http://localhost:3000 | Compliance dashboard + 15 operator pages |
 | MCP Server | localhost:8001 | AI agent tool integration |
-| PostgreSQL | localhost:5432 | System of record |
+| PostgreSQL | localhost:5432 | System of record (24 ORM models, 16 migrations) |
 | Elasticsearch | localhost:9200 | Full-text and vector search |
 | Neo4j | localhost:7474 | Rule relationship graph |
 | Redis | localhost:6379 | Background job queue |
@@ -116,7 +116,7 @@ Hybrid (BM25 + vector), full-text, semantic, document search, and by-source. The
 
 ### Test rules safely
 
-The **Playground** supports two input modes — **Code** (diffs/snippets) and **Scenario** (narrative + structured facts for policy rules). Pick registered rules to test, or write rules manually. The **Suggest by LLM** button generates realistic test inputs. Per-rule test cases with auto-generation via Gemini.
+The **Playground** supports two input modes — **Code** (diffs/snippets) and **Scenario** (narrative + structured facts for policy rules). Pick registered rules to test, or write rules manually. The **Suggest by LLM** button generates realistic test inputs (violating or compliant). Per-rule test cases with auto-generation via Gemini.
 
 ### Enforce everywhere
 
@@ -141,8 +141,8 @@ Intelligence dashboard: health scoring (6 dimensions), evaluation analytics, cac
 │  Extraction   Search(5)   Evaluation    Intelligence   Discovery   │
 │  Pipeline     BM25+Vec    Engine        Health+Recs    + Import    │
 │  (bulk)       +DocSearch  (batched +    Analytics       Federation │
-│                            conflict-    Flywheel        Snapshots  │
-│               Projects     aware)       Feedback Loop   Alerts     │
+│               +Project    conflict-     Flywheel        Snapshots  │
+│               filter      aware)        Feedback Loop   Alerts     │
 │                                         Dashboard       Playground │
 │                                                                     │
 │  PostgreSQL    Elasticsearch   Neo4j       Redis       Audit Log   │
@@ -176,15 +176,15 @@ rule-repository/
 │   │   │   │   ├── extraction/      #   document ingestion (Gemini)
 │   │   │   │   ├── context_delivery/#   rule formatting for agents
 │   │   │   │   ├── federation/      #   hierarchy resolver with overrides
-│   │   │   │   ├── playground/      #   sandbox eval + test cases (code + scenario)
+│   │   │   │   ├── playground/      #   sandbox eval + test cases + suggest-by-LLM
 │   │   │   │   └── snapshots/       #   versioned rule sets + deployment
 │   │   │   ├── mcp/                 # 6 tools, resources, prompts
 │   │   │   ├── gateway/             # normalizers, policy engine
 │   │   │   ├── integrations/        # GitHub webhook, CI formatters
 │   │   │   └── workers/             # 5 background cron jobs
-│   │   ├── alembic/                 # 16 database migrations
+│   │   ├── alembic/                 # 16 database migrations, 24 ORM models
 │   │   └── tests/                   # 20 test files (unit, integration, e2e)
-│   └── frontend/                    # Next.js 15, TypeScript, Tailwind CSS
+│   └── frontend/                    # Next.js 15, React 19, TypeScript, Tailwind CSS
 │       └── app/(dashboard)/         # 15 pages + 6 shared components
 ├── packages/
 │   ├── rule-client/                 # Python SDK (async, typed)
@@ -199,8 +199,9 @@ rule-repository/
 ├── infra/                           # Dockerfiles, init SQL, ES templates, Neo4j constraints
 ├── development/                     # 14 technical docs
 ├── docs/                            # mkdocs site — 39 pages across 9 sections
-├── docker-compose.yml               # 10 services (+ 4 init containers)
-├── Makefile                         # 60 targets for dev workflow
+├── docker-compose.yml               # 11 services
+├── Makefile                         # 63 targets for dev workflow
+├── .pre-commit-config.yaml          # ruff, mypy, trailing-whitespace, etc.
 ├── PROJECT.md                       # Vision, domain model, 5-phase roadmap
 └── CLAUDE.md                        # Operational guide for Claude Code
 ```
@@ -216,15 +217,15 @@ Swagger UI at [localhost:8000/docs](http://localhost:8000/docs). Overview:
 | **projects** | CRUD for organizational units |
 | **rules** | CRUD, retire, revisions, relationships, graph |
 | **evaluate** | `/evaluate` (full), `/evaluate/quick`, `/evaluate/applicable-rules` |
-| **search** | fulltext, vector, hybrid, category, context, documents, by-source |
+| **search** | fulltext, vector, hybrid, category, context, documents, by-source — all with `project_id` filtering |
 | **intent** | Natural language query routing |
-| **intelligence** | summary (dashboard), health scores, analytics, recommendations |
+| **intelligence** | summary (home dashboard), health scores, analytics, recommendations |
 | **discovery** | scan, GitHub import, candidates, approve/dismiss |
-| **feedback** | corrections, approve/dismiss, stats |
-| **extraction** | upload (multi-file), extract, review candidates |
+| **feedback** | corrections, approve/dismiss, stats, proposals (flywheel) |
+| **extraction** | upload (multi-file + bulk extract), extract, review candidates |
 | **federation** | hierarchy CRUD, add/remove rules, effective rules, diff |
 | **snapshots** | versioned rule sets, deploy to environments, rollback, simulate |
-| **playground** | sandbox evaluation (code + scenario), test cases, test runner, suggest input |
+| **playground** | sandbox eval (code + scenario), test cases, test runner, suggest-by-LLM |
 | **alerts** | list, acknowledge, resolve |
 | **relationships** | create, delete rule relationships |
 | **gateway** | webhook ingestion, policy CRUD |
@@ -319,7 +320,7 @@ Import via CLI, the Documents page upload, or the seed script.
 ## Development
 
 ```bash
-make help                 # show all 60 available targets
+make help                 # show all 63 available targets
 
 # Docker Compose
 make up                   # docker compose up --build -d
@@ -329,6 +330,11 @@ make reset                # wipe volumes and rebuild
 # Local development
 make dev.server           # FastAPI with hot-reload on :8000
 make dev.frontend         # Next.js with hot-reload on :3000
+
+# Pre-commit
+make precommit.install    # install git hooks (ruff, mypy, trailing-whitespace, etc.)
+make precommit.run        # run all hooks on all files
+make precommit.update     # update hook versions
 
 # Testing
 make test                 # run all tests
@@ -349,7 +355,7 @@ make check                # format + lint + test (run before committing)
 | Data | PostgreSQL 17, Elasticsearch 8.17, Neo4j 5, Redis 7 |
 | MCP | FastMCP (mcp >= 1.9) |
 | Jobs | arq (async Redis queue, 5 cron jobs) |
-| Linting | ruff (Python), ESLint + Prettier (TypeScript) |
+| Quality | ruff + mypy (Python), ESLint + Prettier (TypeScript), pre-commit hooks |
 
 ---
 
@@ -368,9 +374,10 @@ make check                # format + lint + test (run before committing)
 ## Contributing
 
 1. Read [CLAUDE.md](CLAUDE.md) — it's the operational contract
-2. Branch from `main`, use Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`
-3. Run `make check` before pushing
-4. Mock Gemini in tests — never call the real API in CI
+2. Run `make precommit.install` to set up git hooks
+3. Branch from `main`, use Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`
+4. Run `make check` before pushing
+5. Mock Gemini in tests — never call the real API in CI
 
 ---
 

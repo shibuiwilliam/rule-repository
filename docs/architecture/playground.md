@@ -56,15 +56,24 @@ The test runner (`POST /api/v1/rules/{rule_id}/test-cases/run`) executes all tes
 - Overall pass rate
 - Any cases where the actual verdict diverged from the expected verdict, with the LLM's reasoning
 
+## Suggest by LLM
+
+The playground provides a `POST /api/v1/playground/suggest-input` endpoint that uses Gemini to generate realistic test inputs for a rule. You can request either a **violating** input (should trigger DENY) or a **compliant** input (should trigger ALLOW), in either code or scenario mode.
+
+The endpoint accepts `rule_id` (to look up an existing rule) or inline `rule_statement`/`rule_modality`/`rule_severity`. It returns a `sample_input` string and a `description` explaining what the generated input demonstrates.
+
 ## Frontend
 
 The playground is accessible at `/playground` in the frontend. It uses a two-column layout:
 
-- **Left column**: rule editor (statement, modality, severity).
-- **Right column**: input with two tabs:
+- **Left column**: rule definition with two modes:
+  - **Pick Rules** -- search for and select one or more registered rules from the database. Multi-select supported; each selected rule is evaluated independently.
+  - **Manual** -- type a rule statement directly with modality and severity dropdowns.
+- **Right column**: test input with two tabs:
   - **Code** tab: textarea for code snippets or unified diffs.
   - **Scenario** tab: narrative textarea for describing a situation, plus an optional structured facts editor (dynamic key-value pairs).
-- **Below**: evaluation result (verdict, confidence, reasoning, fix suggestion, and code locations for code mode).
+  - **Suggest by LLM**: two buttons ("Violating Input" / "Compliant Input") that call Gemini to generate a realistic test input and populate the textarea automatically.
+- **Below**: evaluation results. For multi-rule evaluation, a summary bar shows ALLOW/DENY/NEEDS_CONFIRMATION counts, followed by per-rule result cards.
 
 The test case management UI is available on the rule detail page under a "Test Cases" tab.
 

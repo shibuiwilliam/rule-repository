@@ -29,17 +29,27 @@ Narrows the full rule corpus to a manageable set of 5--20 relevant rules:
 
 The metadata stage runs in under 50ms. The full selection is designed to avoid sending irrelevant rules to the LLM.
 
-### 3. LLM Judgment
+### 3. LLM Judgment (Batched)
 
-Each selected rule is evaluated against the context by Gemini with structured JSON output. Model selection is tiered by rule severity:
+All selected rules are sent to Gemini in a **single batched API call** using structured JSON output. The batch prompt lists every rule (index, statement, modality, severity) alongside the code diff or facts, and requests an array of per-rule verdicts.
 
-| Rule Severity | Model | Thinking Level |
+**Tiered model strategy:**
+
+| Scenario | Model | Thinking Level |
 |---|---|---|
-| LOW / MEDIUM | Gemini 3 Flash | low |
-| HIGH | Gemini 3 Flash | medium |
-| CRITICAL | Gemini 3.1 Pro | high |
+| Batch call (all rules) | Gemini 3 Flash | medium |
+| Pro confirmation (DENY + CRITICAL only) | Gemini 3.1 Pro | high |
+| Single-rule fallback | Severity-based (Flash or Pro) | low / medium / high |
+
+If the batch call fails (API error, token budget exceeded, response parsing failure), the system falls back transparently to per-rule concurrent evaluation via `asyncio.gather()`.
 
 Each rule judgment produces: a verdict (ALLOW, DENY, or NEEDS_CONFIRMATION), a confidence score, reasoning, issue description, fix suggestion, and specific code locations where the issue was found.
+
+See [Batched Evaluation](batch-evaluation.md) for full architectural details.
+
+### 3b. Evaluation Persistence
+
+After LLM judgment, each per-rule verdict is persisted to the `evaluations` table. This enables fast analytics queries without parsing audit log JSON. The intelligence dashboard and analytics endpoints query this table with a fallback to audit log for historical data.
 
 ### 4. Verdict Aggregation
 
