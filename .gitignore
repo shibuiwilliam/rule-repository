@@ -220,10 +220,10 @@ __marimo__/
 # Node
 node_modules/
 .next/
-pnpm-lock.yaml
+# pnpm-lock.yaml — committed for reproducible builds
 
 # uv
-uv.lock
+# uv.lock — committed for reproducible builds
 
 # Rule Repository specific
 /apps/frontend/node_modules/
