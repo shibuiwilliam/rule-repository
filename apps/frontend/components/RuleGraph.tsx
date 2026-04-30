@@ -34,8 +34,8 @@ interface RuleGraphProps {
 
 function graphToFlow(data: GraphData, currentRuleId: string) {
   const nodes: Node[] = data.nodes
-    .filter((n) => n.id)
-    .map((n, i) => ({
+    .filter((n: GraphData["nodes"][number]) => n.id)
+    .map((n: GraphData["nodes"][number], i: number) => ({
       id: n.id,
       position: { x: (i % 4) * 250, y: Math.floor(i / 4) * 120 },
       data: {
@@ -54,8 +54,8 @@ function graphToFlow(data: GraphData, currentRuleId: string) {
     }));
 
   const edges: Edge[] = data.edges
-    .filter((e) => e.source && e.target)
-    .map((e, i) => ({
+    .filter((e: GraphData["edges"][number]) => e.source && e.target)
+    .map((e: GraphData["edges"][number], i: number) => ({
       id: `e-${i}`,
       source: e.source,
       target: e.target,

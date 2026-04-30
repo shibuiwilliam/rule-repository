@@ -45,11 +45,11 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
         rationale: form.rationale,
         scope: form.scope
           .split(",")
-          .map((s) => s.trim())
+          .map((s: string) => s.trim())
           .filter(Boolean),
         tags: form.tags
           .split(",")
-          .map((t) => t.trim())
+          .map((t: string) => t.trim())
           .filter(Boolean),
         revision_note: form.revision_note,
       });

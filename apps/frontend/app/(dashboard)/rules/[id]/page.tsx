@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getRule, getRevisions, getRelationships, getGraph, getDocument } from "@/lib/api";
-import type { DocumentInfo } from "@/lib/api";
+import type { DocumentInfo, Relationship, Revision } from "@/lib/api";
 import Badge from "@/components/Badge";
 import RuleDetailClient from "./client";
 
@@ -33,7 +33,7 @@ export default async function RuleDetailPage({
   // Resolve source document filenames
   const sourceDocMap: Record<string, DocumentInfo> = {};
   if (rule.source_refs && rule.source_refs.length > 0) {
-    const docIds = [
+    const docIds: string[] = [
       ...new Set(
         rule.source_refs
           .map((ref: Record<string, unknown>) => ref.document_id as string)
@@ -156,7 +156,7 @@ export default async function RuleDetailPage({
             <p className="text-sm text-gray-500">No relationships.</p>
           ) : (
             <ul className="space-y-2 text-sm">
-              {relationships.map((rel, i) => (
+              {relationships.map((rel: Relationship, i: number) => (
                 <li key={i} className="flex items-center gap-2">
                   <Badge label={rel.relationship_type} variant="relationship" />
                   <Link
@@ -191,7 +191,7 @@ export default async function RuleDetailPage({
           <p className="text-sm text-gray-500">No revisions.</p>
         ) : (
           <div className="space-y-3">
-            {revisions.map((rev) => (
+            {revisions.map((rev: Revision) => (
               <div key={rev.id} className="border-l-2 border-gray-200 pl-4">
                 <div className="flex items-center gap-2 text-sm">
                   <span className="font-medium">Rev #{rev.revision_number}</span>

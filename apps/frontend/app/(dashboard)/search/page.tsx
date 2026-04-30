@@ -187,7 +187,7 @@ export default function SearchPage() {
   const selectedProjectName =
     searchProjectId === ALL_PROJECTS
       ? "All Projects"
-      : projects.find((p) => p.id === searchProjectId)?.name ?? "Unknown";
+      : projects.find((p: { id: string; name: string }) => p.id === searchProjectId)?.name ?? "Unknown";
 
   return (
     <div>
@@ -255,7 +255,7 @@ export default function SearchPage() {
             className="rounded-md border px-3 py-2 text-sm"
           >
             <option value={ALL_PROJECTS}>All Projects</option>
-            {projects.map((p) => (
+            {projects.map((p: { id: string; name: string }) => (
               <option key={p.id} value={p.id}>
                 {p.name}
               </option>

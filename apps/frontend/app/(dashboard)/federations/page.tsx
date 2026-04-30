@@ -110,7 +110,7 @@ function TreeNode({
       </button>
       {hasChildren && expanded && (
         <div>
-          {node.children!.map((child) => (
+          {node.children!.map((child: Federation) => (
             <TreeNode key={child.id} node={child} depth={depth + 1} selectedId={selectedId} onSelect={onSelect} directRuleCounts={directRuleCounts} />
           ))}
         </div>
@@ -432,7 +432,7 @@ export default function FederationsPage() {
                 {selected.description && <p className="mt-1 text-sm text-gray-500">{selected.description}</p>}
                 {selected.default_scope && selected.default_scope.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {selected.default_scope.map((s) => (
+                    {selected.default_scope.map((s: string) => (
                       <span key={s} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{s}</span>
                     ))}
                   </div>

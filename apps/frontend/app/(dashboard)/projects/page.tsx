@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Project } from "@/lib/api";
 import { useProject } from "@/lib/project-context";
 
 export default function ProjectsPage() {
@@ -111,7 +112,7 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {projects.map((p) => (
+          {projects.map((p: Project) => (
             <div
               key={p.id}
               className={`flex items-center justify-between rounded-lg border bg-white p-4 ${

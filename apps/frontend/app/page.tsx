@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { HomeSummary } from "@/lib/api";
+import type { HomeSummary, ComplianceTrendPoint } from "@/lib/api";
 
 const API_BASE =
   process.env.INTERNAL_API_URL ??
@@ -59,7 +59,7 @@ function ComplianceHero({
         <span className={`text-5xl font-bold ${color}`}>{pct}%</span>
         {trend.length > 1 && (
           <div className="flex items-end gap-0.5 pb-2">
-            {trend.map((point, i) => {
+            {trend.map((point: ComplianceTrendPoint, i: number) => {
               const h = Math.max(4, Math.round(point.compliance_rate * 40));
               return (
                 <div
@@ -209,7 +209,7 @@ function TopViolatedRules({
         Top Violated Rules (30d)
       </p>
       <div className="space-y-2">
-        {rules.map((item) => (
+        {rules.map((item: HomeSummary["top_violated_rules"][number]) => (
           <div
             key={item.rule_id}
             className="flex items-center justify-between rounded-md border px-3 py-2"
@@ -272,7 +272,7 @@ function RecentCorrections({
         </Link>
       </div>
       <div className="space-y-2">
-        {corrections.map((c) => (
+        {corrections.map((c: HomeSummary["recent_corrections"][number]) => (
           <div
             key={c.id}
             className="flex items-center justify-between rounded-md border px-3 py-2"

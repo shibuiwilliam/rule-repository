@@ -1,6 +1,7 @@
 "use client";
 
 import { useProject } from "@/lib/project-context";
+import type { Project } from "@/lib/api";
 
 export function ProjectSelector() {
   const { currentProject, projects, selectProject, loading } = useProject();
@@ -32,7 +33,7 @@ export function ProjectSelector() {
         onChange={(e) => selectProject(e.target.value)}
         className="w-full rounded-md border bg-white px-3 py-2 text-sm font-medium text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       >
-        {projects.map((p) => (
+        {projects.map((p: Project) => (
           <option key={p.id} value={p.id}>
             {p.name}
           </option>

@@ -453,7 +453,7 @@ function CandidateCard({
               <div>
                 <dt className="text-xs font-semibold text-gray-500">Scope</dt>
                 <dd className="flex flex-wrap gap-1">
-                  {c.scope.map((s) => (
+                  {c.scope.map((s: string) => (
                     <span key={s} className="rounded bg-gray-200 px-1.5 py-0.5 text-xs">{s}</span>
                   ))}
                 </dd>
@@ -463,7 +463,7 @@ function CandidateCard({
               <div>
                 <dt className="text-xs font-semibold text-gray-500">Tags</dt>
                 <dd className="flex flex-wrap gap-1">
-                  {c.tags.map((t) => (
+                  {c.tags.map((t: string) => (
                     <span key={t} className="rounded bg-gray-200 px-1.5 py-0.5 text-xs">{t}</span>
                   ))}
                 </dd>

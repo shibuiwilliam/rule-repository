@@ -206,7 +206,7 @@ export default function FeedbackPage() {
             Top Violated Rules (most corrections)
           </h3>
           <div className="flex flex-wrap gap-2">
-            {stats.top_violated_rules.map((item) => (
+            {stats.top_violated_rules.map((item: { rule_id: string; count: number }) => (
               <a
                 key={item.rule_id}
                 href={`/rules/${item.rule_id}`}
@@ -411,7 +411,7 @@ export default function FeedbackPage() {
                     <div className="mb-3">
                       <p className="mb-1 text-xs font-medium uppercase text-gray-500">Matched Existing Rules</p>
                       <div className="flex flex-wrap gap-1">
-                        {c.matched_rule_ids.map((rid) => (
+                        {c.matched_rule_ids.map((rid: string) => (
                           <a
                             key={rid}
                             href={`/rules/${rid}`}

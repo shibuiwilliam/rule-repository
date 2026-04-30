@@ -487,7 +487,7 @@ export default function PlaygroundPage() {
             Locations
           </h3>
           <ul className="space-y-1">
-            {result.locations.map((loc, i) => (
+            {result.locations.map((loc: { file_path: string; start_line: number | null; function_name: string | null }, i: number) => (
               <li key={i} className="text-sm text-gray-600">
                 <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs">
                   {loc.file_path}

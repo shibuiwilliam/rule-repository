@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { type RuleList, getRules } from "@/lib/api";
+import { type Rule, type RuleList, getRules } from "@/lib/api";
 import { useProject } from "@/lib/project-context";
 
 const MODALITY_COLORS: Record<string, string> = {
@@ -95,7 +95,7 @@ export default function RulesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {data.items.map((rule) => (
+                {data.items.map((rule: Rule) => (
                   <tr key={rule.id} className="hover:bg-gray-50">
                     <td className="max-w-md px-4 py-3">
                       <Link
@@ -126,7 +126,7 @@ export default function RulesPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {rule.tags.map((tag) => (
+                        {rule.tags.map((tag: string) => (
                           <span
                             key={tag}
                             className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600"

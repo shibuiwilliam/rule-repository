@@ -9,6 +9,7 @@ import {
   type CorpusAnalytics,
   type IntelligenceRecommendation,
   type RecommendationList,
+  type TopViolatedRule,
   getIntelligenceDashboard,
   getHealthScores,
   getCorpusAnalytics,
@@ -211,11 +212,11 @@ export default function IntelligencePage() {
   }
 
   const verdictTotal = dashboard
-    ? Object.values(dashboard.verdict_distribution).reduce((a, b) => a + b, 0)
+    ? (Object.values(dashboard.verdict_distribution) as number[]).reduce((a: number, b: number) => a + b, 0)
     : 0;
 
   const healthDistTotal = dashboard
-    ? Object.values(dashboard.health_distribution).reduce((a, b) => a + b, 0)
+    ? (Object.values(dashboard.health_distribution) as number[]).reduce((a: number, b: number) => a + b, 0)
     : 0;
 
   const healthTotalPages = health ? Math.ceil(health.total / PAGE_SIZE) : 0;
@@ -384,7 +385,7 @@ export default function IntelligencePage() {
               <p className="text-sm text-gray-400">No violations recorded.</p>
             ) : (
               <div className="space-y-2">
-                {dashboard.top_violated_rules.map((v, i) => {
+                {dashboard.top_violated_rules.map((v: TopViolatedRule, i: number) => {
                   const maxCount = dashboard.top_violated_rules[0]?.violation_count ?? 1;
                   const pct = (v.violation_count / maxCount) * 100;
                   return (
@@ -463,7 +464,7 @@ export default function IntelligencePage() {
                     ? formatPercent(
                         (analytics.verdict_distribution.ALLOW ?? 0) /
                           Math.max(
-                            Object.values(analytics.verdict_distribution).reduce((a, b) => a + b, 0),
+                            (Object.values(analytics.verdict_distribution) as number[]).reduce((a: number, b: number) => a + b, 0),
                             1,
                           ),
                       )
@@ -515,7 +516,7 @@ export default function IntelligencePage() {
 
             {/* Rows */}
             <div className="divide-y">
-              {health.items.map((h) => (
+              {health.items.map((h: HealthScore) => (
                 <HealthRow
                   key={h.rule_id}
                   score={h}
@@ -573,7 +574,7 @@ export default function IntelligencePage() {
         ) : (
           <>
             <div className="space-y-3">
-              {recs.items.map((r) => (
+              {recs.items.map((r: IntelligenceRecommendation) => (
                 <RecommendationCard key={r.id} rec={r} />
               ))}
             </div>
@@ -710,7 +711,7 @@ function HealthRow({
             <div>
               <p className="mb-1.5 text-xs font-semibold text-gray-500">Issues</p>
               <ul className="space-y-1">
-                {h.issues.map((issue, i) => (
+                {h.issues.map((issue: string, i: number) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
                     <span className="mt-0.5 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-orange-400" />
                     {issue}
@@ -775,7 +776,7 @@ function RecommendationCard({ rec: r }: { rec: IntelligenceRecommendation }) {
       {r.related_rule_ids && r.related_rule_ids.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           <span className="text-xs text-gray-400">Related:</span>
-          {r.related_rule_ids.map((id) => (
+          {r.related_rule_ids.map((id: string) => (
             <Link
               key={id}
               href={`/rules/${id}`}
