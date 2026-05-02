@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getRule, getRevisions, getRelationships, getGraph, getDocument } from "@/lib/api";
-import type { DocumentInfo, Relationship, Revision } from "@/lib/api";
+import type { DocumentInfo, Revision } from "@/lib/api";
 
 const API_BASE =
   process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
