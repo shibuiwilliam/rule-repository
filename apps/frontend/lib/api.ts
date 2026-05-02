@@ -58,8 +58,11 @@ export interface Rule {
   scope: string[];
   tags: string[];
   rationale: string;
+  context: string;
   preconditions: string[];
   exceptions: string[];
+  following_examples: string[];
+  violation_examples: string[];
   source_refs: Record<string, unknown>[];
   effective_period: { valid_from: string | null; valid_until: string | null };
   governance: { owner: string; approvers: string[] };
@@ -166,6 +169,20 @@ export const getRelationships = (id: string) =>
 
 export const getGraph = (id: string, depth = 1) =>
   apiFetch<GraphData>(`/api/v1/rules/${id}/graph?depth=${depth}`);
+
+export const createRelationship = (data: {
+  source_id: string;
+  target_id: string;
+  relationship_type: string;
+}) => apiFetch<Relationship>("/api/v1/relationships", {
+  method: "POST",
+  body: JSON.stringify(data),
+});
+
+export const deleteRelationship = (sourceId: string, targetId: string, relationshipType: string) => {
+  const params = new URLSearchParams({ source_id: sourceId, target_id: targetId, relationship_type: relationshipType });
+  return apiFetch<void>(`/api/v1/relationships?${params}`, { method: "DELETE" });
+};
 
 // Search
 export const searchFulltext = (query: string, page = 1, pageSize = 20, projectId?: string) =>
@@ -516,7 +533,7 @@ export interface HomeSummary {
   compliance_trend: ComplianceTrendPoint[];
   total_rules: number;
   rules_by_status: Record<string, number>;
-  top_violated_rules: Array<{ rule_id: string; violation_count: number; rule_statement?: string }>;
+  top_violated_rules: Array<{ rule_id: string; violation_count: number; rule_statement?: string; effectiveness_score?: number | null }>;
   recent_corrections: Array<{
     id: string;
     status: string;
@@ -742,4 +759,370 @@ export async function simulateSnapshot(snapshotId: string, compareTo = 'producti
 
 export async function getDeployments(): Promise<Deployment[]> {
   return apiFetch('/api/v1/snapshots/deployments');
+}
+
+// ---------------------------------------------------------------------------
+// Proposals (Phase 6a: Collaborative Governance)
+// ---------------------------------------------------------------------------
+
+export interface ProposalComment {
+  id: string;
+  proposal_id: string;
+  parent_comment_id: string | null;
+  author_id: string;
+  body: string;
+  comment_type: string;
+  suggestion_spec: Record<string, unknown> | null;
+  resolved: boolean;
+  created_at: string;
+}
+
+export interface Proposal {
+  id: string;
+  project_id: string | null;
+  proposal_type: string;
+  status: string;
+  author_id: string;
+  title: string;
+  description: string;
+  change_spec: Record<string, unknown>;
+  target_rule_ids: string[];
+  conflict_analysis: Record<string, unknown> | null;
+  impact_preview: Record<string, unknown> | null;
+  required_approvers: string[];
+  approval_votes: Array<{ user_id: string; vote: string; condition?: string | null; timestamp: string }>;
+  comments: ProposalComment[];
+  enacted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProposalList {
+  items: Proposal[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export async function getProposals(
+  status?: string,
+  page = 1,
+  pageSize = 20,
+  projectId?: string,
+): Promise<ProposalList> {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  if (status) params.set('status', status);
+  if (projectId) params.set('project_id', projectId);
+  return apiFetch(`/api/v1/proposals?${params}`);
+}
+
+export async function getProposal(id: string): Promise<Proposal> {
+  return apiFetch(`/api/v1/proposals/${id}`);
+}
+
+export async function createProposal(data: {
+  proposal_type: string;
+  title: string;
+  description?: string;
+  target_rule_ids?: string[];
+  change_spec?: Record<string, unknown>;
+  required_approvers?: string[];
+}, projectId?: string, authorId = 'system'): Promise<Proposal> {
+  const params = new URLSearchParams();
+  if (projectId) params.set('project_id', projectId);
+  if (authorId) params.set('author_id', authorId);
+  return apiFetch(`/api/v1/proposals?${params}`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateProposal(id: string, data: {
+  title?: string;
+  description?: string;
+  target_rule_ids?: string[];
+  change_spec?: Record<string, unknown>;
+  required_approvers?: string[];
+}): Promise<Proposal> {
+  return apiFetch(`/api/v1/proposals/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function submitProposal(id: string): Promise<Proposal> {
+  return apiFetch(`/api/v1/proposals/${id}/submit`, { method: 'POST' });
+}
+
+export async function voteOnProposal(id: string, vote: string, voterId = 'system', condition?: string): Promise<Proposal> {
+  const params = new URLSearchParams({ voter_id: voterId });
+  return apiFetch(`/api/v1/proposals/${id}/vote?${params}`, {
+    method: 'POST',
+    body: JSON.stringify({ vote, condition }),
+  });
+}
+
+export async function enactProposal(id: string, actor = 'system'): Promise<Proposal> {
+  const params = new URLSearchParams({ actor });
+  return apiFetch(`/api/v1/proposals/${id}/enact?${params}`, { method: 'POST' });
+}
+
+export async function revertProposal(id: string): Promise<Proposal> {
+  return apiFetch(`/api/v1/proposals/${id}/revert`, { method: 'POST' });
+}
+
+export async function closeProposal(id: string): Promise<Proposal> {
+  return apiFetch(`/api/v1/proposals/${id}/close`, { method: 'POST' });
+}
+
+export async function addProposalComment(proposalId: string, data: {
+  body: string;
+  parent_comment_id?: string | null;
+  comment_type?: string;
+  suggestion_spec?: Record<string, unknown> | null;
+}): Promise<ProposalComment> {
+  return apiFetch(`/api/v1/proposals/${proposalId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function refreshProposalAnalysis(id: string): Promise<Proposal> {
+  return apiFetch(`/api/v1/proposals/${id}/analyze`, { method: 'POST' });
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  proposal_id: string | null;
+  notification_type: string;
+  title: string;
+  body: string;
+  read: boolean;
+  created_at: string;
+}
+
+export interface NotificationList {
+  items: AppNotification[];
+  total: number;
+  unread_count: number;
+}
+
+export async function getNotifications(userId: string, unreadOnly = false, page = 1): Promise<NotificationList> {
+  const params = new URLSearchParams({ user_id: userId, page: String(page) });
+  if (unreadOnly) params.set('unread_only', 'true');
+  return apiFetch(`/api/v1/proposals/notifications/inbox?${params}`);
+}
+
+export async function markNotificationRead(id: string): Promise<AppNotification> {
+  return apiFetch(`/api/v1/proposals/notifications/${id}/read`, { method: 'PATCH' });
+}
+
+export async function markAllNotificationsRead(userId: string): Promise<{ marked_read: number }> {
+  const params = new URLSearchParams({ user_id: userId });
+  return apiFetch(`/api/v1/proposals/notifications/mark-all-read?${params}`, { method: 'POST' });
+}
+
+// ---------------------------------------------------------------------------
+// Agent Governance (Phase 6b)
+// ---------------------------------------------------------------------------
+
+export interface AgentProfile {
+  agent_id: string;
+  display_name: string;
+  agent_type: string;
+  capabilities: string[];
+  trust_level: string;
+  compliance_rate_30d: number;
+  violation_patterns: Record<string, unknown>;
+  strength_areas: string[];
+  weakness_areas: string[];
+  can_propose_rules: boolean;
+  can_vote_on_proposals: boolean;
+  max_auto_fix_severity: string;
+  mastered_rules_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentList {
+  items: AgentProfile[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export async function getAgents(page = 1, pageSize = 20): Promise<AgentList> {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  return apiFetch(`/api/v1/agent-governance/agents?${params}`);
+}
+
+export async function getAgentProfile(agentId: string): Promise<AgentProfile> {
+  return apiFetch(`/api/v1/agent-governance/profile/${agentId}`);
+}
+
+export async function registerAgent(data: {
+  agent_id: string;
+  display_name: string;
+  agent_type?: string;
+  capabilities?: string[];
+}): Promise<AgentProfile> {
+  return apiFetch('/api/v1/agent-governance/register', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getAgentExceptions(agentId?: string, page = 1): Promise<{ items: Record<string, unknown>[]; total: number }> {
+  const params = new URLSearchParams({ page: String(page) });
+  if (agentId) params.set('agent_id', agentId);
+  return apiFetch(`/api/v1/agent-governance/exceptions?${params}`);
+}
+
+export async function getAgentNegotiations(agentId?: string, page = 1): Promise<{ items: Record<string, unknown>[]; total: number }> {
+  const params = new URLSearchParams({ page: String(page) });
+  if (agentId) params.set('agent_id', agentId);
+  return apiFetch(`/api/v1/agent-governance/negotiations?${params}`);
+}
+
+// ---------------------------------------------------------------------------
+// Marketplace (Phase 6c)
+// ---------------------------------------------------------------------------
+
+export interface RulePackage {
+  id: string;
+  name: string;
+  version: string;
+  publisher_id: string;
+  description: string;
+  license: string;
+  homepage: string | null;
+  changelog: unknown[];
+  metadata: Record<string, unknown>;
+  quality_score: number;
+  adoption_count: number;
+  published: boolean;
+  published_at: string | null;
+  rule_count: number;
+  created_at: string;
+}
+
+export interface PackageList {
+  items: RulePackage[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface PackageSubscription {
+  id: string;
+  project_id: string;
+  package_id: string;
+  package_name: string;
+  version_constraint: string;
+  auto_update: boolean;
+  installed_version: string;
+  last_synced_at: string;
+  created_at: string;
+}
+
+export async function getPackages(publishedOnly = false, page = 1, pageSize = 20): Promise<PackageList> {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  if (publishedOnly) params.set('published_only', 'true');
+  return apiFetch(`/api/v1/marketplace?${params}`);
+}
+
+export async function getPackage(id: string): Promise<RulePackage> {
+  return apiFetch(`/api/v1/marketplace/${id}`);
+}
+
+export async function createPackage(data: {
+  name: string;
+  version: string;
+  description?: string;
+  license?: string;
+}): Promise<RulePackage> {
+  return apiFetch('/api/v1/marketplace', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function publishPackage(id: string): Promise<RulePackage> {
+  return apiFetch(`/api/v1/marketplace/${id}/publish`, { method: 'POST' });
+}
+
+export async function subscribeToPackage(projectId: string, packageId: string, versionConstraint = '*'): Promise<PackageSubscription> {
+  return apiFetch('/api/v1/marketplace/subscribe', {
+    method: 'POST',
+    body: JSON.stringify({ project_id: projectId, package_id: packageId, version_constraint: versionConstraint }),
+  });
+}
+
+export async function getSubscriptions(projectId?: string): Promise<{ items: PackageSubscription[]; total: number }> {
+  const params = new URLSearchParams();
+  if (projectId) params.set('project_id', projectId);
+  return apiFetch(`/api/v1/marketplace/subscriptions?${params}`);
+}
+
+export async function unsubscribe(subscriptionId: string): Promise<void> {
+  await apiFetch(`/api/v1/marketplace/subscriptions/${subscriptionId}`, { method: 'DELETE' });
+}
+
+// ---------------------------------------------------------------------------
+// Activity Review (Two-Tier Compliance)
+// ---------------------------------------------------------------------------
+
+export interface RuleRelevanceItem {
+  rule_id: string;
+  rule_statement: string;
+  modality: string;
+  severity: string;
+  relevance: string;
+  relevance_score: number;
+  relevance_reason: string;
+}
+
+export interface RoughReviewResponse {
+  review_id: string;
+  total_rules_scanned: number;
+  relevant_count: number;
+  potentially_relevant_count: number;
+  not_relevant_count: number;
+  rule_assessments: RuleRelevanceItem[];
+  llm_triage_used: boolean;
+  latency_ms: number;
+}
+
+export interface DetailedReviewResponse {
+  review_id: string;
+  overall_verdict: string;
+  rule_verdicts: Array<{ rule_id: string; rule_statement: string; verdict: string; confidence: number; reasoning: string; issue_description: string; fix_suggestion: string | null }>;
+  violations: Array<{ rule_id: string; rule_statement: string; verdict: string; confidence: number; reasoning: string; issue_description: string; fix_suggestion: string | null }>;
+  warnings: Array<{ rule_id: string; rule_statement: string; verdict: string; confidence: number; reasoning: string; issue_description: string; fix_suggestion: string | null }>;
+  rules_evaluated: number;
+  rules_passed: number;
+  rules_violated: number;
+  rules_uncertain: number;
+  fix_summary: string | null;
+  total_latency_ms: number;
+  chunk_count: number;
+}
+
+export interface CombinedReviewResponse {
+  rough_review: RoughReviewResponse;
+  detailed_review: DetailedReviewResponse;
+}
+
+export async function roughReview(data: Record<string, unknown>): Promise<RoughReviewResponse> {
+  return apiFetch('/api/v1/evaluate/review/rough', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function detailedReview(data: Record<string, unknown>): Promise<DetailedReviewResponse> {
+  return apiFetch('/api/v1/evaluate/review/detailed', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function combinedReview(data: Record<string, unknown>): Promise<CombinedReviewResponse> {
+  return apiFetch('/api/v1/evaluate/review', { method: 'POST', body: JSON.stringify(data) });
 }

@@ -44,6 +44,7 @@ nav:
     - Rule Client (Python): sdks/rule-client.md
     - Agentic Client: sdks/agentic-client.md
     - CLI Tools: sdks/cli.md
+    - Context Generator: sdks/context-generator.md
   - Integrations:
     - MCP Server: integrations/mcp.md
     - GitHub PR Review: integrations/github.md

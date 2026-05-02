@@ -7,9 +7,9 @@ The Rule Repository is a monorepo with 10+ services orchestrated via Docker Comp
 | Component | Tech | Port | Purpose |
 |---|---|---|---|
 | Backend API | Python 3.13 + FastAPI | 8000 | REST, Evaluate, Intent, Gateway, Intelligence, Discovery, Feedback, Federation, Playground, Alerts, Snapshots APIs |
-| MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 6 tools) |
-| Frontend | TypeScript + Next.js 15 | 3000 | Compliance dashboard + 15 operator pages |
-| PostgreSQL | 17-alpine | 5432 | System of record (rules, revisions, audit log, evaluations, 24 ORM models) |
+| MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 12 tools) |
+| Frontend | TypeScript + Next.js 15 | 3000 | Compliance dashboard + 23 operator pages |
+| PostgreSQL | 17-alpine | 5432 | System of record (rules, revisions, audit log, evaluations, 35 ORM models) |
 | Elasticsearch | 8.17 | 9200 | Full-text + vector search |
 | Neo4j | 5-community | 7474/7687 | Rule relationship graph |
 | Redis | 7-alpine | 6379 | Job queue for arq background worker |
@@ -25,7 +25,7 @@ The Rule Repository is a monorepo with 10+ services orchestrated via Docker Comp
 src/rulerepo_server/
 ├── main.py                         # FastAPI app factory, router registration
 ├── api/
-│   └── v1/                         # 14 API routers
+│   └── v1/                         # 18 API routers
 │       ├── rules.py                #   CRUD, retire, revisions, relationships, graph
 │       ├── search.py               #   fulltext, vector, hybrid, category, context
 │       ├── evaluation.py           #   evaluate, quick, applicable-rules, get by ID
@@ -39,7 +39,10 @@ src/rulerepo_server/
 │       ├── playground.py           #   sandbox eval, test case CRUD, run, generate
 │       ├── projects.py            #   project CRUD (create, list, get, update)
 │       ├── alerts.py               #   list, get, acknowledge, resolve alerts
-│       └── snapshots.py            #   snapshot CRUD, deploy, rollback, simulate, deployments
+│       ├── snapshots.py            #   snapshot CRUD, deploy, rollback, simulate, deployments
+│       ├── proposals.py            #   governance proposal lifecycle (create, submit, vote, enact, revert, close, comments, notifications)
+│       ├── agent_governance.py     #   agent profiles, trust levels, personalized rules, mastery, exceptions, negotiations, sessions
+│       └── marketplace.py          #   rule packages, publish, subscribe, subscriptions, conflicts
 ├── core/
 │   ├── config.py                   # Settings (Pydantic BaseSettings)
 │   ├── logging.py                  # structlog JSON logger
@@ -50,7 +53,12 @@ src/rulerepo_server/
 ├── domain/                         # Pure domain models (no deps on project)
 │   ├── rule.py                     # Rule, RuleRelationship, RuleRevision, EffectivePeriod
 │   ├── evaluation.py               # EvaluationContext, FileChange, RuleVerdict, EvaluationResult
-│   └── ...
+│   ├── proposal.py                 # Proposal, ProposalStatus, ProposalVote
+│   ├── agent.py                    # AgentProfile, TrustLevel, AgentSession
+│   ├── verdict.py                  # Verdict enum and helpers
+│   ├── audit.py                    # AuditEntry, hash chaining
+│   ├── revision.py                 # Revision tracking
+│   └── federation.py               # Federation domain objects
 ├── services/
 │   ├── rule_service.py             # Rule CRUD orchestration
 │   ├── search.py                   # Search coordination (ES + PG hydration)
@@ -96,14 +104,21 @@ src/rulerepo_server/
 │   │   ├── test_generator.py       #   LLM-powered test case generation via Gemini
 │   │   ├── test_runner.py          #   Run test suites against rules
 │   │   └── prompts/                #   Prompt templates for playground
-│   └── snapshots/                  # Rule set snapshots and deployments
-│       ├── service.py              #   SnapshotService (create, deploy, rollback)
-│       ├── serializer.py           #   Serialize/deserialize rule snapshots
-│       └── simulator.py            #   Deployment impact simulation
+│   ├── snapshots/                  # Rule set snapshots and deployments
+│   │   ├── service.py              #   SnapshotService (create, deploy, rollback)
+│   │   ├── serializer.py           #   Serialize/deserialize rule snapshots
+│   │   └── simulator.py            #   Deployment impact simulation
+│   ├── proposals/                  # Governance proposal lifecycle
+│   │   ├── service.py              #   ProposalService (create, submit, vote, enact, revert, close)
+│   │   └── enactor.py              #   Proposal enactment (applies approved changes)
+│   ├── agent_governance/           # Agent trust and personalized governance
+│   │   └── service.py              #   AgentGovernanceService (register, profiles, trust, exceptions, negotiations, sessions)
+│   └── marketplace/                # Rule package marketplace
+│       └── service.py              #   MarketplaceService (packages, publish, subscribe, conflicts)
 ├── adapters/
 │   ├── postgres/
 │   │   ├── session.py              # AsyncSession factory
-│   │   ├── models.py               # 21 SQLAlchemy ORM models
+│   │   ├── models.py               # 33 SQLAlchemy ORM models
 │   │   ├── rule_repo.py            # PostgresRuleRepository
 │   │   ├── audit_repo.py           # AuditLogRepository (append-only, hash-chained)
 │   │   └── cache_repo.py           # LLM response cache
@@ -113,7 +128,7 @@ src/rulerepo_server/
 │   └── files/                      # Local file storage for uploads
 ├── mcp/
 │   ├── server.py                   # FastMCP app factory
-│   ├── tools.py                    # 6 MCP tools
+│   ├── tools.py                    # 12 MCP tools
 │   ├── resources.py                # rule:// and ruleset:// resources
 │   └── prompts.py                  # MCP prompt workflows
 ├── gateway/
@@ -124,7 +139,7 @@ src/rulerepo_server/
 │       ├── signature.py
 │       └── review_formatter.py
 ├── workers/
-│   ├── settings.py                 # arq WorkerSettings: 3 cron jobs with real implementations
+│   ├── settings.py                 # arq WorkerSettings: cron jobs (health scores, recommendations, corrections, maturity promotion, digest)
 │   └── tasks.py                    # On-demand task stubs (placeholder)
 └── schemas/                        # Pydantic request/response models
     ├── rule.py
@@ -139,10 +154,13 @@ src/rulerepo_server/
     ├── federation.py
     ├── playground.py
     ├── alerts.py
-    └── snapshots.py
+    ├── snapshots.py
+    ├── proposals.py
+    ├── agent_governance.py
+    └── marketplace.py
 ```
 
-### ORM Models (22 total in `adapters/postgres/models.py`)
+### ORM Models (33 total in `adapters/postgres/models.py`)
 
 | Model | Table | Purpose |
 |---|---|---|
@@ -168,6 +186,19 @@ src/rulerepo_server/
 | `RuleRecommendationModel` | `rule_recommendations` | Improvement recommendations |
 | `RuleSetSnapshotModel` | `rule_set_snapshots` | Immutable rule set snapshots |
 | `RuleSetDeploymentModel` | `rule_set_deployments` | Snapshot-to-environment deployment tracking |
+| `EvaluationRecordModel` | `evaluations` | Persistent per-rule evaluation records |
+| `DraftRuleProposalModel` | `draft_rule_proposals` | Correction-to-rule flywheel proposals |
+| `ProposalModel` | `proposals` | Governance proposal lifecycle |
+| `ProposalCommentModel` | `proposal_comments` | Comments on governance proposals |
+| `NotificationModel` | `notifications` | User notifications for proposals and actions |
+| `AgentProfileModel` | `agent_profiles` | Registered agent identities and trust levels |
+| `AgentExceptionRequestModel` | `agent_exception_requests` | Agent requests for rule exceptions |
+| `AgentNegotiationModel` | `agent_negotiations` | Agent-initiated rule negotiations |
+| `GovernanceSessionModel` | `governance_sessions` | Agent governance session tracking |
+| `RulePackageModel` | `rule_packages` | Marketplace rule packages |
+| `PackageRuleModel` | `package_rules` | Rules included in marketplace packages |
+| `PackageSubscriptionModel` | `package_subscriptions` | Package subscription records |
+| `CompositionConflictModel` | `composition_conflicts` | Conflicts detected across composed packages |
 
 ---
 
@@ -264,7 +295,7 @@ If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.
 
 ## Alembic Migrations
 
-16 migrations in `apps/server/alembic/versions/`:
+21 migrations in `apps/server/alembic/versions/`:
 
 | Migration | Description |
 |---|---|
@@ -285,6 +316,10 @@ If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.
 | `015_add_maturity_level` | Rule maturity model: maturity_level + accuracy tracking |
 | `016_add_draft_proposals` | Draft rule proposals for correction-to-rule flywheel |
 | `017_add_agent_id_to_evaluations` | Agent identity tracking on evaluation records |
+| `018_add_proposals` | Governance proposals, proposal comments, and notifications tables; context column on rules |
+| `019_add_agent_governance` | Agent profiles, agent exception requests, agent negotiations, governance sessions |
+| `020_add_marketplace` | Rule packages, package rules, package subscriptions |
+| `021_add_composition_conflicts` | Composition conflicts for marketplace package conflict detection |
 
 ---
 
@@ -331,7 +366,7 @@ The FastAPI application applies three middleware layers (outermost first):
 
 ## Frontend Pages
 
-The Next.js frontend has 12 pages under the `(dashboard)` route group:
+The Next.js frontend has 15 pages under the `(dashboard)` route group:
 
 | Route | Purpose |
 |---|---|
@@ -347,3 +382,6 @@ The Next.js frontend has 12 pages under the `(dashboard)` route group:
 | `/playground` | Sandbox rule evaluation and test case management |
 | `/snapshots` | Rule set snapshots and deployment management |
 | `/projects` | Project management (create, list, switch) |
+| `/proposals` | Governance proposal lifecycle and voting |
+| `/agents` | Agent profiles, trust levels, and compliance tracking |
+| `/marketplace` | Rule package browsing, publishing, and subscriptions |

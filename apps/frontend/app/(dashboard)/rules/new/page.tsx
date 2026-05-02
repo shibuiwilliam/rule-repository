@@ -20,6 +20,11 @@ export default function NewRulePage() {
     scope: "",
     tags: "",
     rationale: "",
+    context: "",
+    preconditions: "",
+    exceptions: "",
+    following_examples: "",
+    violation_examples: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,6 +48,11 @@ export default function NewRulePage() {
             .map((t) => t.trim())
             .filter(Boolean),
           rationale: form.rationale,
+          context: form.context,
+          preconditions: form.preconditions.split("\n").map((s: string) => s.trim()).filter(Boolean),
+          exceptions: form.exceptions.split("\n").map((s: string) => s.trim()).filter(Boolean),
+          following_examples: form.following_examples.split("\n").map((s: string) => s.trim()).filter(Boolean),
+          violation_examples: form.violation_examples.split("\n").map((s: string) => s.trim()).filter(Boolean),
         },
         currentProject?.id,
       );
@@ -160,6 +170,88 @@ export default function NewRulePage() {
             placeholder="Why does this rule exist?"
             className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
           />
+        </div>
+
+        {/* Context */}
+        <div>
+          <label htmlFor="context" className="block text-sm font-medium text-gray-700">
+            Context
+          </label>
+          <textarea
+            id="context"
+            rows={3}
+            value={form.context}
+            onChange={(e) => setForm({ ...form, context: e.target.value })}
+            placeholder="Surrounding document context — section hierarchy, regulatory authority, definitions, or qualifying information that gives this rule meaning."
+            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+          />
+          <p className="mt-1 text-xs text-gray-400">
+            Captured automatically during document extraction. For manual rules, describe the source or background.
+          </p>
+        </div>
+
+        {/* Preconditions */}
+        <div>
+          <label htmlFor="preconditions" className="block text-sm font-medium text-gray-700">
+            Preconditions
+          </label>
+          <textarea
+            id="preconditions"
+            rows={3}
+            value={form.preconditions}
+            onChange={(e) => setForm({ ...form, preconditions: e.target.value })}
+            placeholder={"Conditions that must be true for this rule to apply (one per line):\nThe code defines an API endpoint\nThe function handles user input"}
+            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+          />
+          <p className="mt-1 text-xs text-gray-400">One condition per line. Leave empty if the rule applies unconditionally.</p>
+        </div>
+
+        {/* Exceptions */}
+        <div>
+          <label htmlFor="exceptions" className="block text-sm font-medium text-gray-700">
+            Exceptions
+          </label>
+          <textarea
+            id="exceptions"
+            rows={2}
+            value={form.exceptions}
+            onChange={(e) => setForm({ ...form, exceptions: e.target.value })}
+            placeholder={"Situations where this rule does NOT apply (one per line):\nInternal-only APIs with no external consumers"}
+            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+          />
+          <p className="mt-1 text-xs text-gray-400">One exception per line. Leave empty if there are no exceptions.</p>
+        </div>
+
+        {/* Following Examples */}
+        <div>
+          <label htmlFor="following_examples" className="block text-sm font-medium text-gray-700">
+            Following Examples
+          </label>
+          <textarea
+            id="following_examples"
+            rows={3}
+            value={form.following_examples}
+            onChange={(e) => setForm({ ...form, following_examples: e.target.value })}
+            placeholder={"Examples of correct behavior (one per line):\nUsing Pydantic BaseModel for request validation\ndef get_user(user_id: int) -> UserResponse:"}
+            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+          />
+          <p className="mt-1 text-xs text-gray-400">Concrete examples of activities that follow this rule. One per line.</p>
+        </div>
+
+        {/* Violation Examples */}
+        <div>
+          <label htmlFor="violation_examples" className="block text-sm font-medium text-gray-700">
+            Violation Examples
+          </label>
+          <textarea
+            id="violation_examples"
+            rows={3}
+            value={form.violation_examples}
+            onChange={(e) => setForm({ ...form, violation_examples: e.target.value })}
+            placeholder={"Examples of incorrect behavior (one per line):\nAccepting raw dict without validation\ndef get_user(id):  # missing type hints"}
+            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+          />
+          <p className="mt-1 text-xs text-gray-400">Concrete examples of activities that violate this rule. One per line.</p>
         </div>
 
         {/* Submit */}

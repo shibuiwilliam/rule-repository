@@ -283,6 +283,11 @@ async def review_extraction(
                 scope=candidate.get("scope", []),
                 tags=candidate.get("tags", []),
                 rationale=candidate.get("rationale", ""),
+                context=candidate.get("context", ""),
+                preconditions=candidate.get("preconditions", []),
+                exceptions=candidate.get("exceptions", []),
+                following_examples=candidate.get("following_examples", []),
+                violation_examples=candidate.get("violation_examples", []),
                 source_refs=[SourceRefSchema(**source_ref)],
             )
             rule = await rule_service.create_rule(rule_data, actor="extraction_pipeline", project_id=doc_project_id)

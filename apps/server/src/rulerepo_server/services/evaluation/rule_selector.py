@@ -241,5 +241,128 @@ def _rule_to_dict(rule: Any) -> dict[str, Any]:
         "scope": rule.scope,
         "tags": rule.tags,
         "rationale": rule.rationale,
+        "context": getattr(rule, "context", ""),
+        "preconditions": getattr(rule, "preconditions", []),
+        "exceptions": getattr(rule, "exceptions", []),
+        "following_examples": getattr(rule, "following_examples", []),
+        "violation_examples": getattr(rule, "violation_examples", []),
         "maturity_level": getattr(rule, "maturity_level", "proven"),
     }
+
+
+# ---------------------------------------------------------------------------
+# Activity Review — select ALL rules + keyword relevance
+# ---------------------------------------------------------------------------
+
+
+async def select_all_active_rules(
+    session: AsyncSession,
+    *,
+    scope: str | None = None,
+    project_id: str | None = None,
+) -> list[dict[str, Any]]:
+    """Load ALL active rules without max_rules cap. For activity review only.
+
+    Args:
+        session: Async database session.
+        scope: Optional scope filter.
+        project_id: Optional project filter.
+
+    Returns:
+        List of all active rule dicts (up to 2000).
+    """
+
+    query = select(RuleModel).where(RuleModel.status.in_(["APPROVED", "EFFECTIVE"]))
+
+    if scope:
+        for part in scope.split("/"):
+            query = query.where(RuleModel.scope.contains([part]))
+
+    if project_id:
+        query = query.where(RuleModel.project_id == project_id)
+
+    # Note: effective_period filtering is handled in-memory after loading
+    # because JSONB path querying with NullType casting is unreliable
+
+    query = query.limit(2000)
+    result = await session.execute(query)
+    rules = list(result.scalars().all())
+
+    logger.info("select_all_active_rules", count=len(rules), scope=scope)
+    return [_rule_to_dict(r) for r in rules]
+
+
+def compute_keyword_relevance(rule_statement: str, context_text: str) -> float:
+    """Compute keyword overlap between a rule statement and context text.
+
+    Tokenizes both strings, computes the fraction of rule tokens found in context.
+
+    Args:
+        rule_statement: The rule's statement text.
+        context_text: The activity description (diff, narrative, or intent).
+
+    Returns:
+        Score between 0.0 and 1.0 representing keyword overlap.
+    """
+    if not rule_statement or not context_text:
+        return 0.0
+
+    # Simple word tokenization and lowering
+    stop_words = {
+        "the",
+        "a",
+        "an",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "have",
+        "has",
+        "had",
+        "do",
+        "does",
+        "did",
+        "will",
+        "would",
+        "shall",
+        "should",
+        "may",
+        "might",
+        "must",
+        "can",
+        "could",
+        "and",
+        "or",
+        "but",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "with",
+        "by",
+        "from",
+        "not",
+        "no",
+        "all",
+        "any",
+        "each",
+        "every",
+        "this",
+        "that",
+        "it",
+        "its",
+    }
+
+    rule_words = {w.lower() for w in rule_statement.split() if len(w) > 2} - stop_words
+    context_words = {w.lower() for w in context_text.split() if len(w) > 2} - stop_words
+
+    if not rule_words:
+        return 0.0
+
+    overlap = rule_words & context_words
+    return len(overlap) / len(rule_words)

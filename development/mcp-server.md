@@ -71,7 +71,7 @@ If the Rule Repository stack is running via Docker Compose, adjust the connectio
 
 ## Tools
 
-All 6 tools are registered in `mcp/tools.py` via the `register_tools()` function.
+All 12 tools are registered in `mcp/tools.py` via the `register_tools()` function.
 
 ### search_rules
 
@@ -214,6 +214,129 @@ get_rules_for_context(
 | `detailed` | Learning/onboarding | Full metadata with rationale, scope, and governance info |
 
 **When to use**: Call this when you start working on a file or task to understand what organizational rules, conventions, and policies apply. This should be the first tool a coding agent calls.
+
+---
+
+### create_proposal
+
+Create a governance proposal for a rule change (Phase 6a).
+
+```
+create_proposal(
+    title: str,                          # Proposal title (required)
+    description: str,                    # Detailed description (required)
+    proposal_type: str,                  # "create", "modify", or "retire"
+    rule_id: str | None = None,          # UUID of existing rule (for modify/retire)
+    proposed_changes: str | None = None  # JSON string of proposed changes
+) -> dict
+```
+
+**Delegates to**: `ProposalService.create_proposal()`.
+
+**Returns**: Dict with proposal ID, title, status, and creation timestamp.
+
+**When to use**: When you want to formally propose creating a new rule, modifying an existing one, or retiring a rule through the governance workflow.
+
+---
+
+### get_proposal_status
+
+Check the status of a governance proposal (Phase 6a).
+
+```
+get_proposal_status(
+    proposal_id: str                     # UUID of the proposal (required)
+) -> dict
+```
+
+**Delegates to**: `ProposalService.get_proposal()`.
+
+**Returns**: Dict with proposal details including status, votes, comments, and enactment state.
+
+**When to use**: When you need to check whether a proposal has been approved, how many votes it has received, or whether it has been enacted.
+
+---
+
+### register_agent
+
+Register an agent profile for personalized governance (Phase 6b).
+
+```
+register_agent(
+    agent_id: str,                       # Unique agent identifier (required)
+    name: str,                           # Human-readable agent name (required)
+    description: str | None = None,      # Agent description
+    capabilities: str | None = None      # JSON string of agent capabilities
+) -> dict
+```
+
+**Delegates to**: `AgentGovernanceService.register_agent()`.
+
+**Returns**: Dict with agent profile including ID, name, trust level, and registration timestamp.
+
+**When to use**: When an agent first connects and needs to establish its identity for trust-based rule personalization.
+
+---
+
+### get_personalized_rules
+
+Get rules tailored to an agent's trust level and compliance history (Phase 6b).
+
+```
+get_personalized_rules(
+    agent_id: str,                       # Registered agent ID (required)
+    scope: str | None = None,            # Rule scope filter
+    file_paths: list[str] | None = None  # Files being worked on
+) -> dict
+```
+
+**Delegates to**: `AgentGovernanceService.get_personalized_rules()`.
+
+**Returns**: Dict with personalized rule set, trust level context, and any active exceptions.
+
+**When to use**: Instead of `get_rules_for_context` when the agent is registered and wants rules adapted to its trust level and demonstrated mastery.
+
+---
+
+### challenge_verdict
+
+Challenge an evaluation verdict through the negotiation mechanism (Phase 6b).
+
+```
+challenge_verdict(
+    agent_id: str,                       # Registered agent ID (required)
+    rule_id: str,                        # UUID of the rule being challenged (required)
+    evaluation_id: str,                  # UUID of the evaluation (required)
+    argument: str                        # Reasoning for the challenge (required)
+) -> dict
+```
+
+**Delegates to**: `AgentGovernanceService.create_negotiation()`.
+
+**Returns**: Dict with negotiation ID, status, and initial response.
+
+**When to use**: When an agent believes a DENY verdict is incorrect and wants to formally challenge it with reasoning.
+
+---
+
+### request_exception
+
+Request a temporary exception from a specific rule (Phase 6b).
+
+```
+request_exception(
+    agent_id: str,                       # Registered agent ID (required)
+    rule_id: str,                        # UUID of the rule (required)
+    reason: str,                         # Justification for the exception (required)
+    duration: str | None = None          # Duration (e.g., "24h", "7d")
+) -> dict
+```
+
+**Delegates to**: `AgentGovernanceService.request_exception()`.
+
+**Returns**: Dict with exception request ID, status, and expiration if approved.
+
+**When to use**: When an agent needs a temporary exemption from a rule for a justified reason (e.g., emergency fix, migration in progress).
 
 ---
 

@@ -139,6 +139,35 @@ async def compute_health_scores(ctx: dict) -> None:
                 )
                 session.add(alert)
 
+            # Alert: low effectiveness score
+            total_judgments = (rule.true_positive_count or 0) + (rule.false_positive_count or 0)
+            if total_judgments >= 10:
+                try:
+                    from rulerepo_server.services.intelligence.effectiveness import (
+                        compute_effectiveness,
+                    )
+
+                    eff = await compute_effectiveness(session, str(rule.id), period_days=30)
+                    if eff["effectiveness_score"] < 30:
+                        alert = AlertModel(
+                            id=str(uuid4()),
+                            alert_type="effectiveness_decline",
+                            severity="warning",
+                            title=f"Low effectiveness: {rule.statement[:60]}...",
+                            description=(
+                                f"Effectiveness score {eff['effectiveness_score']}. "
+                                f"Precision: {eff['precision']}, "
+                                f"FP: {eff['false_positives']}, TP: {eff['true_positives']}. "
+                                "Consider rewriting or narrowing scope."
+                            ),
+                            rule_id=rule.id,
+                            status="active",
+                            project_id=rule.project_id,
+                        )
+                        session.add(alert)
+                except Exception:
+                    pass
+
         await session.commit()
         logger.info("compute_health_scores_completed", rules_scored=len(rules))
     except Exception:

@@ -22,6 +22,11 @@ interface RuleResult {
     scope: string[];
     tags: string[];
     rationale: string;
+    context: string;
+    preconditions: string[];
+    exceptions: string[];
+    following_examples: string[];
+    violation_examples: string[];
     source_refs: Array<{
       document_id?: string;
       section?: string;
@@ -452,6 +457,18 @@ function RuleCard({
           <Badge key={tag} label={tag} variant="tag" />
         ))}
       </div>
+
+      {/* Conditions preview */}
+      {(item.rule.preconditions?.length > 0 || item.rule.exceptions?.length > 0) && (
+        <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
+          {item.rule.preconditions?.length > 0 && (
+            <span>When: {item.rule.preconditions.slice(0, 2).join("; ")}{item.rule.preconditions.length > 2 ? ` (+${item.rule.preconditions.length - 2})` : ""}</span>
+          )}
+          {item.rule.exceptions?.length > 0 && (
+            <span>Unless: {item.rule.exceptions.slice(0, 1).join("; ")}{item.rule.exceptions.length > 1 ? ` (+${item.rule.exceptions.length - 1})` : ""}</span>
+          )}
+        </div>
+      )}
 
       {/* Source document link */}
       {item.rule.source_refs && item.rule.source_refs.length > 0 && (

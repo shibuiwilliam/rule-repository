@@ -27,6 +27,11 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
     severity: rule.severity,
     status: rule.status,
     rationale: rule.rationale,
+    context: rule.context || "",
+    preconditions: (rule.preconditions || []).join("\n"),
+    exceptions: (rule.exceptions || []).join("\n"),
+    following_examples: (rule.following_examples || []).join("\n"),
+    violation_examples: (rule.violation_examples || []).join("\n"),
     scope: rule.scope.join(", "),
     tags: rule.tags.join(", "),
     revision_note: "",
@@ -43,6 +48,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
         severity: form.severity,
         status: form.status,
         rationale: form.rationale,
+        context: form.context,
         scope: form.scope
           .split(",")
           .map((s: string) => s.trim())
@@ -51,6 +57,10 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
           .split(",")
           .map((t: string) => t.trim())
           .filter(Boolean),
+        preconditions: form.preconditions.split("\n").map((s: string) => s.trim()).filter(Boolean),
+        exceptions: form.exceptions.split("\n").map((s: string) => s.trim()).filter(Boolean),
+        following_examples: form.following_examples.split("\n").map((s: string) => s.trim()).filter(Boolean),
+        violation_examples: form.violation_examples.split("\n").map((s: string) => s.trim()).filter(Boolean),
         revision_note: form.revision_note,
       });
       onSaved();
@@ -153,6 +163,61 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
               rows={2}
               value={form.rationale}
               onChange={(e) => setForm({ ...form, rationale: e.target.value })}
+              className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Context</label>
+            <textarea
+              rows={3}
+              value={form.context}
+              onChange={(e) => setForm({ ...form, context: e.target.value })}
+              placeholder="Surrounding document context — section hierarchy, regulatory authority, definitions."
+              className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Preconditions</label>
+            <textarea
+              rows={3}
+              value={form.preconditions}
+              onChange={(e) => setForm({ ...form, preconditions: e.target.value })}
+              placeholder="Conditions that must be true for this rule to apply (one per line)"
+              className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Exceptions</label>
+            <textarea
+              rows={2}
+              value={form.exceptions}
+              onChange={(e) => setForm({ ...form, exceptions: e.target.value })}
+              placeholder="Situations where this rule does NOT apply (one per line)"
+              className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Following Examples</label>
+            <textarea
+              rows={2}
+              value={form.following_examples}
+              onChange={(e) => setForm({ ...form, following_examples: e.target.value })}
+              placeholder="Examples of correct behavior (one per line)"
+              className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Violation Examples</label>
+            <textarea
+              rows={2}
+              value={form.violation_examples}
+              onChange={(e) => setForm({ ...form, violation_examples: e.target.value })}
+              placeholder="Examples of incorrect behavior (one per line)"
               className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
             />
           </div>

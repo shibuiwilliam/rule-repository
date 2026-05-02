@@ -28,6 +28,11 @@ class CandidateRule(BaseModel):
     scope: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     rationale: str = ""
+    context: str = ""
+    preconditions: list[str] = Field(default_factory=list)
+    exceptions: list[str] = Field(default_factory=list)
+    following_examples: list[str] = Field(default_factory=list)
+    violation_examples: list[str] = Field(default_factory=list)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     source_section: str | None = None
     source_page: int | None = None

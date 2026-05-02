@@ -1,7 +1,21 @@
 import Link from "next/link";
 import { getRule, getRevisions, getRelationships, getGraph, getDocument } from "@/lib/api";
 import type { DocumentInfo, Relationship, Revision } from "@/lib/api";
+
+const API_BASE =
+  process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
+interface EffectivenessData {
+  effectiveness_score: number;
+  precision: number;
+  prevention_rate: number;
+  agent_adoption: number;
+  total_evaluations: number;
+  true_positives: number;
+  false_positives: number;
+}
 import Badge from "@/components/Badge";
+import RelationshipManager from "@/components/RelationshipManager";
 import RuleDetailClient from "./client";
 
 export default async function RuleDetailPage({
@@ -28,6 +42,18 @@ export default async function RuleDetailPage({
         </Link>
       </div>
     );
+  }
+
+  // Fetch effectiveness score
+  let effectiveness: EffectivenessData | null = null;
+  try {
+    const effRes = await fetch(
+      `${API_BASE}/api/v1/intelligence/effectiveness/${id}`,
+      { cache: "no-store" },
+    );
+    if (effRes.ok) effectiveness = await effRes.json();
+  } catch {
+    // Non-critical — page still renders without effectiveness
   }
 
   // Resolve source document filenames
@@ -75,6 +101,60 @@ export default async function RuleDetailPage({
               <dt className="font-medium text-gray-600">Rationale</dt>
               <dd className="text-gray-900">{rule.rationale || "—"}</dd>
             </div>
+            {rule.context && (
+              <div>
+                <dt className="font-medium text-gray-600">Context</dt>
+                <dd className="text-gray-900 whitespace-pre-wrap">{rule.context}</dd>
+              </div>
+            )}
+            {rule.preconditions && rule.preconditions.length > 0 && (
+              <div>
+                <dt className="font-medium text-gray-600">Preconditions</dt>
+                <dd>
+                  <ul className="list-disc list-inside text-gray-900 text-sm">
+                    {rule.preconditions.map((p: string, i: number) => (
+                      <li key={i}>{p}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
+            {rule.exceptions && rule.exceptions.length > 0 && (
+              <div>
+                <dt className="font-medium text-gray-600">Exceptions</dt>
+                <dd>
+                  <ul className="list-disc list-inside text-gray-900 text-sm">
+                    {rule.exceptions.map((e: string, i: number) => (
+                      <li key={i}>{e}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
+            {rule.following_examples && rule.following_examples.length > 0 && (
+              <div>
+                <dt className="font-medium text-gray-600">Following Examples</dt>
+                <dd>
+                  <ul className="space-y-1 text-sm">
+                    {rule.following_examples.map((ex: string, i: number) => (
+                      <li key={i} className="rounded bg-green-50 px-2 py-1 text-green-800">{ex}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
+            {rule.violation_examples && rule.violation_examples.length > 0 && (
+              <div>
+                <dt className="font-medium text-gray-600">Violation Examples</dt>
+                <dd>
+                  <ul className="space-y-1 text-sm">
+                    {rule.violation_examples.map((ex: string, i: number) => (
+                      <li key={i} className="rounded bg-red-50 px-2 py-1 text-red-800">{ex}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
             <div>
               <dt className="font-medium text-gray-600">Scope</dt>
               <dd>{rule.scope.length ? rule.scope.join(", ") : "—"}</dd>
@@ -149,28 +229,44 @@ export default async function RuleDetailPage({
         </div>
 
         <div className="rounded-lg border bg-white p-4">
-          <h2 className="mb-3 text-sm font-medium uppercase text-gray-500">
-            Relationships ({relationships.length})
-          </h2>
-          {relationships.length === 0 ? (
-            <p className="text-sm text-gray-500">No relationships.</p>
-          ) : (
-            <ul className="space-y-2 text-sm">
-              {relationships.map((rel: Relationship, i: number) => (
-                <li key={i} className="flex items-center gap-2">
-                  <Badge label={rel.relationship_type} variant="relationship" />
-                  <Link
-                    href={`/rules/${rel.source_id === id ? rel.target_id : rel.source_id}`}
-                    className="font-mono text-xs text-blue-600 hover:underline"
-                  >
-                    {(rel.source_id === id ? rel.target_id : rel.source_id).slice(0, 8)}...
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+          <RelationshipManager ruleId={id} relationships={relationships} />
         </div>
       </div>
+
+      {/* Effectiveness */}
+      {effectiveness && effectiveness.total_evaluations > 0 && (
+        <div className="rounded-lg border bg-white p-5">
+          <h2 className="mb-3 text-sm font-medium uppercase text-gray-500">
+            Effectiveness
+          </h2>
+          <div className="flex items-center gap-8">
+            <div className="text-center">
+              <span
+                className={`text-4xl font-bold ${
+                  effectiveness.effectiveness_score >= 70
+                    ? "text-green-600"
+                    : effectiveness.effectiveness_score >= 40
+                      ? "text-yellow-600"
+                      : "text-red-600"
+                }`}
+              >
+                {Math.round(effectiveness.effectiveness_score)}
+              </span>
+              <p className="mt-1 text-xs text-gray-400">Score</p>
+            </div>
+            <div className="flex-1 space-y-2.5">
+              <EffectivenessBar label="Precision" value={effectiveness.precision} />
+              <EffectivenessBar label="Prevention" value={effectiveness.prevention_rate} />
+              <EffectivenessBar label="Agent Adoption" value={effectiveness.agent_adoption} />
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-gray-400">
+            {effectiveness.total_evaluations} evaluations |{" "}
+            {effectiveness.true_positives} true positives |{" "}
+            {effectiveness.false_positives} false positives
+          </p>
+        </div>
+      )}
 
       {/* Relationship Graph */}
       {(graph.nodes.length > 0 || graph.edges.length > 0) && (
@@ -208,6 +304,24 @@ export default async function RuleDetailPage({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function EffectivenessBar({ label, value }: { label: string; value: number }) {
+  const pct = Math.round(value * 100);
+  const color =
+    pct >= 70 ? "bg-green-500" : pct >= 40 ? "bg-yellow-500" : "bg-red-500";
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-28 text-xs text-gray-500">{label}</span>
+      <div className="h-2 flex-1 rounded-full bg-gray-100">
+        <div
+          className={`h-2 rounded-full ${color}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="w-8 text-right text-xs text-gray-500">{pct}%</span>
     </div>
   );
 }

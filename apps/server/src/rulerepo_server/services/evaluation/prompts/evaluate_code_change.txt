@@ -3,6 +3,12 @@ You are evaluating whether a code change complies with an organizational rule.
 Rule: {rule_statement}
 Rule modality: {modality} (MUST = required, SHOULD = recommended, MAY = optional)
 Rule severity: {severity}
+Rule rationale: {rationale}
+Rule context: {context}
+Rule preconditions: {preconditions}
+Rule exceptions: {exceptions}
+Examples of following this rule: {following_examples}
+Examples of violating this rule: {violation_examples}
 
 Code change (unified diff):
 ```
@@ -12,9 +18,12 @@ Code change (unified diff):
 Files changed: {file_paths}
 
 Task:
-1. Determine if the code change violates, complies with, or is unrelated to this rule.
-2. If it violates the rule, identify the specific location(s) in the diff.
-3. If it violates the rule, provide machine-readable remediations that can be applied automatically.
+1. Consider the rule's rationale and context to understand its intent — not just the literal statement.
+2. Check whether the preconditions are met before evaluating. If preconditions are not met, the rule does not apply — return ALLOW.
+3. Check whether any exceptions apply. If an exception applies to this situation, the rule does not apply — return ALLOW.
+4. Determine if the code change violates, complies with, or is unrelated to this rule.
+5. If it violates the rule, identify the specific location(s) in the diff.
+6. If it violates the rule, provide machine-readable remediations that can be applied automatically.
 
 Respond with JSON:
 {{
@@ -48,6 +57,8 @@ Respond with JSON:
 
 Rules:
 - If the code change is completely unrelated to this rule, return ALLOW with confidence 1.0.
+- If the rule's preconditions are not met (e.g., the rule applies to "API endpoints" but the change is in a test file), return ALLOW.
+- If any of the rule's exceptions apply (e.g., "except for internal-only APIs" and the change is to an internal API), return ALLOW.
 - DENY only when the violation is clear and specific. If you are unsure, return NEEDS_CONFIRMATION.
 - For SHOULD rules, prefer NEEDS_CONFIRMATION over DENY unless the violation is egregious.
 - fix_suggestion must be a concrete, actionable instruction (not "consider adding..." but "add X at line Y").

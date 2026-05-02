@@ -50,8 +50,20 @@ class RuleCreate(BaseModel):
     scope: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     rationale: str = ""
+    context: str = Field(
+        default="",
+        description="Surrounding document context — section hierarchy, definitions, and qualifying information.",
+    )
     preconditions: list[str] = Field(default_factory=list)
     exceptions: list[str] = Field(default_factory=list)
+    following_examples: list[str] = Field(
+        default_factory=list,
+        description="Examples of activities that follow this rule.",
+    )
+    violation_examples: list[str] = Field(
+        default_factory=list,
+        description="Examples of activities that violate this rule.",
+    )
     source_refs: list[SourceRefSchema] = Field(default_factory=list)
     effective_period: EffectivePeriodSchema = Field(default_factory=EffectivePeriodSchema)
     governance: GovernanceSchema = Field(default_factory=GovernanceSchema)
@@ -67,8 +79,11 @@ class RuleUpdate(BaseModel):
     scope: list[str] | None = None
     tags: list[str] | None = None
     rationale: str | None = None
+    context: str | None = None
     preconditions: list[str] | None = None
     exceptions: list[str] | None = None
+    following_examples: list[str] | None = None
+    violation_examples: list[str] | None = None
     source_refs: list[SourceRefSchema] | None = None
     effective_period: EffectivePeriodSchema | None = None
     governance: GovernanceSchema | None = None
@@ -95,8 +110,11 @@ class RuleResponse(BaseModel):
     scope: list[str]
     tags: list[str]
     rationale: str
+    context: str = ""
     preconditions: list[str]
     exceptions: list[str]
+    following_examples: list[str] = Field(default_factory=list)
+    violation_examples: list[str] = Field(default_factory=list)
     source_refs: list[SourceRefSchema]
     effective_period: EffectivePeriodSchema
     governance: GovernanceSchema
@@ -165,6 +183,9 @@ class RuleImportItem(BaseModel):
     scope: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     rationale: str = ""
+    context: str = ""
+    following_examples: list[str] = Field(default_factory=list)
+    violation_examples: list[str] = Field(default_factory=list)
     source: str | None = None
     confidence: float | None = None
 

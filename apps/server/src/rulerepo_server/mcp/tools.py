@@ -83,6 +83,10 @@ def register_tools(mcp: FastMCP) -> None:
                 "tags": r.tags,
                 "rationale": r.rationale,
                 "status": r.status,
+                "preconditions": getattr(r, "preconditions", []) or [],
+                "exceptions": getattr(r, "exceptions", []) or [],
+                "following_examples": getattr(r, "following_examples", []) or [],
+                "violation_examples": getattr(r, "violation_examples", []) or [],
             }
             for r in rules
         ]
@@ -130,6 +134,10 @@ def register_tools(mcp: FastMCP) -> None:
             "rationale": rule.rationale or "No rationale documented.",
             "scope": rule.scope,
             "tags": rule.tags,
+            "preconditions": getattr(rule, "preconditions", []) or [],
+            "exceptions": getattr(rule, "exceptions", []) or [],
+            "following_examples": getattr(rule, "following_examples", []) or [],
+            "violation_examples": getattr(rule, "violation_examples", []) or [],
             "source_refs": rule.source_refs,
             "governance": rule.governance,
             "effective_period": rule.effective_period,
@@ -410,3 +418,226 @@ def register_tools(mcp: FastMCP) -> None:
                 format_type=format,
                 federation_id=federation,
             )
+
+    # ------------------------------------------------------------------
+    # Governance Proposals (Phase 6a)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def create_proposal(
+        proposal_type: str,
+        title: str,
+        description: str = "",
+        target_rule_ids: list[str] | None = None,
+        change_spec: dict[str, Any] | None = None,
+        required_approvers: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Create a governance proposal for rule changes.
+
+        Use this when you want to propose creating, modifying, or retiring
+        a rule through the proper governance workflow. The proposal goes
+        through draft → review → approval → enactment.
+
+        Args:
+            proposal_type: Type of change — create, amend, retire, merge, split, override.
+            title: Short title describing the proposed change.
+            description: Detailed description with motivation (Markdown).
+            target_rule_ids: Rule IDs being changed (required for amend, retire, merge, split).
+            change_spec: Structured description of changes. For create: {"new_rule_data": {...}}.
+                For amend: {"fields_changed": {"statement": {"old": "...", "new": "..."}}}.
+            required_approvers: User IDs who must approve before enactment.
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.proposals.service import ProposalService
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            svc = ProposalService(session)
+            result = await svc.create_proposal(
+                proposal_type=proposal_type,
+                title=title,
+                description=description,
+                target_rule_ids=target_rule_ids,
+                change_spec=change_spec,
+                required_approvers=required_approvers,
+            )
+            await session.commit()
+            return result
+
+    @mcp.tool()
+    async def get_proposal_status(proposal_id: str) -> dict[str, Any]:
+        """Check the current status of a governance proposal.
+
+        Use this to see where a proposal is in the review process,
+        who has voted, and whether there are conflicts or comments.
+
+        Args:
+            proposal_id: UUID of the proposal.
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.proposals.service import ProposalService
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            svc = ProposalService(session)
+            return await svc.get_proposal(proposal_id)
+
+    # ------------------------------------------------------------------
+    # Agent Governance (Phase 6b)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def register_agent(
+        agent_id: str,
+        display_name: str,
+        agent_type: str = "coding_assistant",
+        capabilities: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Register this agent with the governance system.
+
+        Call once at agent initialization. Returns existing profile if
+        already registered. This enables personalized rule delivery,
+        trust level progression, and governance participation.
+
+        Args:
+            agent_id: Unique identifier for this agent.
+            display_name: Human-readable name.
+            agent_type: Type: coding_assistant, code_reviewer, security_scanner, deployment_agent, custom.
+            capabilities: What this agent can do (e.g., ["write_code", "review_pr"]).
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.agent_governance.service import AgentGovernanceService
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            svc = AgentGovernanceService(session)
+            result = await svc.register_agent(
+                agent_id=agent_id,
+                display_name=display_name,
+                agent_type=agent_type,
+                capabilities=capabilities,
+            )
+            await session.commit()
+            return result
+
+    @mcp.tool()
+    async def get_personalized_rules(
+        agent_id: str,
+        file_paths: list[str] | None = None,
+        max_rules: int = 20,
+    ) -> dict[str, Any]:
+        """Get rules personalized to this agent's history and current task.
+
+        Returns rules weighted by your violation patterns, with mastered
+        rules suppressed. Use this instead of generic rule fetching for
+        a more efficient and relevant rule set.
+
+        Args:
+            agent_id: Your agent ID (must be registered first).
+            file_paths: Files you're working on (for scope matching).
+            max_rules: Maximum number of rules to return.
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.agent_governance.service import AgentGovernanceService
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            svc = AgentGovernanceService(session)
+            return await svc.get_personalized_rules(
+                agent_id=agent_id,
+                file_paths=file_paths,
+                max_rules=max_rules,
+            )
+
+    @mcp.tool()
+    async def challenge_verdict(
+        agent_id: str,
+        evaluation_id: str,
+        rule_id: str,
+        counter_argument: str,
+        proposed_action: str = "proceed_with_justification",
+    ) -> dict[str, Any]:
+        """Challenge a verdict you disagree with.
+
+        Provide a counter-argument explaining why the rule doesn't apply
+        in this context. This creates an audit trail and may trigger
+        rule improvements if similar challenges accumulate.
+
+        Args:
+            agent_id: Your agent ID.
+            evaluation_id: ID of the evaluation being challenged.
+            rule_id: ID of the rule that produced the verdict.
+            counter_argument: Why you disagree with the verdict.
+            proposed_action: What you want to do — proceed_with_justification,
+                request_exception, or request_amendment.
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.agent_governance.service import AgentGovernanceService
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            svc = AgentGovernanceService(session)
+            result = await svc.challenge_verdict(
+                agent_id=agent_id,
+                evaluation_id=evaluation_id,
+                rule_id=rule_id,
+                original_verdict="DENY",
+                counter_argument=counter_argument,
+                proposed_action=proposed_action,
+            )
+            await session.commit()
+            return result
+
+    @mcp.tool()
+    async def request_exception(
+        agent_id: str,
+        rule_id: str,
+        context: str,
+        proposed_exception: str,
+        evidence: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Request a formal exception to a rule for a specific context.
+
+        If similar exceptions are requested frequently, the system may
+        auto-draft a rule amendment proposal.
+
+        Args:
+            agent_id: Your agent ID.
+            rule_id: ID of the rule to request an exception for.
+            context: The specific context where the exception applies.
+            proposed_exception: What the exception should be.
+            evidence: Supporting evidence (e.g., file paths, diffs).
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.agent_governance.service import AgentGovernanceService
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            svc = AgentGovernanceService(session)
+            result = await svc.request_exception(
+                agent_id=agent_id,
+                rule_id=rule_id,
+                context=context,
+                proposed_exception=proposed_exception,
+                evidence=evidence,
+            )
+            await session.commit()
+            return result

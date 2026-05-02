@@ -123,6 +123,14 @@ async def evaluate_rule(
     config = _get_config_for_severity(rule["severity"])
     start_time = time.time()
 
+    # Prepare rule context fields (may not be present in all rule dicts)
+    rule_rationale = rule.get("rationale", "") or ""
+    rule_context = rule.get("context", "") or ""
+    rule_preconditions = ", ".join(rule.get("preconditions", []) or []) or "None"
+    rule_exceptions = ", ".join(rule.get("exceptions", []) or []) or "None"
+    rule_following = "; ".join(rule.get("following_examples", []) or []) or "None"
+    rule_violations = "; ".join(rule.get("violation_examples", []) or []) or "None"
+
     # Select prompt based on context type
     if context.diff:
         template = _load_prompt("evaluate_code_change.txt")
@@ -130,6 +138,12 @@ async def evaluate_rule(
             rule_statement=rule["statement"],
             modality=rule["modality"],
             severity=rule["severity"],
+            rationale=rule_rationale or "Not specified",
+            context=rule_context or "Not specified",
+            preconditions=rule_preconditions,
+            exceptions=rule_exceptions,
+            following_examples=rule_following,
+            violation_examples=rule_violations,
             diff=context.diff[:8000],  # cap diff size for token budget
             file_paths=", ".join(context.file_paths),
         )
@@ -140,6 +154,12 @@ async def evaluate_rule(
             rule_statement=rule["statement"],
             modality=rule["modality"],
             severity=rule["severity"],
+            rationale=rule_rationale or "Not specified",
+            context=rule_context or "Not specified",
+            preconditions=rule_preconditions,
+            exceptions=rule_exceptions,
+            following_examples=rule_following,
+            violation_examples=rule_violations,
             narrative=context.narrative or context.intent or "",
             facts=facts_str,
         )

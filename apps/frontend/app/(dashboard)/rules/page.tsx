@@ -5,6 +5,8 @@ import Link from "next/link";
 import { type Rule, type RuleList, getRules } from "@/lib/api";
 import { useProject } from "@/lib/project-context";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
 const MODALITY_COLORS: Record<string, string> = {
   MUST: "bg-red-100 text-red-800",
   MUST_NOT: "bg-red-200 text-red-900",
@@ -25,12 +27,34 @@ export default function RulesPage() {
   const [page, setPage] = useState(1);
   const [data, setData] = useState<RuleList | null>(null);
   const [loading, setLoading] = useState(true);
+  const [effectivenessScores, setEffectivenessScores] = useState<Record<string, number | null>>({});
 
   const loadRules = useCallback(async () => {
     setLoading(true);
     try {
       const result = await getRules(page, 20, currentProject?.id);
       setData(result);
+
+      // Fetch effectiveness scores for displayed rules (fire-and-forget)
+      if (result?.items?.length) {
+        const scores: Record<string, number | null> = {};
+        await Promise.all(
+          result.items.map(async (rule: Rule) => {
+            try {
+              const res = await fetch(
+                `${API_BASE}/api/v1/intelligence/effectiveness/${rule.id}`,
+              );
+              if (res.ok) {
+                const eff = await res.json();
+                scores[rule.id] = eff.effectiveness_score ?? null;
+              }
+            } catch {
+              // non-critical
+            }
+          }),
+        );
+        setEffectivenessScores(scores);
+      }
     } catch {
       setData(null);
     } finally {
@@ -92,6 +116,9 @@ export default function RulesPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
                     Tags
                   </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500" title="Effectiveness score">
+                    Quality
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -135,6 +162,14 @@ export default function RulesPage() {
                           </span>
                         ))}
                       </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {(() => {
+                        const score = effectivenessScores[rule.id];
+                        if (score == null) return <span className="inline-block h-2.5 w-2.5 rounded-full bg-gray-200" title="No data" />;
+                        const color = score >= 60 ? "bg-green-500" : score >= 30 ? "bg-yellow-500" : "bg-red-500";
+                        return <span className={`inline-block h-2.5 w-2.5 rounded-full ${color}`} title={`Effectiveness: ${Math.round(score)}`} />;
+                      })()}
                     </td>
                   </tr>
                 ))}

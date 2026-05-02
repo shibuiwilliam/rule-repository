@@ -120,6 +120,41 @@ async def generate_weekly_digest(
     )
     maturity_dist = {str(row[0]): row[1] for row in maturity_result.all()}
 
+    # 9. Most effective and declining rules
+    most_effective: list[dict[str, Any]] = []
+    declining_rules: list[dict[str, Any]] = []
+    try:
+        from rulerepo_server.services.intelligence.effectiveness import (
+            compute_effectiveness,
+        )
+
+        # Sample top rules by evaluation count for effectiveness scoring
+        eff_candidates = await session.execute(
+            select(RuleModel).where(RuleModel.status.in_(["APPROVED", "EFFECTIVE"])).limit(20)
+        )
+        for rule in eff_candidates.scalars().all():
+            try:
+                eff = await compute_effectiveness(session, str(rule.id), period_days=7)
+                if eff["total_evaluations"] >= 3:
+                    entry = {
+                        "rule_id": str(rule.id),
+                        "statement": rule.statement[:100],
+                        "effectiveness_score": eff["effectiveness_score"],
+                        "precision": eff["precision"],
+                        "agent_adoption": eff["agent_adoption"],
+                    }
+                    most_effective.append(entry)
+                    if eff["effectiveness_score"] < 30:
+                        declining_rules.append(entry)
+            except Exception as exc:
+                logger.debug("effectiveness_compute_skipped", rule_id=str(rule.id), error=str(exc))
+                continue
+
+        most_effective.sort(key=lambda x: x["effectiveness_score"], reverse=True)
+        most_effective = most_effective[:5]
+    except Exception:
+        pass
+
     digest = {
         "period": "7d",
         "compliance": {
@@ -136,6 +171,8 @@ async def generate_weekly_digest(
             "maturity_distribution": maturity_dist,
         },
         "top_violated_rules": top_violated,
+        "most_effective_rules": most_effective,
+        "declining_rules": declining_rules,
         "attention_needed": attention_rules,
         "corrections": {
             "this_week": corrections_count,

@@ -6,13 +6,36 @@ For each rule you identify, extract:
 3. **severity**: One of LOW, MEDIUM, HIGH, or CRITICAL based on the likely impact of violation.
 4. **scope**: Who or what the rule applies to (e.g., "engineering", "hr/attendance", "all-employees").
 5. **tags**: Relevant categorization labels.
-6. **rationale**: Why the rule exists, if stated or inferable from context.
-7. **source_section**: The section or heading where the rule was found.
-8. **source_page**: The page number if applicable.
+6. **rationale**: Why the rule exists — the intent, purpose, or goal behind it.
+7. **context**: The surrounding document context that gives meaning to this rule. Include:
+   - The section title or heading hierarchy where the rule appears (e.g., "Chapter 3 > §3.2 Code Review Standards").
+   - Relevant surrounding text that provides background, definitions, or qualifying information.
+   - The document title or regulatory authority if identifiable (e.g., "Company Engineering Handbook v2.1" or "GDPR Article 17").
+   Keep this concise but sufficient for someone who has never read the original document to understand the rule in its proper context.
+8. **preconditions**: Conditions that must be true for this rule to apply. These are the "when" or "if" clauses — facts about the situation that determine whether the rule is relevant. Examples:
+   - "The endpoint handles user-submitted data"
+   - "The employee's contract type is full-time"
+   - "The change modifies a public API"
+   - "The system processes personal data of EU residents"
+   If the rule applies unconditionally, return an empty array.
+9. **exceptions**: Situations where the rule does NOT apply even when preconditions are met. These are carve-outs, exemptions, or "unless" clauses. Examples:
+   - "Unless the data is already anonymized"
+   - "Except for internal-only APIs with no external consumers"
+   - "Does not apply to prototype or experimental code"
+   If there are no exceptions, return an empty array.
+10. **following_examples**: Concrete examples from the document of activities, code, or behaviors that COMPLY with this rule. Preserve the original wording from the document. If the document shows "correct" examples, code snippets marked as good practice, or "do this" examples, extract them here. Return an empty array if no examples are found in the document.
+11. **violation_examples**: Concrete examples from the document of activities, code, or behaviors that VIOLATE this rule. Preserve the original wording from the document. If the document shows "incorrect" examples, anti-patterns, code snippets marked as bad practice, or "don't do this" examples, extract them here. Return an empty array if no examples are found in the document.
+12. **depends_on_indices**: An array of integers — the indices (0-based) of other rules in this extraction that this rule depends on. A rule depends on another when it only makes sense if the other rule is also in effect, or when evaluating this rule requires knowing the verdict of the other rule first. Examples:
+   - If rule #3 says "All API endpoints MUST validate input with Pydantic" and rule #7 says "Validation errors MUST return a 422 status code", then rule #7 depends on rule #3 (validation must exist before you can define its error behavior).
+   - If rule #0 says "All functions MUST have type annotations" and rule #2 says "Return types MUST use Optional[] for nullable values", then rule #2 depends on rule #0.
+   If this rule has no dependencies on other rules in this document, return an empty array.
+13. **source_section**: The section or heading where the rule was found.
+14. **source_page**: The page number if applicable.
 
 Guidelines:
 - Extract ONLY normative statements — skip purely descriptive or informational text unless it serves as a guideline.
 - Preserve the original language. Do not paraphrase unless the original is ambiguous.
 - If a single paragraph contains multiple distinct rules, split them into separate entries.
 - Assign confidence between 0.0 and 1.0 based on how clearly the text is a normative rule.
+- Preconditions and exceptions are critical for accurate rule evaluation. A rule like "All API endpoints MUST validate input" has an implicit precondition ("the code defines an API endpoint") that should be made explicit.
 - Return the results as a JSON array.

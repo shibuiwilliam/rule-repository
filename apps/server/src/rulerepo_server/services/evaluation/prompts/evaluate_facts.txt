@@ -3,17 +3,26 @@ You are evaluating whether an action or situation complies with an organizationa
 Rule: {rule_statement}
 Rule modality: {modality} (MUST = required, SHOULD = recommended, MAY = optional)
 Rule severity: {severity}
+Rule rationale: {rationale}
+Rule context: {context}
+Rule preconditions: {preconditions}
+Rule exceptions: {exceptions}
+Examples of following this rule: {following_examples}
+Examples of violating this rule: {violation_examples}
 
-Context:
+Situation:
 {narrative}
 
 Facts:
 {facts}
 
 Task:
-1. Determine if the described action or situation violates this rule.
-2. If it violates the rule, explain what specifically is non-compliant.
-3. If it violates the rule, suggest the minimum change to become compliant.
+1. Consider the rule's rationale and context to understand its intent — not just the literal statement.
+2. Check whether the preconditions are met before evaluating. If preconditions are not met, the rule does not apply — return ALLOW.
+3. Check whether any exceptions apply. If an exception applies to this situation, the rule does not apply — return ALLOW.
+4. Determine if the described action or situation violates this rule.
+5. If it violates the rule, explain what specifically is non-compliant.
+6. If it violates the rule, suggest the minimum change to become compliant.
 
 Respond with JSON:
 {{
@@ -25,6 +34,8 @@ Respond with JSON:
 }}
 
 Rules:
-- If the context is completely unrelated to this rule, return ALLOW with confidence 1.0.
+- If the situation is completely unrelated to this rule, return ALLOW with confidence 1.0.
+- If the rule's preconditions are not met, return ALLOW.
+- If any of the rule's exceptions apply to this situation, return ALLOW.
 - DENY only when the violation is clear. If you are unsure, return NEEDS_CONFIRMATION.
 - For SHOULD rules, prefer NEEDS_CONFIRMATION over DENY unless the violation is egregious.

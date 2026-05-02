@@ -1,7 +1,7 @@
 # Database Schema & ER Diagram
 
 > PostgreSQL 17 — source of truth for the Rule Repository.
-> 27+ tables across 16 Alembic migrations.
+> 38+ tables across 22 Alembic migrations.
 
 ---
 
@@ -27,6 +27,9 @@ erDiagram
         jsonb governance
         jsonb effective_period
         text rationale
+        text context
+        jsonb following_examples
+        jsonb violation_examples
         float8_array embedding
         float8 clarity_score
         timestamptz created_at
@@ -449,6 +452,34 @@ erDiagram
 | Table | Purpose | Key Relationships |
 |---|---|---|
 | **llm_cache** | Cached Gemini responses keyed by hash(inputs+model+prompt) | Standalone |
+
+### Governance Proposals (3 tables)
+
+| Table | Purpose | Key Relationships |
+|---|---|---|
+| **proposals** | Governance proposals for rule changes (create, modify, retire) with voting lifecycle | `rule_id → rules.id`, `project_id → projects.id` |
+| **proposal_comments** | Discussion comments on governance proposals | `proposal_id → proposals.id` |
+| **notifications** | User notifications for proposal events and governance actions | `proposal_id → proposals.id` |
+
+Note: The `rules` table also has a `context` column added in migration 018 to support richer rule metadata.
+
+### Agent Governance (4 tables)
+
+| Table | Purpose | Key Relationships |
+|---|---|---|
+| **agent_profiles** | Registered agent identities with trust levels and compliance history | Standalone |
+| **agent_exception_requests** | Agent requests for temporary rule exceptions | `rule_id → rules.id`, `agent_id → agent_profiles.id` |
+| **agent_negotiations** | Agent-initiated negotiations to challenge or adjust rule verdicts | `rule_id → rules.id`, `agent_id → agent_profiles.id` |
+| **governance_sessions** | Tracking of agent governance sessions for audit | `agent_id → agent_profiles.id` |
+
+### Marketplace (4 tables)
+
+| Table | Purpose | Key Relationships |
+|---|---|---|
+| **rule_packages** | Curated rule packages available for subscription | Standalone |
+| **package_rules** | Association of rules to marketplace packages | `package_id → rule_packages.id`, `rule_id → rules.id` |
+| **package_subscriptions** | Project subscriptions to rule packages | `package_id → rule_packages.id`, `project_id → projects.id` |
+| **composition_conflicts** | Detected conflicts when composing multiple subscribed packages | `package_id → rule_packages.id` |
 
 ---
 

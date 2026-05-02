@@ -286,8 +286,21 @@ class IntelligenceService:
         rules_by_status = {str(row[0]): row[1] for row in status_result.all()}
         total_rules = sum(rules_by_status.values())
 
-        # 3. Top violated rules
+        # 3. Top violated rules (enriched with effectiveness scores)
         top_violated = await get_top_violated_rules(self._session, period_days=30, limit=5)
+        try:
+            from rulerepo_server.services.intelligence.effectiveness import (
+                compute_effectiveness,
+            )
+
+            for item in top_violated:
+                try:
+                    eff = await compute_effectiveness(self._session, item["rule_id"], period_days=30)
+                    item["effectiveness_score"] = eff["effectiveness_score"]
+                except Exception:
+                    item["effectiveness_score"] = None
+        except Exception:
+            pass
 
         # 4. Recent corrections
         corr_result = await self._session.execute(

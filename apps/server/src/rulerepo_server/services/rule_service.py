@@ -77,6 +77,9 @@ class RuleService:
             "scope": data.scope,
             "tags": data.tags,
             "rationale": data.rationale,
+            "context": data.context,
+            "following_examples": data.following_examples,
+            "violation_examples": data.violation_examples,
             "preconditions": data.preconditions,
             "exceptions": data.exceptions,
             "source_refs": [ref.model_dump() for ref in data.source_refs],
@@ -119,6 +122,7 @@ class RuleService:
                 "scope": data.scope,
                 "tags": data.tags,
                 "rationale": data.rationale,
+                "context": data.context,
                 "effective_from": data.effective_period.valid_from.isoformat()
                 if data.effective_period.valid_from
                 else None,
@@ -241,10 +245,16 @@ class RuleService:
             updates["tags"] = data.tags
         if data.rationale is not None:
             updates["rationale"] = data.rationale
+        if data.context is not None:
+            updates["context"] = data.context
         if data.preconditions is not None:
             updates["preconditions"] = data.preconditions
         if data.exceptions is not None:
             updates["exceptions"] = data.exceptions
+        if data.following_examples is not None:
+            updates["following_examples"] = data.following_examples
+        if data.violation_examples is not None:
+            updates["violation_examples"] = data.violation_examples
         if data.source_refs is not None:
             updates["source_refs"] = [ref.model_dump() for ref in data.source_refs]
         if data.effective_period is not None:
@@ -545,6 +555,9 @@ class RuleService:
             "scope": model.scope,
             "tags": model.tags,
             "rationale": model.rationale,
+            "context": getattr(model, "context", ""),
+            "following_examples": getattr(model, "following_examples", []),
+            "violation_examples": getattr(model, "violation_examples", []),
             "preconditions": model.preconditions,
             "exceptions": model.exceptions,
             "source_refs": model.source_refs,

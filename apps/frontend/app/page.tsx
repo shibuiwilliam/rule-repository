@@ -27,6 +27,34 @@ async function getHealth(): Promise<boolean> {
   }
 }
 
+interface AlertItem {
+  id: string;
+  alert_type: string;
+  severity: string;
+  title: string;
+  description: string | null;
+  rule_id: string | null;
+  status: string;
+}
+
+async function getLatestCriticalAlert(): Promise<AlertItem | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/alerts?status=active&page_size=1`,
+      { cache: "no-store" },
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const items = data.items ?? [];
+    // Return the first warning or critical alert
+    return items.find(
+      (a: AlertItem) => a.severity === "critical" || a.severity === "warning",
+    ) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /* ---------- Sub-components ---------- */
 
 function ComplianceHero({
@@ -226,9 +254,24 @@ function TopViolatedRules({
                   : `Rule ${item.rule_id.slice(0, 8)}...`}
               </Link>
             </div>
-            <span className="ml-3 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
-              {item.violation_count} deny
-            </span>
+            <div className="ml-3 flex items-center gap-2">
+              {item.effectiveness_score != null && (
+                <span
+                  className={`rounded px-1.5 py-0.5 text-xs font-medium ${
+                    item.effectiveness_score >= 60
+                      ? "bg-green-100 text-green-700"
+                      : item.effectiveness_score >= 30
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  eff {Math.round(item.effectiveness_score)}
+                </span>
+              )}
+              <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
+                {item.violation_count} deny
+              </span>
+            </div>
           </div>
         ))}
       </div>
@@ -300,7 +343,11 @@ function RecentCorrections({
 /* ---------- Main Page ---------- */
 
 export default async function HomePage() {
-  const [summary, healthy] = await Promise.all([getSummary(), getHealth()]);
+  const [summary, healthy, criticalAlert] = await Promise.all([
+    getSummary(),
+    getHealth(),
+    getLatestCriticalAlert(),
+  ]);
 
   // Graceful degradation: if API is unreachable, show minimal page
   if (!summary) {
@@ -364,6 +411,38 @@ export default async function HomePage() {
             <span className="text-sm text-gray-500">Connected</span>
           </div>
         </div>
+
+        {/* Critical Alert Banner */}
+        {criticalAlert && (
+          <Link
+            href={criticalAlert.rule_id ? `/rules/${criticalAlert.rule_id}` : "/alerts"}
+            className={`flex items-start gap-3 rounded-lg border-l-4 p-4 transition-colors hover:opacity-90 ${
+              criticalAlert.severity === "critical"
+                ? "border-red-500 bg-red-50"
+                : "border-yellow-500 bg-yellow-50"
+            }`}
+          >
+            <span className="mt-0.5 text-lg">
+              {criticalAlert.severity === "critical" ? "\u26a0\ufe0f" : "\u26a0"}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className={`text-sm font-medium ${
+                criticalAlert.severity === "critical" ? "text-red-800" : "text-yellow-800"
+              }`}>
+                {criticalAlert.title}
+              </p>
+              {criticalAlert.description && (
+                <p className={`mt-0.5 text-xs ${
+                  criticalAlert.severity === "critical" ? "text-red-600" : "text-yellow-600"
+                }`}>
+                  {criticalAlert.description.length > 150
+                    ? `${criticalAlert.description.slice(0, 150)}...`
+                    : criticalAlert.description}
+                </p>
+              )}
+            </div>
+          </Link>
+        )}
 
         {/* Hero: Compliance Rate */}
         <ComplianceHero

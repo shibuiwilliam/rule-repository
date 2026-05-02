@@ -102,6 +102,20 @@ class ExtractionPipeline:
             model=self._config.model_id,
         )
 
+        # Stage 2: Resolve intra-document dependencies from depends_on_indices
+        for candidate in candidates:
+            dep_indices = candidate.get("depends_on_indices", [])
+            candidate["suggested_relationships"] = []
+            for dep_idx in dep_indices:
+                if isinstance(dep_idx, int) and 0 <= dep_idx < len(candidates) and dep_idx != candidate.get("index"):
+                    candidate["suggested_relationships"].append(
+                        {
+                            "target_candidate_index": dep_idx,
+                            "relationship_type": "DEPENDS_ON",
+                            "reason": f"Rule depends on rule #{dep_idx} from the same document",
+                        }
+                    )
+
         return {
             "extraction_id": str(extraction_id),
             "candidates": candidates,
@@ -147,9 +161,19 @@ class ExtractionPipeline:
                     "scope": {"type": "array", "items": {"type": "string"}},
                     "tags": {"type": "array", "items": {"type": "string"}},
                     "rationale": {"type": "string"},
+                    "context": {"type": "string"},
+                    "preconditions": {"type": "array", "items": {"type": "string"}},
+                    "exceptions": {"type": "array", "items": {"type": "string"}},
+                    "following_examples": {"type": "array", "items": {"type": "string"}},
+                    "violation_examples": {"type": "array", "items": {"type": "string"}},
                     "confidence": {"type": "number"},
                     "source_section": {"type": "string"},
                     "source_page": {"type": "integer"},
+                    "depends_on_indices": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "description": "Indices of other rules this rule depends on",
+                    },
                 },
                 "required": ["statement", "modality", "confidence"],
             },

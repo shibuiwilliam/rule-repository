@@ -5,6 +5,7 @@ import { ProjectSelector } from "./ProjectSelector";
 
 const NAV_ITEMS = [
   { href: "/rules", label: "Rules", section: "manage" },
+  { href: "/proposals", label: "Proposals", section: "manage" },
   { href: "/search", label: "Search", section: "manage" },
   { href: "/documents", label: "Documents", section: "manage" },
   { href: "/discover", label: "Discover", section: "manage" },
@@ -13,8 +14,12 @@ const NAV_ITEMS = [
   { href: "/snapshots", label: "Snapshots", section: "manage" },
   { href: "/intelligence", label: "Intelligence", section: "observe" },
   { href: "/feedback", label: "Feedback", section: "observe" },
+  { href: "/notifications", label: "Notifications", section: "observe" },
+  { href: "/agents", label: "Agents", section: "observe" },
+  { href: "/review", label: "Review", section: "enforce" },
   { href: "/gateway", label: "Gateway", section: "enforce" },
   { href: "/integrations", label: "Integrations", section: "enforce" },
+  { href: "/marketplace", label: "Marketplace", section: "share" },
   { href: "/projects", label: "Projects", section: "settings" },
 ];
 
@@ -67,6 +72,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 Enforce
               </p>
               {NAV_ITEMS.filter((i) => i.section === "enforce").map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="block rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+
+            <div>
+              <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Share
+              </p>
+              {NAV_ITEMS.filter((i) => i.section === "share").map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}

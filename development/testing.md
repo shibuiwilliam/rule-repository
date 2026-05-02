@@ -47,7 +47,7 @@ cd packages/rule-client && uv run pytest
 
 ## Test Structure
 
-The project has **21 test files** across four locations with **161+ test functions** total (unit + integration + e2e + SDK).
+The project has **24 test files** across four locations with **212+ test functions** total (unit + integration + e2e + SDK).
 
 ### Unit Tests (`apps/server/tests/unit/`)
 
@@ -79,6 +79,9 @@ Test API endpoints with mocked external services (Postgres, Elasticsearch, Neo4j
 | `test_search_api.py` | 7 | All search modes: full-text, vector, hybrid, category search; search with filters (scope, modality, severity); pagination; validation (empty query) |
 | `test_intent_api.py` | 3 | Intent classification via `/api/v1/intent` endpoint; intent with context; validation (empty query) |
 | `test_relationships_api.py` | 2 | Relationship CRUD: create and delete rule relationships |
+| `test_proposals.py` | -- | Proposal lifecycle: create, submit, vote, enact, revert, close, comments, notifications |
+| `test_agent_governance.py` | -- | Agent registration, profiles, trust levels, personalized rules, mastery, exceptions, negotiations, sessions |
+| `test_marketplace.py` | -- | Package CRUD, publish, subscribe, subscriptions, conflict detection |
 
 ### End-to-End Tests (`apps/server/tests/e2e/`)
 

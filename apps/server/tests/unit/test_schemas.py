@@ -23,9 +23,15 @@ class TestRuleCreate:
             scope=["hr/attendance"],
             tags=["overtime", "labor-law"],
             rationale="Labor Standards Act Article 36",
+            context="Chapter 4 > §4.2 Working Hours. Article 36 limits overtime.",
         )
         assert rule.modality.value == "MUST_NOT"
         assert rule.scope == ["hr/attendance"]
+        assert "Article 36" in rule.context
+
+    def test_context_defaults_empty(self) -> None:
+        rule = RuleCreate(statement="Test rule")
+        assert rule.context == ""
 
     def test_empty_statement_rejected(self) -> None:
         with pytest.raises(ValidationError):
@@ -46,6 +52,11 @@ class TestRuleUpdate:
         update = RuleUpdate(severity="CRITICAL", revision_note="Escalated")
         assert update.severity.value == "CRITICAL"
         assert update.revision_note == "Escalated"
+
+    def test_context_update(self) -> None:
+        update = RuleUpdate(context="Updated context from GDPR Article 17.")
+        assert update.context == "Updated context from GDPR Article 17."
+        assert update.statement is None  # other fields remain None
 
 
 class TestSearchQuery:

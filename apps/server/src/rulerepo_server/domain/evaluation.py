@@ -129,3 +129,49 @@ class EvaluationResult:
     def warnings(self) -> list[RuleVerdict]:
         """Only NEEDS_CONFIRMATION verdicts."""
         return [v for v in self.rule_verdicts if v.verdict == Verdict.NEEDS_CONFIRMATION]
+
+
+# ---------------------------------------------------------------------------
+# Activity Review (two-tier compliance)
+# ---------------------------------------------------------------------------
+
+
+class Relevance(StrEnum):
+    """Classification of a rule's relevance to an activity."""
+
+    RELEVANT = "RELEVANT"
+    POTENTIALLY_RELEVANT = "POTENTIALLY_RELEVANT"
+    NOT_RELEVANT = "NOT_RELEVANT"
+
+
+@dataclass(frozen=True)
+class RuleRelevanceAssessment:
+    """Result of assessing a single rule's relevance to an activity."""
+
+    rule_id: str
+    rule_statement: str
+    modality: str
+    severity: str
+    relevance: Relevance
+    relevance_score: float
+    relevance_reason: str = ""
+
+
+@dataclass
+class RoughReviewResult:
+    """Aggregated result of Tier 1 rough compliance review."""
+
+    review_id: str
+    total_rules_scanned: int
+    assessments: list[RuleRelevanceAssessment]
+    llm_triage_used: bool
+    latency_ms: int
+    timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
+
+    @property
+    def relevant(self) -> list[RuleRelevanceAssessment]:
+        return [a for a in self.assessments if a.relevance == Relevance.RELEVANT]
+
+    @property
+    def potentially_relevant(self) -> list[RuleRelevanceAssessment]:
+        return [a for a in self.assessments if a.relevance == Relevance.POTENTIALLY_RELEVANT]

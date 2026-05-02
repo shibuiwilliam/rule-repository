@@ -138,6 +138,9 @@ class Rule:
 
     # Metadata
     rationale: str = ""
+    context: str = ""
+    following_examples: list[str] = field(default_factory=list)
+    violation_examples: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
     governance: Governance = field(default_factory=lambda: Governance(owner="system"))
 

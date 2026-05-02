@@ -504,8 +504,34 @@ These are architecture decisions and patterns for ongoing Phase 5 work. Read bef
 - Format: `version: 1`, `template: {name, description, tags}`, `rules: [{statement, modality, severity, scope, tags, rationale}]`.
 - Import via `POST /api/v1/rules/import` with the rules array from any template.
 
-### 14.12 Future Implementation Notes
-- **CLAUDE.md generator**: `rulerepo-context update --file ./CLAUDE.md` — maintains a `## Rules` section in CLAUDE.md, auto-updated when rules change.
+### 14.12 CLAUDE.md Context Generator (Implemented)
+- `packages/cli/src/rulerepo_cli/context.py` — `rulerepo-context` CLI with three commands:
+  - `generate --server URL --project ID --max-rules N` — prints formatted rules section to stdout
+  - `update --file CLAUDE.md --server URL` — updates file in-place between `<!-- rulerepo:rules:start/end -->` markers
+  - `watch --file CLAUDE.md --interval 60` — polls and regenerates periodically
+- Groups rules by modality (MUST/Never/SHOULD/MAY/INFO), includes severity tags.
+- If markers don't exist in the file, appends the section at the end.
+- Respects `RULEREPO_SERVER_URL` env var as default server.
+- Entry point: `rulerepo-context` in `packages/cli/pyproject.toml`.
+
+### 14.13 Effectiveness Visibility (Implemented)
+- **Rule detail page** (`rules/[id]/page.tsx`): fetches `GET /intelligence/effectiveness/{id}`, shows composite score (0-100) with color coding + precision/prevention/adoption bar charts.
+- **Dashboard top violated rules** (`page.tsx` + `service.py`): `get_home_summary()` enriches each violated rule with `effectiveness_score`. UI shows "eff N" badge next to deny count.
+- **Rules list quality dots** (`rules/page.tsx`): Quality column with green (>=60) / yellow (30-59) / red (<30) / gray (no data) dots.
+- **Dashboard alert banner** (`page.tsx`): `getLatestCriticalAlert()` fetches the most critical active alert; renders as a clickable banner above the compliance hero.
+- **Weekly digest** (`digest.py`): `most_effective_rules` (top 5) and `declining_rules` (score < 30) sections.
+- **Effectiveness-based alerts** (`workers/settings.py`): health worker generates `effectiveness_decline` alerts for rules with score < 30 and 10+ judgments.
+
+### 14.14 Rule Context Extraction (Implemented)
+- **Domain**: `domain/rule.py` — `Rule` dataclass has `context: str` field (default `""`) capturing surrounding document text, section hierarchy, regulatory authority, and qualifying information. Distinct from `rationale` (intent/purpose).
+- **Database**: `context` column on `RuleModel` (Text, migration 021).
+- **Extraction**: `extract_rules.txt` prompt requests `context` field with instructions to capture section title hierarchy, surrounding text, document title/authority, and scoping language. `infer_metadata.txt` also infers context. Extraction JSON schema includes `context` field.
+- **Schemas**: `context` field on `RuleCreate`, `RuleUpdate`, `RuleResponse`, and `RuleImportItem`.
+- **Service**: `rule_service.py` persists and updates `context`. Elasticsearch indexes `context` for full-text search.
+- **Evaluation**: `evaluate_code_change.txt` and `evaluate_facts.txt` prompts include `{rationale}`, `{context}`, and `{preconditions}` placeholders. `evaluation_core.py` passes these from the rule dict. `batch_evaluator.py` includes rationale/context/preconditions in the rules block. `rule_selector.py` includes `context`, `preconditions`, and `exceptions` in the rule dict passed to evaluators.
+- **Frontend**: Rule detail page displays context below rationale. Rule creation form has context textarea with guidance text. RuleEditForm includes context field. `Rule` TypeScript interface includes `context: string`.
+
+### 14.15 Future Implementation Notes
 - **Task-start hook**: Add `task-start` mode to `rulerepo-hook` with `--prompt` option for task-aware rule injection.
 - **Zero-config init**: Create `packages/cli/src/rulerepo_cli/init.py` that wraps the existing discovery analyzers for local execution without the server.
 - **CLI auto-fix**: Add `--auto-fix` flag to `rulerepo-check` that applies `auto_applicable` remediations and re-evaluates.
@@ -513,6 +539,37 @@ These are architecture decisions and patterns for ongoing Phase 5 work. Read bef
 - **Frontend onboarding wizard**: When zero rules exist, show 3-step wizard (scan → review → activate in shadow mode).
 - **Infrastructure tiers**: Add `ELASTICSEARCH_ENABLED`, `NEO4J_ENABLED`, `REDIS_ENABLED` flags to Settings. Implement Postgres FTS fallback in search service.
 - **Generated TypeScript client**: Export OpenAPI spec and use `openapi-typescript` + `openapi-fetch` to replace hand-written `lib/api.ts`.
+### 14.17 Rule Marketplace & Interoperability (Phase 6c, Implemented)
+- **Models**: `RulePackageModel` (versioned bundle with quality score, adoption count, unique constraint on name+version+publisher), `PackageRuleModel` (package-rule association with stable in-package ID), `PackageSubscriptionModel` (project subscription with version constraint, auto-update), `CompositionConflictModel` (cross-package conflict detection and resolution) in `models.py` (migration 020).
+- **Service**: `services/marketplace/service.py` — `MarketplaceService` with: create/get/list packages, add/remove rules from packages, publish (immutable once published), subscribe (imports rules with ["imported","marketplace"] tags, increments adoption count), list/unsubscribe subscriptions, list/resolve composition conflicts.
+- **API**: `api/v1/marketplace.py` — 11 endpoints: package CRUD, add/remove rules, publish, subscribe, list/unsubscribe subscriptions, list/resolve conflicts.
+- **Schemas**: `schemas/marketplace.py` — PackageCreate, PackageRuleAdd, SubscribeRequest, ConflictResolveRequest, PackageResponse, PackageListResponse, SubscriptionResponse, ConflictResponse.
+- **Frontend**: `/marketplace` (browse packages with quality score, adoption count, rule count; tabs for All/Published/My Subscriptions; subscribe button per package; unsubscribe from subscriptions tab).
+- **Sidebar**: "Marketplace" under new "Share" section.
+- **Env vars**: `REGISTRY_URL`, `REGISTRY_API_KEY`, `PACKAGE_AUTO_UPDATE_ENABLED`.
+
+### 14.16 Autonomous Agent Governance (Phase 6b, Implemented)
+- **Domain**: `domain/agent.py` — `TrustLevel` (untrusted→limited→standard→elevated→autonomous), `AgentType` (coding_assistant/code_reviewer/security_scanner/deployment_agent/custom). Trust promotion thresholds, mastery constants.
+- **Models**: `AgentProfileModel` (persistent governance profile with compliance rate, violation patterns, mastery data, personalized weights), `AgentExceptionRequestModel`, `AgentNegotiationModel`, `GovernanceSessionModel` in `models.py` (migration 019).
+- **Service**: `services/agent_governance/service.py` — `AgentGovernanceService` with: register/get/update/list agents, get_personalized_rules (suppresses mastered rules, boosts weak areas), get_mastery_report, request_exception, list/resolve exceptions, challenge_verdict, list/resolve negotiations, create/join/get/publish_verdict/close governance sessions. Cron-ready: `compute_compliance_and_trust()` (trust promotion/demotion), `compute_mastery()` (rule mastery detection).
+- **API**: `api/v1/agent_governance.py` — 15 endpoints: register, list agents (leaderboard), get profile, personalized rules, mastery report, exception request/list, negotiate/list, session create/join/get/publish verdict/close.
+- **Schemas**: `schemas/agent_governance.py` — AgentRegisterRequest, ExceptionRequest, NegotiationRequest, SessionCreateRequest, SessionJoinRequest, VerdictPublishRequest, AgentProfileResponse, AgentListResponse, PersonalizedRulesResponse, etc.
+- **MCP Tools**: `register_agent`, `get_personalized_rules`, `challenge_verdict`, `request_exception` in `mcp/tools.py`.
+- **Frontend**: `/agents` (compliance leaderboard with trust level badges, compliance rate colors), `/agents/[id]` (profile detail with capabilities, mastery stats, exception/negotiation history).
+- **Sidebar**: "Agents" under Observe section.
+- **Env vars**: `AGENT_TRUST_PROMOTION_ENABLED`, `AGENT_MASTERY_THRESHOLD`, `AGENT_PATTERN_MIN_EVIDENCE`.
+
+### 14.15 Collaborative Governance — Proposals (Phase 6a, Implemented)
+- **Domain**: `domain/proposal.py` — `ProposalType` (create/amend/retire/merge/split/override), `ProposalStatus` (draft→review→approved→enacted), `ApprovalVote`, `ChangeSpec`. Status transition validation via `validate_proposal_transition()`.
+- **Models**: `ProposalModel`, `ProposalCommentModel`, `NotificationModel` in `models.py` (migration 018).
+- **Service**: `services/proposals/service.py` — `ProposalService` with full lifecycle: create, list, update (draft only), submit_for_review (runs conflict analysis + impact preview), vote (auto-transitions on all-approve or any-reject), enact (delegates to enactor), revert, close. Threaded comments with suggestion/resolution types. Notification creation on status changes.
+- **Enactor**: `services/proposals/enactor.py` — Applies approved proposals: create (new rule), amend (field-level update), retire (set valid_until + RETIRED status), merge (create + retire sources), split (create sub-rules + retire original).
+- **API**: `api/v1/proposals.py` — 14 endpoints: CRUD, submit, vote, enact, revert, close, comments, resolve comment, analyze, notifications inbox, mark read, mark all read.
+- **Schemas**: `schemas/proposal.py` — ProposalCreate, ProposalUpdate, VoteRequest, CommentCreate, ProposalResponse, CommentResponse, NotificationResponse, ProposalListResponse, NotificationListResponse.
+- **MCP Tools**: `create_proposal`, `get_proposal_status` in `mcp/tools.py`.
+- **Frontend**: `/proposals` (list with status tabs), `/proposals/new` (guided creation with type selection, rule definition for create/override), `/proposals/[id]` (detail with actions, diff view, comments, approval tracker, conflict analysis, impact preview), `/notifications` (inbox with mark-read).
+- **Sidebar**: "Proposals" under Manage, "Notifications" under Observe.
+- **Env vars**: `NOTIFICATION_WEBHOOK_URL`, `NOTIFICATION_WEBHOOK_TYPE` in `.env.example`.
 
 ---
 

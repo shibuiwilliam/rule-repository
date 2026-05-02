@@ -92,18 +92,84 @@ def _build_rules_block(rules: list[dict[str, Any]]) -> str:
     """Format rules for inclusion in the batch prompt."""
     lines: list[str] = []
     for i, rule in enumerate(rules):
-        lines.append(
+        block = (
             f"[Rule {i}] (id={rule['id']}) "
             f"[{rule.get('modality', 'MUST')}] [{rule.get('severity', 'MEDIUM')}]\n"
-            f"  {rule.get('statement', '')}"
+            f"  Statement: {rule.get('statement', '')}"
         )
+        rationale = rule.get("rationale", "")
+        if rationale:
+            block += f"\n  Rationale: {rationale}"
+        context = rule.get("context", "")
+        if context:
+            block += f"\n  Context: {context}"
+        preconditions = rule.get("preconditions", [])
+        if preconditions:
+            block += f"\n  Preconditions: {', '.join(preconditions)}"
+        exceptions = rule.get("exceptions", [])
+        if exceptions:
+            block += f"\n  Exceptions: {', '.join(exceptions)}"
+        following = rule.get("following_examples", [])
+        if following:
+            block += f"\n  Following examples: {'; '.join(following)}"
+        violations = rule.get("violation_examples", [])
+        if violations:
+            block += f"\n  Violation examples: {'; '.join(violations)}"
+        lines.append(block)
     return "\n\n".join(lines)
 
 
-def _build_relationships_block(rules: list[dict[str, Any]]) -> str:
-    """Build relationship context if rules have known interactions."""
-    # Placeholder for future Neo4j relationship injection
-    return ""
+def _build_relationships_block(
+    rules: list[dict[str, Any]],
+    plan: Any | None = None,
+) -> str:
+    """Build relationship context from the evaluation plan.
+
+    Includes overrides, conflicts, and dependencies so the LLM can
+    reason about rule interactions when evaluating.
+
+    Args:
+        rules: List of rule dicts being evaluated.
+        plan: Optional EvaluationPlan with relationship data.
+
+    Returns:
+        Formatted string describing rule relationships, or empty if none.
+    """
+    if plan is None:
+        return ""
+
+    rule_ids = {r["id"] for r in rules}
+    lines: list[str] = []
+
+    # Overrides
+    for overridden_id, overriding_id in getattr(plan, "overrides", {}).items():
+        if overridden_id in rule_ids and overriding_id in rule_ids:
+            lines.append(
+                f"- Rule {overriding_id[:8]} OVERRIDES Rule {overridden_id[:8]} "
+                "(apply the overriding rule's verdict when they conflict)"
+            )
+
+    # Conflicts
+    for a_id, b_id in getattr(plan, "conflicts", []):
+        if a_id in rule_ids and b_id in rule_ids:
+            lines.append(
+                f"- Rule {a_id[:8]} CONFLICTS WITH Rule {b_id[:8]} "
+                "(these rules may contradict — evaluate both but note the tension)"
+            )
+
+    # Dependencies (skip_if_denied)
+    for prereq_id, dependent_ids in getattr(plan, "skip_if_denied", {}).items():
+        for dep_id in dependent_ids:
+            if prereq_id in rule_ids and dep_id in rule_ids:
+                lines.append(
+                    f"- Rule {dep_id[:8]} DEPENDS ON Rule {prereq_id[:8]} "
+                    "(if the prerequisite rule is violated, the dependent rule may not apply)"
+                )
+
+    if not lines:
+        return ""
+
+    return "## Rule Relationships\n\n" + "\n".join(lines)
 
 
 def _parse_batch_response(rules: list[dict[str, Any]], response_verdicts: list[dict[str, Any]]) -> list[RuleVerdict]:
@@ -164,6 +230,7 @@ async def evaluate_batch(
     context: EvaluationContext,
     gemini_client: genai.Client,
     cache_repo: Any | None = None,
+    evaluation_plan: Any | None = None,
 ) -> list[tuple[RuleVerdict, str, int]]:
     """Evaluate multiple rules in a single batched LLM call.
 
@@ -185,7 +252,7 @@ async def evaluate_batch(
         return [await evaluate_rule(rules[0], context, gemini_client, cache_repo)]
 
     try:
-        return await _batch_evaluate_impl(rules, context, gemini_client, cache_repo)
+        return await _batch_evaluate_impl(rules, context, gemini_client, cache_repo, evaluation_plan)
     except Exception as exc:
         logger.warning(
             "batch_evaluation_fallback",
@@ -200,6 +267,7 @@ async def _batch_evaluate_impl(
     context: EvaluationContext,
     gemini_client: genai.Client,
     cache_repo: Any | None = None,
+    evaluation_plan: Any | None = None,
 ) -> list[tuple[RuleVerdict, str, int]]:
     """Core batch evaluation implementation."""
     config = get_default_config()
@@ -207,7 +275,7 @@ async def _batch_evaluate_impl(
 
     # Build prompt
     rules_block = _build_rules_block(rules)
-    relationships_block = _build_relationships_block(rules)
+    relationships_block = _build_relationships_block(rules, evaluation_plan)
 
     if context.diff:
         template = (PROMPTS_DIR / "evaluate_batch.txt").read_text()

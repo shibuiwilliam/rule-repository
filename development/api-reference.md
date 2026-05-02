@@ -341,6 +341,65 @@ Endpoints in `api/v1/snapshots.py`. Router prefix: `/api/v1/snapshots`.
 
 ---
 
+## Proposals
+
+Endpoints in `api/v1/proposals.py`. Router prefix: `/api/v1/proposals`.
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/proposals` | Create a new governance proposal. Body: `ProposalCreate` with `title`, `description`, `proposal_type` (create/modify/retire), `rule_id` (for modify/retire), `proposed_changes` (dict). Status 201. Returns `ProposalResponse`. |
+| GET | `/api/v1/proposals` | List proposals with optional status filter and pagination. Query params: `status`, `page`, `page_size`. Returns `ProposalListResponse`. |
+| GET | `/api/v1/proposals/{proposal_id}` | Get a single proposal with full details including votes and comments. |
+| PATCH | `/api/v1/proposals/{proposal_id}` | Update a draft proposal. Body: `ProposalUpdate` (partial). Only allowed while status is `draft`. |
+| POST | `/api/v1/proposals/{proposal_id}/submit` | Submit a proposal for review, transitioning from `draft` to `submitted`. |
+| POST | `/api/v1/proposals/{proposal_id}/vote` | Cast a vote on a submitted proposal. Body: `VoteRequest` with `vote` (approve/reject) and optional `comment`. |
+| POST | `/api/v1/proposals/{proposal_id}/enact` | Enact an approved proposal, applying the proposed changes to the rule corpus. |
+| POST | `/api/v1/proposals/{proposal_id}/revert` | Revert an enacted proposal, undoing the changes it applied. |
+| POST | `/api/v1/proposals/{proposal_id}/close` | Close a proposal without enacting. |
+| POST | `/api/v1/proposals/{proposal_id}/comments` | Add a comment to a proposal. Body: `CommentCreate` with `text` and `author`. |
+| GET | `/api/v1/proposals/{proposal_id}/comments` | List comments on a proposal. |
+| GET | `/api/v1/notifications` | List notifications for the current user. Query params: `unread_only`, `page`, `page_size`. |
+
+---
+
+## Agent Governance
+
+Endpoints in `api/v1/agent_governance.py`. Router prefix: `/api/v1/agents`.
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/agents/register` | Register a new agent profile. Body: `AgentRegisterRequest` with `agent_id`, `name`, `description`, `capabilities`. Status 201. Returns `AgentProfileResponse`. |
+| GET | `/api/v1/agents` | List registered agents with compliance summaries. Query params: `page`, `page_size`. Returns `AgentListResponse`. |
+| GET | `/api/v1/agents/{agent_id}` | Get a single agent profile with trust level, compliance history, and mastery details. |
+| GET | `/api/v1/agents/{agent_id}/rules` | Get personalized rules for an agent based on trust level, mastery, and violation history. Query params: `scope`, `file_paths`. Returns tailored rule set. |
+| GET | `/api/v1/agents/{agent_id}/mastery` | Get the agent's mastery status across rules (which rules the agent has demonstrated consistent compliance with). |
+| POST | `/api/v1/agents/{agent_id}/exceptions` | Request a temporary exception from a rule. Body: `ExceptionRequest` with `rule_id`, `reason`, `duration`. Returns `ExceptionResponse`. |
+| GET | `/api/v1/agents/{agent_id}/exceptions` | List active and past exception requests for an agent. |
+| POST | `/api/v1/agents/{agent_id}/negotiations` | Initiate a negotiation to challenge or adjust a verdict. Body: `NegotiationRequest` with `rule_id`, `evaluation_id`, `argument`. Returns `NegotiationResponse`. |
+| GET | `/api/v1/agents/{agent_id}/negotiations` | List negotiations for an agent. |
+| POST | `/api/v1/agents/{agent_id}/sessions` | Start a governance session. Returns `SessionResponse` with session ID. |
+| GET | `/api/v1/agents/{agent_id}/sessions` | List governance sessions for an agent. |
+
+---
+
+## Marketplace
+
+Endpoints in `api/v1/marketplace.py`. Router prefix: `/api/v1/marketplace`.
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/marketplace/packages` | Create a new rule package. Body: `PackageCreate` with `name`, `description`, `scope`, `rule_ids`. Status 201. Returns `PackageResponse`. |
+| GET | `/api/v1/marketplace/packages` | List available rule packages. Query params: `scope`, `search`, `page`, `page_size`. Returns `PackageListResponse`. |
+| GET | `/api/v1/marketplace/packages/{package_id}` | Get a package with its included rules and metadata. |
+| PATCH | `/api/v1/marketplace/packages/{package_id}` | Update a package (add/remove rules, update metadata). |
+| POST | `/api/v1/marketplace/packages/{package_id}/publish` | Publish a package, making it available for subscription. |
+| POST | `/api/v1/marketplace/packages/{package_id}/subscribe` | Subscribe the current project to a package. Body: `SubscribeRequest` with `project_id`. Status 201. Returns `SubscriptionResponse`. |
+| DELETE | `/api/v1/marketplace/packages/{package_id}/subscribe` | Unsubscribe from a package. Query param: `project_id`. |
+| GET | `/api/v1/marketplace/subscriptions` | List active subscriptions. Query params: `project_id`, `page`, `page_size`. Returns `SubscriptionListResponse`. |
+| GET | `/api/v1/marketplace/conflicts` | Detect conflicts across subscribed packages for a project. Query param: `project_id`. Returns `ConflictListResponse` with conflicting rules and resolution suggestions. |
+
+---
+
 ## Error Responses
 
 All application errors return structured JSON:

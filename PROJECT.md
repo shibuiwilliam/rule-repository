@@ -499,7 +499,9 @@ The project is structured in four phases, each delivering independent value.
 - **File-aware scope resolution** [IMPLEMENTED]: `resolve_scopes()` function with `DEFAULT_SCOPE_MAP` (20 glob patterns for Python, TypeScript, Go, Rust, Java, docs, Docker, CI). Teams can override via custom maps.
 - **Session context API** [IMPLEMENTED]: `GET /api/v1/rules/context?files=...&format=instructions` — resolves scopes from file paths, auto-detects languages, returns formatted rules (~500 tokens for 15 rules)
 - Installable via `rulerepo hooks install` (writes to `.claude/hooks.json`) [PLANNED]
-- CLAUDE.md rules section generator [PLANNED]
+- **CLAUDE.md rules section generator** [IMPLEMENTED]: `rulerepo-context` CLI with generate/update/watch commands. Maintains a `## Rules` section between `<!-- rulerepo:rules:start/end -->` markers. Groups by modality, includes severity, auto-updates in-place.
+- **Dashboard alert banner** [IMPLEMENTED]: Home page shows the most critical active alert (warning/critical) as a prominent banner above the compliance hero.
+- **Rules list quality dots** [IMPLEMENTED]: Quality column on the rules list page shows green/yellow/red dots based on effectiveness score, enabling instant scanning for problem rules.
 - Task-start hook mode: `UserPromptSubmit` hook that injects rules before agent starts a task [PLANNED]
 
 #### 5f. Zero-Config Bootstrapping [PARTIALLY IMPLEMENTED]
@@ -529,7 +531,7 @@ The project is structured in four phases, each delivering independent value.
 #### 5i. Advanced Intelligence [PARTIALLY IMPLEMENTED]
 - **Agent performance tracking** [IMPLEMENTED]: `agent_id` field on evaluations (migration 017), `agent_analytics.py` service with `get_agent_list`, `get_agent_detail`, `get_agent_top_violations`; API at `GET /intelligence/agents` and `GET /intelligence/agents/{agent_id}`
 - **Targeted rule delivery** [IMPLEMENTED]: `select_rules()` boosts rules an agent historically violates by +20 relevance points, using `get_agent_top_violations()`
-- **Rule effectiveness score** [IMPLEMENTED]: `GET /api/v1/intelligence/effectiveness/{rule_id}` — precision (40%), prevention rate (35%), agent adoption (25%) → composite score 0-100. Data from `evaluations`, `corrections`, and `rules` tables.
+- **Rule effectiveness score** [IMPLEMENTED]: `GET /api/v1/intelligence/effectiveness/{rule_id}` — precision (40%), prevention rate (35%), agent adoption (25%) → composite score 0-100. Surfaced on rule detail page (bars), dashboard (badges on top violated rules), rules list (quality dots), and weekly digest (`most_effective_rules` + `declining_rules` sections).
 - **Weekly governance digest** [IMPLEMENTED]: `GET /api/v1/intelligence/digest` — compliance trend (this week vs last), rule changes, top violations, attention needed, corrections, pending actions. Cron job `send_weekly_digest` (Monday 9am) with `DIGEST_WEBHOOK_URL` delivery.
 - **Team comparison dashboard** [IMPLEMENTED]: `GET /api/v1/intelligence/comparison` — per-project rule count, compliance rate, sorted by performance.
 - Conflict detector (continuous scanning) [PLANNED]
@@ -543,6 +545,30 @@ The project is structured in four phases, each delivering independent value.
 - Graceful degradation: detect available services at startup
 
 **Value delivered:** "Our rules improve themselves — every correction teaches the system, evaluation is fast and holistic, and the dashboard shows impact."
+
+### Phase 6 — Platform & Ecosystem [PLANNED]
+
+Three strategic enhancements that transform the Rule Repository from a team tool into an organizational platform.
+
+#### 6a. Collaborative Governance Workflow
+- **Rule proposals**: Draft → Review → Approve workflow with comments and revision tracking
+- **Multi-approver voting**: Rules above a severity threshold require N approvals before activation
+- **Change impact preview**: Before approving a rule change, see which historical evaluations would change
+- **Notification routing**: Rule changes notify affected scope owners automatically
+
+#### 6b. Autonomous Agent Governance Loop
+- **Self-healing rules**: When a rule's effectiveness score drops below threshold, the system auto-generates a rewrite proposal using Gemini, citing the corrections that revealed the problem
+- **Conflict auto-resolution**: When two rules contradict, the system proposes a merged rule or scope narrowing
+- **Proactive rule suggestions**: Analyze code patterns across all projects to suggest rules that no team has written yet
+- **Agent feedback integration**: Agents report which rules were helpful vs confusing, informing rule quality
+
+#### 6c. Cross-Organization Rule Marketplace
+- **Rule publishing**: Teams publish their best rules to a shared marketplace with usage stats
+- **Rule importing**: Browse, preview, and import rules from other teams or public templates
+- **Version tracking**: Imported rules track upstream changes and offer one-click updates
+- **Quality certification**: Rules that maintain >80 effectiveness score across 3+ projects earn a "certified" badge
+
+**Value delivered:** "Rules are a shared organizational asset — governed collaboratively, improved autonomously, and shared across teams."
 
 ---
 

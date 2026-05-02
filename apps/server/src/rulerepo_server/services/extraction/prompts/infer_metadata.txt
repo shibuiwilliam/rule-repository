@@ -3,9 +3,13 @@ Given the following rule statement and its source document context, infer struct
 Rule statement: {statement}
 Source section: {section}
 Document type: {document_type}
+Source context: {context}
 
 Return a JSON object with:
 - "severity": one of LOW, MEDIUM, HIGH, CRITICAL (based on potential impact of violation)
 - "scope": array of scope labels (e.g., ["engineering", "backend"], ["hr", "all-employees"])
 - "tags": array of relevant tags for categorization
 - "rationale": brief explanation of why this rule likely exists (infer from context if not stated)
+- "context": the surrounding document context that gives meaning to this rule, including section hierarchy, relevant definitions, and qualifying information. If the provided source context is adequate, refine and return it. If it is empty, infer context from the statement and document type.
+- "preconditions": array of conditions that must be true for this rule to apply. These are "when" or "if" clauses that determine whether the rule is relevant to a given situation. For example, a rule about API validation has a precondition "the code defines an API endpoint". If the rule applies unconditionally, return an empty array.
+- "exceptions": array of situations where the rule does NOT apply even when preconditions are met. These are carve-outs or "unless" clauses. If there are no exceptions, return an empty array.

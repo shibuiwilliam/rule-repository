@@ -11,7 +11,8 @@ Where traditional rule engines require translating human rules into formal logic
 - **Search 5 ways**: full-text (BM25), semantic (vector), category/tag, hybrid (BM25 + vector), and context-based (given facts, find applicable rules).
 - **Extract rules from documents**: upload PDFs, text, or markdown files and run an LLM-powered extraction pipeline that proposes candidate rules for human review. Bulk extraction runs in parallel.
 - **Evaluate compliance with auto-remediation**: submit code diffs, file changes, or free-form facts and receive per-rule verdicts (ALLOW / DENY / NEEDS_CONFIRMATION) with **structured remediations** --- machine-readable fix objects that agents can apply automatically.
-- **Deliver rules to AI agents**: expose the rule corpus to coding agents and other AI systems via an MCP server with 6 tools.
+- **Deliver rules to AI agents**: expose the rule corpus via MCP server, session context API (`GET /rules/context?files=...`), and CLI hooks. File-aware scope resolution matches rules to the files being edited.
+- **Rule templates**: 5 pre-built rule sets (57 rules) for Python/FastAPI, TypeScript/React, security (OWASP), API design, and testing. Import in one API call.
 - **Enforce via webhooks**: receive events from GitHub, Slack, or any webhook source, match them to enforcement policies, and run automated evaluation.
 - **Discover rules automatically**: scan project artifacts (CLAUDE.md, linter configs, policy documents, code patterns) to identify implicit rules.
 - **Self-improving flywheel**: capture human corrections, cluster similar patterns, auto-draft rule proposals via Gemini, and approve with one click. Every correction teaches the system.
@@ -21,7 +22,10 @@ Where traditional rule engines require translating human rules into formal logic
 - **Observe rule health**: track per-rule health scores (6 dimensions), evaluation analytics, maturity distribution, and automated improvement recommendations.
 - **Track agent performance**: per-agent compliance rates, violation trends, targeted rule delivery that boosts rules an agent historically breaks.
 - **Rule Playground**: sandbox-test rules against code snippets or real-world scenarios (narrative + structured facts) without audit trails or caching.
-- **Proactive Alerts**: automated notifications for dormant rules, high deny rates, health decline, and conflicts. Five background workers run daily maintenance.
+- **Rule effectiveness scores**: per-rule precision, prevention rate, and agent adoption metrics. Proves ROI.
+- **Weekly governance digest**: automated Monday report with compliance trends, top violations, and pending actions. Delivered via webhook.
+- **Team comparison**: cross-project compliance comparison for multi-team organizations.
+- **Proactive Alerts**: automated notifications for dormant rules, high deny rates, health decline, and conflicts. Six background workers run daily maintenance.
 - **Versioned Snapshots**: capture immutable snapshots, deploy to environments (production, staging, development), simulate impact, and roll back.
 
 ## Get Started

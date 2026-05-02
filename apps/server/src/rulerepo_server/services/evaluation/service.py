@@ -145,7 +145,13 @@ class EvaluationService:
         except Exception:
             pass
 
-        batch_results = await evaluate_batch(rules, context, self._gemini_client, cache_repo=cache_repo)
+        batch_results = await evaluate_batch(
+            rules,
+            context,
+            self._gemini_client,
+            cache_repo=cache_repo,
+            evaluation_plan=plan,
+        )
 
         verdicts = []
         model_ids: list[str] = []

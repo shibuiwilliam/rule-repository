@@ -92,6 +92,7 @@ class TestRule:
         assert rule.status == RuleStatus.DRAFT
         assert rule.scope == []
         assert rule.tags == []
+        assert rule.context == ""
 
     def test_full_creation(self) -> None:
         rule = Rule(
@@ -102,11 +103,13 @@ class TestRule:
             scope=["engineering"],
             tags=["code-review", "sla"],
             rationale="Ensures timely feedback",
+            context="Engineering Handbook > §3.2 Code Review Standards. All PRs require at least one approval.",
             governance=Governance(owner="eng-lead", approvers=["cto"]),
         )
         assert rule.modality == Modality.MUST
         assert rule.severity == Severity.HIGH
         assert rule.governance.owner == "eng-lead"
+        assert "Code Review Standards" in rule.context
 
 
 class TestStatusTransitions:
