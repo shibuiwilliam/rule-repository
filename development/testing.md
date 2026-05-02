@@ -47,7 +47,7 @@ cd packages/rule-client && uv run pytest
 
 ## Test Structure
 
-The project has **24 test files** across four locations with **212+ test functions** total (unit + integration + e2e + SDK).
+The project has **23 test files** across four locations with **212+ test functions** total (unit + integration + e2e + SDK).
 
 ### Unit Tests (`apps/server/tests/unit/`)
 

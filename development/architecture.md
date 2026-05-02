@@ -118,7 +118,7 @@ src/rulerepo_server/
 ├── adapters/
 │   ├── postgres/
 │   │   ├── session.py              # AsyncSession factory
-│   │   ├── models.py               # 33 SQLAlchemy ORM models
+│   │   ├── models.py               # 35 SQLAlchemy ORM models
 │   │   ├── rule_repo.py            # PostgresRuleRepository
 │   │   ├── audit_repo.py           # AuditLogRepository (append-only, hash-chained)
 │   │   └── cache_repo.py           # LLM response cache
@@ -295,7 +295,7 @@ If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.
 
 ## Alembic Migrations
 
-21 migrations in `apps/server/alembic/versions/`:
+22 migrations in `apps/server/alembic/versions/`:
 
 | Migration | Description |
 |---|---|
@@ -316,10 +316,11 @@ If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.
 | `015_add_maturity_level` | Rule maturity model: maturity_level + accuracy tracking |
 | `016_add_draft_proposals` | Draft rule proposals for correction-to-rule flywheel |
 | `017_add_agent_id_to_evaluations` | Agent identity tracking on evaluation records |
-| `018_add_proposals` | Governance proposals, proposal comments, and notifications tables; context column on rules |
-| `019_add_agent_governance` | Agent profiles, agent exception requests, agent negotiations, governance sessions |
-| `020_add_marketplace` | Rule packages, package rules, package subscriptions |
-| `021_add_composition_conflicts` | Composition conflicts for marketplace package conflict detection |
+| `018_add_proposals` | Governance proposals, proposal comments, and notifications tables |
+| `019_add_agent_governance` | Agent profiles, exception requests, negotiations, governance sessions |
+| `020_add_marketplace` | Rule packages, package rules, subscriptions, composition conflicts |
+| `021_add_rule_context` | Context column on rules for document provenance |
+| `022_add_rule_examples` | Following/violation examples on rules for evaluation accuracy |
 
 ---
 
@@ -366,12 +367,15 @@ The FastAPI application applies three middleware layers (outermost first):
 
 ## Frontend Pages
 
-The Next.js frontend has 15 pages under the `(dashboard)` route group:
+The Next.js frontend has 23 pages (including nested routes):
 
 | Route | Purpose |
 |---|---|
+| `/` | Home dashboard (compliance rate, trends, pending actions) |
 | `/rules` | Browse and manage rules |
-| `/search` | Full-text and filtered search |
+| `/rules/new` | Create a new rule (statement, conditions, examples) |
+| `/rules/[id]` | Rule detail (context, conditions, examples, relationships, graph, effectiveness) |
+| `/search` | Full-text, vector, and hybrid search with conditions preview |
 | `/documents` | Upload documents, trigger extraction, review candidates |
 | `/discover` | Rule discovery scans and candidate review |
 | `/federations` | Cross-project federation management |
@@ -383,5 +387,9 @@ The Next.js frontend has 15 pages under the `(dashboard)` route group:
 | `/snapshots` | Rule set snapshots and deployment management |
 | `/projects` | Project management (create, list, switch) |
 | `/proposals` | Governance proposal lifecycle and voting |
-| `/agents` | Agent profiles, trust levels, and compliance tracking |
-| `/marketplace` | Rule package browsing, publishing, and subscriptions |
+| `/proposals/new` | Create new governance proposal (wizard) |
+| `/proposals/[id]` | Proposal detail (diff, comments, votes, impact) |
+| `/notifications` | Notification inbox for proposal activity |
+| `/agents` | Agent compliance leaderboard and trust levels |
+| `/agents/[id]` | Agent detail (mastery, exceptions, negotiations) |
+| `/marketplace` | Rule packages, subscriptions, composition conflicts |
