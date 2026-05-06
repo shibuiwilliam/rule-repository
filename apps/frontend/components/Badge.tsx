@@ -34,6 +34,34 @@ interface BadgeProps {
   className?: string;
 }
 
+const BADGE_TITLES: Record<string, Record<string, string>> = {
+  modality: {
+    MUST: "Required obligation — violations block approval",
+    MUST_NOT: "Prohibited action — violations block approval",
+    SHOULD: "Recommended practice — violations are flagged but not blocking",
+    MAY: "Optional practice — permitted but not required",
+    INFO: "Informational — no enforcement, for awareness only",
+  },
+  severity: {
+    CRITICAL: "Critical impact if violated — highest priority",
+    HIGH: "High impact if violated",
+    MEDIUM: "Medium impact if violated",
+    LOW: "Low impact if violated",
+  },
+  status: {
+    DRAFT: "Draft — not yet ready for review",
+    REVIEW: "Under review — awaiting approval",
+    APPROVED: "Approved — ready to become effective",
+    EFFECTIVE: "Effective — actively enforced",
+    SUPERSEDED: "Superseded — replaced by a newer rule",
+    RETIRED: "Retired — no longer in effect",
+  },
+};
+
+function getTitle(variant: BadgeVariant, label: string): string | undefined {
+  return BADGE_TITLES[variant]?.[label];
+}
+
 function getStyle(variant: BadgeVariant, label: string): string {
   switch (variant) {
     case "modality":
@@ -52,9 +80,11 @@ function getStyle(variant: BadgeVariant, label: string): string {
 
 export default function Badge({ label, variant = "tag", className = "" }: BadgeProps) {
   const style = getStyle(variant, label);
+  const badgeTitle = getTitle(variant, label);
   return (
     <span
       className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${style} ${className}`}
+      title={badgeTitle}
     >
       {label}
     </span>

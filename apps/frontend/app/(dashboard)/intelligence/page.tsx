@@ -225,7 +225,7 @@ export default function IntelligencePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Intelligence Dashboard</h1>
+        <h1 className="text-2xl font-bold" title="Automated analysis of rule health, evaluation trends, and improvement opportunities">Intelligence Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500">
           Rule health, evaluation analytics, and automated improvement recommendations
         </p>
@@ -281,7 +281,7 @@ export default function IntelligencePage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Health Distribution */}
           <div className="rounded-lg border bg-white p-5">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500" title="Breakdown of rules by health tier: excellent, good, fair, and poor">
               Health Distribution
             </h2>
             {healthDistTotal === 0 ? (
@@ -327,7 +327,7 @@ export default function IntelligencePage() {
 
           {/* Verdict Distribution */}
           <div className="rounded-lg border bg-white p-5">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500" title="Proportion of ALLOW, DENY, and NEEDS_CONFIRMATION verdicts over the last 30 days">
               Verdict Distribution (30d)
             </h2>
             {verdictTotal === 0 ? (
@@ -378,7 +378,7 @@ export default function IntelligencePage() {
         {/* Top Violated Rules */}
         {dashboard && (
           <div className="rounded-lg border bg-white p-5">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500" title="Rules with the most DENY verdicts in the last 30 days">
               Top Violated Rules (30d)
             </h2>
             {(!dashboard.top_violated_rules || dashboard.top_violated_rules.length === 0) ? (
@@ -422,7 +422,7 @@ export default function IntelligencePage() {
         {/* Corpus Analytics */}
         <div className="rounded-lg border bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500" title="Aggregate evaluation metrics including volume, latency, and compliance rate">
               Evaluation Analytics
             </h2>
             <div className="flex rounded-md border">
@@ -480,7 +480,7 @@ export default function IntelligencePage() {
       {/* ============ Section D: Health Scores Table ============ */}
       <div className="rounded-lg border bg-white p-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500" title="Per-rule health scores across completeness, clarity, test coverage, freshness, activity, and owner engagement">
             Rule Health Scores
             {health && <span className="ml-2 font-normal normal-case text-gray-400">({health.total} rules)</span>}
           </h2>
@@ -562,7 +562,7 @@ export default function IntelligencePage() {
 
       {/* ============ Section E: Recommendations ============ */}
       <div className="rounded-lg border bg-white p-5">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500" title="Automated suggestions to retire, clarify, strengthen, or escalate rules">
           Recommendations
           {recs && recs.total > 0 && (
             <span className="ml-2 font-normal normal-case text-gray-400">({recs.total} open)</span>

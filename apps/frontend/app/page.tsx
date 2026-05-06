@@ -80,7 +80,7 @@ function ComplianceHero({
 
   return (
     <div className={`rounded-xl border-2 p-6 ${bg}`}>
-      <p className="text-sm font-medium uppercase tracking-wider text-gray-500">
+      <p className="text-sm font-medium uppercase tracking-wider text-gray-500" title="30-day average of evaluations that passed (ALLOW verdict)">
         Agent Compliance Rate (30d)
       </p>
       <div className="mt-2 flex items-end gap-6">
@@ -128,7 +128,7 @@ function RulesStatusBar({
   return (
     <div className="rounded-lg border bg-white p-5">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium uppercase tracking-wider text-gray-500">
+        <p className="text-sm font-medium uppercase tracking-wider text-gray-500" title="Distribution of rules across lifecycle statuses">
           Rules
         </p>
         <span className="text-2xl font-bold text-gray-800">{total}</span>
@@ -196,7 +196,7 @@ function PendingActions({
 
   return (
     <div className="rounded-lg border bg-white p-5">
-      <p className="mb-3 text-sm font-medium uppercase tracking-wider text-gray-500">
+      <p className="mb-3 text-sm font-medium uppercase tracking-wider text-gray-500" title="Items requiring your attention: rules to review, corrections to approve, active alerts">
         Pending Actions
       </p>
       <div className="flex gap-3">
@@ -223,7 +223,7 @@ function TopViolatedRules({
   if (rules.length === 0) {
     return (
       <div className="rounded-lg border bg-white p-5">
-        <p className="text-sm font-medium uppercase tracking-wider text-gray-500">
+        <p className="text-sm font-medium uppercase tracking-wider text-gray-500" title="Rules with the most DENY verdicts in the last 30 days">
           Top Violated Rules
         </p>
         <p className="mt-3 text-sm text-gray-400">No violations recorded yet.</p>
@@ -233,7 +233,7 @@ function TopViolatedRules({
 
   return (
     <div className="rounded-lg border bg-white p-5">
-      <p className="mb-3 text-sm font-medium uppercase tracking-wider text-gray-500">
+      <p className="mb-3 text-sm font-medium uppercase tracking-wider text-gray-500" title="Rules with the most DENY verdicts in the last 30 days">
         Top Violated Rules (30d)
       </p>
       <div className="space-y-2">
@@ -293,7 +293,7 @@ function RecentCorrections({
   if (corrections.length === 0) {
     return (
       <div className="rounded-lg border bg-white p-5">
-        <p className="text-sm font-medium uppercase tracking-wider text-gray-500">
+        <p className="text-sm font-medium uppercase tracking-wider text-gray-500" title="Latest human corrections of AI-generated code feeding the self-improving flywheel">
           Recent Corrections
         </p>
         <p className="mt-3 text-sm text-gray-400">No corrections submitted yet.</p>
@@ -304,7 +304,7 @@ function RecentCorrections({
   return (
     <div className="rounded-lg border bg-white p-5">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium uppercase tracking-wider text-gray-500">
+        <p className="text-sm font-medium uppercase tracking-wider text-gray-500" title="Latest human corrections of AI-generated code feeding the self-improving flywheel">
           Recent Corrections
         </p>
         <Link

@@ -82,7 +82,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Statement</label>
+            <label className="block text-sm font-medium text-gray-700" title="The normative statement — this is the source of truth for the rule">Statement</label>
             <textarea
               rows={3}
               value={form.statement}
@@ -93,7 +93,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Modality</label>
+              <label className="block text-sm font-medium text-gray-700" title="Obligation strength: MUST, MUST_NOT, SHOULD, MAY, INFO">Modality</label>
               <select
                 value={form.modality}
                 onChange={(e) => setForm({ ...form, modality: e.target.value })}
@@ -107,7 +107,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Severity</label>
+              <label className="block text-sm font-medium text-gray-700" title="Impact level if violated: LOW, MEDIUM, HIGH, CRITICAL">Severity</label>
               <select
                 value={form.severity}
                 onChange={(e) => setForm({ ...form, severity: e.target.value })}
@@ -121,7 +121,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
+              <label className="block text-sm font-medium text-gray-700" title="Lifecycle status: DRAFT, REVIEW, APPROVED, EFFECTIVE, SUPERSEDED, RETIRED">Status</label>
               <select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -138,7 +138,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Scope</label>
+              <label className="block text-sm font-medium text-gray-700" title="Comma-separated labels for who/what this rule applies to">Scope</label>
               <input
                 value={form.scope}
                 onChange={(e) => setForm({ ...form, scope: e.target.value })}
@@ -147,7 +147,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Tags</label>
+              <label className="block text-sm font-medium text-gray-700" title="Comma-separated categorization labels">Tags</label>
               <input
                 value={form.tags}
                 onChange={(e) => setForm({ ...form, tags: e.target.value })}
@@ -158,7 +158,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Rationale</label>
+            <label className="block text-sm font-medium text-gray-700" title="Why this rule exists — helps the evaluator understand intent">Rationale</label>
             <textarea
               rows={2}
               value={form.rationale}
@@ -168,7 +168,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Context</label>
+            <label className="block text-sm font-medium text-gray-700" title="Source document context and qualifying information">Context</label>
             <textarea
               rows={3}
               value={form.context}
@@ -179,7 +179,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Preconditions</label>
+            <label className="block text-sm font-medium text-gray-700" title="Conditions for this rule to apply. One per line">Preconditions</label>
             <textarea
               rows={3}
               value={form.preconditions}
@@ -190,7 +190,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Exceptions</label>
+            <label className="block text-sm font-medium text-gray-700" title="When this rule does NOT apply. One per line">Exceptions</label>
             <textarea
               rows={2}
               value={form.exceptions}
@@ -201,7 +201,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Following Examples</label>
+            <label className="block text-sm font-medium text-gray-700" title="Examples of correct behavior. One per line">Following Examples</label>
             <textarea
               rows={2}
               value={form.following_examples}
@@ -212,7 +212,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Violation Examples</label>
+            <label className="block text-sm font-medium text-gray-700" title="Examples of incorrect behavior. One per line">Violation Examples</label>
             <textarea
               rows={2}
               value={form.violation_examples}
@@ -223,7 +223,7 @@ export default function RuleEditForm({ rule, onSaved, onCancel }: RuleEditFormPr
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700" title="Describe why you are making this change">
               Revision Note *
             </label>
             <input

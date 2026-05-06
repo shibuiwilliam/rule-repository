@@ -24,6 +24,16 @@ const TYPE_LABELS: Record<string, string> = {
   override: "Override",
 };
 
+const STATUS_TITLES: Record<string, string> = {
+  "": "Show proposals in any status",
+  draft: "Proposals still being edited before submission",
+  review: "Proposals awaiting approver votes",
+  approved: "Proposals that received sufficient approvals",
+  enacted: "Proposals whose changes have been applied",
+  rejected: "Proposals that were rejected by approvers",
+  closed: "Proposals that were closed without enactment",
+};
+
 export default function ProposalsPage() {
   const { currentProject } = useProject();
   const [proposals, setProposals] = useState<Proposal[]>([]);
@@ -58,7 +68,7 @@ export default function ProposalsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Governance Proposals</h1>
+          <h1 className="text-2xl font-bold" title="Governance proposals for collaborative rule changes with multi-approver voting">Governance Proposals</h1>
           <p className="text-sm text-gray-500 mt-1">
             Propose, review, and approve rule changes through a collaborative workflow.
           </p>
@@ -66,6 +76,7 @@ export default function ProposalsPage() {
         <Link
           href="/proposals/new"
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          title="Create a new proposal to add, modify, retire, merge, or split rules"
         >
           New Proposal
         </Link>
@@ -77,6 +88,7 @@ export default function ProposalsPage() {
           <button
             key={s}
             onClick={() => { setStatusFilter(s); setPage(1); }}
+            title={STATUS_TITLES[s] ?? ""}
             className={`px-3 py-1.5 text-sm rounded-t-md ${
               statusFilter === s
                 ? "bg-blue-50 text-blue-700 border-b-2 border-blue-600 font-medium"

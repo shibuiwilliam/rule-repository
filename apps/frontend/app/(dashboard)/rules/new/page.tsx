@@ -75,7 +75,7 @@ export default function NewRulePage() {
       <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border bg-white p-6">
         {/* Statement */}
         <div>
-          <label htmlFor="statement" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="statement" className="block text-sm font-medium text-gray-700" title="The normative statement in natural language -- this is the source of truth">
             Rule Statement *
           </label>
           <textarea
@@ -92,7 +92,7 @@ export default function NewRulePage() {
         {/* Modality + Severity */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="modality" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="modality" className="block text-sm font-medium text-gray-700" title="Obligation strength: MUST (required), SHOULD (recommended), MAY (optional), INFO (informational)">
               Modality
             </label>
             <select
@@ -109,7 +109,7 @@ export default function NewRulePage() {
             </select>
           </div>
           <div>
-            <label htmlFor="severity" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="severity" className="block text-sm font-medium text-gray-700" title="Impact level if violated: LOW, MEDIUM, HIGH, CRITICAL">
               Severity
             </label>
             <select
@@ -129,7 +129,7 @@ export default function NewRulePage() {
 
         {/* Scope */}
         <div>
-          <label htmlFor="scope" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="scope" className="block text-sm font-medium text-gray-700" title="Comma-separated labels for who/what this rule applies to">
             Scope
           </label>
           <input
@@ -144,7 +144,7 @@ export default function NewRulePage() {
 
         {/* Tags */}
         <div>
-          <label htmlFor="tags" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="tags" className="block text-sm font-medium text-gray-700" title="Comma-separated categorization labels for filtering and grouping">
             Tags
           </label>
           <input
@@ -159,7 +159,7 @@ export default function NewRulePage() {
 
         {/* Rationale */}
         <div>
-          <label htmlFor="rationale" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="rationale" className="block text-sm font-medium text-gray-700" title="Why this rule exists -- helps the LLM evaluator understand intent">
             Rationale
           </label>
           <textarea
@@ -174,7 +174,7 @@ export default function NewRulePage() {
 
         {/* Context */}
         <div>
-          <label htmlFor="context" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="context" className="block text-sm font-medium text-gray-700" title="Source document context: section hierarchy, regulatory authority, definitions">
             Context
           </label>
           <textarea
@@ -192,7 +192,7 @@ export default function NewRulePage() {
 
         {/* Preconditions */}
         <div>
-          <label htmlFor="preconditions" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="preconditions" className="block text-sm font-medium text-gray-700" title="When does this rule apply? One condition per line. Leave empty if always applicable">
             Preconditions
           </label>
           <textarea
@@ -208,7 +208,7 @@ export default function NewRulePage() {
 
         {/* Exceptions */}
         <div>
-          <label htmlFor="exceptions" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="exceptions" className="block text-sm font-medium text-gray-700" title="When does this rule NOT apply? One exception per line">
             Exceptions
           </label>
           <textarea
@@ -224,7 +224,7 @@ export default function NewRulePage() {
 
         {/* Following Examples */}
         <div>
-          <label htmlFor="following_examples" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="following_examples" className="block text-sm font-medium text-gray-700" title="Examples of correct behavior from the source document. One per line">
             Following Examples
           </label>
           <textarea
@@ -240,7 +240,7 @@ export default function NewRulePage() {
 
         {/* Violation Examples */}
         <div>
-          <label htmlFor="violation_examples" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="violation_examples" className="block text-sm font-medium text-gray-700" title="Examples of incorrect behavior from the source document. One per line">
             Violation Examples
           </label>
           <textarea
@@ -267,6 +267,7 @@ export default function NewRulePage() {
             type="submit"
             disabled={submitting || !form.statement.trim()}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            title="Save this rule and add it to the current project"
           >
             {submitting ? "Creating..." : "Create Rule"}
           </button>

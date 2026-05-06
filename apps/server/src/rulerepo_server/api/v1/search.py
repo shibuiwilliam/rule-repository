@@ -15,6 +15,7 @@ from rulerepo_server.core.deps import get_search_service
 from rulerepo_server.schemas.search import (
     CategorySearchQuery,
     ContextSearchQuery,
+    DocumentSearchModeQuery,
     DocumentSearchQuery,
     SearchQuery,
     SourceDocSearchQuery,
@@ -103,6 +104,140 @@ async def context_search(
         page_size=query.page_size,
         project_id=project_id,
     )
+
+
+@router.post("/documents/fulltext")
+async def search_documents_fulltext(
+    body: DocumentSearchModeQuery,
+    project_id: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Full-text BM25 search on document filenames and content."""
+    from rulerepo_server.adapters.elasticsearch.client import get_es_client
+    from rulerepo_server.adapters.elasticsearch.document_index import ElasticsearchDocumentIndex
+
+    es_doc_index = ElasticsearchDocumentIndex(get_es_client())
+    filters = {}
+    if project_id:
+        filters["project_id"] = project_id
+
+    hits, total = await es_doc_index.search_fulltext(
+        body.query,
+        filters=filters,
+        page=body.page,
+        page_size=body.page_size,
+    )
+    items = _build_document_results(hits)
+    return {"items": items, "total": total, "page": body.page, "page_size": body.page_size, "query": body.query}
+
+
+@router.post("/documents/vector")
+async def search_documents_vector(
+    body: DocumentSearchModeQuery,
+    project_id: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Semantic vector search on document embeddings."""
+    from rulerepo_server.adapters.elasticsearch.client import get_es_client
+    from rulerepo_server.adapters.elasticsearch.document_index import ElasticsearchDocumentIndex
+    from rulerepo_server.adapters.gemini.embeddings import generate_embedding
+    from rulerepo_server.core.deps import _get_optional_gemini
+
+    gemini = _get_optional_gemini()
+    if not gemini:
+        return {
+            "items": [],
+            "total": 0,
+            "page": body.page,
+            "page_size": body.page_size,
+            "query": body.query,
+            "error": "Gemini unavailable for vector search",
+        }
+
+    embedding = await generate_embedding(gemini, body.query)
+    es_doc_index = ElasticsearchDocumentIndex(get_es_client())
+    filters = {}
+    if project_id:
+        filters["project_id"] = project_id
+
+    hits, total = await es_doc_index.search_vector(
+        embedding,
+        filters=filters,
+        page=body.page,
+        page_size=body.page_size,
+    )
+    items = _build_document_results(hits)
+    return {"items": items, "total": total, "page": body.page, "page_size": body.page_size, "query": body.query}
+
+
+@router.post("/documents/hybrid")
+async def search_documents_hybrid(
+    body: DocumentSearchModeQuery,
+    project_id: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Hybrid BM25 + vector search on documents."""
+    from rulerepo_server.adapters.elasticsearch.client import get_es_client
+    from rulerepo_server.adapters.elasticsearch.document_index import ElasticsearchDocumentIndex
+    from rulerepo_server.adapters.gemini.embeddings import generate_embedding
+    from rulerepo_server.core.deps import _get_optional_gemini
+
+    gemini = _get_optional_gemini()
+    embedding = []
+    if gemini:
+        try:
+            embedding = await generate_embedding(gemini, body.query)
+        except Exception:
+            pass
+
+    es_doc_index = ElasticsearchDocumentIndex(get_es_client())
+    filters = {}
+    if project_id:
+        filters["project_id"] = project_id
+
+    if embedding:
+        hits, total = await es_doc_index.search_hybrid(
+            body.query,
+            embedding,
+            filters=filters,
+            page=body.page,
+            page_size=body.page_size,
+        )
+    else:
+        hits, total = await es_doc_index.search_fulltext(
+            body.query,
+            filters=filters,
+            page=body.page,
+            page_size=body.page_size,
+        )
+    items = _build_document_results(hits)
+    return {"items": items, "total": total, "page": body.page, "page_size": body.page_size, "query": body.query}
+
+
+def _build_document_results(hits: list[tuple[str, float, dict]]) -> list[dict]:
+    """Convert ES hits to API response items."""
+    items = []
+    for doc_id, score, source in hits:
+        highlight = source.pop("highlight", {})
+        snippet = ""
+        if "content_text" in highlight:
+            snippet = " ... ".join(highlight["content_text"])
+        elif source.get("content_text"):
+            snippet = source["content_text"][:300]
+
+        items.append(
+            {
+                "document_id": doc_id,
+                "filename": source.get("filename", ""),
+                "mime_type": source.get("mime_type", ""),
+                "size_bytes": source.get("size_bytes", 0),
+                "uploaded_by": source.get("uploaded_by", ""),
+                "uploaded_at": source.get("uploaded_at", ""),
+                "snippet": snippet,
+                "score": score,
+            }
+        )
+    return items
 
 
 @router.post("/documents")

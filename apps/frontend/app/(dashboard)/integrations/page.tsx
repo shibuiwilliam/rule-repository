@@ -48,7 +48,7 @@ rulerepo-ingest --source claude-md --file ./CLAUDE.md --scope engineering/python
 export default function IntegrationsPage() {
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Integrations</h1>
+      <h1 className="text-2xl font-bold" title="Connect the Rule Repository to CI pipelines, GitHub PRs, and coding agents">Integrations</h1>
       <p className="text-gray-600">
         Connect the Rule Repository to your development workflow — CI pipelines, PR reviews,
         and coding agents.

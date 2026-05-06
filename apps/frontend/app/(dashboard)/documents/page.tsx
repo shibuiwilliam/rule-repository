@@ -485,7 +485,7 @@ export default function DocumentsPage() {
       {/* Left panel: Document list */}
       <div className="w-80 shrink-0">
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Documents</h1>
+          <h1 className="text-2xl font-bold" title="Upload policy documents and extract candidate rules via LLM analysis">Documents</h1>
           <button
             onClick={toggleBulkMode}
             disabled={bulkRunning}
@@ -505,6 +505,7 @@ export default function DocumentsPage() {
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={(e) => { e.preventDefault(); setDragging(false); }}
           onClick={() => fileInputRef.current?.click()}
+          title="Drop PDF, text, or markdown files here to upload for rule extraction"
           className={`mb-4 flex cursor-pointer flex-col items-center rounded-lg border-2 border-dashed p-4 text-center transition-colors ${
             dragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"
           }`}
@@ -885,6 +886,7 @@ export default function DocumentsPage() {
                     <button
                       onClick={handleExtract}
                       disabled={extracting}
+                      title="Run LLM-powered extraction to discover candidate rules in this document"
                       className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
                     >
                       {extracting ? "Extracting..." : "Extract Rules"}

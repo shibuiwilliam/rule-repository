@@ -191,7 +191,7 @@ export default function DiscoverPage() {
   /* ---- Render ---- */
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-bold">Rule Discovery</h1>
+      <h1 className="mb-1 text-2xl font-bold" title="Automatically discover implicit rules from documents, configs, and code patterns">Rule Discovery</h1>
       <p className="mb-6 text-sm text-gray-500">
         Discover rules from any document — policies, contracts, handbooks, code standards, or configuration files
       </p>
@@ -200,7 +200,7 @@ export default function DiscoverPage() {
       <div className="mb-8 rounded-lg border bg-white p-6">
         {/* Source type selection */}
         <fieldset className="mb-5">
-          <legend className="mb-2 text-sm font-medium text-gray-700">
+          <legend className="mb-2 text-sm font-medium text-gray-700" title="Select which types of implicit rules to scan for">
             What to look for
           </legend>
           <div className="grid grid-cols-2 gap-3">
@@ -320,6 +320,7 @@ export default function DiscoverPage() {
         <button
           onClick={handleScan}
           disabled={phase === "scanning" || files.length === 0}
+          title="Analyze uploaded files to discover candidate rules using selected source types"
           className="rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {phase === "scanning" ? "Scanning..." : `Scan ${files.length} file(s)`}

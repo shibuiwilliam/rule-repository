@@ -137,7 +137,7 @@ export default function SnapshotsPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Rule Set Snapshots</h1>
+        <h1 className="text-2xl font-bold" title="Create versioned snapshots of rule sets for deployment to environments">Rule Set Snapshots</h1>
         <p className="mt-1 text-sm text-gray-500">
           Version, deploy, and roll back rule sets
         </p>
@@ -205,6 +205,7 @@ export default function SnapshotsPage() {
             onClick={handleCreate}
             disabled={creating}
             className="rounded-md bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:opacity-50"
+            title="Capture the current rule set as a named, immutable snapshot"
           >
             {creating ? "Creating..." : "Create Snapshot"}
           </button>
@@ -266,6 +267,7 @@ export default function SnapshotsPage() {
                               setDeployDropdown(deployDropdown === snap.id ? null : snap.id)
                             }
                             className="rounded border px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+                            title="Deploy this snapshot to an environment"
                           >
                             Deploy
                           </button>
@@ -290,6 +292,7 @@ export default function SnapshotsPage() {
                           onClick={() => handleSimulate(snap.id)}
                           disabled={simulating === snap.id}
                           className="rounded border px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                          title="Preview the impact of deploying this snapshot"
                         >
                           {simulating === snap.id ? "Simulating..." : "Simulate"}
                         </button>
@@ -298,6 +301,7 @@ export default function SnapshotsPage() {
                           <button
                             onClick={() => handleRollback(snap.id)}
                             className="rounded border border-red-200 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                            title="Revert the active deployment to this snapshot"
                           >
                             Rollback
                           </button>

@@ -95,21 +95,21 @@ export default async function RuleDetailPage({
       {/* Metadata + Relationships side by side */}
       <div className="grid grid-cols-2 gap-6">
         <div className="rounded-lg border bg-white p-4">
-          <h2 className="mb-3 text-sm font-medium uppercase text-gray-500">Details</h2>
+          <h2 className="mb-3 text-sm font-medium uppercase text-gray-500" title="Rule metadata including context, conditions, examples, and provenance">Details</h2>
           <dl className="space-y-2 text-sm">
             <div>
-              <dt className="font-medium text-gray-600">Rationale</dt>
+              <dt className="font-medium text-gray-600" title="Why this rule exists -- the intent and purpose behind it">Rationale</dt>
               <dd className="text-gray-900">{rule.rationale || "—"}</dd>
             </div>
             {rule.context && (
               <div>
-                <dt className="font-medium text-gray-600">Context</dt>
+                <dt className="font-medium text-gray-600" title="Surrounding document text, section hierarchy, and regulatory authority">Context</dt>
                 <dd className="text-gray-900 whitespace-pre-wrap">{rule.context}</dd>
               </div>
             )}
             {rule.preconditions && rule.preconditions.length > 0 && (
               <div>
-                <dt className="font-medium text-gray-600">Preconditions</dt>
+                <dt className="font-medium text-gray-600" title="Conditions that must be true for this rule to apply">Preconditions</dt>
                 <dd>
                   <ul className="list-disc list-inside text-gray-900 text-sm">
                     {rule.preconditions.map((p: string, i: number) => (
@@ -121,7 +121,7 @@ export default async function RuleDetailPage({
             )}
             {rule.exceptions && rule.exceptions.length > 0 && (
               <div>
-                <dt className="font-medium text-gray-600">Exceptions</dt>
+                <dt className="font-medium text-gray-600" title="Situations where this rule does NOT apply even when preconditions are met">Exceptions</dt>
                 <dd>
                   <ul className="list-disc list-inside text-gray-900 text-sm">
                     {rule.exceptions.map((e: string, i: number) => (
@@ -133,7 +133,7 @@ export default async function RuleDetailPage({
             )}
             {rule.following_examples && rule.following_examples.length > 0 && (
               <div>
-                <dt className="font-medium text-gray-600">Following Examples</dt>
+                <dt className="font-medium text-gray-600" title="Concrete examples of activities that comply with this rule">Following Examples</dt>
                 <dd>
                   <ul className="space-y-1 text-sm">
                     {rule.following_examples.map((ex: string, i: number) => (
@@ -145,7 +145,7 @@ export default async function RuleDetailPage({
             )}
             {rule.violation_examples && rule.violation_examples.length > 0 && (
               <div>
-                <dt className="font-medium text-gray-600">Violation Examples</dt>
+                <dt className="font-medium text-gray-600" title="Concrete examples of activities that violate this rule">Violation Examples</dt>
                 <dd>
                   <ul className="space-y-1 text-sm">
                     {rule.violation_examples.map((ex: string, i: number) => (
@@ -156,7 +156,7 @@ export default async function RuleDetailPage({
               </div>
             )}
             <div>
-              <dt className="font-medium text-gray-600">Scope</dt>
+              <dt className="font-medium text-gray-600" title="Who or what this rule applies to (e.g., engineering/api, hr/attendance)">Scope</dt>
               <dd>{rule.scope.length ? rule.scope.join(", ") : "—"}</dd>
             </div>
             <div>
@@ -236,7 +236,7 @@ export default async function RuleDetailPage({
       {/* Effectiveness */}
       {effectiveness && effectiveness.total_evaluations > 0 && (
         <div className="rounded-lg border bg-white p-5">
-          <h2 className="mb-3 text-sm font-medium uppercase text-gray-500">
+          <h2 className="mb-3 text-sm font-medium uppercase text-gray-500" title="How well this rule performs: precision, prevention rate, and agent adoption">
             Effectiveness
           </h2>
           <div className="flex items-center gap-8">
@@ -271,7 +271,7 @@ export default async function RuleDetailPage({
       {/* Relationship Graph */}
       {(graph.nodes.length > 0 || graph.edges.length > 0) && (
         <div className="rounded-lg border bg-white p-4">
-          <h2 className="mb-3 text-sm font-medium uppercase text-gray-500">
+          <h2 className="mb-3 text-sm font-medium uppercase text-gray-500" title="Visual graph of how this rule relates to other rules (refines, overrides, conflicts, depends on)">
             Relationship Graph
           </h2>
           <RuleDetailClient rule={rule} graph={graph} showGraph />
@@ -280,7 +280,7 @@ export default async function RuleDetailPage({
 
       {/* Revisions */}
       <div className="rounded-lg border bg-white p-4">
-        <h2 className="mb-3 text-sm font-medium uppercase text-gray-500">
+        <h2 className="mb-3 text-sm font-medium uppercase text-gray-500" title="Chronological record of all changes made to this rule">
           Revision History ({revisions.length})
         </h2>
         {revisions.length === 0 ? (

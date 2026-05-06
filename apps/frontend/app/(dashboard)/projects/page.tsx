@@ -38,7 +38,7 @@ export default function ProjectsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Projects</h1>
+          <h1 className="text-2xl font-bold" title="Projects are the top-level organizational boundary that scopes all resources">Projects</h1>
           <p className="mt-1 text-sm text-gray-500">
             Manage projects to organize rules, documents, and other resources
           </p>
@@ -46,6 +46,7 @@ export default function ProjectsPage() {
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          title="Create a new project to organize rules and resources"
         >
           {showCreate ? "Cancel" : "New Project"}
         </button>

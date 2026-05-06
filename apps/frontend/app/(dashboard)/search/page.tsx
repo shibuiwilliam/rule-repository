@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Badge from "@/components/Badge";
 import { useProject } from "@/lib/project-context";
+import { searchDocumentsFulltext, searchDocumentsVector, searchDocumentsHybrid } from "@/lib/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
@@ -11,6 +12,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"
 
 type SearchTab = "rules" | "documents";
 type RuleSearchMode = "hybrid" | "fulltext" | "vector";
+type DocSearchMode = "hybrid" | "fulltext" | "vector";
 
 interface RuleResult {
   rule: {
@@ -66,6 +68,7 @@ export default function SearchPage() {
   const [tab, setTab] = useState<SearchTab>("rules");
   const [query, setQuery] = useState("");
   const [ruleMode, setRuleMode] = useState<RuleSearchMode>("hybrid");
+  const [docMode, setDocMode] = useState<DocSearchMode>("hybrid");
 
   // Project filter for search — independent of sidebar selector
   const [searchProjectId, setSearchProjectId] = useState<string>(ALL_PROJECTS);
@@ -133,17 +136,25 @@ export default function SearchPage() {
     setSourceDoc(null);
     setSourceRules([]);
     try {
-      const res = await fetch(
-        `${API_BASE}/api/v1/search/documents${projectParam}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, page: 1, page_size: 30 }),
-        },
-      );
-      if (!res.ok) throw new Error(`Search failed: ${res.status}`);
-      const data = await res.json();
-      setDocResults(data.items ?? []);
+      const pid = searchProjectId !== ALL_PROJECTS ? searchProjectId : undefined;
+      const searchFn =
+        docMode === "fulltext"
+          ? searchDocumentsFulltext
+          : docMode === "vector"
+            ? searchDocumentsVector
+            : searchDocumentsHybrid;
+      const data = await searchFn(query, 1, 30, pid);
+      setDocResults(data.items?.map((item) => ({
+        id: item.document_id,
+        filename: item.filename,
+        mime_type: item.mime_type,
+        size_bytes: item.size_bytes,
+        uploaded_at: item.uploaded_at,
+        uploaded_by: item.uploaded_by,
+        content_snippet: item.snippet,
+        rules_extracted: 0,
+        relevance: item.score,
+      })) ?? []);
       setTotal(data.total ?? 0);
       setSearched(true);
     } catch (err) {
@@ -211,6 +222,7 @@ export default function SearchPage() {
               ? "border-b-2 border-blue-600 text-blue-600"
               : "text-gray-500 hover:text-gray-700"
           }`}
+          title="Search natural-language rules by statement, rationale, or context"
         >
           Rules
         </button>
@@ -225,6 +237,7 @@ export default function SearchPage() {
               ? "border-b-2 border-blue-600 text-blue-600"
               : "text-gray-500 hover:text-gray-700"
           }`}
+          title="Search uploaded documents by filename or content"
         >
           Documents
         </button>
@@ -245,6 +258,19 @@ export default function SearchPage() {
               value={ruleMode}
               onChange={(e) => setRuleMode(e.target.value as RuleSearchMode)}
               className="rounded-md border px-3 py-2 text-sm"
+              title="Search algorithm: Hybrid combines text and semantic matching for best results"
+            >
+              <option value="hybrid">Hybrid</option>
+              <option value="fulltext">Full-text</option>
+              <option value="vector">Semantic</option>
+            </select>
+          )}
+          {tab === "documents" && (
+            <select
+              value={docMode}
+              onChange={(e) => setDocMode(e.target.value as DocSearchMode)}
+              className="rounded-md border px-3 py-2 text-sm"
+              title="Search algorithm: Hybrid combines text and semantic matching for best results"
             >
               <option value="hybrid">Hybrid</option>
               <option value="fulltext">Full-text</option>
@@ -258,6 +284,7 @@ export default function SearchPage() {
             onChange={(e) => setSearchProjectId(e.target.value)}
             disabled={projectsLoading}
             className="rounded-md border px-3 py-2 text-sm"
+            title="Filter search results to a specific project, or search across all"
           >
             <option value={ALL_PROJECTS}>All Projects</option>
             {projects.map((p: { id: string; name: string }) => (

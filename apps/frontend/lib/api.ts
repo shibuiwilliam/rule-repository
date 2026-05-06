@@ -243,6 +243,42 @@ export const extractRules = (documentId: string) =>
     candidates: Record<string, unknown>[];
   }>(`/api/v1/documents/${documentId}/extract`, { method: "POST" });
 
+// Document Search
+export interface DocumentSearchResult {
+  document_id: string;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  uploaded_by: string;
+  uploaded_at: string;
+  snippet: string;
+  score: number;
+}
+
+export async function searchDocumentsFulltext(query: string, page = 1, pageSize = 20, projectId?: string) {
+  const body: Record<string, unknown> = { query, mode: "fulltext", page, page_size: pageSize };
+  const params = projectId ? `?project_id=${projectId}` : "";
+  return apiFetch<{ items: DocumentSearchResult[]; total: number; page: number; page_size: number; query: string }>(
+    `/api/v1/search/documents/fulltext${params}`, { method: "POST", body: JSON.stringify(body) },
+  );
+}
+
+export async function searchDocumentsVector(query: string, page = 1, pageSize = 20, projectId?: string) {
+  const body: Record<string, unknown> = { query, mode: "vector", page, page_size: pageSize };
+  const params = projectId ? `?project_id=${projectId}` : "";
+  return apiFetch<{ items: DocumentSearchResult[]; total: number; page: number; page_size: number; query: string }>(
+    `/api/v1/search/documents/vector${params}`, { method: "POST", body: JSON.stringify(body) },
+  );
+}
+
+export async function searchDocumentsHybrid(query: string, page = 1, pageSize = 20, projectId?: string) {
+  const body: Record<string, unknown> = { query, mode: "hybrid", page, page_size: pageSize };
+  const params = projectId ? `?project_id=${projectId}` : "";
+  return apiFetch<{ items: DocumentSearchResult[]; total: number; page: number; page_size: number; query: string }>(
+    `/api/v1/search/documents/hybrid${params}`, { method: "POST", body: JSON.stringify(body) },
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Discovery
 // ---------------------------------------------------------------------------

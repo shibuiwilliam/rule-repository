@@ -104,7 +104,7 @@ export default function MarketplacePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Rule Marketplace</h1>
+        <h1 className="text-2xl font-bold" title="Browse and subscribe to versioned rule packages shared across teams">Rule Marketplace</h1>
         <p className="text-sm text-gray-500 mt-1">
           Browse, subscribe to, and share curated rule packages across projects.
         </p>
@@ -113,13 +113,14 @@ export default function MarketplacePage() {
       {/* Tab navigation */}
       <div className="flex gap-2 border-b pb-2">
         {([
-          { key: "all" as TabKey, label: "All Packages" },
-          { key: "published" as TabKey, label: "Published" },
-          { key: "subscriptions" as TabKey, label: "My Subscriptions" },
+          { key: "all" as TabKey, label: "All Packages", title: "Browse all available rule packages" },
+          { key: "published" as TabKey, label: "Published", title: "Show only published and installable packages" },
+          { key: "subscriptions" as TabKey, label: "My Subscriptions", title: "Packages your project is currently subscribed to" },
         ]).map((t) => (
           <button
             key={t.key}
             onClick={() => { setTab(t.key); setPage(1); }}
+            title={t.title}
             className={`px-3 py-1.5 text-sm rounded-t-md ${
               tab === t.key
                 ? "bg-blue-50 text-blue-700 border-b-2 border-blue-600 font-medium"
@@ -252,6 +253,7 @@ export default function MarketplacePage() {
                       <button
                         onClick={() => handleSubscribe(pkg)}
                         disabled={subscribingId === pkg.id}
+                        title="Subscribe this project to the package and import its rules"
                         className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                       >
                         {subscribingId === pkg.id ? "Subscribing..." : "Subscribe"}

@@ -511,7 +511,7 @@ export default function PlaygroundPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Rule Playground</h1>
+        <h1 className="text-2xl font-bold" title="Sandbox for testing rules against code or scenarios before deployment">Rule Playground</h1>
         <p className="mt-1 text-sm text-gray-500">
           Test rules against code changes or real-world scenarios before
           deploying
@@ -528,7 +528,7 @@ export default function PlaygroundPage() {
         {/* ============ Left panel: Rule Definition ============ */}
         <div className="space-y-4 rounded-lg border bg-white p-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500" title="Select existing rules or manually define a rule to test">
               Rule Definition
             </h2>
             <div className="flex gap-2">
@@ -625,7 +625,7 @@ export default function PlaygroundPage() {
         <div className="space-y-4 rounded-lg border bg-white p-5">
           {/* Mode tabs + Suggest button */}
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500" title="Provide code or a scenario description to evaluate against the rule">
               Test Input
             </h2>
             <div className="flex gap-2">
@@ -773,6 +773,7 @@ export default function PlaygroundPage() {
         <button
           onClick={handleEvaluate}
           disabled={loading}
+          title="Run the selected rule(s) against the provided input and see the verdict"
           className="rounded-md bg-blue-600 px-8 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading

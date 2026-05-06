@@ -8,15 +8,15 @@ Technical documentation for developing and extending the Rule Repository.
 
 | Document | Description |
 |---|---|
-| [architecture.md](architecture.md) | System architecture: 8 deployable services, server module map (14 routers, 10 service areas), layering rules, data flows, 17 migrations, 24 ORM models |
-| [evaluation-engine.md](evaluation-engine.md) | How the Code-Aware Evaluation Engine works: batched evaluation, diff parsing, context assembly, rule selection (with project + environment scoping), verdict aggregation, shadow mode, structured remediations |
-| [api-reference.md](api-reference.md) | All API endpoints (14 routers): rules, search, evaluation, extraction, intent, intelligence (including /summary), relationships, discovery, feedback, federation, playground (including suggest-input), alerts, snapshots, projects |
-| [mcp-server.md](mcp-server.md) | MCP tools (6 tools), resources, prompts, and transport configuration (stdio + HTTP) |
+| [architecture.md](architecture.md) | System architecture: 10 deployable services, server module map (18 routers, 13 service areas), layering rules, data flows, 22 migrations, 35 ORM models |
+| [evaluation-engine.md](evaluation-engine.md) | How the Code-Aware Evaluation Engine works: batched evaluation, diff parsing, context assembly, rule selection (with project + environment scoping), verdict aggregation, shadow mode, structured remediations. Rules carry context, preconditions, exceptions, and examples into evaluation prompts |
+| [api-reference.md](api-reference.md) | All API endpoints (18 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects, proposals, agent-governance, marketplace, review |
+| [mcp-server.md](mcp-server.md) | MCP tools (12 tools), resources, prompts, and transport configuration (stdio + HTTP) |
 | [integrations.md](integrations.md) | GitHub App, CI CLI, agent hooks, rule ingestion, background workers (arq + Redis, 6 cron jobs), and webhook gateway |
-| [testing.md](testing.md) | Test strategy (20 test files), running tests, writing new tests, LLM mocking, and linting |
+| [testing.md](testing.md) | Test strategy (23 test files, 212+ tests), running tests, writing new tests, LLM mocking, and linting |
 | [feedback-flywheel.md](feedback-flywheel.md) | Correction capture → analysis → auto-drafting → rule improvement loop (flywheel implemented with clustering + proposals) |
 | [rule-registration-workflows.md](rule-registration-workflows.md) | Sequence diagrams for all 4 rule registration paths: manual, extraction, discovery, feedback. Data store sync matrix |
-| [database-schema.md](database-schema.md) | Database schema: 24 ORM models across 17 migrations, ER diagram, design decisions |
+| [database-schema.md](database-schema.md) | Database schema: 35 ORM models across 22 migrations, ER diagram, design decisions |
 | [intelligence-dashboard-plan.md](intelligence-dashboard-plan.md) | Intelligence Dashboard implementation plan (completed) |
 | [playground-enhancement-plan.md](playground-enhancement-plan.md) | Playground multi-mode input support (completed) — Code + Scenario evaluation, rule picker, suggest-by-LLM |
 | [project-entity-plan.md](project-entity-plan.md) | Project entity as top-level organizational boundary (completed) |

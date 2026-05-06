@@ -153,13 +153,14 @@ export default function FeedbackPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Correction Feedback</h1>
+          <h1 className="text-2xl font-bold" title="Review human corrections of AI-generated code and convert patterns into new rules">Correction Feedback</h1>
           <p className="mt-1 text-sm text-gray-500">
             Human corrections of AI-generated code become rule improvements
           </p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
+          title="Submit a before-and-after code diff for analysis and rule proposal"
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           {showForm ? "Close Form" : "Submit Correction"}
@@ -222,7 +223,7 @@ export default function FeedbackPage() {
       {/* Submit form (expandable) */}
       {showForm && (
         <div className="rounded-lg border bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold">Submit a Correction</h2>
+          <h2 className="mb-4 text-lg font-semibold" title="Paste original and corrected code for semantic delta analysis">Submit a Correction</h2>
           <p className="mb-4 text-sm text-gray-500">
             Paste the original code (what the agent wrote) and the corrected code (what you fixed).
             The system will analyze the delta and propose rules.
@@ -273,6 +274,7 @@ export default function FeedbackPage() {
             <button
               onClick={handleSubmit}
               disabled={submitting || !originalDiff.trim() || !correctedDiff.trim()}
+              title="Analyze the correction delta and propose a candidate rule"
               className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {submitting ? "Analyzing..." : "Submit & Analyze"}
@@ -302,6 +304,7 @@ export default function FeedbackPage() {
         {pendingCount > 1 && filter !== "approved" && filter !== "dismissed" && (
           <button
             onClick={handleBulkApprove}
+            title="Approve all pending corrections and create rules from those with new_rule analysis"
             className="rounded-md border border-green-300 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-50"
           >
             Approve All Pending ({pendingCount})

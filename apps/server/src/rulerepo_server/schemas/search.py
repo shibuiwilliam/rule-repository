@@ -66,6 +66,15 @@ class DocumentSearchQuery(BaseModel):
     page_size: int = Field(default=20, ge=1, le=100)
 
 
+class DocumentSearchModeQuery(BaseModel):
+    """Query for document search with mode selection."""
+
+    query: str = Field(..., min_length=1, description="Search query")
+    mode: str = Field(default="fulltext", description="Search mode: fulltext, vector, or hybrid")
+    page: int = Field(default=1, ge=1)
+    page_size: int = Field(default=20, ge=1, le=100)
+
+
 class SourceDocSearchQuery(BaseModel):
     """Parameters for searching rules by their source document."""
 

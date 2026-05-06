@@ -46,7 +46,7 @@ export default function AgentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Agents</h1>
+        <h1 className="text-2xl font-bold" title="AI agent compliance leaderboard with trust levels and mastery tracking">Agents</h1>
         <p className="text-sm text-gray-500 mt-1">
           Agent compliance leaderboard ({total} total)
         </p>
@@ -67,12 +67,12 @@ export default function AgentsPage() {
           <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow-sm">
             <thead>
               <tr className="text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                <th className="px-4 py-3">Agent Name</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Trust Level</th>
-                <th className="px-4 py-3">Compliance Rate (30d)</th>
-                <th className="px-4 py-3">Mastered Rules</th>
-                <th className="px-4 py-3">Capabilities</th>
+                <th className="px-4 py-3" title="Agent display name and unique identifier">Agent Name</th>
+                <th className="px-4 py-3" title="Agent category such as coding assistant or review bot">Type</th>
+                <th className="px-4 py-3" title="Trust tier from untrusted to autonomous based on compliance history">Trust Level</th>
+                <th className="px-4 py-3" title="Percentage of evaluations resulting in ALLOW over the last 30 days">Compliance Rate (30d)</th>
+                <th className="px-4 py-3" title="Number of rules the agent consistently follows without violations">Mastered Rules</th>
+                <th className="px-4 py-3" title="Declared agent capabilities such as code generation or review">Capabilities</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">

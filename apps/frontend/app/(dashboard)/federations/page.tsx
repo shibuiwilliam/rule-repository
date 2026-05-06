@@ -384,7 +384,7 @@ export default function FederationsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Rule Federation</h1>
+        <h1 className="text-2xl font-bold text-gray-900" title="Organize rules into org/team/project hierarchy with inheritance and overrides">Rule Federation</h1>
         <p className="mt-1 text-sm text-gray-500">
           Manage cross-project rule inheritance — organization, team, and project levels
         </p>
@@ -399,7 +399,7 @@ export default function FederationsPage() {
           <div className="rounded-lg border bg-white shadow-sm">
             <div className="flex items-center justify-between border-b px-4 py-3">
               <h2 className="text-sm font-semibold text-gray-900">Federations</h2>
-              <button onClick={() => setShowCreate(true)} className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700">
+              <button onClick={() => setShowCreate(true)} className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700" title="Create a new federation node in the hierarchy">
                 New
               </button>
             </div>

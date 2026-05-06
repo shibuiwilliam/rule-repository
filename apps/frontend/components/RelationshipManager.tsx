@@ -73,12 +73,13 @@ export default function RelationshipManager({ ruleId, relationships: initial }: 
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-medium uppercase text-gray-500">
+        <h2 className="text-sm font-medium uppercase text-gray-500" title="Directed connections between rules: refines, overrides, conflicts, depends on, derives from, succeeds">
           Relationships ({relationships.length})
         </h2>
         <button
           onClick={() => setShowForm(!showForm)}
           className="text-xs text-blue-600 hover:text-blue-700"
+          title="Create a new relationship between this rule and another rule"
         >
           {showForm ? "Cancel" : "+ Add"}
         </button>
@@ -92,6 +93,7 @@ export default function RelationshipManager({ ruleId, relationships: initial }: 
               value={direction}
               onChange={(e) => setDirection(e.target.value as "outgoing" | "incoming")}
               className="rounded border px-2 py-1 text-xs"
+              title="Direction of the relationship: outgoing means this rule relates to the target"
             >
               <option value="outgoing">This rule &rarr;</option>
               <option value="incoming">&rarr; This rule</option>
@@ -100,6 +102,7 @@ export default function RelationshipManager({ ruleId, relationships: initial }: 
               value={relType}
               onChange={(e) => setRelType(e.target.value)}
               className="rounded border px-2 py-1 text-xs flex-1"
+              title="Type of relationship to create"
             >
               {RELATIONSHIP_TYPES.map((rt) => (
                 <option key={rt.value} value={rt.value}>

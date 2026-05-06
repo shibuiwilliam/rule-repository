@@ -11,7 +11,7 @@ The Rule Repository exposes a Model Context Protocol (MCP) server that allows AI
 
 ## Tools
 
-The MCP server provides 6 tools:
+The MCP server provides 12 tools:
 
 ### `search_rules`
 
@@ -69,6 +69,32 @@ When `federation` is provided (a federation node ID), rules are resolved through
 |---|---|
 | `rule://{id}` | A single rule by its ID |
 | `ruleset://{scope}` | All rules within a given scope |
+
+### `create_proposal`
+
+Create a governance proposal for rule changes (create, amend, retire, merge, split, override). Proposals go through draft, review, approval, and enactment stages.
+
+### `get_proposal_status`
+
+Check the current status, votes, and comments on a governance proposal.
+
+### `register_agent`
+
+Register an AI agent with the governance system. Enables personalized rule delivery, trust level progression, and governance participation.
+
+### `get_personalized_rules`
+
+Get rules personalized to the agent's history and current task. Mastered rules are suppressed, and historically-violated rules are weighted higher.
+
+### `challenge_verdict`
+
+Challenge a verdict the agent disagrees with. Creates an audit trail and may trigger rule improvements if similar challenges accumulate.
+
+### `request_exception`
+
+Request a formal exception to a rule for a specific context. If similar exceptions are requested frequently, the system may auto-draft a rule amendment proposal.
+
+---
 
 ## Prompts
 

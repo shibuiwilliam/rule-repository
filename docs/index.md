@@ -6,16 +6,20 @@ Where traditional rule engines require translating human rules into formal logic
 
 ## Key Capabilities
 
-- **Store rules** as natural-language statements with full provenance to source documents, revision history, governance metadata, and maturity level.
+- **Store rules** as natural-language statements with document context, preconditions, exceptions, following/violation examples, provenance, revision history, governance metadata, and maturity level.
 - **Progressive enforcement**: new rules start in **shadow mode** (experimental) --- they observe but don't block. Rules auto-promote to stable and proven based on accuracy. Teams add rules fearlessly.
-- **Search 5 ways**: full-text (BM25), semantic (vector), category/tag, hybrid (BM25 + vector), and context-based (given facts, find applicable rules).
-- **Extract rules from documents**: upload PDFs, text, or markdown files and run an LLM-powered extraction pipeline that proposes candidate rules for human review. Bulk extraction runs in parallel.
-- **Evaluate compliance with auto-remediation**: submit code diffs, file changes, or free-form facts and receive per-rule verdicts (ALLOW / DENY / NEEDS_CONFIRMATION) with **structured remediations** --- machine-readable fix objects that agents can apply automatically.
-- **Deliver rules to AI agents**: expose the rule corpus via MCP server, session context API (`GET /rules/context?files=...`), and CLI hooks. File-aware scope resolution matches rules to the files being edited.
+- **Search 5 ways**: full-text (BM25), semantic (vector), category/tag, hybrid (BM25 + vector), and context-based (given facts, find applicable rules). Documents also support full-text, semantic, and hybrid search.
+- **Extract rules from documents**: upload PDFs, text, or markdown files and run an LLM-powered extraction pipeline that captures rule context, preconditions, exceptions, and following/violation examples from the source document.
+- **Evaluate compliance with full context**: submit code diffs, file changes, or free-form facts. The LLM evaluator receives the rule's rationale, context, preconditions, exceptions, and examples to produce accurate per-rule verdicts with **structured remediations**.
+- **Deliver rules to AI agents**: expose the rule corpus via MCP server (12 tools), session context API (`GET /rules/context?files=...`), and CLI hooks. File-aware scope resolution matches rules to the files being edited.
 - **Rule templates**: 5 pre-built rule sets (57 rules) for Python/FastAPI, TypeScript/React, security (OWASP), API design, and testing. Import in one API call.
 - **Enforce via webhooks**: receive events from GitHub, Slack, or any webhook source, match them to enforcement policies, and run automated evaluation.
 - **Discover rules automatically**: scan project artifacts (CLAUDE.md, linter configs, policy documents, code patterns) to identify implicit rules.
 - **Self-improving flywheel**: capture human corrections, cluster similar patterns, auto-draft rule proposals via Gemini, and approve with one click. Every correction teaches the system.
+- **Governance proposals**: propose rule changes (create, amend, retire, merge, split, override) through a collaborative workflow with multi-approver voting, threaded comments, conflict analysis, and impact preview.
+- **Autonomous agent governance**: each AI agent gets a profile with trust levels, personalized rule delivery (mastered rules suppressed, weak areas boosted), verdict challenge/negotiation, and multi-agent governance sessions.
+- **Rule marketplace**: publish versioned rule packages, subscribe across teams, and detect composition conflicts when combining packages.
+- **Two-tier activity review**: rough triage across all rules followed by detailed LLM evaluation of relevant rules.
 - **Compliance dashboard**: the home page shows agent compliance rate with 7-day trend, rules by status, top violated rules, recent corrections, and pending actions --- all in one view.
 - **Organize by project**: rules belong to projects; a project selector filters everything across the UI and API. Search has its own project dropdown with an "All Projects" option.
 - **Federate across teams**: compose rules hierarchically (organization, team, project) with inheritance and overrides. Add/remove rules and view effective rule sets in the tree view.

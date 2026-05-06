@@ -49,7 +49,7 @@ export default function NotificationsPage() {
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Notifications</h1>
+          <h1 className="text-2xl font-bold" title="Notifications for proposal activity, approval requests, and governance events">Notifications</h1>
           <p className="text-sm text-gray-500 mt-1">
             {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}
           </p>
@@ -66,6 +66,7 @@ export default function NotificationsPage() {
             <button
               onClick={handleMarkAllRead}
               className="text-sm text-blue-600 hover:text-blue-700"
+              title="Mark all notifications as read"
             >
               Mark all read
             </button>

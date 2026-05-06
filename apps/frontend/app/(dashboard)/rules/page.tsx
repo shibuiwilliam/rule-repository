@@ -74,10 +74,11 @@ export default function RulesPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Rules</h1>
+        <h1 className="text-2xl font-bold" title="Browse and manage all rules in the current project">Rules</h1>
         <Link
           href="/rules/new"
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          title="Create a new rule with statement, conditions, examples, and metadata"
         >
           New Rule
         </Link>
@@ -116,7 +117,7 @@ export default function RulesPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
                     Tags
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500" title="Effectiveness score">
+                  <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500" title="Rule effectiveness score: green (>=60), yellow (30-59), red (<30)">
                     Quality
                   </th>
                 </tr>

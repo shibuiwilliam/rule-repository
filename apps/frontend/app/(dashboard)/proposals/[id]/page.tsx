@@ -107,6 +107,7 @@ export default function ProposalDetailPage() {
       <div className="flex gap-2 flex-wrap">
         {proposal.status === "draft" && (
           <button onClick={() => doAction(() => submitProposal(id))} disabled={acting}
+            title="Submit this proposal for review — runs conflict analysis and notifies approvers"
             className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
             Submit for Review
           </button>
@@ -117,10 +118,12 @@ export default function ProposalDetailPage() {
               <input type="text" value={voterId} onChange={(e) => setVoterId(e.target.value)}
                 className="border rounded px-2 py-1 text-xs w-24" placeholder="your ID" />
               <button onClick={() => doAction(() => voteOnProposal(id, "approve", voterId))} disabled={acting}
+                title="Cast an approval vote on this proposal"
                 className="rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">
                 Approve
               </button>
               <button onClick={() => doAction(() => voteOnProposal(id, "reject", voterId))} disabled={acting}
+                title="Reject this proposal — it can be returned to draft for revision"
                 className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">
                 Reject
               </button>
@@ -129,6 +132,7 @@ export default function ProposalDetailPage() {
         )}
         {proposal.status === "approved" && (
           <button onClick={() => doAction(() => enactProposal(id))} disabled={acting}
+            title="Apply the approved changes to the rule corpus"
             className="rounded-md bg-purple-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50">
             Enact Changes
           </button>
@@ -146,6 +150,7 @@ export default function ProposalDetailPage() {
           </button>
         )}
         <button onClick={() => doAction(() => refreshProposalAnalysis(id))} disabled={acting}
+          title="Re-run conflict detection and impact preview"
           className="rounded-md border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50">
           Refresh Analysis
         </button>
@@ -158,7 +163,7 @@ export default function ProposalDetailPage() {
           {/* Description */}
           {proposal.description && (
             <section className="border rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-gray-700 mb-2">Description</h2>
+              <h2 className="text-sm font-semibold text-gray-700 mb-2" title="Detailed motivation and context for the proposed change">Description</h2>
               <p className="text-sm text-gray-600 whitespace-pre-wrap">{proposal.description}</p>
             </section>
           )}
@@ -166,7 +171,7 @@ export default function ProposalDetailPage() {
           {/* Change Spec */}
           {Object.keys(proposal.change_spec).length > 0 && (
             <section className="border rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-gray-700 mb-2">Proposed Changes</h2>
+              <h2 className="text-sm font-semibold text-gray-700 mb-2" title="Structured specification of what will change">Proposed Changes</h2>
               <pre className="text-xs bg-gray-50 rounded p-3 overflow-x-auto">
                 {JSON.stringify(proposal.change_spec, null, 2)}
               </pre>
@@ -175,7 +180,7 @@ export default function ProposalDetailPage() {
 
           {/* Comments */}
           <section className="border rounded-lg p-4">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3">
+            <h2 className="text-sm font-semibold text-gray-700 mb-3" title="Threaded discussion with inline suggestions">
               Comments ({proposal.comments.length})
             </h2>
             {proposal.comments.length > 0 ? (
@@ -223,7 +228,7 @@ export default function ProposalDetailPage() {
         <div className="space-y-4">
           {/* Approval Status */}
           <section className="border rounded-lg p-4">
-            <h2 className="text-sm font-semibold text-gray-700 mb-2">Approvals</h2>
+            <h2 className="text-sm font-semibold text-gray-700 mb-2" title="Required approvers and their vote status">Approvals</h2>
             {proposal.required_approvers.length > 0 ? (
               <div className="space-y-1.5">
                 {proposal.required_approvers.map((a: string) => {
@@ -269,7 +274,7 @@ export default function ProposalDetailPage() {
           {/* Conflict Analysis */}
           {proposal.conflict_analysis && (
             <section className="border rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-gray-700 mb-2">Conflict Analysis</h2>
+              <h2 className="text-sm font-semibold text-gray-700 mb-2" title="Automatically detected conflicts with existing rules">Conflict Analysis</h2>
               <p className="text-sm">
                 <span className={`font-medium ${(proposal.conflict_analysis.conflicts_found as number) > 0 ? "text-orange-600" : "text-green-600"}`}>
                   {proposal.conflict_analysis.conflicts_found as number} conflict(s) found
@@ -291,7 +296,7 @@ export default function ProposalDetailPage() {
           {/* Impact Preview */}
           {proposal.impact_preview && (
             <section className="border rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-gray-700 mb-2">Impact Preview</h2>
+              <h2 className="text-sm font-semibold text-gray-700 mb-2" title="Estimated effect on existing evaluations if this proposal is enacted">Impact Preview</h2>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Affected rules</span>

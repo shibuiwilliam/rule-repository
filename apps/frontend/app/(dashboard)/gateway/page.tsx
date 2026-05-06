@@ -55,7 +55,7 @@ export default function GatewayPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Enforcement Gateway</h1>
+      <h1 className="text-2xl font-bold" title="Webhook-driven enforcement that evaluates incoming events against rules and returns ALLOW/DENY verdicts">Enforcement Gateway</h1>
 
       {loading ? (
         <p className="text-gray-500">Loading...</p>

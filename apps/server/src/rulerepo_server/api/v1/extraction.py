@@ -161,6 +161,42 @@ async def upload_document(
     session.add(doc_model)
     await session.flush()
 
+    # Index document in Elasticsearch for search
+    try:
+        from rulerepo_server.adapters.elasticsearch.client import get_es_client
+        from rulerepo_server.adapters.elasticsearch.document_index import ElasticsearchDocumentIndex
+        from rulerepo_server.adapters.gemini.embeddings import generate_embedding
+        from rulerepo_server.core.deps import _get_optional_gemini
+
+        es_doc_index = ElasticsearchDocumentIndex(get_es_client())
+
+        # Generate embedding from content or filename
+        embedding = None
+        embed_text = content_text or filename
+        if embed_text:
+            try:
+                gemini = _get_optional_gemini()
+                if gemini:
+                    embedding = await generate_embedding(gemini, embed_text[:5000])
+            except Exception:
+                pass  # embedding is optional
+
+        es_doc = {
+            "document_id": str(doc_model.id),
+            "project_id": str(doc_model.project_id),
+            "filename": filename,
+            "content_text": content_text or "",
+            "mime_type": mime_type,
+            "size_bytes": len(file_bytes),
+            "uploaded_by": doc_model.uploaded_by,
+            "uploaded_at": doc_model.uploaded_at.isoformat() if doc_model.uploaded_at else None,
+        }
+        if embedding:
+            es_doc["embedding"] = embedding
+        await es_doc_index.index_document(doc_model.id, es_doc)
+    except Exception as exc:
+        logger.warning("document_es_indexing_failed", error=str(exc))
+
     return {
         "document_id": str(doc_model.id),
         "filename": filename,
