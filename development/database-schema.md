@@ -472,14 +472,6 @@ Note: The `rules` table also has a `context` column added in migration 018 to su
 | **agent_negotiations** | Agent-initiated negotiations to challenge or adjust rule verdicts | `rule_id → rules.id`, `agent_id → agent_profiles.id` |
 | **governance_sessions** | Tracking of agent governance sessions for audit | `agent_id → agent_profiles.id` |
 
-### Marketplace (4 tables)
-
-| Table | Purpose | Key Relationships |
-|---|---|---|
-| **rule_packages** | Curated rule packages available for subscription | Standalone |
-| **package_rules** | Association of rules to marketplace packages | `package_id → rule_packages.id`, `rule_id → rules.id` |
-| **package_subscriptions** | Project subscriptions to rule packages | `package_id → rule_packages.id`, `project_id → projects.id` |
-| **composition_conflicts** | Detected conflicts when composing multiple subscribed packages | `package_id → rule_packages.id` |
 
 ---
 

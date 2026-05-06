@@ -11,7 +11,6 @@ from rulerepo_server.api.v1.federation import router as federation_router
 from rulerepo_server.api.v1.feedback import router as feedback_router
 from rulerepo_server.api.v1.intelligence import router as intelligence_router
 from rulerepo_server.api.v1.intent import router as intent_router
-from rulerepo_server.api.v1.marketplace import router as marketplace_router
 from rulerepo_server.api.v1.playground import router as playground_router
 from rulerepo_server.api.v1.projects import router as projects_router
 from rulerepo_server.api.v1.proposals import router as proposals_router
@@ -33,7 +32,6 @@ v1_router.include_router(relationships_router)
 v1_router.include_router(extraction_router)
 v1_router.include_router(intent_router)
 v1_router.include_router(intelligence_router)
-v1_router.include_router(marketplace_router)
 v1_router.include_router(discovery_router)
 v1_router.include_router(federation_router)
 v1_router.include_router(feedback_router)

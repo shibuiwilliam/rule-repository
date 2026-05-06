@@ -19,7 +19,6 @@ const NAV_ITEMS = [
   { href: "/review", label: "Review", section: "enforce", tooltip: "Run two-tier compliance reviews: rough triage across all rules, then detailed LLM evaluation" },
   { href: "/gateway", label: "Gateway", section: "enforce", tooltip: "Configure webhook-driven enforcement policies that automatically evaluate incoming events" },
   { href: "/integrations", label: "Integrations", section: "enforce", tooltip: "Set up GitHub App for PR review, CI pipeline checks, and agent hook integration" },
-  { href: "/marketplace", label: "Marketplace", section: "share", tooltip: "Browse, publish, and subscribe to versioned rule packages shared across teams" },
   { href: "/projects", label: "Projects", section: "settings", tooltip: "Create and manage projects that scope rules, documents, evaluations, and all other resources" },
 ];
 
@@ -27,7 +26,6 @@ const SECTION_TOOLTIPS: Record<string, string> = {
   manage: "Create, organize, and test your rules",
   observe: "Monitor compliance, health, and agent behavior",
   enforce: "Automatically evaluate and enforce rules",
-  share: "Distribute rule packages across teams",
   settings: "Configure projects and preferences",
 };
 
@@ -45,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <ProjectSelector />
 
           <nav className="mt-6 space-y-6">
-            {["manage", "observe", "enforce", "share", "settings"].map((section) => (
+            {["manage", "observe", "enforce", "settings"].map((section) => (
               <div key={section}>
                 <p
                   className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400"

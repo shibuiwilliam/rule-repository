@@ -8,9 +8,9 @@ Technical documentation for developing and extending the Rule Repository.
 
 | Document | Description |
 |---|---|
-| [architecture.md](architecture.md) | System architecture: 10 deployable services, server module map (18 routers, 13 service areas), layering rules, data flows, 22 migrations, 35 ORM models |
+| [architecture.md](architecture.md) | System architecture: 10 deployable services, server module map (17 routers, 12 service areas), layering rules, data flows, 21 migrations, 31 ORM models |
 | [evaluation-engine.md](evaluation-engine.md) | How the Code-Aware Evaluation Engine works: batched evaluation, diff parsing, context assembly, rule selection (with project + environment scoping), verdict aggregation, shadow mode, structured remediations. Rules carry context, preconditions, exceptions, and examples into evaluation prompts |
-| [api-reference.md](api-reference.md) | All API endpoints (18 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects, proposals, agent-governance, marketplace, review |
+| [api-reference.md](api-reference.md) | All API endpoints (17 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects, proposals, agent-governance, review |
 | [mcp-server.md](mcp-server.md) | MCP tools (12 tools), resources, prompts, and transport configuration (stdio + HTTP) |
 | [integrations.md](integrations.md) | GitHub App, CI CLI, agent hooks, rule ingestion, background workers (arq + Redis, 6 cron jobs), and webhook gateway |
 | [testing.md](testing.md) | Test strategy (23 test files, 212+ tests), running tests, writing new tests, LLM mocking, and linting |

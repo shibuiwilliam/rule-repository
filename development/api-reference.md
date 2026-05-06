@@ -382,22 +382,6 @@ Endpoints in `api/v1/agent_governance.py`. Router prefix: `/api/v1/agents`.
 
 ---
 
-## Marketplace
-
-Endpoints in `api/v1/marketplace.py`. Router prefix: `/api/v1/marketplace`.
-
-| Method | Path | Description |
-|---|---|---|
-| POST | `/api/v1/marketplace/packages` | Create a new rule package. Body: `PackageCreate` with `name`, `description`, `scope`, `rule_ids`. Status 201. Returns `PackageResponse`. |
-| GET | `/api/v1/marketplace/packages` | List available rule packages. Query params: `scope`, `search`, `page`, `page_size`. Returns `PackageListResponse`. |
-| GET | `/api/v1/marketplace/packages/{package_id}` | Get a package with its included rules and metadata. |
-| PATCH | `/api/v1/marketplace/packages/{package_id}` | Update a package (add/remove rules, update metadata). |
-| POST | `/api/v1/marketplace/packages/{package_id}/publish` | Publish a package, making it available for subscription. |
-| POST | `/api/v1/marketplace/packages/{package_id}/subscribe` | Subscribe the current project to a package. Body: `SubscribeRequest` with `project_id`. Status 201. Returns `SubscriptionResponse`. |
-| DELETE | `/api/v1/marketplace/packages/{package_id}/subscribe` | Unsubscribe from a package. Query param: `project_id`. |
-| GET | `/api/v1/marketplace/subscriptions` | List active subscriptions. Query params: `project_id`, `page`, `page_size`. Returns `SubscriptionListResponse`. |
-| GET | `/api/v1/marketplace/conflicts` | Detect conflicts across subscribed packages for a project. Query param: `project_id`. Returns `ConflictListResponse` with conflicting rules and resolution suggestions. |
-
 ---
 
 ## Error Responses

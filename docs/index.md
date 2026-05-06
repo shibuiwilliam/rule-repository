@@ -18,7 +18,6 @@ Where traditional rule engines require translating human rules into formal logic
 - **Self-improving flywheel**: capture human corrections, cluster similar patterns, auto-draft rule proposals via Gemini, and approve with one click. Every correction teaches the system.
 - **Governance proposals**: propose rule changes (create, amend, retire, merge, split, override) through a collaborative workflow with multi-approver voting, threaded comments, conflict analysis, and impact preview.
 - **Autonomous agent governance**: each AI agent gets a profile with trust levels, personalized rule delivery (mastered rules suppressed, weak areas boosted), verdict challenge/negotiation, and multi-agent governance sessions.
-- **Rule marketplace**: publish versioned rule packages, subscribe across teams, and detect composition conflicts when combining packages.
 - **Two-tier activity review**: rough triage across all rules followed by detailed LLM evaluation of relevant rules.
 - **Compliance dashboard**: the home page shows agent compliance rate with 7-day trend, rules by status, top violated rules, recent corrections, and pending actions --- all in one view.
 - **Organize by project**: rules belong to projects; a project selector filters everything across the UI and API. Search has its own project dropdown with an "All Projects" option.

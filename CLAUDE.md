@@ -539,14 +539,6 @@ These are architecture decisions and patterns for ongoing Phase 5 work. Read bef
 - **Frontend onboarding wizard**: When zero rules exist, show 3-step wizard (scan → review → activate in shadow mode).
 - **Infrastructure tiers**: Add `ELASTICSEARCH_ENABLED`, `NEO4J_ENABLED`, `REDIS_ENABLED` flags to Settings. Implement Postgres FTS fallback in search service.
 - **Generated TypeScript client**: Export OpenAPI spec and use `openapi-typescript` + `openapi-fetch` to replace hand-written `lib/api.ts`.
-### 14.17 Rule Marketplace & Interoperability (Phase 6c, Implemented)
-- **Models**: `RulePackageModel` (versioned bundle with quality score, adoption count, unique constraint on name+version+publisher), `PackageRuleModel` (package-rule association with stable in-package ID), `PackageSubscriptionModel` (project subscription with version constraint, auto-update), `CompositionConflictModel` (cross-package conflict detection and resolution) in `models.py` (migration 020).
-- **Service**: `services/marketplace/service.py` — `MarketplaceService` with: create/get/list packages, add/remove rules from packages, publish (immutable once published), subscribe (imports rules with ["imported","marketplace"] tags, increments adoption count), list/unsubscribe subscriptions, list/resolve composition conflicts.
-- **API**: `api/v1/marketplace.py` — 11 endpoints: package CRUD, add/remove rules, publish, subscribe, list/unsubscribe subscriptions, list/resolve conflicts.
-- **Schemas**: `schemas/marketplace.py` — PackageCreate, PackageRuleAdd, SubscribeRequest, ConflictResolveRequest, PackageResponse, PackageListResponse, SubscriptionResponse, ConflictResponse.
-- **Frontend**: `/marketplace` (browse packages with quality score, adoption count, rule count; tabs for All/Published/My Subscriptions; subscribe button per package; unsubscribe from subscriptions tab).
-- **Sidebar**: "Marketplace" under new "Share" section.
-- **Env vars**: `REGISTRY_URL`, `REGISTRY_API_KEY`, `PACKAGE_AUTO_UPDATE_ENABLED`.
 
 ### 14.16 Autonomous Agent Governance (Phase 6b, Implemented)
 - **Domain**: `domain/agent.py` — `TrustLevel` (untrusted→limited→standard→elevated→autonomous), `AgentType` (coding_assistant/code_reviewer/security_scanner/deployment_agent/custom). Trust promotion thresholds, mastery constants.

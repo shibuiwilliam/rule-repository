@@ -81,7 +81,6 @@ Test API endpoints with mocked external services (Postgres, Elasticsearch, Neo4j
 | `test_relationships_api.py` | 2 | Relationship CRUD: create and delete rule relationships |
 | `test_proposals.py` | -- | Proposal lifecycle: create, submit, vote, enact, revert, close, comments, notifications |
 | `test_agent_governance.py` | -- | Agent registration, profiles, trust levels, personalized rules, mastery, exceptions, negotiations, sessions |
-| `test_marketplace.py` | -- | Package CRUD, publish, subscribe, subscriptions, conflict detection |
 
 ### End-to-End Tests (`apps/server/tests/e2e/`)
 

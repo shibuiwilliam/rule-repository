@@ -150,10 +150,6 @@ The **Governance Proposals** system brings structured change management to rules
 
 **Autonomous Agent Governance** gives each AI agent a profile with trust levels (untrusted, limited, standard, elevated, autonomous). The system delivers personalized rules — suppressing rules the agent has already mastered, weighting rules it historically violates. Agents can challenge verdicts they disagree with and request exceptions with justification. Multi-agent governance sessions let multiple agents share verdicts on the same change.
 
-### Share rules across teams
-
-The **Rule Marketplace** lets teams publish versioned rule packages and subscribe to packages from other teams. Composition conflict detection catches clashes when multiple packages are combined. Package quality scores help subscribers pick the best rule sets for their needs.
-
 ### Review activities at two speeds
 
 **Activity Review** offers two-tier compliance checking: a **rough review** for fast triage across all rules, and a **detailed review** for deep LLM evaluation of the most relevant rules. Combined endpoint at `/api/v1/evaluate/review`.
@@ -177,15 +173,15 @@ The **Rule Marketplace** lets teams publish versioned rule packages and subscrib
 │                           aware +       Flywheel        Alerts     │
 │               Templates   remediation   Agent Tracking  Playground │
 │                           + review)                                 │
-│  Proposals    Agent Gov   Marketplace                              │
-│  (lifecycle,  (trust,     (packages,                               │
-│   voting,     challenge,  subscribe,                               │
-│   comments)   sessions)   conflicts)                               │
+│  Proposals    Agent Gov                                            │
+│  (lifecycle,  (trust,                                              │
+│   voting,     challenge,                                           │
+│   comments)   sessions)                                            │
 │                                                                     │
 │  PostgreSQL    Elasticsearch   Neo4j       Redis       Audit Log   │
 │  (truth)       (search)        (graph)     (jobs)      (immutable) │
 │                                                                     │
-│  18 routers  |  MCP Server (12 tools)  |  Gateway  |  GitHub App  │
+│  17 routers  |  MCP Server (12 tools)  |  Gateway  |  GitHub App  │
 └──────────────┼─────────────────────────┼───────────┼───────────────┘
                │                         │           │
     Rule    Agentic    MCP     CLI     GitHub    Gateway   arq-worker
@@ -203,13 +199,13 @@ rule-repository/
 ├── apps/
 │   ├── server/                      # FastAPI backend
 │   │   ├── src/rulerepo_server/
-│   │   │   ├── api/v1/              # 18 routers (incl. proposals, agent-governance,
-│   │   │   │                        #   marketplace, review)
-│   │   │   ├── services/            # 13 service areas (evaluation, discovery,
+│   │   │   ├── api/v1/              # 17 routers (incl. proposals, agent-governance,
+│   │   │   │                        #   review)
+│   │   │   ├── services/            # 12 service areas (evaluation, discovery,
 │   │   │   │                        #   feedback, intelligence, extraction,
 │   │   │   │                        #   context_delivery, federation, playground,
 │   │   │   │                        #   snapshots, proposals, agent_governance,
-│   │   │   │                        #   marketplace, + top-level search/intent/rule)
+│   │   │   │                        #   + top-level search/intent/rule)
 │   │   │   ├── mcp/                 # MCP server (12 tools, resources, prompts)
 │   │   │   ├── gateway/             # normalizers, policy engine
 │   │   │   ├── integrations/        # GitHub webhook, CI formatters
@@ -217,8 +213,8 @@ rule-repository/
 │   │   ├── alembic/                 # 22 database migrations, 35 ORM models
 │   │   └── tests/                   # 212 passing tests (unit, integration, e2e)
 │   └── frontend/                    # Next.js 15, React 19, TypeScript, Tailwind
-│       └── app/(dashboard)/         # 23 pages (incl. proposals, agents,
-│                                    #   marketplace, notifications)
+│       └── app/(dashboard)/         # 22 pages (incl. proposals, agents,
+│                                    #   notifications)
 ├── packages/
 │   ├── rule-client/                 # Python SDK (async, typed)
 │   ├── agentic-client/              # Evaluation SDK
@@ -264,7 +260,6 @@ Swagger UI at [localhost:8000/docs](http://localhost:8000/docs).
 | **relationships** | create, delete rule relationships |
 | **proposals** | create, vote, comment (with suggestions), enact, conflict analysis, impact preview, notifications |
 | **agent-governance** | agent profiles, trust levels, personalized rules, verdict challenges, exception requests, governance sessions |
-| **marketplace** | rule packages, publish, subscribe, composition conflict detection, quality scores |
 | **gateway** | webhook ingestion, policy CRUD |
 | **intent** | Natural language query routing |
 

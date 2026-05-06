@@ -9,7 +9,7 @@ The Rule Repository is a monorepo with 10+ services orchestrated via Docker Comp
 | Backend API | Python 3.13 + FastAPI | 8000 | REST, Evaluate, Intent, Gateway, Intelligence, Discovery, Feedback, Federation, Playground, Alerts, Snapshots APIs |
 | MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 12 tools) |
 | Frontend | TypeScript + Next.js 15 | 3000 | Compliance dashboard + 23 operator pages |
-| PostgreSQL | 17-alpine | 5432 | System of record (rules, revisions, audit log, evaluations, 35 ORM models) |
+| PostgreSQL | 17-alpine | 5432 | System of record (rules, revisions, audit log, evaluations, 31 ORM models) |
 | Elasticsearch | 8.17 | 9200 | Full-text + vector search |
 | Neo4j | 5-community | 7474/7687 | Rule relationship graph |
 | Redis | 7-alpine | 6379 | Job queue for arq background worker |
@@ -42,7 +42,6 @@ src/rulerepo_server/
 │       ├── snapshots.py            #   snapshot CRUD, deploy, rollback, simulate, deployments
 │       ├── proposals.py            #   governance proposal lifecycle (create, submit, vote, enact, revert, close, comments, notifications)
 │       ├── agent_governance.py     #   agent profiles, trust levels, personalized rules, mastery, exceptions, negotiations, sessions
-│       └── marketplace.py          #   rule packages, publish, subscribe, subscriptions, conflicts
 ├── core/
 │   ├── config.py                   # Settings (Pydantic BaseSettings)
 │   ├── logging.py                  # structlog JSON logger
@@ -113,8 +112,6 @@ src/rulerepo_server/
 │   │   └── enactor.py              #   Proposal enactment (applies approved changes)
 │   ├── agent_governance/           # Agent trust and personalized governance
 │   │   └── service.py              #   AgentGovernanceService (register, profiles, trust, exceptions, negotiations, sessions)
-│   └── marketplace/                # Rule package marketplace
-│       └── service.py              #   MarketplaceService (packages, publish, subscribe, conflicts)
 ├── adapters/
 │   ├── postgres/
 │   │   ├── session.py              # AsyncSession factory
@@ -157,10 +154,9 @@ src/rulerepo_server/
     ├── snapshots.py
     ├── proposals.py
     ├── agent_governance.py
-    └── marketplace.py
 ```
 
-### ORM Models (33 total in `adapters/postgres/models.py`)
+### ORM Models (29 total in `adapters/postgres/models.py`)
 
 | Model | Table | Purpose |
 |---|---|---|
@@ -195,10 +191,6 @@ src/rulerepo_server/
 | `AgentExceptionRequestModel` | `agent_exception_requests` | Agent requests for rule exceptions |
 | `AgentNegotiationModel` | `agent_negotiations` | Agent-initiated rule negotiations |
 | `GovernanceSessionModel` | `governance_sessions` | Agent governance session tracking |
-| `RulePackageModel` | `rule_packages` | Marketplace rule packages |
-| `PackageRuleModel` | `package_rules` | Rules included in marketplace packages |
-| `PackageSubscriptionModel` | `package_subscriptions` | Package subscription records |
-| `CompositionConflictModel` | `composition_conflicts` | Conflicts detected across composed packages |
 
 ---
 
@@ -318,7 +310,6 @@ If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.
 | `017_add_agent_id_to_evaluations` | Agent identity tracking on evaluation records |
 | `018_add_proposals` | Governance proposals, proposal comments, and notifications tables |
 | `019_add_agent_governance` | Agent profiles, exception requests, negotiations, governance sessions |
-| `020_add_marketplace` | Rule packages, package rules, subscriptions, composition conflicts |
 | `021_add_rule_context` | Context column on rules for document provenance |
 | `022_add_rule_examples` | Following/violation examples on rules for evaluation accuracy |
 
@@ -392,4 +383,3 @@ The Next.js frontend has 23 pages (including nested routes):
 | `/notifications` | Notification inbox for proposal activity |
 | `/agents` | Agent compliance leaderboard and trust levels |
 | `/agents/[id]` | Agent detail (mastery, exceptions, negotiations) |
-| `/marketplace` | Rule packages, subscriptions, composition conflicts |

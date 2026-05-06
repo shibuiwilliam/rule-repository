@@ -562,13 +562,7 @@ Three strategic enhancements that transform the Rule Repository from a team tool
 - **Proactive rule suggestions**: Analyze code patterns across all projects to suggest rules that no team has written yet
 - **Agent feedback integration**: Agents report which rules were helpful vs confusing, informing rule quality
 
-#### 6c. Cross-Organization Rule Marketplace
-- **Rule publishing**: Teams publish their best rules to a shared marketplace with usage stats
-- **Rule importing**: Browse, preview, and import rules from other teams or public templates
-- **Version tracking**: Imported rules track upstream changes and offer one-click updates
-- **Quality certification**: Rules that maintain >80 effectiveness score across 3+ projects earn a "certified" badge
-
-**Value delivered:** "Rules are a shared organizational asset — governed collaboratively, improved autonomously, and shared across teams."
+**Value delivered:** "Rules are a shared organizational asset — governed collaboratively and improved autonomously."
 
 ---
 
