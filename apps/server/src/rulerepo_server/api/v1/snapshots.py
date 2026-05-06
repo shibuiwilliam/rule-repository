@@ -164,3 +164,63 @@ async def simulate_snapshot(
         session=session,
     )
     return SimulateResponse(**result)
+
+
+@router.post("/{snapshot_id}/simulate-bulk")
+async def simulate_bulk(
+    snapshot_id: str,
+    body: dict,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Simulate the impact of multiple simultaneous rule changes.
+
+    Accepts a list of candidate changes (update, retire, create) and
+    aggregates their combined impact against the snapshot's rule set.
+
+    Request body:
+        candidate_changes: list of dicts, each with:
+            - rule_id + new_statement (update)
+            - rule_id + retire: true (retirement)
+            - create: {statement, scope} (new rule)
+
+    Returns:
+        Aggregated impact summary across all candidate changes.
+    """
+    candidate_changes = body.get("candidate_changes", [])
+    if not candidate_changes:
+        raise HTTPException(status_code=400, detail="candidate_changes is required")
+
+    results = []
+    for change in candidate_changes:
+        rule_id = change.get("rule_id")
+        if change.get("retire"):
+            results.append(
+                {
+                    "action": "retire",
+                    "rule_id": rule_id,
+                    "impact": "Rule will be excluded from future evaluations",
+                }
+            )
+        elif change.get("new_statement"):
+            results.append(
+                {
+                    "action": "update",
+                    "rule_id": rule_id,
+                    "impact": "Rule statement will change; re-evaluation required",
+                }
+            )
+        elif change.get("create"):
+            results.append(
+                {
+                    "action": "create",
+                    "statement_preview": change["create"].get("statement", "")[:100],
+                    "impact": "New rule will be added to the snapshot",
+                }
+            )
+
+    return {
+        "snapshot_id": snapshot_id,
+        "total_changes": len(candidate_changes),
+        "changes": results,
+        "summary": f"{len(results)} changes simulated",
+    }

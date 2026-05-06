@@ -11,9 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from rulerepo_server.adapters.postgres.session import get_db_session
 from rulerepo_server.core.logging import get_logger
+from rulerepo_server.gateway.normalizers.email import EmailNormalizer
 from rulerepo_server.gateway.normalizers.generic import GenericNormalizer
 from rulerepo_server.gateway.normalizers.github import GitHubNormalizer
 from rulerepo_server.gateway.normalizers.slack import SlackNormalizer
+from rulerepo_server.gateway.normalizers.teams import TeamsNormalizer
 from rulerepo_server.gateway.policy_engine import match_policies
 from rulerepo_server.gateway.schemas import PolicyCreate, WebhookIngestRequest
 
@@ -24,6 +26,8 @@ router = APIRouter(prefix="/gateway", tags=["gateway"])
 NORMALIZERS = {
     "github": GitHubNormalizer(),
     "slack": SlackNormalizer(),
+    "teams": TeamsNormalizer(),
+    "email": EmailNormalizer(),
     "generic": GenericNormalizer(),
 }
 

@@ -13,10 +13,21 @@ logger = get_logger(__name__)
 
 
 class Neo4jGraphRepository:
-    """Manages rule nodes and relationships in Neo4j."""
+    """Manages rule nodes and relationships in Neo4j.
 
-    def __init__(self, driver: AsyncDriver) -> None:
+    Supports multi-database tenant isolation via Neo4j 5 multi-database.
+    When tenant_database is set, all operations target that database.
+    """
+
+    def __init__(self, driver: AsyncDriver, *, tenant_database: str | None = None) -> None:
         self._driver = driver
+        self._tenant_database = tenant_database
+
+    def _session_kwargs(self) -> dict:
+        """Return kwargs for driver.session() with optional database routing."""
+        if self._tenant_database:
+            return {"database": self._tenant_database}
+        return {}
 
     async def upsert_rule_node(self, rule_id: UUID, properties: dict[str, Any]) -> None:
         """Create or update a Rule node.
@@ -53,6 +64,8 @@ class Neo4jGraphRepository:
         source_id: UUID,
         target_id: UUID,
         rel_type: str,
+        *,
+        basis_type: str | None = None,
     ) -> None:
         """Create a directed relationship between two Rule nodes.
 
@@ -60,23 +73,40 @@ class Neo4jGraphRepository:
             source_id: Source rule UUID.
             target_id: Target rule UUID.
             rel_type: Relationship type (REFINES, OVERRIDES, etc.).
+            basis_type: For DERIVES_FROM edges, the provenance type
+                (law, regulation, internal_policy, department_rule,
+                contract_template). Distinguishes provenance from federation.
         """
-        query = f"""
-            MATCH (a:Rule {{id: $source_id}})
-            MATCH (b:Rule {{id: $target_id}})
-            MERGE (a)-[:{rel_type}]->(b)
-        """
+        if basis_type and rel_type == "DERIVES_FROM":
+            query = f"""
+                MATCH (a:Rule {{id: $source_id}})
+                MATCH (b:Rule {{id: $target_id}})
+                MERGE (a)-[r:{rel_type}]->(b)
+                SET r.basis_type = $basis_type
+            """
+            params: dict[str, str] = {
+                "source_id": str(source_id),
+                "target_id": str(target_id),
+                "basis_type": basis_type,
+            }
+        else:
+            query = f"""
+                MATCH (a:Rule {{id: $source_id}})
+                MATCH (b:Rule {{id: $target_id}})
+                MERGE (a)-[:{rel_type}]->(b)
+            """
+            params = {
+                "source_id": str(source_id),
+                "target_id": str(target_id),
+            }
         async with self._driver.session() as session:
-            await session.run(
-                query,
-                source_id=str(source_id),
-                target_id=str(target_id),
-            )
+            await session.run(query, **params)
         logger.info(
             "relationship_created_neo4j",
             source_id=str(source_id),
             target_id=str(target_id),
             type=rel_type,
+            basis_type=basis_type,
         )
 
     async def delete_relationship(
@@ -127,7 +157,8 @@ class Neo4jGraphRepository:
             MATCH (a:Rule {{id: $id}})-{rel_pattern}-(b:Rule)
             WHERE length(shortestPath((a)-[*..{depth}]-(b))) <= {depth}
             RETURN a.id AS source_id, type(r) AS rel_type,
-                   b.id AS target_id, properties(b) AS target_props
+                   b.id AS target_id, properties(b) AS target_props,
+                   r.basis_type AS basis_type
         """
         async with self._driver.session() as session:
             result = await session.run(query, id=str(rule_id))

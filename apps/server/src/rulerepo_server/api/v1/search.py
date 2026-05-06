@@ -407,6 +407,172 @@ async def search_rules_by_source_document(
     }
 
 
+@router.post("/temporal")
+async def temporal_search(
+    as_of: str = Query(..., description="ISO 8601 timestamp — return rules effective at this time"),
+    q: str = Query(default="", description="Optional text query"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    project_id: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Search for rules effective at a given timestamp."""
+    from datetime import datetime as dt
+
+    try:
+        ts = dt.fromisoformat(as_of.replace("Z", "+00:00"))
+    except ValueError:
+        return {
+            "items": [],
+            "total": 0,
+            "page": page,
+            "page_size": page_size,
+            "query": as_of,
+            "error": "Invalid timestamp",
+        }
+
+    stmt = (
+        select(RuleModel)
+        .where(RuleModel.status.in_(["EFFECTIVE", "APPROVED"]))
+        .where(
+            sa.or_(
+                RuleModel.effective_period["valid_from"].astext.cast(sa.DateTime) <= ts,
+                RuleModel.effective_period["valid_from"].is_(sa.null()),
+            )
+        )
+    )
+    if project_id:
+        stmt = stmt.where(RuleModel.project_id == project_id)
+    if q:
+        stmt = stmt.where(RuleModel.statement.ilike(f"%{q}%"))
+    stmt = stmt.offset((page - 1) * page_size).limit(page_size)
+
+    result = await session.execute(stmt)
+    rules = list(result.scalars().all())
+    return {
+        "items": [{"rule": {"id": str(r.id), "statement": r.statement, "scope": r.scope}, "score": 1.0} for r in rules],
+        "total": len(rules),
+        "page": page,
+        "page_size": page_size,
+        "query": as_of,
+    }
+
+
+@router.post("/citation")
+async def citation_search(
+    source: str = Query(..., description="External source identifier to search for"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    project_id: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Search for rules referencing a particular external source."""
+    stmt = select(RuleModel).where(RuleModel.source_refs.cast(sa.Text).ilike(f"%{source}%"))
+    if project_id:
+        stmt = stmt.where(RuleModel.project_id == project_id)
+    stmt = stmt.offset((page - 1) * page_size).limit(page_size)
+
+    result = await session.execute(stmt)
+    rules = list(result.scalars().all())
+    return {
+        "items": [
+            {"rule": {"id": str(r.id), "statement": r.statement, "source_refs": r.source_refs}, "score": 1.0}
+            for r in rules
+        ],
+        "total": len(rules),
+        "page": page,
+        "page_size": page_size,
+        "query": source,
+    }
+
+
+@router.post("/subject")
+async def subject_search(
+    role: str | None = Query(default=None),
+    location: str | None = Query(default=None),
+    employment_type: str | None = Query(default=None),
+    department: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    project_id: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Search for rules applicable to a specific subject profile."""
+    stmt = select(RuleModel).where(RuleModel.status.in_(["EFFECTIVE", "APPROVED"]))
+    if project_id:
+        stmt = stmt.where(RuleModel.project_id == project_id)
+
+    # Filter by scope patterns matching subject fields
+    scope_patterns = []
+    if role:
+        scope_patterns.append(f"%{role}%")
+    if location:
+        scope_patterns.append(f"%{location}%")
+    if department:
+        scope_patterns.append(f"%{department}%")
+    if employment_type:
+        scope_patterns.append(f"%{employment_type}%")
+
+    if scope_patterns:
+        conditions = [RuleModel.scope.cast(sa.Text).ilike(p) for p in scope_patterns]
+        stmt = stmt.where(sa.or_(*conditions))
+
+    stmt = stmt.offset((page - 1) * page_size).limit(page_size)
+    result = await session.execute(stmt)
+    rules = list(result.scalars().all())
+    return {
+        "items": [{"rule": {"id": str(r.id), "statement": r.statement, "scope": r.scope}, "score": 1.0} for r in rules],
+        "total": len(rules),
+        "page": page,
+        "page_size": page_size,
+        "query": f"role={role},location={location},dept={department}",
+    }
+
+
+@router.post("/conflict")
+async def conflict_search(
+    rule_id: str = Query(..., description="Rule ID to find conflicts for"),
+    project_id: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Search for rules that conflict with a given rule."""
+    from rulerepo_server.adapters.postgres.models import RuleRelationshipModel
+
+    stmt = (
+        select(RuleRelationshipModel)
+        .where(RuleRelationshipModel.relationship_type == "CONFLICTS_WITH")
+        .where(
+            sa.or_(
+                RuleRelationshipModel.source_id == rule_id,
+                RuleRelationshipModel.target_id == rule_id,
+            )
+        )
+    )
+    result = await session.execute(stmt)
+    rels = list(result.scalars().all())
+
+    conflicting_ids = set()
+    for rel in rels:
+        other = str(rel.target_id) if str(rel.source_id) == rule_id else str(rel.source_id)
+        conflicting_ids.add(other)
+
+    if not conflicting_ids:
+        return {"items": [], "total": 0, "page": 1, "page_size": 20, "query": rule_id}
+
+    rule_stmt = select(RuleModel).where(RuleModel.id.in_(list(conflicting_ids)))
+    if project_id:
+        rule_stmt = rule_stmt.where(RuleModel.project_id == project_id)
+    rule_result = await session.execute(rule_stmt)
+    rules = list(rule_result.scalars().all())
+    return {
+        "items": [{"rule": {"id": str(r.id), "statement": r.statement, "scope": r.scope}, "score": 1.0} for r in rules],
+        "total": len(rules),
+        "page": 1,
+        "page_size": 20,
+        "query": rule_id,
+    }
+
+
 def _build_filters(query: SearchQuery) -> dict:
     """Build ES filter dict from search query parameters."""
     filters: dict = {}

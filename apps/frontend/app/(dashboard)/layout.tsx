@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ProjectProvider } from "@/lib/project-context";
+import { PersonaSwitcher } from "./PersonaSwitcher";
 import { ProjectSelector } from "./ProjectSelector";
 
 const NAV_ITEMS = [
@@ -12,10 +13,12 @@ const NAV_ITEMS = [
   { href: "/federations", label: "Federations", section: "manage", tooltip: "Organize rules into org/team/project hierarchy with inheritance and overrides" },
   { href: "/playground", label: "Playground", section: "manage", tooltip: "Test rules in a sandbox with code or scenario inputs, generate test cases, and validate rule behavior" },
   { href: "/snapshots", label: "Snapshots", section: "manage", tooltip: "Create versioned snapshots of rule sets, deploy to environments, simulate impact, and rollback" },
+  { href: "/tutor", label: "Tutor", section: "manage", tooltip: "Conversational rule guide — ask about policies, compliance questions, and rule explanations" },
   { href: "/intelligence", label: "Intelligence", section: "observe", tooltip: "Monitor rule health scores, analytics, compliance trends, cache performance, and AI-generated recommendations" },
   { href: "/feedback", label: "Feedback", section: "observe", tooltip: "Review human corrections of AI-generated code, approve rule proposals from the self-improving flywheel" },
   { href: "/notifications", label: "Notifications", section: "observe", tooltip: "View notifications for proposal activity, approval requests, and governance events" },
   { href: "/agents", label: "Agents", section: "observe", tooltip: "Track AI agent compliance leaderboard, trust levels, rule mastery, and verdict challenges" },
+  { href: "/audit", label: "Audit", section: "observe", tooltip: "View immutable audit log with hash-chain verification and activity history" },
   { href: "/review", label: "Review", section: "enforce", tooltip: "Run two-tier compliance reviews: rough triage across all rules, then detailed LLM evaluation" },
   { href: "/gateway", label: "Gateway", section: "enforce", tooltip: "Configure webhook-driven enforcement policies that automatically evaluate incoming events" },
   { href: "/integrations", label: "Integrations", section: "enforce", tooltip: "Set up GitHub App for PR review, CI pipeline checks, and agent hook integration" },
@@ -41,6 +44,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Project selector */}
           <ProjectSelector />
+
+          {/* Persona switcher */}
+          <PersonaSwitcher />
 
           <nav className="mt-6 space-y-6">
             {["manage", "observe", "enforce", "settings"].map((section) => (

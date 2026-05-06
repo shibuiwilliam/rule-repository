@@ -1,0 +1,72 @@
+version: 1
+project: documentation
+rules:
+  - statement: "Every public API endpoint MUST have a corresponding entry in the API reference documentation with request/response examples."
+    modality: MUST
+    severity: HIGH
+    scope:
+      - documentation/api
+    tags:
+      - api
+      - completeness
+    rationale: "Undocumented APIs create friction for consumers and increase support burden."
+    following_examples:
+      - "The POST /api/v1/rules endpoint has a section in api_reference.md with curl examples and response schemas."
+    violation_examples:
+      - "A new GET /api/v1/audit endpoint was added but api_reference.md was not updated."
+
+  - statement: "All markdown documents MUST include a title (H1 heading) as the first line."
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      - documentation/markdown
+    tags:
+      - formatting
+      - structure
+    rationale: "Consistent document structure enables automated indexing and improves readability."
+    following_examples:
+      - "A document starts with '# Architecture Overview' as the first line."
+    violation_examples:
+      - "A document starts with a paragraph of text without any heading."
+
+  - statement: "Technical documentation SHOULD use the project's official glossary terms consistently. Do not introduce synonyms without updating the glossary."
+    modality: SHOULD
+    severity: MEDIUM
+    scope:
+      - documentation/terminology
+    tags:
+      - glossary
+      - consistency
+    rationale: "Inconsistent terminology confuses readers and creates ambiguity in specifications."
+    following_examples:
+      - "The document uses 'evaluation' consistently, matching the glossary entry."
+    violation_examples:
+      - "The document alternates between 'evaluation', 'assessment', and 'check' for the same concept."
+
+  - statement: "Documentation MUST NOT contain broken internal links. All cross-references to other documents or sections must resolve."
+    modality: MUST_NOT
+    severity: HIGH
+    scope:
+      - documentation/links
+    tags:
+      - links
+      - integrity
+    rationale: "Broken links erode trust in documentation and waste reader time."
+    following_examples:
+      - "All links in the architecture doc point to existing files and anchors."
+    violation_examples:
+      - "A link to 'development/deployment.md' points to a file that was renamed to 'development/operations.md'."
+
+  - statement: "README files SHOULD include at minimum: project description, quick start instructions, and a link to detailed documentation."
+    modality: SHOULD
+    severity: LOW
+    scope:
+      - documentation/readme
+    tags:
+      - readme
+      - onboarding
+    rationale: "READMEs are the first point of contact for new contributors. Missing essentials slow onboarding."
+    following_examples:
+      - "The README has sections: Overview, Quick Start, Documentation, Contributing."
+    violation_examples:
+      - "The README only contains the project name and a one-line description."

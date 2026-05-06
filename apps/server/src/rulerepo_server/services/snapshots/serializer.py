@@ -27,6 +27,7 @@ def serialize_rules(rules: list[Any]) -> dict[str, Any]:
                 "scope": rule.get("scope", []),
                 "tags": rule.get("tags", []),
                 "rationale": rule.get("rationale", ""),
+                "maturity_level": rule.get("maturity_level", "experimental"),
             }
         else:
             rule_id = str(rule.id)
@@ -38,6 +39,7 @@ def serialize_rules(rules: list[Any]) -> dict[str, Any]:
                 "scope": rule.scope if isinstance(rule.scope, list) else [],
                 "tags": rule.tags if isinstance(rule.tags, list) else [],
                 "rationale": rule.rationale or "",
+                "maturity_level": getattr(rule, "maturity_level", "experimental"),
             }
     return snapshot
 

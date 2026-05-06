@@ -201,13 +201,16 @@ db.revision: ## Create a new Alembic migration (usage: make db.revision MSG="add
 # ===========================================================================
 #  Scripts & Data
 # ===========================================================================
-.PHONY: seed reconcile
+.PHONY: seed reconcile spec-audit
 
 seed: ## Load sample rules into a running stack
 	uv run python scripts/seed_data.py
 
 reconcile: ## Rebuild Neo4j graph from PostgreSQL source of truth
 	uv run python scripts/reconcile_graph.py
+
+spec-audit: ## Audit spec docs against codebase (outputs development/spec_implementation_audit.md)
+	uv run python scripts/spec_audit.py
 
 # ===========================================================================
 #  MCP Server

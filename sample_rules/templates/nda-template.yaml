@@ -1,0 +1,75 @@
+version: 1
+project: legal
+rules:
+  - statement: "Every NDA MUST define 'Confidential Information' explicitly. The definition must enumerate included categories and state any exclusions."
+    modality: MUST
+    severity: CRITICAL
+    scope:
+      - legal/nda
+    tags:
+      - nda
+      - definition
+      - confidentiality
+    rationale: "An NDA without a clear definition of what is confidential is unenforceable and creates legal risk."
+    following_examples:
+      - "The NDA defines Confidential Information as 'all technical, business, and financial information disclosed by the Disclosing Party, whether orally, in writing, or electronically, excluding information that is publicly available.'"
+    violation_examples:
+      - "The NDA states 'all information shared is confidential' without specifying categories or exclusions."
+
+  - statement: "NDA confidentiality obligations MUST specify a duration. Open-ended obligations are not permitted without legal review."
+    modality: MUST
+    severity: HIGH
+    scope:
+      - legal/nda
+    tags:
+      - nda
+      - duration
+    rationale: "Perpetual confidentiality obligations are difficult to enforce and may not be upheld by courts in all jurisdictions."
+    following_examples:
+      - "The NDA states 'The Receiving Party's obligations under this Agreement shall continue for a period of three (3) years from the date of disclosure.'"
+    violation_examples:
+      - "The NDA has no expiration clause or states 'in perpetuity'."
+
+  - statement: "NDAs MUST NOT permit the Receiving Party to disclose Confidential Information to third parties without prior written consent of the Disclosing Party, except as required by law."
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope:
+      - legal/nda
+    tags:
+      - nda
+      - disclosure
+    rationale: "Unrestricted third-party sharing defeats the purpose of the NDA."
+    following_examples:
+      - "Clause 4 states: 'The Receiving Party shall not disclose any Confidential Information to any third party without the prior written consent of the Disclosing Party.'"
+    violation_examples:
+      - "The NDA allows sharing with 'business partners' without defining who qualifies or requiring consent."
+
+  - statement: "Every NDA SHOULD include a return-or-destroy clause requiring the Receiving Party to return or certify destruction of Confidential Information upon termination."
+    modality: SHOULD
+    severity: MEDIUM
+    scope:
+      - legal/nda
+    tags:
+      - nda
+      - termination
+    rationale: "Without a return/destroy obligation, confidential materials may remain accessible after the relationship ends."
+    following_examples:
+      - "Article 7 requires the Receiving Party to 'return or destroy all copies of Confidential Information within 30 days of written request and provide a certificate of destruction.'"
+    violation_examples:
+      - "The NDA has no clause addressing what happens to confidential materials after termination."
+
+  - statement: "NDAs involving cross-border disclosure MUST specify the governing law and jurisdiction for dispute resolution."
+    modality: MUST
+    severity: HIGH
+    scope:
+      - legal/nda
+      - legal/international
+    tags:
+      - nda
+      - governing_law
+      - jurisdiction
+    rationale: "Cross-border NDAs without a governing law clause create uncertainty about which court has jurisdiction and which law applies."
+    following_examples:
+      - "The NDA states: 'This Agreement shall be governed by and construed in accordance with the laws of Japan. Any disputes shall be submitted to the exclusive jurisdiction of the Tokyo District Court.'"
+    violation_examples:
+      - "The NDA between a Japanese and US company has no governing law clause."

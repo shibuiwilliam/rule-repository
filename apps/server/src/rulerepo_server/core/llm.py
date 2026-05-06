@@ -2,6 +2,9 @@
 
 Model IDs and thinking levels are read from Settings.
 Never hardcode model IDs in business logic.
+
+Sensitivity-aware routing: RESTRICTED rules are not sent to external LLMs;
+they return NEEDS_CONFIRMATION until a self-hosted provider is configured.
 """
 
 from __future__ import annotations
@@ -18,10 +21,13 @@ class LLMConfig:
     Attributes:
         model_id: The model to use (e.g., "gemini-3-flash-preview").
         thinking_level: Thinking depth ("minimal", "low", "medium", "high").
+        skip_llm: If True, the caller should return NEEDS_CONFIRMATION
+            instead of making an LLM call (used for RESTRICTED sensitivity).
     """
 
     model_id: str
     thinking_level: str = "low"
+    skip_llm: bool = False
 
 
 def get_default_config() -> LLMConfig:
@@ -42,3 +48,19 @@ def get_judge_config() -> LLMConfig:
     """
     settings = get_settings()
     return LLMConfig(model_id=settings.llm_judge_model, thinking_level="high")
+
+
+def get_config_for_sensitivity(sensitivity: str) -> LLMConfig:
+    """Select LLM config based on rule sensitivity level.
+
+    Args:
+        sensitivity: The rule's sensitivity level (PUBLIC, INTERNAL,
+            CONFIDENTIAL, RESTRICTED).
+
+    Returns:
+        LLMConfig appropriate for the sensitivity level.
+        For RESTRICTED, skip_llm=True until a self-hosted provider is available.
+    """
+    if sensitivity == "RESTRICTED":
+        return LLMConfig(model_id="", skip_llm=True)
+    return get_default_config()

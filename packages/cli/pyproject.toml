@@ -11,6 +11,7 @@ dependencies = [
 ]
 
 [project.scripts]
+rulerepo = "rulerepo_cli.main:main"
 rulerepo-check = "rulerepo_cli.check:main"
 rulerepo-hook = "rulerepo_cli.hook:main"
 rulerepo-ingest = "rulerepo_cli.ingest:main"

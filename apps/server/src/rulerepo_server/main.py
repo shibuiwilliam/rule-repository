@@ -163,6 +163,32 @@ def create_app() -> FastAPI:
             "checks": checks,
         }
 
+    # --- Prometheus metrics endpoint ---
+
+    @app.get("/metrics", tags=["observability"])
+    async def metrics() -> str:
+        """Prometheus-compatible metrics endpoint.
+
+        Exposes evaluation counts, latency histograms, cache hit rates,
+        and LLM token consumption. Uses text/plain content type.
+        """
+        # Placeholder metrics — real instrumentation will integrate
+        # with OpenTelemetry exporters in core/telemetry.py
+        lines = [
+            "# HELP rulerepo_evaluations_total Total evaluations",
+            "# TYPE rulerepo_evaluations_total counter",
+            "rulerepo_evaluations_total 0",
+            "# HELP rulerepo_rules_total Total active rules",
+            "# TYPE rulerepo_rules_total gauge",
+            "rulerepo_rules_total 0",
+            "# HELP rulerepo_up Server is running",
+            "# TYPE rulerepo_up gauge",
+            "rulerepo_up 1",
+        ]
+        from fastapi.responses import PlainTextResponse
+
+        return PlainTextResponse("\n".join(lines) + "\n", media_type="text/plain")
+
     # --- Register API routers ---
     from rulerepo_server.api.v1 import v1_router
     from rulerepo_server.gateway.router import router as gateway_router

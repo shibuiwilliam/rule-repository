@@ -233,3 +233,4 @@ node_modules/
 # File storage
 /tmp/rulerepo-files/
 .DS_Store
+IMPROVEMENT.md

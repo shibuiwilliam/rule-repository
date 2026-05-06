@@ -1082,3 +1082,58 @@ export async function detailedReview(data: Record<string, unknown>): Promise<Det
 export async function combinedReview(data: Record<string, unknown>): Promise<CombinedReviewResponse> {
   return apiFetch('/api/v1/evaluate/review', { method: 'POST', body: JSON.stringify(data) });
 }
+
+// ---------------------------------------------------------------------------
+// Audit Log
+// ---------------------------------------------------------------------------
+
+export interface AuditEntry {
+  id: string;
+  timestamp: string;
+  action: string;
+  actor: string;
+  resource_type: string;
+  resource_id: string;
+  details: Record<string, unknown>;
+  previous_hash: string;
+  entry_hash: string;
+}
+
+export interface AuditListResponse {
+  entries: AuditEntry[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+export interface AuditChainVerification {
+  verified: boolean;
+  entries_checked: number;
+  first_broken_entry_id: string | null;
+  message: string;
+}
+
+export async function getAuditEntries(
+  page = 1,
+  pageSize = 20,
+  action?: string,
+  actor?: string,
+  resourceType?: string,
+  ruleId?: string,
+  since?: string,
+  until?: string,
+): Promise<AuditListResponse> {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  if (action) params.set('action', action);
+  if (actor) params.set('actor', actor);
+  if (resourceType) params.set('resource_type', resourceType);
+  if (ruleId) params.set('rule_id', ruleId);
+  if (since) params.set('since', since);
+  if (until) params.set('until', until);
+  return apiFetch<AuditListResponse>(`/api/v1/audit?${params}`);
+}
+
+export async function verifyAuditChain(limit = 1000): Promise<AuditChainVerification> {
+  return apiFetch<AuditChainVerification>(`/api/v1/audit/verify?limit=${limit}`);
+}

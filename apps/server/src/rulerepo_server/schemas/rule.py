@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from rulerepo_server.domain.rule import Modality, RuleStatus, Severity
+from rulerepo_server.domain.rule import Modality, RegulatorySeverity, RuleStatus, Sensitivity, Severity
 
 # ---------------------------------------------------------------------------
 # Nested value-object schemas
@@ -64,6 +64,8 @@ class RuleCreate(BaseModel):
         default_factory=list,
         description="Examples of activities that violate this rule.",
     )
+    sensitivity: Sensitivity = Sensitivity.INTERNAL
+    regulatory_severity: RegulatorySeverity = RegulatorySeverity.NONE
     source_refs: list[SourceRefSchema] = Field(default_factory=list)
     effective_period: EffectivePeriodSchema = Field(default_factory=EffectivePeriodSchema)
     governance: GovernanceSchema = Field(default_factory=GovernanceSchema)
@@ -84,6 +86,8 @@ class RuleUpdate(BaseModel):
     exceptions: list[str] | None = None
     following_examples: list[str] | None = None
     violation_examples: list[str] | None = None
+    sensitivity: Sensitivity | None = None
+    regulatory_severity: RegulatorySeverity | None = None
     source_refs: list[SourceRefSchema] | None = None
     effective_period: EffectivePeriodSchema | None = None
     governance: GovernanceSchema | None = None
@@ -115,6 +119,8 @@ class RuleResponse(BaseModel):
     exceptions: list[str]
     following_examples: list[str] = Field(default_factory=list)
     violation_examples: list[str] = Field(default_factory=list)
+    sensitivity: str = "INTERNAL"
+    regulatory_severity: str = "NONE"
     source_refs: list[SourceRefSchema]
     effective_period: EffectivePeriodSchema
     governance: GovernanceSchema

@@ -17,15 +17,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "apps", "server
 
 
 async def main() -> None:
-    from sqlalchemy import select
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
     from neo4j import AsyncGraphDatabase
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
     from rulerepo_server.adapters.postgres.models import RuleModel, RuleRelationshipModel
 
-    database_url = os.environ.get(
-        "DATABASE_URL", "postgresql+asyncpg://rule:rule@localhost:5432/ruledb"
-    )
+    database_url = os.environ.get("DATABASE_URL", "postgresql+asyncpg://rule:rule@localhost:5432/ruledb")
     neo4j_uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
     neo4j_user = os.environ.get("NEO4J_USER", "neo4j")
     neo4j_password = os.environ.get("NEO4J_PASSWORD", "ruledev")
@@ -73,21 +71,34 @@ async def main() -> None:
 
         print("Creating relationships...")
         for rel in relationships:
-            query = f"""
-                MATCH (a:Rule {{id: $source_id}})
-                MATCH (b:Rule {{id: $target_id}})
-                CREATE (a)-[:{rel.relationship_type}]->(b)
-            """
-            await neo_session.run(
-                query,
-                source_id=str(rel.source_id),
-                target_id=str(rel.target_id),
-            )
+            # DERIVES_FROM edges carry basis_type for provenance distinction
+            basis_type = getattr(rel, "basis_type", None)
+            if rel.relationship_type == "DERIVES_FROM" and basis_type:
+                query = f"""
+                    MATCH (a:Rule {{id: $source_id}})
+                    MATCH (b:Rule {{id: $target_id}})
+                    CREATE (a)-[:{rel.relationship_type} {{basis_type: $basis_type}}]->(b)
+                """
+                await neo_session.run(
+                    query,
+                    source_id=str(rel.source_id),
+                    target_id=str(rel.target_id),
+                    basis_type=basis_type,
+                )
+            else:
+                query = f"""
+                    MATCH (a:Rule {{id: $source_id}})
+                    MATCH (b:Rule {{id: $target_id}})
+                    CREATE (a)-[:{rel.relationship_type}]->(b)
+                """
+                await neo_session.run(
+                    query,
+                    source_id=str(rel.source_id),
+                    target_id=str(rel.target_id),
+                )
 
         # Recreate constraints
-        await neo_session.run(
-            "CREATE CONSTRAINT rule_id_unique IF NOT EXISTS FOR (r:Rule) REQUIRE r.id IS UNIQUE"
-        )
+        await neo_session.run("CREATE CONSTRAINT rule_id_unique IF NOT EXISTS FOR (r:Rule) REQUIRE r.id IS UNIQUE")
 
     await driver.close()
     await engine.dispose()

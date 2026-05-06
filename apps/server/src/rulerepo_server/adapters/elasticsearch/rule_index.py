@@ -20,19 +20,29 @@ class ElasticsearchRuleIndex:
     def __init__(self, client: AsyncElasticsearch) -> None:
         self._client = client
 
-    async def index_rule(self, rule_id: UUID, document: dict) -> None:
+    async def index_rule(
+        self,
+        rule_id: UUID,
+        document: dict,
+        *,
+        tenant_id: str | None = None,
+    ) -> None:
         """Index or re-index a rule document.
 
         Args:
             rule_id: The rule's UUID (used as the ES document ID).
             document: The document body to index.
+            tenant_id: Optional tenant ID for routing tenant isolation.
         """
-        await self._client.index(
-            index=INDEX_NAME,
-            id=str(rule_id),
-            document=document,
-        )
-        logger.info("rule_indexed", rule_id=str(rule_id))
+        kwargs: dict = {
+            "index": INDEX_NAME,
+            "id": str(rule_id),
+            "document": document,
+        }
+        if tenant_id:
+            kwargs["routing"] = f"tenant_{tenant_id}"
+        await self._client.index(**kwargs)
+        logger.info("rule_indexed", rule_id=str(rule_id), tenant_id=tenant_id)
 
     async def delete_rule(self, rule_id: UUID) -> None:
         """Remove a rule from the index.

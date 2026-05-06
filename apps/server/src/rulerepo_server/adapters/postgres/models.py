@@ -14,6 +14,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Text,
     Uuid,
@@ -35,6 +36,21 @@ class Base(DeclarativeBase):
 # ---------------------------------------------------------------------------
 
 DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001"
+
+
+class TenantModel(Base):
+    """A tenant — the top-level isolation boundary for multi-tenancy."""
+
+    __tablename__ = "tenants"
+
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    plan: Mapped[str] = mapped_column(String(50), nullable=False, default="free")
+    settings: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000000"
 
 
 class ProjectModel(Base):
@@ -107,6 +123,18 @@ class RuleModel(Base):
     context: Mapped[str] = mapped_column(Text, nullable=False, default="")
     following_examples: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     violation_examples: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+
+    # Sensitivity — drives LLM provider routing and log retention
+    sensitivity: Mapped[str] = mapped_column(String(20), nullable=False, default="INTERNAL")
+
+    # Regulatory severity — penalty band independent of operational severity
+    regulatory_severity: Mapped[str] = mapped_column(String(20), nullable=False, default="NONE")
+
+    # Multi-tenancy
+    tenant_id: Mapped[str] = mapped_column(Uuid, nullable=False, default=DEFAULT_TENANT_ID, index=True)
+
+    # Polyglot rules — shared equivalence_id groups translations
+    equivalence_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
 
     # Embedding stored as float array (for pgvector compatibility later)
     embedding: Mapped[list | None] = mapped_column(ARRAY(Float), nullable=True)
@@ -437,7 +465,39 @@ class EvaluationRecordModel(Base):
     model_id: Mapped[str] = mapped_column(String(100), nullable=False, default="unknown")
     cached: Mapped[bool] = mapped_column(default=False)
     agent_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+
+    # Encrypted evaluation context — PII-safe at rest (AES-GCM, key from core/secrets)
+    context_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+
+    # Cost ledger — token counts and estimated cost per evaluation
+    input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    estimated_cost_usd: Mapped[float | None] = mapped_column(sa.Numeric(10, 6), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+# ---------------------------------------------------------------------------
+# Evaluations Daily Aggregation — intelligence dashboard backing table
+# ---------------------------------------------------------------------------
+
+
+class EvaluationDailyAggModel(Base):
+    """Pre-aggregated daily evaluation metrics per rule per tenant."""
+
+    __tablename__ = "evaluations_daily_agg"
+    __table_args__ = (sa.UniqueConstraint("rule_id", "tenant_id", "date", name="uq_eval_daily_agg"),)
+
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
+    rule_id: Mapped[str] = mapped_column(Uuid, nullable=False, index=True)
+    tenant_id: Mapped[str] = mapped_column(Uuid, nullable=False, index=True)
+    date: Mapped[datetime] = mapped_column(sa.Date, nullable=False)
+    allow_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    deny_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    needs_confirmation_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    avg_latency_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    p95_latency_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    estimated_cost_usd: Mapped[float | None] = mapped_column(sa.Numeric(10, 6), nullable=True)
 
 
 class GatewayEvaluationModel(Base):

@@ -23,9 +23,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "apps", "server
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Generate a CLAUDE.md rules section from the Rule Repository"
-    )
+    parser = argparse.ArgumentParser(description="Generate a CLAUDE.md rules section from the Rule Repository")
     parser.add_argument("--scope", help="Rule scope filter (e.g., engineering/python)")
     parser.add_argument("--repo", help="Repository identifier")
     parser.add_argument("--format", default="instructions", choices=["instructions", "checklist", "detailed"])
@@ -63,10 +61,7 @@ async def main() -> None:
 
         # Filter by scope if specified
         if args.scope:
-            rules = [
-                r for r in rules
-                if any(args.scope.lower() in s.lower() for s in (r.get("scope") or []))
-            ]
+            rules = [r for r in rules if any(args.scope.lower() in s.lower() for s in (r.get("scope") or []))]
 
     # Format using the formatter
     from rulerepo_server.services.context_delivery.formatter import format_rules
@@ -82,8 +77,8 @@ async def main() -> None:
     header = f"""\
 # Rules from Rule Repository
 # Generated from: {args.server_url}
-# Scope: {args.scope or 'all'}
-# Repository: {args.repo or 'all'}
+# Scope: {args.scope or "all"}
+# Repository: {args.repo or "all"}
 # Rules: {len(rules)}
 #
 # Append this to your CLAUDE.md to give coding agents access to organizational rules.

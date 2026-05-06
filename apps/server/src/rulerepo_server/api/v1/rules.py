@@ -3,10 +3,17 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from rulerepo_server.core.deps import get_rule_service
+from rulerepo_server.adapters.neo4j.graph_repo import Neo4jGraphRepository
+from rulerepo_server.adapters.postgres.session import get_db_session
+from rulerepo_server.core.deps import get_graph_repo, get_rule_service
 from rulerepo_server.core.logging import get_logger
 from rulerepo_server.schemas.rule import RuleCreate, RulesImportRequest, RuleUpdate
+from rulerepo_server.services.provenance.lineage_resolver import (
+    MAX_LINEAGE_DEPTH,
+    resolve_lineage,
+)
 from rulerepo_server.services.rule_service import RuleService
 
 logger = get_logger(__name__)
@@ -101,6 +108,32 @@ async def get_session_context(
         "scopes_resolved": scopes,
         "files_analyzed": len(file_list),
     }
+
+
+@router.get("/{rule_id}/why")
+async def get_rule_why(
+    rule_id: UUID,
+    depth: int = Query(default=3, ge=1, le=MAX_LINEAGE_DEPTH),
+    session: AsyncSession = Depends(get_db_session),
+    graph_repo: Neo4jGraphRepository = Depends(get_graph_repo),
+) -> dict:
+    """Get multi-level rationale and provenance lineage for a rule.
+
+    Walks the DERIVES_FROM chain in Neo4j up to ``depth`` levels,
+    returning the rule's rationale and its derivation tree.
+    """
+    try:
+        graph = graph_repo
+    except Exception:
+        graph = None
+
+    lineage = await resolve_lineage(
+        rule_id=str(rule_id),
+        session=session,
+        graph_repo=graph,
+        depth=depth,
+    )
+    return lineage
 
 
 @router.get("/{rule_id}")

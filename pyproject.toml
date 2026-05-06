@@ -65,6 +65,7 @@ ignore = [
 "**/tests/**/*.py" = ["S101", "ANN", "T20"]
 "alembic/**/*.py" = ["ANN", "S608"]
 "**/alembic/**/*.py" = ["ANN", "S608"]
+"scripts/**/*.py" = ["ANN", "T20"]
 
 [tool.mypy]
 python_version = "3.13"

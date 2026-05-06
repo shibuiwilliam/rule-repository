@@ -21,13 +21,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "apps", "server
 async def main() -> None:
     from elasticsearch import AsyncElasticsearch
     from sqlalchemy import select
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
     from rulerepo_server.adapters.postgres.models import RuleModel
 
-    database_url = os.environ.get(
-        "DATABASE_URL", "postgresql+asyncpg://rule:rule@localhost:5432/ruledb"
-    )
+    database_url = os.environ.get("DATABASE_URL", "postgresql+asyncpg://rule:rule@localhost:5432/ruledb")
     elasticsearch_url = os.environ.get("ELASTICSEARCH_URL", "http://localhost:9200")
 
     engine = create_async_engine(database_url)

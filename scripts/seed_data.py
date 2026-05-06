@@ -21,7 +21,9 @@ SAMPLE_RULES = [
         "rationale": "Required by Labor Standards Act Article 36 agreement",
     },
     {
-        "statement": "All production code changes must be reviewed by at least one peer before merging to the main branch",
+        "statement": (
+            "All production code changes must be reviewed by at least one peer before merging to the main branch"
+        ),
         "modality": "MUST",
         "severity": "HIGH",
         "scope": ["engineering"],
@@ -113,9 +115,9 @@ async def main() -> None:
             resp = await client.post("/api/v1/rules", json=rule_data)
             if resp.status_code == 201:
                 rule = resp.json()
-                print(f"  [{i+1}/{len(SAMPLE_RULES)}] Created: {rule['id'][:8]}... - {rule_data['statement'][:60]}")
+                print(f"  [{i + 1}/{len(SAMPLE_RULES)}] Created: {rule['id'][:8]}... - {rule_data['statement'][:60]}")
             else:
-                print(f"  [{i+1}/{len(SAMPLE_RULES)}] Failed ({resp.status_code}): {rule_data['statement'][:60]}")
+                print(f"  [{i + 1}/{len(SAMPLE_RULES)}] Failed ({resp.status_code}): {rule_data['statement'][:60]}")
 
         print("Seed data loaded.")
 

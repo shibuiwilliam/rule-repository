@@ -62,6 +62,36 @@ class MaturityLevel(str, enum.Enum):
     PROVEN = "proven"
 
 
+class Sensitivity(str, enum.Enum):
+    """Data classification level — drives LLM provider routing and log retention.
+
+    PUBLIC: no restrictions.
+    INTERNAL: standard handling, no special routing.
+    CONFIDENTIAL: evaluation logs masked on frontend.
+    RESTRICTED: routed to self-hosted LLM only; logs purge after 90 days.
+    """
+
+    PUBLIC = "PUBLIC"
+    INTERNAL = "INTERNAL"
+    CONFIDENTIAL = "CONFIDENTIAL"
+    RESTRICTED = "RESTRICTED"
+
+
+class RegulatorySeverity(str, enum.Enum):
+    """Regulatory penalty band — independent of operational Severity.
+
+    NONE: no regulatory implications.
+    GUIDANCE: administrative guidance, no penalty.
+    FINE: monetary penalty risk.
+    CRIMINAL: criminal liability risk.
+    """
+
+    NONE = "NONE"
+    GUIDANCE = "GUIDANCE"
+    FINE = "FINE"
+    CRIMINAL = "CRIMINAL"
+
+
 class RelationshipType(str, enum.Enum):
     """Types of relationships between rules (PROJECT.md §5.2)."""
 
@@ -142,6 +172,9 @@ class Rule:
     following_examples: list[str] = field(default_factory=list)
     violation_examples: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
+    sensitivity: Sensitivity = Sensitivity.INTERNAL
+    regulatory_severity: RegulatorySeverity = RegulatorySeverity.NONE
+    equivalence_id: str | None = None
     governance: Governance = field(default_factory=lambda: Governance(owner="system"))
 
     # Derived
