@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 from rulerepo_server.core.logging import get_logger
-from rulerepo_server.domain.subject import EvaluationSubject, SubjectType
+from rulerepo_server.domain.subject import EvaluationSubject, SubjectKind
 
 logger = get_logger(__name__)
 
@@ -35,7 +35,7 @@ class AttendanceConnector:
             leave_days: int (for leave)
         """
         return EvaluationSubject(
-            type=SubjectType.HR_EVENT,
+            kind=SubjectKind.EVENT,
             payload={
                 "event_type": payload.get("event_type", "attendance_record"),
                 "employee_id": payload.get("employee_id", ""),

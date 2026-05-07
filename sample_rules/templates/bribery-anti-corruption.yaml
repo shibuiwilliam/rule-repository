@@ -26,8 +26,8 @@ rules:
   violation_examples:
   - Employee offers concert tickets to a government procurement officer during a bidding process.
   applicable_subject_types: &id001
-  - hr_event
-  - expense_claim
+  - event
+  - transaction
   - transaction
   jurisdiction: global
   legal_force: statutory

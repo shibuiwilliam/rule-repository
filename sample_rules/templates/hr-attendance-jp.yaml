@@ -19,7 +19,7 @@ rules:
   - statutory
   - labor-standards-act
   applicable_subject_types:
-  - hr_event
+  - event
   jurisdiction: jp
   legal_force: statutory
   review_cadence: annual
@@ -51,7 +51,7 @@ rules:
   - statute: Labor Standards Act
     article: '40'
   applicable_subject_types: &id001
-  - hr_event
+  - event
   jurisdiction: jp
   legal_force: statutory
 - statement: Overtime work MUST NOT be assigned without a valid written 36 Agreement (三六協定) filed with the local Labor Standards

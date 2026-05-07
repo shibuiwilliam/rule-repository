@@ -175,7 +175,7 @@ class Rule:
     sensitivity: Sensitivity = Sensitivity.INTERNAL
     regulatory_severity: RegulatorySeverity = RegulatorySeverity.NONE
     equivalence_id: str | None = None
-    applicable_subject_types: list[str] = field(default_factory=lambda: ["code_change"])
+    applicable_subject_types: list[str] = field(default_factory=lambda: ["code_diff"])
     jurisdiction: str = "global"
     legal_force: str = "policy"
     review_cadence: str | None = None

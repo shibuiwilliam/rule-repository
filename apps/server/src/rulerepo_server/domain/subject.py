@@ -1,35 +1,42 @@
 """Domain models for evaluation subjects.
 
-Subject represents the entity or person involved in a business event.
-SubjectFilter enables partial matching for rule applicability.
-SubjectType and EvaluationSubject support the Phase 7b subject abstraction.
+SubjectKind is the discriminator for the polymorphic Subject protocol.
+Each subject kind has a corresponding adapter that knows how to parse
+the payload, assemble context, and format prompts.
 
-See: IMPROVEMENT.md Phase 7b, CLAUDE.md §14
+Subject (frozen dataclass) represents the entity or person involved in
+a business event. SubjectFilter enables partial matching for rule
+applicability.
+
+See: PROJECT.md §5.2, CLAUDE.md §11
 """
 
 from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 
-class SubjectType(str, enum.Enum):
+class SubjectKind(str, enum.Enum):
     """Type of entity being evaluated against rules.
 
-    Each type has a corresponding adapter that knows how to parse
-    the payload, assemble context, and format prompts.
+    Each kind has a corresponding adapter registered via
+    ``@register(SubjectKind.X)`` in ``subjects/registry.py``.
     """
 
-    CODE_CHANGE = "code_change"
-    HR_EVENT = "hr_event"
-    CONTRACT_CLAUSE = "contract_clause"
-    EXPENSE_CLAIM = "expense_claim"
-    MARKETING_COPY = "marketing_copy"
-    VENDOR_ONBOARDING = "vendor_onboarding"
-    DOCUMENT_REVISION = "document_revision"
+    CODE_DIFF = "code_diff"
+    CLAUSE_SET = "clause_set"
+    EVENT = "event"
     TRANSACTION = "transaction"
-    CUSTOM = "custom"
+    CREATIVE = "creative"
+    DECISION = "decision"
+    IDENTITY = "identity"
+    DOCUMENT = "document"
+
+
+# Backward-compatible alias for code that still imports the old name.
+SubjectType = SubjectKind
 
 
 class LegalForce(str, enum.Enum):
@@ -42,35 +49,110 @@ class LegalForce(str, enum.Enum):
     GUIDELINE = "guideline"
 
 
-@dataclass
-class EvaluationSubject:
-    """The entity being evaluated against rules — Phase 7b subject envelope.
+class PromptFormat(str, enum.Enum):
+    """Format hint for Subject.render_for_llm()."""
 
-    Wraps a typed payload with metadata. The evaluation pipeline uses the
-    ``type`` field to dispatch to the correct adapter.
+    FULL = "full"
+    COMPACT = "compact"
+
+
+@dataclass(frozen=True)
+class Attachment:
+    """Binary or referenced evidence attached to a subject.
 
     Attributes:
-        type: The subject type (determines adapter routing).
-        payload: Type-specific data (diff for code_change, event details
-            for hr_event, clause text for contract_clause, etc.).
-        context: Additional context.
-        metadata: Freeform metadata (actor, timestamp, source system).
+        name: Human-readable filename or label.
+        mime_type: MIME type (e.g., "application/pdf").
+        data: Raw bytes (for inline attachments) or None.
+        uri: External URI (for referenced attachments) or None.
     """
 
-    type: SubjectType
+    name: str
+    mime_type: str
+    data: bytes | None = None
+    uri: str | None = None
+
+
+@runtime_checkable
+class SubjectAdapter(Protocol):
+    """Protocol that every subject-kind adapter must implement.
+
+    Each adapter translates a domain-specific payload into the uniform
+    interface consumed by the evaluation pipeline.
+
+    See CLAUDE.md §11.1 for the full specification.
+    """
+
+    kind: SubjectKind
+
+    @property
+    def identifier(self) -> str:
+        """Stable identity string for audit."""
+        ...
+
+    def render_for_llm(self, facts: dict[str, Any], format: PromptFormat = PromptFormat.FULL) -> str:
+        """Produce the prompt-friendly representation of the subject.
+
+        This is the seam at which domain knowledge enters the evaluation
+        pipeline. The orchestrator calls this instead of building prompts.
+        """
+        ...
+
+    def extract_features(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Extract domain-specific features for rule selection and scoring."""
+        ...
+
+    def resolve_scopes(self, payload: dict[str, Any]) -> list[str]:
+        """Determine applicable rule scopes from the payload."""
+        ...
+
+    def parse_remediation(self, raw: dict[str, Any]) -> Any | None:
+        """Parse a raw LLM remediation dict into a domain-specific Remediation."""
+        ...
+
+    def pii_fields(self, payload: dict[str, Any]) -> list[str]:
+        """Return JSON paths into ``payload`` that contain PII."""
+        ...
+
+
+@dataclass
+class EvaluationSubject:
+    """The entity being evaluated against rules — subject envelope.
+
+    Wraps a typed payload with metadata. The evaluation pipeline uses the
+    ``kind`` field to dispatch to the correct adapter.
+
+    Attributes:
+        kind: The subject kind (determines adapter routing).
+        payload: Kind-specific data (diff for code_diff, event details
+            for event, clause text for clause_set, etc.).
+        context: Additional context.
+        metadata: Freeform metadata (actor, timestamp, source system).
+        locale: ISO language tag for locale-aware rule selection.
+        jurisdiction: Legal jurisdiction (JP, US, EU, ...).
+    """
+
+    kind: SubjectKind
     payload: dict[str, Any] = field(default_factory=dict)
     context: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    locale: str | None = None
+    jurisdiction: str | None = None
+
+    # Backward-compatible alias
+    @property
+    def type(self) -> SubjectKind:
+        return self.kind
 
     @classmethod
     def from_legacy_diff(cls, diff: str, **kwargs: Any) -> EvaluationSubject:
-        """Create a code_change EvaluationSubject from a legacy diff request.
+        """Create a code_diff EvaluationSubject from a legacy diff request.
 
         Backward-compatibility shim: existing callers that send a raw diff
         are wrapped in an EvaluationSubject transparently.
         """
         return cls(
-            type=SubjectType.CODE_CHANGE,
+            kind=SubjectKind.CODE_DIFF,
             payload={"diff": diff, **{k: v for k, v in kwargs.items() if k != "diff"}},
         )
 

@@ -57,6 +57,7 @@ class EvaluationService:
         actor: str | None = None,
         environment: str | None = None,
         agent_id: str | None = None,
+        subject_kind: str | None = None,
     ) -> EvaluationResult:
         """Run the full evaluation pipeline.
 
@@ -103,6 +104,7 @@ class EvaluationService:
             scope=scope,
             environment=environment,
             agent_id=agent_id,
+            subject_type=subject_kind,
         )
 
         logger.info(

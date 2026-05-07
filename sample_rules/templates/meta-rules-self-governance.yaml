@@ -22,8 +22,8 @@ rules:
   rationale: Verdicts must be reproducible and auditable. Without model and prompt versioning, debugging verdict drift is
     impossible.
   applicable_subject_types: &id001
-  - code_change
-  - document_revision
+  - code_diff
+  - document
   jurisdiction: global
   legal_force: policy
 - statement: Every new HIGH or CRITICAL severity rule MUST have at least one following_example and one violation_example before

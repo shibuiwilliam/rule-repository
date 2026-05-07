@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 from rulerepo_server.core.logging import get_logger
-from rulerepo_server.domain.subject import EvaluationSubject, SubjectType
+from rulerepo_server.domain.subject import EvaluationSubject, SubjectKind
 
 logger = get_logger(__name__)
 
@@ -26,7 +26,7 @@ class ExpenseConnector:
     def normalize_webhook(self, payload: dict[str, Any]) -> EvaluationSubject:
         """Normalize an expense webhook into an EXPENSE_CLAIM subject."""
         return EvaluationSubject(
-            type=SubjectType.EXPENSE_CLAIM,
+            kind=SubjectKind.TRANSACTION,
             payload={
                 "expense_type": payload.get("expense_type", "general"),
                 "amount": payload.get("amount", 0),

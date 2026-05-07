@@ -148,7 +148,7 @@ async def select_rules(
     if subject_type:
         pre_subject = len(all_rules)
         all_rules = [
-            r for r in all_rules if subject_type in (getattr(r, "applicable_subject_types", None) or ["code_change"])
+            r for r in all_rules if subject_type in (getattr(r, "applicable_subject_types", None) or ["code_diff"])
         ]
         logger.info(
             "rule_selector_subject_filter",

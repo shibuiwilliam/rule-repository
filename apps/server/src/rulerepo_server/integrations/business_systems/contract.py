@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 from rulerepo_server.core.logging import get_logger
-from rulerepo_server.domain.subject import EvaluationSubject, SubjectType
+from rulerepo_server.domain.subject import EvaluationSubject, SubjectKind
 
 logger = get_logger(__name__)
 
@@ -26,7 +26,7 @@ class ContractConnector:
     def normalize_webhook(self, payload: dict[str, Any]) -> EvaluationSubject:
         """Normalize a contract webhook into a CONTRACT_CLAUSE subject."""
         return EvaluationSubject(
-            type=SubjectType.CONTRACT_CLAUSE,
+            kind=SubjectKind.CLAUSE_SET,
             payload={
                 "contract_type": payload.get("contract_type", ""),
                 "clause_text": payload.get("clause_text", payload.get("text", "")),

@@ -1,8 +1,8 @@
-"""Tests for Phase 7d business system connectors."""
+"""Tests for business system connectors."""
 
 from __future__ import annotations
 
-from rulerepo_server.domain.subject import SubjectType
+from rulerepo_server.domain.subject import SubjectKind
 from rulerepo_server.integrations.business_systems.attendance import AttendanceConnector
 from rulerepo_server.integrations.business_systems.contract import ContractConnector
 from rulerepo_server.integrations.business_systems.expense import ExpenseConnector
@@ -23,7 +23,7 @@ class TestAttendanceConnector:
                 "location": "jp",
             }
         )
-        assert subject.type == SubjectType.HR_EVENT
+        assert subject.kind == SubjectKind.EVENT
         assert subject.payload["hours"] == 50
         assert subject.payload["event_type"] == "overtime_register"
         assert subject.metadata["source_system"] == "attendance"
@@ -38,7 +38,7 @@ class TestAttendanceConnector:
                 "leave_days": 3,
             }
         )
-        assert subject.type == SubjectType.HR_EVENT
+        assert subject.kind == SubjectKind.EVENT
         assert subject.payload["leave_type"] == "paid_leave"
 
 
@@ -58,7 +58,7 @@ class TestExpenseConnector:
                 "receipt_attached": True,
             }
         )
-        assert subject.type == SubjectType.EXPENSE_CLAIM
+        assert subject.kind == SubjectKind.TRANSACTION
         assert subject.payload["amount"] == 45000
         assert subject.payload["receipt_attached"] is True
 
@@ -77,6 +77,6 @@ class TestContractConnector:
                 "governing_law": "JP",
             }
         )
-        assert subject.type == SubjectType.CONTRACT_CLAUSE
+        assert subject.kind == SubjectKind.CLAUSE_SET
         assert subject.payload["contract_type"] == "NDA"
         assert subject.payload["counterparty"] == "ACME Corp"

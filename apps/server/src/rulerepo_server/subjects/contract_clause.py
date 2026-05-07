@@ -1,22 +1,32 @@
-"""Contract clause subject adapter — handles clause review evaluations.
+"""Clause set subject adapter — handles contract clause review evaluations.
 
 Evaluates contract clauses against NDA, MSA, and procurement rules.
-See: IMPROVEMENT.md Phase 7b
+See: CLAUDE.md §12.2
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from rulerepo_server.domain.evaluation import EvaluationContext
+from rulerepo_server.domain.evaluation import ContractClauseRemediation, EvaluationContext
+from rulerepo_server.domain.subject import PromptFormat, SubjectKind
+from rulerepo_server.subjects.registry import register
 
 
-class ContractClauseAdapter:
+@register(SubjectKind.CLAUSE_SET)
+class ClauseSetAdapter:
     """Adapter for contract clause evaluations."""
+
+    kind = SubjectKind.CLAUSE_SET
+
+    @property
+    def identifier(self) -> str:
+        return "clause_set"
 
     @property
     def subject_type(self) -> str:
-        return "contract_clause"
+        """Backward-compatible alias."""
+        return self.kind.value
 
     def parse_payload(self, payload: dict[str, Any]) -> EvaluationContext:
         """Parse a contract clause payload into an EvaluationContext."""
@@ -39,9 +49,44 @@ class ContractClauseAdapter:
 
         return list(dict.fromkeys(scopes))
 
-    def format_prompt_context(self, payload: dict[str, Any]) -> str:
+    def render_for_llm(self, facts: dict[str, Any], format: PromptFormat = PromptFormat.FULL) -> str:
         """Format the contract clause as prompt context."""
-        return _build_narrative(payload)
+        return _build_narrative(facts)
+
+    def format_prompt_context(self, payload: dict[str, Any]) -> str:
+        """Legacy alias for render_for_llm."""
+        return self.render_for_llm(payload)
+
+    def extract_features(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Extract clause-specific features for rule selection."""
+        return {
+            "contract_type": payload.get("contract_type", ""),
+            "has_clause_text": bool(payload.get("clause_text")),
+            "governing_law": payload.get("governing_law", ""),
+        }
+
+    def parse_remediation(self, raw: dict[str, Any]) -> ContractClauseRemediation | None:
+        """Parse a clause remediation from raw LLM output."""
+        revised = raw.get("revised_text") or raw.get("replacement", "")
+        if not revised and not raw.get("description"):
+            return None
+        return ContractClauseRemediation(
+            type=raw.get("type", "clause_revision"),
+            description=raw.get("description", ""),
+            clause_id=raw.get("clause_id", ""),
+            revised_text=revised,
+            requires_counterparty_consent=raw.get("requires_counterparty_consent", True),
+            auto_applicable=False,
+        )
+
+    def pii_fields(self, payload: dict[str, Any]) -> list[str]:
+        """Contracts may contain counterparty PII."""
+        pii = []
+        if "counterparty" in payload:
+            pii.append("counterparty")
+        if "signatory" in payload:
+            pii.append("signatory")
+        return pii
 
 
 def _build_narrative(payload: dict[str, Any]) -> str:
@@ -63,3 +108,7 @@ def _build_narrative(payload: dict[str, Any]) -> str:
         parts.append(f"\nChanges:\n{payload['diff']}")
 
     return "\n".join(parts)
+
+
+# Backward-compatible alias
+ContractClauseAdapter = ClauseSetAdapter

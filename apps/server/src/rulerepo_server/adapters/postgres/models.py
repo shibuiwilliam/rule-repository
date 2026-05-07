@@ -137,7 +137,7 @@ class RuleModel(Base):
     equivalence_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
 
     # Subject abstraction — which subject types this rule applies to
-    applicable_subject_types: Mapped[list] = mapped_column(JSONB, nullable=False, default=lambda: ["code_change"])
+    applicable_subject_types: Mapped[list] = mapped_column(JSONB, nullable=False, default=lambda: ["code_diff"])
     jurisdiction: Mapped[str] = mapped_column(String(50), nullable=False, default="global")
     legal_force: Mapped[str] = mapped_column(String(20), nullable=False, default="policy")
     review_cadence: Mapped[str | None] = mapped_column(String(20), nullable=True)

@@ -35,6 +35,14 @@ class EvaluateRequest(BaseModel):
         default=None,
         description="AI agent identifier (e.g., 'claude-code', 'cursor', 'copilot')",
     )
+    subject_kind: str | None = Field(
+        default=None,
+        description=(
+            "Subject kind for evaluation dispatch "
+            "(code_diff, clause_set, event, transaction, creative, decision, identity, document). "
+            "Defaults to code_diff when diff is provided."
+        ),
+    )
 
 
 class QuickEvaluateRequest(BaseModel):

@@ -25,7 +25,7 @@ rules:
   violation_examples:
   - Employee submits a report 45 days after the expense without any justification.
   applicable_subject_types: &id001
-  - expense_claim
+  - transaction
   jurisdiction: jp
   legal_force: policy
 - statement: All expense claims exceeding 1,000 JPY MUST be accompanied by an original receipt or a legally compliant electronic

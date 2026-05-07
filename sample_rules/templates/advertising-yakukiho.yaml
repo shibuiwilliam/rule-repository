@@ -27,7 +27,7 @@ rules:
     article: '66'
     paragraph: '1'
   applicable_subject_types: &id001
-  - marketing_copy
+  - creative
   jurisdiction: jp
   legal_force: statutory
 - statement: Advertising MUST NOT guarantee or imply guaranteed efficacy or safety of any pharmaceutical product.

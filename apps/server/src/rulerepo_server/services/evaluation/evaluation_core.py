@@ -108,12 +108,14 @@ def _hash_content(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:16]
 
 
-# Per-subject prompt file mapping. Falls back to generic prompts if missing.
-_SUBJECT_PROMPT_MAP: dict[str, str] = {
-    "code_change": "evaluate_code_change.txt",
-    "hr_event": "evaluate_hr_event.txt",
-    "contract_clause": "evaluate_contract_clause.txt",
-    "expense_claim": "evaluate_expense_claim.txt",
+# Subject-kind prompt file mapping. Each entry maps a SubjectKind value
+# to a prompt file under PROMPTS_DIR. Adapters own the domain knowledge;
+# this map is the only place the orchestrator references subject kinds.
+_SUBJECT_KIND_PROMPT_MAP: dict[str, str] = {
+    "code_diff": "evaluate_code_change.txt",
+    "event": "evaluate_hr_event.txt",
+    "clause_set": "evaluate_contract_clause.txt",
+    "transaction": "evaluate_expense_claim.txt",
 }
 
 
@@ -132,7 +134,10 @@ def _build_prompt(
     """Build the evaluation prompt, dispatching on subject_type.
 
     Subject-specific prompts provide domain-tailored framing. Falls back
-    to the generic code_change or facts prompt for unknown types.
+    to the generic code_diff or facts prompt for unknown types.
+
+    Args:
+        subject_type: SubjectKind value string (e.g., "code_diff", "event").
     """
     common_vars = {
         "rule_statement": rule["statement"],
@@ -147,8 +152,8 @@ def _build_prompt(
     }
 
     # Try subject-specific prompt first
-    if subject_type and subject_type in _SUBJECT_PROMPT_MAP:
-        prompt_file = _SUBJECT_PROMPT_MAP[subject_type]
+    if subject_type and subject_type in _SUBJECT_KIND_PROMPT_MAP:
+        prompt_file = _SUBJECT_KIND_PROMPT_MAP[subject_type]
         prompt_path = PROMPTS_DIR / prompt_file
         if prompt_path.exists():
             template = _load_prompt(prompt_file)

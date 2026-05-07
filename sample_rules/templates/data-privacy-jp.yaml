@@ -23,8 +23,8 @@ rules:
   - statute: APPI
     article: 17, 21
   applicable_subject_types: &id001
-  - document_revision
-  - hr_event
+  - document
+  - event
   jurisdiction: jp
   legal_force: statutory
 - statement: Personal information MUST NOT be used beyond the scope of the specified purpose of use without the individual's

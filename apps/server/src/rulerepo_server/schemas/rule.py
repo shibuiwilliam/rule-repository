@@ -66,7 +66,7 @@ class RuleCreate(BaseModel):
     )
     sensitivity: Sensitivity = Sensitivity.INTERNAL
     regulatory_severity: RegulatorySeverity = RegulatorySeverity.NONE
-    applicable_subject_types: list[str] = Field(default_factory=lambda: ["code_change"])
+    applicable_subject_types: list[str] = Field(default_factory=lambda: ["code_diff"])
     jurisdiction: str = "global"
     legal_force: str = "policy"
     review_cadence: str | None = None
@@ -129,7 +129,7 @@ class RuleResponse(BaseModel):
     violation_examples: list[str] = Field(default_factory=list)
     sensitivity: str = "INTERNAL"
     regulatory_severity: str = "NONE"
-    applicable_subject_types: list[str] = Field(default_factory=lambda: ["code_change"])
+    applicable_subject_types: list[str] = Field(default_factory=lambda: ["code_diff"])
     jurisdiction: str = "global"
     legal_force: str = "policy"
     review_cadence: str | None = None

@@ -23,7 +23,7 @@ rules:
   violation_examples:
   - The NDA states 'all information shared is confidential' without specifying categories or exclusions.
   applicable_subject_types: &id001
-  - contract_clause
+  - clause_set
   jurisdiction: global
   legal_force: contractual
 - statement: 'The NDA MUST contain standard exclusions: (a) publicly available information, (b) independently developed information,
