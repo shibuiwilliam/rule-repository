@@ -10,8 +10,8 @@ COPY pnpm-lock.yaml /app/pnpm-lock.yaml
 COPY apps/frontend/package.json /app/apps/frontend/package.json
 
 # Install dependencies from workspace root
-RUN pnpm install --frozen-lockfile --filter rulerepo-frontend 2>/dev/null || \
-    pnpm install --filter rulerepo-frontend
+ENV COREPACK_ENABLE_STRICT=0
+RUN pnpm install --frozen-lockfile --filter rulerepo-frontend --ignore-scripts
 
 # Copy frontend source into the workspace member location
 COPY apps/frontend/ /app/apps/frontend/
