@@ -16,16 +16,24 @@ rules:
   tags:
   - definition
   - confidentiality
+  applicable_subject_types:
+  - clause_set
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
   rationale: An NDA without a clear definition is unenforceable and creates ambiguity about what is protected.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: Universal requirement in contract law; courts routinely strike down NDAs with vague definitions.
+  preconditions:
+  - The agreement is structured as an NDA or contains a confidentiality section.
+  exceptions:
+  - None. Definition of Confidential Information is always required.
   following_examples:
   - The NDA defines Confidential Information as 'all technical, business, and financial information disclosed by the Disclosing
     Party, whether orally, in writing, or electronically, excluding information that is publicly available.'
   violation_examples:
   - The NDA states 'all information shared is confidential' without specifying categories or exclusions.
-  applicable_subject_types: &id001
-  - clause_set
-  jurisdiction: global
-  legal_force: contractual
 - statement: 'The NDA MUST contain standard exclusions: (a) publicly available information, (b) independently developed information,
     (c) information received from a third party without restriction, (d) information already known to the Receiving Party.'
   modality: MUST
@@ -35,10 +43,24 @@ rules:
   tags:
   - exclusions
   - standard-carve-outs
-  rationale: Standard exclusions are necessary for enforceability and prevent overbroad confidentiality claims.
-  applicable_subject_types: *id001
+  applicable_subject_types:
+  - clause_set
   jurisdiction: global
   legal_force: contractual
+  classification: confidential
+  rationale: Standard exclusions are necessary for enforceability and prevent overbroad confidentiality claims.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: The four standard exclusions are recognized across common-law and civil-law jurisdictions as essential for enforceability.
+  preconditions:
+  - The NDA contains a definition of Confidential Information.
+  exceptions:
+  - Trade-secret-specific NDAs may narrowly limit exclusions, but this must be explicitly justified and flagged for legal review.
+  following_examples:
+  - 'The NDA lists all four standard exclusions: (a) publicly known, (b) independently developed, (c) received from a non-restricted third party, (d) already in possession.'
+  violation_examples:
+  - The NDA omits the 'independently developed' exclusion, potentially blocking the Receiving Party's own R&D.
+  - The NDA includes only 'publicly available' as an exclusion and omits the other three.
 - statement: Confidentiality obligations MUST specify a fixed duration. Open-ended obligations MUST NOT be accepted without
     legal review and explicit approval.
   modality: MUST
@@ -48,14 +70,23 @@ rules:
   tags:
   - duration
   - term
+  applicable_subject_types:
+  - clause_set
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
   rationale: Perpetual obligations may not be enforceable in all jurisdictions and create indefinite liability.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: Many jurisdictions view perpetual obligations as unreasonable restraints; typical durations range from 2-5 years.
+  preconditions:
+  - The NDA contains confidentiality obligations.
+  exceptions:
+  - Trade-secret obligations may legitimately survive the NDA term (as they are backed by statute), but this must be stated separately from general confidentiality obligations.
   following_examples:
   - Obligations continue for 3 years from the date of disclosure.
   violation_examples:
   - The NDA states obligations last 'in perpetuity' with no sunset clause.
-  applicable_subject_types: *id001
-  jurisdiction: global
-  legal_force: contractual
 - statement: A mutual NDA MUST impose symmetric obligations on both parties. One-sided confidentiality in a mutual NDA SHOULD
     be flagged for renegotiation.
   modality: MUST
@@ -65,10 +96,23 @@ rules:
   tags:
   - mutuality
   - symmetry
-  rationale: Asymmetric obligations in a mutual NDA create unfair risk allocation.
-  applicable_subject_types: *id001
+  applicable_subject_types:
+  - clause_set
   jurisdiction: global
   legal_force: contractual
+  classification: confidential
+  rationale: Asymmetric obligations in a mutual NDA create unfair risk allocation.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: Mutuality is a fundamental principle in bilateral agreements; asymmetry requires explicit business justification.
+  preconditions:
+  - The agreement is structured as a mutual (bilateral) NDA.
+  exceptions:
+  - One-sided NDAs (unilateral) by design impose obligations only on the Receiving Party; this rule does not apply to unilateral NDAs.
+  following_examples:
+  - Both parties are defined as both Disclosing Party and Receiving Party with identical obligations.
+  violation_examples:
+  - A mutual NDA requires Party B to return all materials upon request, but has no equivalent obligation for Party A.
 - statement: The NDA MUST NOT permit disclosure to third parties without prior written consent of the Disclosing Party, except
     as required by law or court order.
   modality: MUST_NOT
@@ -78,10 +122,24 @@ rules:
   tags:
   - disclosure
   - third-party
-  rationale: Unrestricted third-party sharing defeats the purpose of the NDA.
-  applicable_subject_types: *id001
+  applicable_subject_types:
+  - clause_set
   jurisdiction: global
   legal_force: contractual
+  classification: confidential
+  rationale: Unrestricted third-party sharing defeats the purpose of the NDA.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: Third-party disclosure restrictions are a core NDA protection; exceptions for legal compulsion are universally accepted.
+  preconditions:
+  - The NDA is in effect and the Receiving Party possesses Confidential Information.
+  exceptions:
+  - Disclosure required by law, regulation, or court order (with prior notice to the Disclosing Party where legally permissible).
+  - Disclosure to professional advisors (lawyers, accountants) bound by professional confidentiality duties.
+  following_examples:
+  - The NDA states that the Receiving Party shall not disclose Confidential Information to any third party without the prior written consent of the Disclosing Party.
+  violation_examples:
+  - The NDA allows the Receiving Party to share Confidential Information with 'business partners' without defining who qualifies or requiring consent.
 - statement: The NDA SHOULD include a return-or-destroy clause requiring the Receiving Party to return or certify destruction
     of Confidential Information upon termination or request.
   modality: SHOULD
@@ -91,10 +149,24 @@ rules:
   tags:
   - termination
   - return-destroy
-  rationale: Without a return/destroy obligation, confidential materials may remain accessible indefinitely.
-  applicable_subject_types: *id001
+  applicable_subject_types:
+  - clause_set
   jurisdiction: global
   legal_force: contractual
+  classification: confidential
+  rationale: Without a return/destroy obligation, confidential materials may remain accessible indefinitely.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: Return-or-destroy clauses provide a clean termination mechanism and reduce ongoing exposure risk.
+  preconditions:
+  - The NDA has a termination or expiration provision.
+  exceptions:
+  - Copies retained in automated backup systems may be excluded if they are not readily accessible and are subject to the surviving confidentiality obligations.
+  - Copies retained as required by law or regulation (e.g., compliance archives) may be excluded.
+  following_examples:
+  - Upon termination, the Receiving Party shall return or destroy all Confidential Information and provide a written certification of destruction within 30 days.
+  violation_examples:
+  - The NDA has no provision for what happens to Confidential Information after the agreement expires.
 - statement: The NDA MUST NOT include non-compete or non-solicitation clauses disguised within the confidentiality section.
     Such restrictions belong in separate, clearly labeled clauses.
   modality: MUST_NOT
@@ -104,11 +176,24 @@ rules:
   tags:
   - non-compete
   - scope-creep
-  rationale: Embedding restrictive covenants in NDA sections obscures their impact and may not satisfy separate enforceability
-    requirements.
-  applicable_subject_types: *id001
+  applicable_subject_types:
+  - clause_set
   jurisdiction: global
   legal_force: contractual
+  classification: confidential
+  rationale: Embedding restrictive covenants in NDA sections obscures their impact and may not satisfy separate enforceability
+    requirements.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: Many jurisdictions (e.g., California) treat non-competes as void; burying them in an NDA may invalidate the entire clause or agreement.
+  preconditions:
+  - The agreement contains a confidentiality section.
+  exceptions:
+  - None. Non-compete and non-solicitation provisions must always be in separate, clearly identified clauses if included.
+  following_examples:
+  - The NDA focuses solely on confidentiality. Any non-compete or non-solicitation terms are in a separate agreement.
+  violation_examples:
+  - 'The confidentiality clause includes: ''The Receiving Party agrees not to engage in any business that competes with the Disclosing Party for 2 years.'''
 - statement: NDAs involving cross-border disclosure MUST specify the governing law and jurisdiction for dispute resolution.
   modality: MUST
   severity: HIGH
@@ -118,13 +203,24 @@ rules:
   - governing-law
   - jurisdiction
   - cross-border
+  applicable_subject_types:
+  - clause_set
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
   rationale: Cross-border NDAs without governing law create uncertainty about which court and law applies.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: Hague Convention on Choice of Court Agreements and national conflict-of-law rules make governing law clauses essential in international contracts.
+  preconditions:
+  - The parties are domiciled in different jurisdictions or Confidential Information may cross national borders.
+  exceptions:
+  - Purely domestic NDAs between parties in the same jurisdiction may rely on default conflict-of-law rules, though explicit choice is still recommended.
   following_examples:
   - This Agreement shall be governed by the laws of Japan. Disputes shall be submitted to the exclusive jurisdiction of the
     Tokyo District Court.
-  applicable_subject_types: *id001
-  jurisdiction: global
-  legal_force: contractual
+  violation_examples:
+  - A cross-border NDA between a Japanese and US company has no governing law clause.
 - statement: The NDA SHOULD specify permitted disclosure to the Receiving Party's employees, contractors, and advisors who
     have a need to know and are bound by similar confidentiality obligations.
   modality: SHOULD
@@ -134,10 +230,23 @@ rules:
   tags:
   - permitted-recipients
   - need-to-know
-  rationale: Practical NDA compliance requires sharing with internal team members; the NDA should anticipate this.
-  applicable_subject_types: *id001
+  applicable_subject_types:
+  - clause_set
   jurisdiction: global
   legal_force: contractual
+  classification: confidential
+  rationale: Practical NDA compliance requires sharing with internal team members; the NDA should anticipate this.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: Need-to-know provisions balance operational necessity with confidentiality protection.
+  preconditions:
+  - The NDA restricts disclosure to third parties.
+  exceptions:
+  - If the Receiving Party is a sole practitioner with no employees or contractors, this clause may be omitted.
+  following_examples:
+  - The NDA allows disclosure to employees, contractors, and advisors who (a) have a need to know and (b) are bound by written confidentiality obligations no less restrictive than those in the NDA.
+  violation_examples:
+  - The NDA allows disclosure to 'team members' without requiring them to be bound by confidentiality obligations.
 - statement: The NDA MUST specify the method of giving notices (e.g., written notice to a designated address or email).
   modality: MUST
   severity: MEDIUM
@@ -146,10 +255,23 @@ rules:
   tags:
   - notices
   - communication
-  rationale: Unclear notice provisions create disputes about whether obligations were properly triggered.
-  applicable_subject_types: *id001
+  applicable_subject_types:
+  - clause_set
   jurisdiction: global
   legal_force: contractual
+  classification: confidential
+  rationale: Unclear notice provisions create disputes about whether obligations were properly triggered.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: Notice clauses ensure both parties can reliably communicate breach notifications, termination, and other formal actions.
+  preconditions:
+  - The NDA contains obligations that may require formal notification (breach, termination, return requests).
+  exceptions:
+  - None. A notice mechanism is essential for any enforceable agreement.
+  following_examples:
+  - Notices shall be in writing and delivered by registered mail or email to the addresses specified in Annex A, and shall be deemed received upon confirmation of delivery.
+  violation_examples:
+  - The NDA has no notice clause; a party claims oral notice of termination was sufficient.
 - statement: Residual knowledge clauses ('residuals clauses') that allow retention of general knowledge SHOULD be reviewed
     carefully and MUST NOT be so broad as to negate the confidentiality obligations.
   modality: SHOULD
@@ -159,10 +281,23 @@ rules:
   tags:
   - residuals
   - knowledge-retention
-  rationale: Overly broad residuals clauses can render the entire NDA meaningless in practice.
-  applicable_subject_types: *id001
+  applicable_subject_types:
+  - clause_set
   jurisdiction: global
   legal_force: contractual
+  classification: confidential
+  rationale: Overly broad residuals clauses can render the entire NDA meaningless in practice.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: Residuals clauses are common in technology NDAs but require careful scoping to prevent them from becoming a blanket exception.
+  preconditions:
+  - The NDA includes or the counterparty proposes a residuals clause.
+  exceptions:
+  - If no residuals clause is proposed, this rule does not apply.
+  following_examples:
+  - The residuals clause is limited to 'general ideas, concepts, know-how, and techniques retained in the unaided memory of representatives' and explicitly excludes source code, customer data, and trade secrets.
+  violation_examples:
+  - The residuals clause states that 'any information retained in memory' is excluded from confidentiality, effectively negating the NDA.
 - statement: The NDA SHOULD include a clause acknowledging that monetary damages may be insufficient and that the Disclosing
     Party is entitled to seek injunctive relief.
   modality: SHOULD
@@ -172,10 +307,23 @@ rules:
   tags:
   - remedies
   - injunctive-relief
-  rationale: Confidential information, once disclosed, cannot be 'undisclosed' — injunctive relief is the practical remedy.
-  applicable_subject_types: *id001
+  applicable_subject_types:
+  - clause_set
   jurisdiction: global
   legal_force: contractual
+  classification: confidential
+  rationale: Confidential information, once disclosed, cannot be 'undisclosed' — injunctive relief is the practical remedy.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: Injunctive relief clauses increase the likelihood of obtaining a temporary restraining order in breach situations.
+  preconditions:
+  - The NDA establishes confidentiality obligations that, if breached, could cause irreparable harm.
+  exceptions:
+  - In jurisdictions where injunctive relief acknowledgment clauses have no legal effect (e.g., where courts independently determine remedies), the clause is still recommended as a signal of intent.
+  following_examples:
+  - The NDA states that 'the parties acknowledge that breach may cause irreparable harm and that the Disclosing Party shall be entitled to seek injunctive relief in addition to any other remedies available at law or in equity.'
+  violation_examples:
+  - The NDA limits remedies exclusively to monetary damages with a low liability cap.
 - statement: The NDA MUST NOT contain automatic renewal clauses without explicit notification provisions allowing either party
     to decline renewal.
   modality: MUST_NOT
@@ -185,10 +333,23 @@ rules:
   tags:
   - renewal
   - auto-renewal
-  rationale: Silent auto-renewal traps parties in obligations they may no longer need or want.
-  applicable_subject_types: *id001
+  applicable_subject_types:
+  - clause_set
   jurisdiction: global
   legal_force: contractual
+  classification: confidential
+  rationale: Silent auto-renewal traps parties in obligations they may no longer need or want.
+  source_refs:
+  - authority: Standard NDA drafting practice
+    note: Auto-renewal without opt-out notice may be unenforceable in some jurisdictions and is considered poor drafting practice.
+  preconditions:
+  - The NDA contains a renewal or extension mechanism.
+  exceptions:
+  - If the NDA has a fixed term with no renewal provision, this rule does not apply.
+  following_examples:
+  - The NDA auto-renews annually but requires 60 days' written notice before the renewal date to decline renewal.
+  violation_examples:
+  - The NDA auto-renews indefinitely with no mechanism for either party to opt out.
 - statement: If the NDA covers trade secrets, it SHOULD reference applicable trade secret law and note that trade secret protections
     may survive the NDA's expiration.
   modality: SHOULD
@@ -198,10 +359,23 @@ rules:
   tags:
   - trade-secrets
   - statutory-protection
-  rationale: Trade secrets receive statutory protection independent of contract; the NDA should acknowledge this.
-  applicable_subject_types: *id001
+  applicable_subject_types:
+  - clause_set
   jurisdiction: global
   legal_force: contractual
+  classification: confidential
+  rationale: Trade secrets receive statutory protection independent of contract; the NDA should acknowledge this.
+  source_refs:
+  - authority: Uniform Trade Secrets Act (US), Unfair Competition Prevention Act (Japan, 不正競争防止法), EU Trade Secrets Directive 2016/943
+    note: Trade secret statutes provide protection that extends beyond the contractual NDA term.
+  preconditions:
+  - The Confidential Information includes or may include trade secrets.
+  exceptions:
+  - If the NDA explicitly excludes trade secrets from its scope (unusual but possible), this rule does not apply.
+  following_examples:
+  - The NDA states that 'to the extent Confidential Information constitutes trade secrets, the obligations of confidentiality shall survive the expiration of this Agreement for so long as such information remains a trade secret under applicable law.'
+  violation_examples:
+  - The NDA's 3-year confidentiality term expires and the agreement is silent on trade secrets, leaving no contractual protection for ongoing trade secret status.
 - statement: The NDA MUST be signed by authorized representatives of both parties. Electronic signatures are acceptable where
     legally recognized.
   modality: MUST
@@ -212,7 +386,20 @@ rules:
   - execution
   - signatures
   - authority
-  rationale: An NDA signed by someone without authority may not bind the organization.
-  applicable_subject_types: *id001
+  applicable_subject_types:
+  - clause_set
   jurisdiction: global
   legal_force: contractual
+  classification: confidential
+  rationale: An NDA signed by someone without authority may not bind the organization.
+  source_refs:
+  - authority: Standard contract execution practice
+    note: Electronic Signatures in Global and National Commerce Act (US E-SIGN), eIDAS Regulation (EU), Act on Electronic Signatures (Japan, 電子署名法) recognize electronic signatures.
+  preconditions:
+  - Both parties intend to enter into a binding NDA.
+  exceptions:
+  - In some jurisdictions, NDAs may be enforceable without a signature if formed through conduct, but signed execution is always the recommended practice.
+  following_examples:
+  - Both parties' authorized signatories (CEO or delegated officer) sign the NDA, with each party retaining an executed copy.
+  violation_examples:
+  - A junior employee signs the NDA without delegation of signing authority from management.

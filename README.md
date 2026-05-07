@@ -20,7 +20,7 @@ The `contract-nda-standard` template checks NDAs for missing definitions, asymme
 
 ### Control expenses and prevent fraud
 
-The `expense-claim-jp` template validates expense submissions against approval thresholds, receipt requirements, entertainment documentation rules, qualified invoice compliance, and anti-splitting controls.
+The `expense-policy-standard` template validates expense submissions against approval thresholds, receipt requirements, entertainment documentation rules, qualified invoice compliance, and anti-splitting controls.
 
 ### Prevent bribery and corruption
 
@@ -80,7 +80,7 @@ Thirteen pre-built rule sets covering 7 domains:
 |----------|-------|--------|
 | `hr-attendance-jp` | 25 | HR / Labor Law (Japan) |
 | `contract-nda-standard` | 15 | Legal / Contracts |
-| `expense-claim-jp` | 20 | Finance / Expenses (Japan) |
+| `expense-policy-standard` | 20 | Finance / Expenses (Japan) |
 | `bribery-anti-corruption` | 18 | Compliance / Anti-Corruption |
 | `data-privacy-jp` | 18 | Compliance / Privacy (Japan) |
 | `advertising-yakukiho` | 20 | Compliance / Advertising (Japan) |

@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from rulerepo_server.domain.classification import Classification
 from rulerepo_server.domain.rule import Modality, RegulatorySeverity, RuleStatus, Sensitivity, Severity
 
 # ---------------------------------------------------------------------------
@@ -64,6 +65,7 @@ class RuleCreate(BaseModel):
         default_factory=list,
         description="Examples of activities that violate this rule.",
     )
+    classification: Classification = Classification.INTERNAL
     sensitivity: Sensitivity = Sensitivity.INTERNAL
     regulatory_severity: RegulatorySeverity = RegulatorySeverity.NONE
     applicable_subject_types: list[str] = Field(default_factory=lambda: ["code_diff"])
@@ -127,6 +129,7 @@ class RuleResponse(BaseModel):
     exceptions: list[str]
     following_examples: list[str] = Field(default_factory=list)
     violation_examples: list[str] = Field(default_factory=list)
+    classification: str = "internal"
     sensitivity: str = "INTERNAL"
     regulatory_severity: str = "NONE"
     applicable_subject_types: list[str] = Field(default_factory=lambda: ["code_diff"])

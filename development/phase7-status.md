@@ -4,7 +4,7 @@
 
 ## Phase 7a — Branding Fix: IMPLEMENTED
 
-- 7 new business-domain templates (134 rules): hr-attendance-jp, contract-nda-standard, expense-claim-jp, bribery-anti-corruption, data-privacy-jp, advertising-yakukiho, meta-rules-self-governance
+- 7 new business-domain templates (134 rules): hr-attendance-jp, contract-nda-standard, expense-policy-standard, bribery-anti-corruption, data-privacy-jp, advertising-yakukiho, meta-rules-self-governance
 - 4 new sample document directories (12 docs): hr_rules, contract_rules, finance_rules, compliance_rules
 - README.md rewritten — business domains lead
 - `docs/scope-naming.md` with 10 domain examples

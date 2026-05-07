@@ -130,8 +130,35 @@ async def main() -> None:
 
         print(f"Seed data loaded: {len(SAMPLE_RULES)} inline rules.")
 
+        # --- Seed default departments ---
+        await _seed_departments(client)
+
         # --- Load YAML templates ---
         await _load_templates(client)
+
+
+DEFAULT_DEPARTMENTS = [
+    {"name": "Legal", "type": "legal"},
+    {"name": "HR", "type": "hr"},
+    {"name": "Finance", "type": "finance"},
+    {"name": "Engineering", "type": "rnd"},
+    {"name": "Sales", "type": "sales"},
+    {"name": "Marketing", "type": "marketing"},
+    {"name": "Operations", "type": "operations"},
+]
+
+
+async def _seed_departments(client) -> None:  # type: ignore[no-untyped-def]
+    """Seed default departments via the departments API."""
+    print(f"Seeding {len(DEFAULT_DEPARTMENTS)} default departments...")
+    for dept in DEFAULT_DEPARTMENTS:
+        resp = await client.post("/api/v1/departments", json=dept)
+        if resp.status_code == 201:
+            result = resp.json()
+            print(f"  Created department: {result['name']} ({result['id'][:8]}...)")
+        else:
+            print(f"  Department {dept['name']}: {resp.status_code} (may already exist)")
+    print(f"Department seeding complete.")
 
 
 async def _load_templates(client) -> None:  # type: ignore[no-untyped-def]

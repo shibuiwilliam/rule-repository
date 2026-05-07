@@ -124,6 +124,9 @@ class RuleModel(Base):
     following_examples: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     violation_examples: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
 
+    # Classification — access control level (PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED)
+    classification: Mapped[str] = mapped_column(String(20), nullable=False, default="internal")
+
     # Sensitivity — drives LLM provider routing and log retention
     sensitivity: Mapped[str] = mapped_column(String(20), nullable=False, default="INTERNAL")
 
@@ -350,6 +353,7 @@ class AuditLogModel(Base):
     resource_type: Mapped[str] = mapped_column(String(100), nullable=False)
     resource_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     details: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    classification: Mapped[str] = mapped_column(String(20), nullable=False, default="internal")
     previous_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     entry_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
 
@@ -474,6 +478,9 @@ class EvaluationRecordModel(Base):
 
     # Encrypted evaluation context — PII-safe at rest (AES-GCM, key from core/secrets)
     context_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+
+    # Classification — access control level
+    classification: Mapped[str] = mapped_column(String(20), nullable=False, default="internal")
 
     # Subject type — records what kind of entity was evaluated
     subject_type: Mapped[str | None] = mapped_column(String(30), nullable=True)
@@ -861,3 +868,59 @@ class GovernanceSessionModel(Base):
     active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# ---------------------------------------------------------------------------
+# Phase 7 Stream B: Department and Capacity Model
+# ---------------------------------------------------------------------------
+
+
+class DepartmentModel(Base):
+    """An organizational department that owns rules."""
+
+    __tablename__ = "departments"
+
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    type: Mapped[str] = mapped_column(String(50), nullable=False, default="custom")
+    parent_id: Mapped[str | None] = mapped_column(
+        Uuid, ForeignKey("departments.id", ondelete="SET NULL"), nullable=True
+    )
+    head_user_id: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    cost_center: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    locale: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class CapacityAssignmentModel(Base):
+    """Binds a user to a department with a specific capacity."""
+
+    __tablename__ = "capacity_assignments"
+
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
+    department_id: Mapped[str] = mapped_column(
+        Uuid, ForeignKey("departments.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    capacity: Mapped[str] = mapped_column(String(20), nullable=False)
+    rule_filter: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class RuleOwnershipModel(Base):
+    """Binds a rule to an owning department with optional delegation."""
+
+    __tablename__ = "rule_ownerships"
+
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
+    rule_id: Mapped[str] = mapped_column(
+        Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
+    )
+    owner_department_id: Mapped[str] = mapped_column(
+        Uuid, ForeignKey("departments.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    delegated_to: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

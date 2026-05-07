@@ -5,7 +5,7 @@ import { useState } from "react";
 const TEMPLATES = [
   { id: "hr-attendance-jp", name: "HR Attendance (Japan)", domain: "HR", rules: 25 },
   { id: "contract-nda-standard", name: "NDA Review", domain: "Legal", rules: 15 },
-  { id: "expense-claim-jp", name: "Expense Claims (Japan)", domain: "Finance", rules: 20 },
+  { id: "expense-policy-standard", name: "Expense Policy (Standard)", domain: "Finance", rules: 20 },
   { id: "bribery-anti-corruption", name: "Anti-Bribery", domain: "Compliance", rules: 18 },
   { id: "data-privacy-jp", name: "Data Privacy (Japan)", domain: "Compliance", rules: 18 },
   { id: "advertising-yakukiho", name: "Advertising (Japan)", domain: "Compliance", rules: 18 },

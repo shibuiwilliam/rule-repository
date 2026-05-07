@@ -12,7 +12,7 @@ Rule templates are pre-built rule sets for common scenarios across engineering, 
 |---|---|---|
 | `hr-attendance-jp` | 25 | HR / Labor Law (Japan): overtime caps, 36-Agreement, leave usage, maternity protections, record-keeping |
 | `contract-nda-standard` | 15 | Legal / Contracts: NDA definitions, asymmetric obligations, residuals clauses, governing law |
-| `expense-claim-jp` | 20 | Finance / Expenses (Japan): approval thresholds, receipt requirements, invoice compliance |
+| `expense-policy-standard` | 20 | Finance / Expenses (Japan): approval thresholds, receipt requirements, invoice compliance |
 | `bribery-anti-corruption` | 18 | Compliance / Anti-Corruption: FCPA, UK Bribery Act, gift thresholds, due diligence |
 | `data-privacy-jp` | 18 | Compliance / Privacy (Japan): APPI requirements, consent, transfers, breach notification |
 | `advertising-yakukiho` | 20 | Compliance / Advertising (Japan): pharmaceutical claims, disclaimers, endorsements |

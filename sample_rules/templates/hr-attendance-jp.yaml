@@ -20,15 +20,21 @@ rules:
   - labor-standards-act
   applicable_subject_types:
   - event
-  jurisdiction: jp
+  jurisdiction: JP
   legal_force: statutory
+  classification: confidential
   review_cadence: annual
   rationale: Labor Standards Act Article 32 sets the maximum statutory working hours. Exceeding these limits without a valid
     36 Agreement is illegal.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '32'
     paragraph: 1-2
+  preconditions:
+  - Employee is subject to standard working hour provisions (not in a discretionary labor system or managerial position exempt under Art. 41).
+  exceptions:
+  - Flex-time system (変形労働時間制) under Art. 32-2 to 32-5 may allow daily/weekly variation if average does not exceed the statutory limit.
+  - Employees in managerial/supervisory positions (管理監督者) under Art. 41(2) are exempt from working-hour limits.
   following_examples:
   - Employee works 7.5 hours/day, 37.5 hours/week — within statutory limits.
   - Employee works 8 hours/day, 40 hours/week — at the statutory maximum, compliant.
@@ -45,15 +51,25 @@ rules:
   - working-hours
   - special-provision
   - small-business
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 40 and associated ordinances allow a relaxed weekly limit for small workplaces in
     certain industries.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '40'
-  applicable_subject_types: &id001
-  - event
-  jurisdiction: jp
-  legal_force: statutory
+  preconditions:
+  - Workplace employs 10 or fewer workers on a regular basis.
+  - Workplace is classified in one of the specified industries (commerce, motion picture/theater, health/hygiene, entertainment).
+  exceptions:
+  - Does not apply to workplaces with more than 10 employees, even if in a specified industry.
+  following_examples:
+  - A retail shop with 8 employees sets a 44-hour weekly schedule with proper notification to the LSIO.
+  violation_examples:
+  - A retail shop with 15 employees applies the 44-hour weekly limit, exceeding the applicable 40-hour cap.
 - statement: Overtime work MUST NOT be assigned without a valid written 36 Agreement (三六協定) filed with the local Labor Standards
     Inspection Office.
   modality: MUST_NOT
@@ -64,19 +80,25 @@ rules:
   - overtime
   - 36-agreement
   - labor-standards-act
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 36 requires a written labor-management agreement for any overtime or holiday work.
     Working employees beyond statutory hours without this agreement is a criminal offense.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '36'
     paragraph: '1'
+  preconditions:
+  - Employee is not exempt from overtime provisions (e.g., managerial/supervisory position under Art. 41).
+  exceptions:
+  - Emergency situations under Art. 33 (disaster, urgent necessity) allow temporary overtime without a 36 Agreement, subject to post-facto notification.
   following_examples:
   - Company has a current 36 Agreement filed with the LSIO and assigns 2 hours overtime.
   violation_examples:
   - Manager asks employee to stay late but no 36 Agreement has been filed for this fiscal year.
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
 - statement: Monthly overtime hours MUST NOT exceed 45 hours under the general 36 Agreement limit.
   modality: MUST_NOT
   severity: HIGH
@@ -86,19 +108,26 @@ rules:
   - overtime
   - monthly-limit
   - 36-agreement
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: The 2019 Work Style Reform Act codified the overtime cap. The general limit is 45 hours/month and 360 hours/year.
     Exceeding this requires a special clause.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '36'
     paragraph: '4'
+  preconditions:
+  - A valid 36 Agreement is on file.
+  - No special-clause (特別条項) provision applies for the current period.
+  exceptions:
+  - A special-clause 36 Agreement may allow exceeding 45 hours/month for up to 6 months per year, subject to the absolute cap.
   following_examples:
   - Employee worked 40 hours of overtime this month — within the 45-hour limit.
   violation_examples:
   - Employee's monthly overtime reaches 50 hours with no special-clause agreement.
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
 - statement: Annual overtime hours MUST NOT exceed 360 hours under the general 36 Agreement limit.
   modality: MUST_NOT
   severity: HIGH
@@ -108,14 +137,24 @@ rules:
   - overtime
   - annual-limit
   - 36-agreement
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 36(4) sets the annual cap at 360 hours for the general provision.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '36'
     paragraph: '4'
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
+  preconditions:
+  - A valid 36 Agreement is on file without special-clause invocation for the year.
+  exceptions:
+  - A special-clause 36 Agreement may allow up to 720 hours/year, subject to monthly and multi-month average caps.
+  following_examples:
+  - Employee's annual overtime total is 340 hours at year-end — within the 360-hour limit.
+  violation_examples:
+  - Employee's annual overtime reaches 380 hours with no special-clause agreement in effect.
 - statement: Even with a special-clause 36 Agreement, monthly overtime MUST NOT exceed 100 hours (including holiday work),
     and the average over any 2-6 month period MUST NOT exceed 80 hours.
   modality: MUST_NOT
@@ -126,18 +165,27 @@ rules:
   - overtime
   - absolute-cap
   - special-clause
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: The absolute cap introduced by the Work Style Reform Act applies even when special clauses are invoked. Violation
     carries criminal penalties.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '36'
     paragraph: '6'
+  preconditions:
+  - A special-clause 36 Agreement is in effect.
+  exceptions:
+  - Certain industries (construction, automobile transport, medical professionals) had transitional grace periods until April 2024.
+  following_examples:
+  - Employee works 95 hours of overtime (including holiday work) in a month under a special clause — within the 100-hour cap.
+  - Employee's rolling 3-month average is 78 hours — within the 80-hour average cap.
   violation_examples:
   - Employee works 105 hours of overtime (including holiday work) in a single month.
   - Employee averages 85 hours/month over a 3-month period.
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
 - statement: Annual overtime MUST NOT exceed 720 hours even under a special-clause 36 Agreement.
   modality: MUST_NOT
   severity: CRITICAL
@@ -147,14 +195,24 @@ rules:
   - overtime
   - annual-cap
   - special-clause
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Absolute annual cap per Labor Standards Act Article 36(5).
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '36'
     paragraph: '5'
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
+  preconditions:
+  - A special-clause 36 Agreement is in effect.
+  exceptions:
+  - New technology R&D workers (新技術・新商品の研究開発) are exempt from the annual cap under Art. 36(11), though health measures are required.
+  following_examples:
+  - Employee's annual overtime total under a special clause is 700 hours — within the 720-hour cap.
+  violation_examples:
+  - Employee's annual overtime reaches 750 hours despite a special-clause agreement.
 - statement: Overtime premium pay MUST be at least 25% above the base hourly wage for hours exceeding the statutory limit.
   modality: MUST
   severity: HIGH
@@ -164,18 +222,24 @@ rules:
   - overtime
   - premium-pay
   - wages
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 37(1) requires premium pay for overtime work.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '37'
     paragraph: '1'
+  preconditions:
+  - Employee has worked beyond the statutory daily or weekly working hours.
+  exceptions:
+  - Employees in managerial/supervisory positions (管理監督者) under Art. 41(2) are not entitled to overtime premium (but late-night premium still applies).
   following_examples:
   - Employee's base rate is 2000 yen/hour; overtime rate is 2500 yen/hour (25% premium).
   violation_examples:
   - Employee works 3 hours overtime but is paid the same base rate.
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
 - statement: When monthly overtime exceeds 60 hours, the premium rate MUST be at least 50% above base hourly wage for the
     excess hours.
   modality: MUST
@@ -186,14 +250,24 @@ rules:
   - overtime
   - premium-pay
   - 60-hour-rule
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 37(1) proviso, effective for all employers since April 2023.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '37'
     paragraph: 1 proviso
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
+  preconditions:
+  - Employee's monthly overtime exceeds 60 hours.
+  exceptions:
+  - Employer and employee may agree to substitute compensatory leave (代替休暇) for the additional 25% premium portion (i.e., the difference between 50% and 25%).
+  following_examples:
+  - Employee works 70 hours of overtime; hours 1-60 are at 25% premium, hours 61-70 are at 50% premium.
+  violation_examples:
+  - Employee works 65 hours of overtime but the entire period is paid at only 25% premium.
 - statement: Employees working more than 6 hours in a day MUST be granted at least 45 minutes of break time.
   modality: MUST
   severity: HIGH
@@ -202,18 +276,24 @@ rules:
   tags:
   - breaks
   - rest-period
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 34(1) mandates minimum break periods.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '34'
     paragraph: '1'
+  preconditions:
+  - Employee's scheduled or actual working hours exceed 6 hours for the day.
+  exceptions:
+  - Workers in certain transport or communication roles may have breaks scheduled differently under industry-specific ordinances.
   following_examples:
   - Employee works 7 hours and takes a 45-minute lunch break.
   violation_examples:
   - Employee works a 7-hour shift with only a 30-minute break.
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
 - statement: Employees working more than 8 hours in a day MUST be granted at least 60 minutes of break time.
   modality: MUST
   severity: HIGH
@@ -222,14 +302,24 @@ rules:
   tags:
   - breaks
   - rest-period
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 34(1) requires at least 1 hour of break for workdays exceeding 8 hours.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '34'
     paragraph: '1'
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
+  preconditions:
+  - Employee's scheduled or actual working hours exceed 8 hours for the day.
+  exceptions:
+  - The 60-minute break may be split into multiple periods (e.g., two 30-minute breaks) if permitted by labor-management agreement.
+  following_examples:
+  - Employee works 9 hours with a 60-minute lunch break.
+  violation_examples:
+  - Employee works a 9-hour shift with only a 45-minute break.
 - statement: Break time MUST be granted during the working hours, not at the beginning or end of the shift.
   modality: MUST
   severity: MEDIUM
@@ -238,15 +328,25 @@ rules:
   tags:
   - breaks
   - scheduling
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 34(2) requires breaks to be granted mid-shift. Breaks placed at the start or end
     of the workday do not fulfill the statutory requirement.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '34'
     paragraph: '2'
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
+  preconditions:
+  - Break time is required under Art. 34(1).
+  exceptions:
+  - None. This is a mandatory requirement for all break periods.
+  following_examples:
+  - Employee's 8-hour shift from 9:00-18:00 includes a break from 12:00-13:00.
+  violation_examples:
+  - Employee's shift starts at 9:00 and the company counts the period 9:00-9:45 as a break, then works continuously until 17:45.
 - statement: Employers MUST grant at least one day off per week, or four days off per four-week period.
   modality: MUST
   severity: HIGH
@@ -255,17 +355,23 @@ rules:
   tags:
   - holidays
   - weekly-rest
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 35 requires weekly rest days.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '35'
+  preconditions:
+  - Employee is subject to standard working-hour provisions.
+  exceptions:
+  - Holiday work is permissible with a valid 36 Agreement, but compensatory days off (代休) should be granted.
   following_examples:
   - Employee works Monday-Friday and has Saturday and Sunday off each week.
   violation_examples:
   - Employee works 13 consecutive days without a day off.
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
 - statement: Work on statutory holidays MUST be compensated at a premium rate of at least 35% above base hourly wage.
   modality: MUST
   severity: HIGH
@@ -274,14 +380,24 @@ rules:
   tags:
   - holidays
   - premium-pay
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 37(1) specifies the holiday work premium rate.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '37'
     paragraph: '1'
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
+  preconditions:
+  - Employee works on a day designated as a statutory holiday (法定休日).
+  exceptions:
+  - Company-designated holidays (法定外休日) that are not statutory holidays may be subject to different premium rates per company policy.
+  following_examples:
+  - Employee works on a Sunday (designated statutory holiday) and receives 135% of base hourly wage.
+  violation_examples:
+  - Employee works on a statutory holiday but receives only the normal base rate.
 - statement: Employees who have worked continuously for 6 months with an attendance rate of 80% or higher MUST be granted
     at least 10 days of annual paid leave.
   modality: MUST
@@ -292,18 +408,25 @@ rules:
   - paid-leave
   - annual-leave
   - entitlement
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 39(1-2) establishes the minimum paid leave entitlement.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '39'
     paragraph: 1-2
+  preconditions:
+  - Employee has been employed continuously for at least 6 months.
+  - Employee's attendance rate is 80% or higher during the qualifying period.
+  exceptions:
+  - Part-time employees with fewer scheduled working days receive proportionally reduced leave (比例付与) under Art. 39(3).
   following_examples:
   - Employee has been with the company for 7 months, attended 85% of days, and is granted 10 days of paid leave.
   violation_examples:
   - Employee who has worked 8 months with 90% attendance is told they have no paid leave entitlement.
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
 - statement: Employers MUST ensure that employees with 10 or more days of annual paid leave take at least 5 days per year.
   modality: MUST
   severity: HIGH
@@ -312,17 +435,25 @@ rules:
   tags:
   - paid-leave
   - mandatory-usage
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 39(7), added by Work Style Reform Act, requires employers to ensure minimum leave
     usage.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '39'
     paragraph: '7'
+  preconditions:
+  - Employee has been granted 10 or more days of annual paid leave for the year.
+  exceptions:
+  - Days taken at the employee's own initiative or through a planned leave schedule (計画年休) count toward the 5-day requirement.
+  following_examples:
+  - Employer designates 5 dates as planned leave days at the start of the year for employees who have not yet scheduled their own leave.
   violation_examples:
   - Employee with 15 days entitlement has taken 0 days by December and no management intervention occurs.
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
 - statement: Unused annual paid leave SHOULD be carried over for up to 2 years from the date of entitlement, in accordance
     with the statute of limitations.
   modality: SHOULD
@@ -332,14 +463,24 @@ rules:
   tags:
   - paid-leave
   - carryover
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 115 (via Civil Code statute of limitations) allows leave claims for up to 2 years.
     Company policy should reflect this.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '115'
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
+  preconditions:
+  - Employee has unused paid leave days from a prior entitlement period.
+  exceptions:
+  - Company policies that provide more generous carryover (e.g., 3 years) are permissible as they exceed the statutory minimum.
+  following_examples:
+  - Employee has 5 unused days from last year's entitlement; they are carried forward and available this year.
+  violation_examples:
+  - Company policy states unused leave expires after 1 year, below the statutory 2-year minimum.
 - statement: Employees under 18 years of age MUST NOT be assigned to work between 22:00 and 05:00.
   modality: MUST_NOT
   severity: CRITICAL
@@ -349,15 +490,23 @@ rules:
   - minors
   - late-night
   - youth-protection
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 61 prohibits late-night work for minors.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '61'
+  preconditions:
+  - Employee is under 18 years of age.
+  exceptions:
+  - Male minors aged 16 or older in shift-work positions may work late-night hours under specific conditions outlined in Art. 61 proviso.
+  following_examples:
+  - A 17-year-old part-time worker's shift ends at 21:30, before the late-night period.
   violation_examples:
   - A 17-year-old part-time worker is scheduled for a shift ending at 23:00.
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
 - statement: Late-night work (22:00-05:00) MUST be compensated at a premium rate of at least 25% above base hourly wage.
   modality: MUST
   severity: HIGH
@@ -366,14 +515,24 @@ rules:
   tags:
   - late-night
   - premium-pay
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 37(4) requires a premium for late-night work.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '37'
     paragraph: '4'
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
+  preconditions:
+  - Employee works during the late-night period (22:00-05:00).
+  exceptions:
+  - Managerial/supervisory employees (管理監督者) are exempt from overtime premium but are still entitled to late-night premium.
+  following_examples:
+  - Employee works until 23:00; the hour from 22:00-23:00 is paid at 125% of base rate.
+  violation_examples:
+  - Employee works 22:00-01:00 but receives no late-night premium.
 - statement: A pregnant employee who requests leave MUST be granted 6 weeks of prenatal leave (14 weeks for multiple pregnancy).
     Post-natal leave of 8 weeks MUST be granted regardless of request.
   modality: MUST
@@ -384,17 +543,23 @@ rules:
   - maternity
   - prenatal
   - postnatal
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 65 mandates maternity leave periods.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '65'
+  preconditions:
+  - Employee is pregnant or has recently given birth.
+  exceptions:
+  - Post-natal leave after the first 6 weeks (of the 8-week period) may be shortened if the employee requests to return and a doctor certifies fitness.
   following_examples:
   - Employee is granted 6 weeks before and 8 weeks after the expected delivery date.
   violation_examples:
   - Employer denies prenatal leave request, telling the employee to use paid leave instead.
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
 - statement: An employer MUST NOT dismiss an employee during maternity leave or within 30 days after the leave period ends.
   modality: MUST_NOT
   severity: CRITICAL
@@ -403,13 +568,23 @@ rules:
   tags:
   - maternity
   - dismissal-protection
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 19 prohibits dismissal during and shortly after maternity leave.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '19'
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
+  preconditions:
+  - Employee is currently on maternity leave or within 30 days of returning from maternity leave.
+  exceptions:
+  - Dismissal is permitted if the employer pays the statutory allowance for dismissal during the restricted period and obtains approval from the Labor Standards Inspection Office (Art. 19 proviso, Art. 81).
+  following_examples:
+  - Employee returns from maternity leave and continues employment without any adverse action for 30+ days.
+  violation_examples:
+  - Employer terminates employee 2 weeks after she returns from maternity leave.
 - statement: Employees raising children under 3 years old who request shorter working hours MUST be accommodated with a reduced
     schedule (generally 6 hours/day).
   modality: MUST
@@ -420,13 +595,25 @@ rules:
   - childcare
   - shortened-hours
   - work-life-balance
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Childcare and Family Care Leave Act Article 23 requires accommodation for parents of young children.
   source_refs:
-  - statute: Childcare and Family Care Leave Act
+  - statute: Childcare and Family Care Leave Act (育児・介護休業法)
     article: '23'
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
+  preconditions:
+  - Employee is raising a child under 3 years old.
+  - Employee has made a request for shortened working hours.
+  exceptions:
+  - Employees employed on a daily basis are excluded.
+  - Employees who have been employed for less than 1 year may be excluded by labor-management agreement.
+  following_examples:
+  - Parent of a 2-year-old requests and is granted a 6-hour workday schedule.
+  violation_examples:
+  - Manager denies request for shortened hours, citing project deadlines.
 - statement: Employees caring for a family member requiring long-term care MUST be granted up to 93 days of family care leave
     per eligible family member.
   modality: MUST
@@ -436,13 +623,25 @@ rules:
   tags:
   - family-care
   - leave-entitlement
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Childcare and Family Care Leave Act Article 11 establishes the minimum family care leave entitlement.
   source_refs:
-  - statute: Childcare and Family Care Leave Act
+  - statute: Childcare and Family Care Leave Act (育児・介護休業法)
     article: '11'
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
+  preconditions:
+  - Employee has a family member (spouse, parent, child, grandparent, sibling, grandchild, or in-law) requiring long-term care.
+  - Employee has submitted a care leave request.
+  exceptions:
+  - Employees employed on a daily basis are excluded.
+  - Employees who have been employed for less than 1 year may be excluded by labor-management agreement.
+  following_examples:
+  - Employee applies for 30 days of family care leave to care for an elderly parent and the leave is granted.
+  violation_examples:
+  - Employer refuses family care leave, stating the employee has not been with the company long enough (despite being employed over 1 year).
 - statement: Employers MUST maintain accurate records of each employee's working hours, including start time, end time, and
     break periods, for at least 5 years.
   modality: MUST
@@ -453,18 +652,24 @@ rules:
   - record-keeping
   - compliance
   - audit
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Labor Standards Act Article 109 requires retention of wage and labor records. The retention period was extended
     from 3 to 5 years (with a transitional 3-year period) by the 2020 amendment.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '109'
+  preconditions:
+  - Employer has employees subject to working-hour record requirements.
+  exceptions:
+  - The transitional measure allows a 3-year retention period until the permanent 5-year rule takes full effect.
   following_examples:
   - Company uses a digital attendance system that logs clock-in, clock-out, and break times, retained for 5 years.
   violation_examples:
   - Company only tracks hours informally in a spreadsheet and deletes records after 1 year.
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory
 - statement: Employers MUST NOT allow employees to under-report working hours (so-called 'service overtime' or サービス残業).
   modality: MUST_NOT
   severity: CRITICAL
@@ -474,15 +679,23 @@ rules:
   - record-keeping
   - service-overtime
   - compliance
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
   rationale: Unreported overtime is a violation of the Labor Standards Act and is aggressively enforced by the Labor Standards
     Inspection Office. It also creates liability for unpaid wages.
   source_refs:
-  - statute: Labor Standards Act
+  - statute: Labor Standards Act (労働基準法)
     article: '32'
     note: 'Enforcement guideline: ''Guidelines on Appropriate Recording of Working Hours'' (労働時間の適正な把握のために使用者が講ずべき措置に関するガイドライン)'
+  preconditions:
+  - Employees are performing work beyond scheduled hours.
+  exceptions:
+  - None. Service overtime is never permissible regardless of employee consent or managerial instruction.
+  following_examples:
+  - Company installs an objective time-tracking system (IC card, PC login times) and reconciles discrepancies monthly.
   violation_examples:
   - Manager instructs employees to clock out at the scheduled time even when continuing to work.
   - Company culture pressures employees not to record overtime under 30 minutes.
-  applicable_subject_types: *id001
-  jurisdiction: jp
-  legal_force: statutory

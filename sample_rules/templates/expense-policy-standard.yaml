@@ -1,0 +1,563 @@
+version: 1
+template:
+  name: expense-policy-standard
+  description: Corporate expense policy rules covering travel, entertainment, receipts, approvals, tax compliance, and fraud prevention (Japan-focused with globally applicable controls)
+  tags:
+  - finance
+  - expenses
+  - japan
+  - travel
+  - entertainment
+  - tax
+  - controls
+rules:
+- statement: Expense reports MUST be submitted within 30 calendar days of the expense date. Reports older than 60 days MUST
+    NOT be accepted without CFO approval.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses
+  tags:
+  - submission
+  - timeliness
+  applicable_subject_types:
+  - transaction
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Timely submission ensures accurate period accounting and prevents fiscal-year-end backlogs.
+  source_refs:
+  - authority: Company expense policy
+    note: Standard corporate control aligned with period-end close requirements.
+  preconditions:
+  - Employee has incurred a business expense.
+  exceptions:
+  - Employees on extended business travel or medical leave may request an extension from the finance department.
+  following_examples:
+  - Employee incurs expense on March 1 and submits the report on March 25 — within 30-day window.
+  violation_examples:
+  - Employee submits a report 45 days after the expense without any justification.
+- statement: All expense claims exceeding 1,000 JPY MUST be accompanied by an original receipt or a legally compliant electronic
+    substitute.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  tags:
+  - receipts
+  - documentation
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: Tax authorities require documentary evidence for deductible business expenses.
+  source_refs:
+  - authority: Corporation Tax Act (法人税法)
+    note: Documentary evidence requirements for deductible expenses.
+  - authority: National Tax Agency guidelines on electronic record-keeping (電子帳簿保存法)
+    note: Permits electronic receipt storage under specified conditions since January 2024.
+  preconditions:
+  - The expense amount exceeds 1,000 JPY.
+  exceptions:
+  - Public transport fares under 1,000 JPY where receipts are not customarily issued (e.g., bus, local train) may be documented via a self-declaration form.
+  following_examples:
+  - Employee photographs the receipt using the approved expense app immediately after purchase.
+  violation_examples:
+  - Employee submits a 5,000 JPY taxi claim with no receipt or substitute documentation.
+- statement: Expense claims MUST NOT include personal expenses. Mixed-use expenses MUST be split with only the business portion
+    claimed.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - finance/expenses
+  tags:
+  - personal-expenses
+  - fraud-prevention
+  applicable_subject_types:
+  - transaction
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Claiming personal expenses as business expenses constitutes fraud and tax evasion.
+  source_refs:
+  - authority: Company expense policy
+    note: Universal internal control principle; personal expense claims may also violate criminal law.
+  preconditions:
+  - Employee is submitting an expense claim.
+  exceptions:
+  - None. Personal expenses are never reimbursable.
+  following_examples:
+  - Employee on a business trip has dinner. The business-related portion is claimed; the personal meal for a companion is excluded.
+  violation_examples:
+  - Employee claims a family dinner as a client entertainment expense.
+  - Employee claims a personal phone bill as a business expense without splitting the business portion.
+- statement: Domestic travel allowance (日当) MUST NOT exceed the company's published per-diem schedule. The schedule MUST distinguish
+    between day trips and overnight stays.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  - finance/travel
+  tags:
+  - per-diem
+  - travel
+  - allowance
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: Per-diem rates above reasonable levels may be treated as taxable income by the NTA.
+  source_refs:
+  - authority: Income Tax Act (所得税法)
+    article: '9'
+    note: Non-taxable travel allowance must be within 'normal and necessary' range per NTA guidance.
+  preconditions:
+  - Employee is traveling on company business and claiming a per-diem allowance.
+  exceptions:
+  - Executives may have a separate, higher per-diem schedule if documented in the company travel regulations and within NTA guidelines.
+  following_examples:
+  - Employee takes a day trip to Osaka and claims the published day-trip per-diem of 2,000 JPY.
+  violation_examples:
+  - Employee claims 10,000 JPY per-diem for a domestic day trip when the published rate is 2,000 JPY.
+- statement: Domestic airfare MUST be economy class for flights under 4 hours. Business class requires prior manager approval.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - finance/expenses/jp
+  - finance/travel
+  tags:
+  - airfare
+  - travel-class
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: Cost control on short-haul domestic flights; business class reserved for longer trips or medical necessity.
+  source_refs:
+  - authority: Company travel policy
+    note: Standard cost-control measure.
+  preconditions:
+  - Employee is booking a domestic flight for business travel.
+  exceptions:
+  - Employees with documented medical conditions requiring additional space may book business class with HR approval.
+  - Flights over 4 hours (e.g., to remote islands) are eligible for business class at manager discretion.
+  following_examples:
+  - Employee books economy class for a Tokyo-Osaka flight (1 hour) without requiring additional approval.
+  violation_examples:
+  - Employee books business class for a Tokyo-Fukuoka flight (2 hours) without prior manager approval.
+- statement: International travel MUST be pre-approved by the department head before booking. Post-facto approval is not permitted
+    except for emergencies.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses
+  - finance/travel
+  tags:
+  - international-travel
+  - pre-approval
+  applicable_subject_types:
+  - transaction
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: International travel involves significant cost and visa/compliance implications requiring advance planning.
+  source_refs:
+  - authority: Company travel policy
+    note: Standard governance control for international travel budgets and compliance.
+  preconditions:
+  - Employee intends to travel internationally for business purposes.
+  exceptions:
+  - Emergency travel (e.g., critical client incident, force majeure) may be approved retroactively by the department head within 5 business days.
+  following_examples:
+  - Employee submits an international travel request to the department head 3 weeks before the trip and receives written approval before booking.
+  violation_examples:
+  - Employee books a flight to Singapore and submits the expense after returning without any prior approval.
+- statement: Hotel accommodation MUST NOT exceed the company's published nightly rate cap for the destination city tier.
+  modality: MUST_NOT
+  severity: MEDIUM
+  scope:
+  - finance/expenses
+  - finance/travel
+  tags:
+  - accommodation
+  - rate-cap
+  applicable_subject_types:
+  - transaction
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Rate caps prevent excessive spending while allowing reasonable comfort.
+  source_refs:
+  - authority: Company travel policy
+    note: Rate caps are typically published internally and updated annually based on market rates.
+  preconditions:
+  - Employee is booking hotel accommodation for business travel.
+  exceptions:
+  - Conferences or events where the only available hotel exceeds the cap may be approved by the department head in advance.
+  - Rate caps may be exceeded by up to 20% in high-demand periods (e.g., major trade shows) with documented justification.
+  following_examples:
+  - Employee books a hotel at 12,000 JPY/night in a city with a 15,000 JPY rate cap.
+  violation_examples:
+  - Employee books a 30,000 JPY/night hotel in a city with a 15,000 JPY rate cap without prior approval.
+- statement: Taxi expenses for trips with available public transit alternatives SHOULD include a brief justification (e.g.,
+    late night, heavy luggage, client meeting).
+  modality: SHOULD
+  severity: LOW
+  scope:
+  - finance/expenses
+  - finance/travel
+  tags:
+  - taxi
+  - justification
+  - transport
+  applicable_subject_types:
+  - transaction
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Encourages cost-conscious transport choices without rigid prohibition.
+  source_refs:
+  - authority: Company travel policy
+    note: Best-practice control for ground transportation spending.
+  preconditions:
+  - Employee is claiming a taxi expense in an area with public transit options.
+  exceptions:
+  - Taxi use after 22:00 or before 06:00 does not require justification.
+  - Taxi use when carrying heavy equipment or sensitive materials is accepted without justification.
+  following_examples:
+  - Employee notes 'client meeting at off-transit location' in the justification field for a 3,000 JPY taxi receipt.
+  violation_examples:
+  - Employee submits five taxi receipts totaling 15,000 JPY for a week of commuting with no justification noted.
+- statement: Entertainment expenses (接待交際費) MUST record the date, venue, attendees (names and affiliations), business purpose,
+    and amount.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  - finance/entertainment
+  tags:
+  - entertainment
+  - documentation
+  - tax
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: Corporation Tax Act requires detailed records for entertainment expense deductions. Missing details may trigger
+    tax adjustments.
+  source_refs:
+  - statute: Corporation Tax Act (法人税法)
+    article: 61-4
+  preconditions:
+  - Employee is claiming an entertainment expense.
+  exceptions:
+  - Internal team meals (社内飲食) are not classified as entertainment expenses and follow different documentation rules.
+  following_examples:
+  - Expense report lists date (2025-03-15), venue (Restaurant ABC, Minato-ku), attendees (John Smith, Acme Corp; Tanaka Taro, our company), purpose (partnership discussion), and amount (12,000 JPY).
+  violation_examples:
+  - Expense report for a 20,000 JPY dinner lists only 'client dinner' with no attendee names or business purpose.
+- statement: Per-person entertainment spending MUST NOT exceed 5,000 JPY (tax-excluded) to qualify for the small-scale entertainment
+    expense exemption.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  - finance/entertainment
+  tags:
+  - entertainment
+  - 5000-yen-rule
+  - tax
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: statutory
+  classification: internal
+  rationale: The 5,000 JPY per-person threshold is the NTA criterion for the simplified entertainment expense treatment.
+  source_refs:
+  - statute: Rental Tax Special Measures Act (租税特別措置法)
+    article: 61-4(1)
+    note: Effective threshold for small-scale entertainment expense exclusion from the entertainment-expense cap.
+  preconditions:
+  - The entertainment expense is being claimed under the small-scale exemption.
+  exceptions:
+  - If the company elects to treat the expense as a standard entertainment expense (within the entertainment expense limit), the 5,000 JPY per-person cap does not apply.
+  following_examples:
+  - Dinner for 4 people totaling 18,000 JPY (tax-excluded) — 4,500 JPY per person, within the 5,000 JPY threshold.
+  violation_examples:
+  - Dinner for 3 people totaling 18,000 JPY (tax-excluded) — 6,000 JPY per person, exceeding the threshold but claimed under the exemption.
+- statement: Entertainment of government officials MUST NOT be conducted without prior compliance-team approval.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - finance/expenses/jp
+  - compliance/anti-bribery
+  tags:
+  - entertainment
+  - government-officials
+  - anti-bribery
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: Entertainment of public officials carries bribery risk under the Penal Code and National Public Service Ethics
+    Act.
+  source_refs:
+  - statute: Penal Code (刑法)
+    article: '198'
+    note: Bribery of public officials.
+  - statute: National Public Service Ethics Act (国家公務員倫理法)
+    note: Restrictions on gifts and entertainment to national government officials.
+  preconditions:
+  - The planned entertainment involves a current government official (national or local).
+  exceptions:
+  - Attendance at publicly open events (conferences, seminars) where government officials are also present does not constitute entertainment requiring approval.
+  following_examples:
+  - Employee obtains compliance-team approval before hosting a working lunch with a government regulator, documenting the business purpose and keeping costs modest.
+  violation_examples:
+  - Employee takes a government procurement officer to an expensive dinner without informing the compliance team.
+- statement: Expense claims under 50,000 JPY MUST be approved by the direct manager. Claims of 50,000 JPY or more MUST be
+    approved by the department head.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  tags:
+  - approval
+  - authority-matrix
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: Tiered approval ensures appropriate oversight proportional to expenditure.
+  source_refs:
+  - authority: Company expense policy
+    note: Standard segregation-of-duties control in expense management.
+  preconditions:
+  - Employee has submitted an expense claim.
+  exceptions:
+  - Claims by the department head are approved by the next level up (division head or CFO).
+  following_examples:
+  - Employee submits a 30,000 JPY travel expense; the direct manager reviews and approves.
+  violation_examples:
+  - Employee submits a 75,000 JPY expense claim and the direct manager approves it without department-head sign-off.
+- statement: Expense claims over 300,000 JPY MUST be approved by the CFO or finance director in addition to the department
+    head.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  tags:
+  - approval
+  - high-value
+  - cfo
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: High-value claims require senior finance oversight for budget control.
+  source_refs:
+  - authority: Company expense policy
+    note: High-value expense control aligned with internal audit requirements.
+  preconditions:
+  - The expense claim amount exceeds 300,000 JPY.
+  exceptions:
+  - Pre-approved budget items (e.g., conference registration fees included in the annual training budget) may follow a simplified approval if the budget was already approved by the CFO.
+  following_examples:
+  - Employee submits a 500,000 JPY conference and travel expense; both the department head and CFO review and approve.
+  violation_examples:
+  - Employee submits a 400,000 JPY expense claim that is approved only by the department head, bypassing the CFO.
+- statement: 'Invoices submitted for payment MUST comply with the Qualified Invoice System (インボイス制度) requirements: registered
+    invoice issuer number, applicable tax rate, and tax amount.'
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  - finance/invoices
+  tags:
+  - invoice
+  - qualified-invoice
+  - consumption-tax
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: statutory
+  classification: internal
+  rationale: Since October 2023, only qualified invoices support input tax credit claims.
+  source_refs:
+  - statute: Consumption Tax Act (消費税法)
+    article: 57-4
+    note: Qualified Invoice System (適格請求書等保存方式) requirements.
+  preconditions:
+  - The company is a consumption-tax-registered business claiming input tax credits.
+  exceptions:
+  - Transitional measures (2023-2029) allow partial input tax credit for invoices from non-registered businesses at a declining rate (80% until Oct 2026, 50% until Oct 2029).
+  following_examples:
+  - Invoice includes the issuer's registered number (T1234567890123), itemized tax rates (10% and 8%), and calculated tax amounts.
+  violation_examples:
+  - Invoice from a vendor lacks a registered issuer number and the full input tax credit is claimed.
+- statement: Vendor invoices without a valid registered invoice issuer number (T+13 digits) MUST be flagged for review and
+    the reduced tax-credit treatment applied.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  - finance/invoices
+  tags:
+  - invoice
+  - issuer-number
+  - tax-credit
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: statutory
+  classification: internal
+  rationale: Non-qualified invoices receive reduced (then zero) input tax credit under the transitional rules.
+  source_refs:
+  - statute: Consumption Tax Act (消費税法)
+    note: Transitional measures for non-qualified invoices (経過措置).
+  preconditions:
+  - A vendor invoice is submitted for payment and lacks a valid registered issuer number.
+  exceptions:
+  - Invoices under 10,000 JPY from certain small-scale vendors may be eligible for simplified treatment during the transitional period.
+  following_examples:
+  - Finance team flags a vendor invoice without a T-number, applies the 80% credit rate (during the first transitional period), and notifies the vendor about registration.
+  violation_examples:
+  - Finance team processes a non-qualified invoice at the full 100% input tax credit rate.
+- statement: Foreign-currency expenses MUST be converted to JPY using the exchange rate on the transaction date or the company's
+    published monthly rate, whichever the policy specifies.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - finance/expenses
+  tags:
+  - currency
+  - exchange-rate
+  - foreign
+  applicable_subject_types:
+  - transaction
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Consistent exchange rate application prevents manipulation and aligns with accounting standards.
+  source_refs:
+  - authority: Company expense policy
+    note: Aligns with JGAAP and IFRS requirements for foreign currency translation.
+  preconditions:
+  - The expense was incurred in a currency other than JPY.
+  exceptions:
+  - Corporate credit card charges may be converted at the card issuer's rate if the company policy accepts this as the definitive rate.
+  following_examples:
+  - Employee converts a USD 100 expense at the BOJ reference rate on the transaction date.
+  violation_examples:
+  - Employee cherry-picks the most favorable exchange rate from the month to maximize the reimbursement amount.
+- statement: Foreign transaction fees and currency conversion charges MAY be claimed as part of the expense.
+  modality: MAY
+  severity: LOW
+  scope:
+  - finance/expenses
+  tags:
+  - currency
+  - fees
+  applicable_subject_types:
+  - transaction
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Bank fees for foreign transactions are a legitimate business cost.
+  source_refs:
+  - authority: Company expense policy
+    note: Standard practice for international business operations.
+  preconditions:
+  - The employee incurred foreign transaction or currency conversion fees in connection with a business expense.
+  exceptions:
+  - Fees from personal credit cards used for business expenses may not be reimbursable if the company provides a corporate card.
+  following_examples:
+  - Employee includes a 300 JPY foreign transaction fee charged by the corporate card issuer on a USD purchase.
+  violation_examples:
+  - Employee claims excessive foreign exchange fees from a personal currency exchange service when a corporate card was available.
+- statement: Expense claims MUST NOT be split across multiple submissions to circumvent approval thresholds.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - finance/expenses
+  tags:
+  - splitting
+  - fraud-prevention
+  applicable_subject_types:
+  - transaction
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Expense splitting is a common fraud pattern and violates internal controls.
+  source_refs:
+  - authority: Company expense policy
+    note: Anti-fraud control; splitting is a red flag in internal audit reviews.
+  preconditions:
+  - Employee has incurred a single expense or a set of related expenses.
+  exceptions:
+  - Legitimately separate expenses (e.g., hotel booked separately from airfare for the same trip) are not considered splitting.
+  following_examples:
+  - Employee submits a single report for a business dinner totaling 70,000 JPY, routed to department-head approval.
+  violation_examples:
+  - Employee splits a 70,000 JPY dinner into two 35,000 JPY claims to avoid department-head approval.
+- statement: All expense records MUST be retained for at least 7 years in accordance with the Corporation Tax Act.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  tags:
+  - retention
+  - compliance
+  - tax
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: statutory
+  classification: internal
+  rationale: The Corporation Tax Act requires retention of accounting records for 7 years from the end of the fiscal year.
+  source_refs:
+  - statute: Corporation Tax Act (法人税法)
+    article: '126'
+    note: Retention period for accounting books and documentary evidence.
+  preconditions:
+  - Expense records have been processed and filed.
+  exceptions:
+  - Records subject to a legal hold or regulatory investigation must be retained beyond the 7-year period until the hold is released.
+  following_examples:
+  - Company retains all expense reports, receipts, and approval records in the document management system for 7 years.
+  violation_examples:
+  - Company purges expense records after 3 years to save storage costs.
+- statement: Corporate credit card statements MUST be reconciled monthly. Unreconciled charges older than 45 days MUST be
+    escalated to the cardholder's manager.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses
+  tags:
+  - credit-card
+  - reconciliation
+  - controls
+  applicable_subject_types:
+  - transaction
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Monthly reconciliation prevents unauthorized charges from going undetected and ensures timely expense categorization.
+  source_refs:
+  - authority: Company expense policy
+    note: Standard internal control for corporate card programs.
+  preconditions:
+  - Employee holds a corporate credit card.
+  exceptions:
+  - Charges under dispute with the card issuer may be excluded from the escalation timeline until the dispute is resolved.
+  following_examples:
+  - Employee reconciles all March charges by April 15 and submits expense reports for each business charge.
+  violation_examples:
+  - Employee has 10 unreconciled charges from 2 months ago and no escalation has occurred.
