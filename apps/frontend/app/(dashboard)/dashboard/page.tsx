@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 
 import { usePersona, type Persona } from "../PersonaSwitcher";
 
