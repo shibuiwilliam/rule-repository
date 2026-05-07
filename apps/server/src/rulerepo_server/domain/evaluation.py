@@ -13,11 +13,13 @@ from typing import Any
 
 
 class Verdict(StrEnum):
-    """Result of evaluating an action or code change against a rule."""
+    """Result of evaluating an action against a rule."""
 
     ALLOW = "ALLOW"
     DENY = "DENY"
     NEEDS_CONFIRMATION = "NEEDS_CONFIRMATION"
+    ALLOW_WITH_CONDITIONS = "ALLOW_WITH_CONDITIONS"
+    REQUIRES_DISCLOSURE = "REQUIRES_DISCLOSURE"
 
 
 @dataclass(frozen=True)
@@ -76,16 +78,61 @@ class Remediation:
 
     Agents and CI pipelines can apply auto_applicable remediations without human
     review. Non-auto remediations require human approval before application.
+
+    Subclasses provide domain-specific remediation semantics.
     """
 
-    type: str  # "replace", "insert", "delete", "add_import", "rename"
-    file_path: str
-    start_line: int
+    type: str  # "replace", "insert", "delete", "add_import", "rename", "workflow", "clause_revision"
+    file_path: str = ""
+    start_line: int = 0
     end_line: int | None = None
     original: str | None = None
     replacement: str | None = None
     description: str = ""
     auto_applicable: bool = False
+
+
+@dataclass(frozen=True)
+class CodeRemediation(Remediation):
+    """Remediation for code changes — file-level patches."""
+
+    pass  # Inherits all fields; type is "replace", "insert", "delete", "add_import", "rename"
+
+
+@dataclass(frozen=True)
+class ContractClauseRemediation(Remediation):
+    """Remediation for contract clauses — suggested clause revisions."""
+
+    clause_id: str = ""
+    revised_text: str = ""
+    requires_counterparty_consent: bool = True
+
+
+@dataclass(frozen=True)
+class HrEventRemediation(Remediation):
+    """Remediation for HR events — corrective actions or approvals."""
+
+    action_required: str = ""  # e.g., "obtain_36_agreement", "reduce_overtime", "file_notification"
+    deadline_days: int | None = None
+    escalation_target: str = ""  # e.g., "department_head", "labor_standards_office"
+
+
+@dataclass(frozen=True)
+class ExpenseRemediation(Remediation):
+    """Remediation for expense claims — return for revision or additional approval."""
+
+    required_documentation: str = ""  # e.g., "original_receipt", "manager_approval"
+    revised_amount: float | None = None
+    approval_level: str = ""  # e.g., "manager", "department_head", "cfo"
+
+
+@dataclass(frozen=True)
+class WorkflowRemediation(Remediation):
+    """Remediation that triggers a workflow or approval process."""
+
+    workflow_type: str = ""  # e.g., "approval", "review", "notification", "hold"
+    assignee: str = ""
+    priority: str = "normal"  # "low", "normal", "high", "urgent"
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "Rule Repository",
+    "tagline": "Manage, search, and enforce natural-language rules"
+  },
+  "nav": {
+    "manage": "Manage",
+    "observe": "Observe",
+    "enforce": "Enforce",
+    "settings": "Settings"
+  },
+  "pages": {
+    "dashboard": "Dashboard",
+    "rules": "Rules",
+    "proposals": "Proposals",
+    "search": "Search",
+    "documents": "Documents",
+    "discover": "Discover",
+    "federations": "Federations",
+    "playground": "Playground",
+    "snapshots": "Snapshots",
+    "tutor": "Tutor",
+    "intelligence": "Intelligence",
+    "feedback": "Feedback",
+    "notifications": "Notifications",
+    "agents": "Agents",
+    "audit": "Audit",
+    "review": "Review",
+    "gateway": "Gateway",
+    "integrations": "Integrations",
+    "projects": "Projects",
+    "onboarding": "Get Started"
+  },
+  "persona": {
+    "label": "Persona",
+    "all": "All Roles",
+    "compliance": "Compliance Officer",
+    "legal": "Legal Counsel",
+    "hr": "HR Manager",
+    "finance": "Finance Controller",
+    "engineering": "Engineering Lead",
+    "sales": "Sales Manager",
+    "executive": "Executive"
+  },
+  "dashboard": {
+    "complianceRate": "Compliance Rate",
+    "rulesActive": "Active Rules",
+    "evaluationsToday": "Evaluations Today",
+    "pendingActions": "Pending Actions",
+    "topViolatedRules": "Top Violated Rules",
+    "recentCorrections": "Recent Corrections",
+    "rulesByDomain": "Rules by Domain",
+    "trendsWeekly": "7-Day Trend"
+  },
+  "audit": {
+    "title": "Audit Log",
+    "description": "Immutable, hash-chained record of all system actions",
+    "verifyChain": "Verify Chain",
+    "exportCsv": "Export CSV",
+    "chainVerified": "Chain integrity verified",
+    "chainBroken": "Chain integrity BROKEN",
+    "entriesChecked": "entries checked",
+    "allActions": "All actions",
+    "allResourceTypes": "All resource types"
+  },
+  "tutor": {
+    "title": "Rule Tutor",
+    "description": "Conversational guide to organizational rules",
+    "welcome": "Welcome to the Rule Tutor! I can help you understand the rules that apply to your work. Ask me about any rule, scope, or compliance question.",
+    "placeholder": "Ask about a rule, policy, or compliance question...",
+    "send": "Send",
+    "thinking": "Thinking...",
+    "error": "Sorry, I encountered an error. Please try again."
+  },
+  "onboarding": {
+    "title": "Get Started",
+    "subtitle": "Set up your rule repository in 3 steps",
+    "step1Title": "What kind of rules do you want to manage?",
+    "step1Description": "Choose a domain template to get started with pre-built rules.",
+    "step2Title": "Where are your existing rules?",
+    "step2Description": "Upload documents or connect to existing sources.",
+    "step3Title": "Activate in shadow mode",
+    "step3Description": "Start with observation only — no enforcement until you opt in.",
+    "selectTemplate": "Select a template",
+    "uploadDocuments": "Upload documents",
+    "activateShadow": "Activate shadow mode",
+    "finish": "Finish setup"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page",
+    "of": "of",
+    "noResults": "No results found"
+  }
+}

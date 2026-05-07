@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "ルールリポジトリ",
+    "tagline": "自然言語ルールの管理・検索・施行"
+  },
+  "nav": {
+    "manage": "管理",
+    "observe": "監視",
+    "enforce": "施行",
+    "settings": "設定"
+  },
+  "pages": {
+    "dashboard": "ダッシュボード",
+    "rules": "ルール",
+    "proposals": "提案",
+    "search": "検索",
+    "documents": "ドキュメント",
+    "discover": "発見",
+    "federations": "フェデレーション",
+    "playground": "プレイグラウンド",
+    "snapshots": "スナップショット",
+    "tutor": "チューター",
+    "intelligence": "インテリジェンス",
+    "feedback": "フィードバック",
+    "notifications": "通知",
+    "agents": "エージェント",
+    "audit": "監査ログ",
+    "review": "レビュー",
+    "gateway": "ゲートウェイ",
+    "integrations": "連携",
+    "projects": "プロジェクト",
+    "onboarding": "はじめに"
+  },
+  "persona": {
+    "label": "ペルソナ",
+    "all": "すべて",
+    "compliance": "コンプライアンス担当",
+    "legal": "法務担当",
+    "hr": "人事担当",
+    "finance": "経理担当",
+    "engineering": "エンジニアリングリード",
+    "sales": "営業マネージャー",
+    "executive": "経営層"
+  },
+  "dashboard": {
+    "complianceRate": "コンプライアンス率",
+    "rulesActive": "有効ルール数",
+    "evaluationsToday": "本日の評価数",
+    "pendingActions": "保留アクション",
+    "topViolatedRules": "違反の多いルール",
+    "recentCorrections": "最近の修正",
+    "rulesByDomain": "ドメイン別ルール",
+    "trendsWeekly": "7日間トレンド"
+  },
+  "audit": {
+    "title": "監査ログ",
+    "description": "改ざん不可能なハッシュチェーン付きの全操作記録",
+    "verifyChain": "チェーン検証",
+    "exportCsv": "CSV出力",
+    "chainVerified": "チェーン整合性を確認しました",
+    "chainBroken": "チェーン整合性が破損しています",
+    "entriesChecked": "件を検証",
+    "allActions": "すべてのアクション",
+    "allResourceTypes": "すべてのリソースタイプ"
+  },
+  "tutor": {
+    "title": "ルールチューター",
+    "description": "組織ルールの対話型ガイド",
+    "welcome": "ルールチューターへようこそ！業務に関連するルールについてお気軽にご質問ください。",
+    "placeholder": "ルール、ポリシー、コンプライアンスについて質問...",
+    "send": "送信",
+    "thinking": "考え中...",
+    "error": "エラーが発生しました。もう一度お試しください。"
+  },
+  "onboarding": {
+    "title": "はじめに",
+    "subtitle": "3ステップでルールリポジトリを設定",
+    "step1Title": "管理したいルールの種類は？",
+    "step1Description": "テンプレートを選んで、事前構築されたルールで始めましょう。",
+    "step2Title": "既存のルールはどこにありますか？",
+    "step2Description": "ドキュメントをアップロードするか、既存のソースに接続します。",
+    "step3Title": "シャドーモードで有効化",
+    "step3Description": "まずは監視のみ — オプトインするまで施行しません。",
+    "selectTemplate": "テンプレートを選択",
+    "uploadDocuments": "ドキュメントをアップロード",
+    "activateShadow": "シャドーモードで有効化",
+    "finish": "設定完了"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "create": "作成",
+    "search": "検索",
+    "filter": "フィルター",
+    "export": "エクスポート",
+    "previous": "前へ",
+    "next": "次へ",
+    "page": "ページ",
+    "of": "/",
+    "noResults": "結果が見つかりません"
+  }
+}

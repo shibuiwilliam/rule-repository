@@ -1,13 +1,78 @@
-"""Domain models for business event subjects.
+"""Domain models for evaluation subjects.
 
-Per CLAUDE.md Tier 2: Subject represents the entity or person involved
-in a business event. SubjectFilter enables partial matching for rule
-applicability.
+Subject represents the entity or person involved in a business event.
+SubjectFilter enables partial matching for rule applicability.
+SubjectType and EvaluationSubject support the Phase 7b subject abstraction.
+
+See: IMPROVEMENT.md Phase 7b, CLAUDE.md §14
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import enum
+from dataclasses import dataclass, field
+from typing import Any
+
+
+class SubjectType(str, enum.Enum):
+    """Type of entity being evaluated against rules.
+
+    Each type has a corresponding adapter that knows how to parse
+    the payload, assemble context, and format prompts.
+    """
+
+    CODE_CHANGE = "code_change"
+    HR_EVENT = "hr_event"
+    CONTRACT_CLAUSE = "contract_clause"
+    EXPENSE_CLAIM = "expense_claim"
+    MARKETING_COPY = "marketing_copy"
+    VENDOR_ONBOARDING = "vendor_onboarding"
+    DOCUMENT_REVISION = "document_revision"
+    TRANSACTION = "transaction"
+    CUSTOM = "custom"
+
+
+class LegalForce(str, enum.Enum):
+    """Legal authority level of a rule."""
+
+    STATUTORY = "statutory"
+    REGULATORY = "regulatory"
+    CONTRACTUAL = "contractual"
+    POLICY = "policy"
+    GUIDELINE = "guideline"
+
+
+@dataclass
+class EvaluationSubject:
+    """The entity being evaluated against rules — Phase 7b subject envelope.
+
+    Wraps a typed payload with metadata. The evaluation pipeline uses the
+    ``type`` field to dispatch to the correct adapter.
+
+    Attributes:
+        type: The subject type (determines adapter routing).
+        payload: Type-specific data (diff for code_change, event details
+            for hr_event, clause text for contract_clause, etc.).
+        context: Additional context.
+        metadata: Freeform metadata (actor, timestamp, source system).
+    """
+
+    type: SubjectType
+    payload: dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def from_legacy_diff(cls, diff: str, **kwargs: Any) -> EvaluationSubject:
+        """Create a code_change EvaluationSubject from a legacy diff request.
+
+        Backward-compatibility shim: existing callers that send a raw diff
+        are wrapped in an EvaluationSubject transparently.
+        """
+        return cls(
+            type=SubjectType.CODE_CHANGE,
+            payload={"diff": diff, **{k: v for k, v in kwargs.items() if k != "diff"}},
+        )
 
 
 @dataclass(frozen=True)

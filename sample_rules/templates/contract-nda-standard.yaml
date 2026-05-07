@@ -1,0 +1,218 @@
+version: 1
+template:
+  name: contract-nda-standard
+  description: Mutual NDA review rules covering definition, scope, duration, exclusions, obligations, and remedies
+  tags:
+  - legal
+  - contracts
+  - nda
+  - confidentiality
+rules:
+- statement: Every NDA MUST explicitly define 'Confidential Information' with enumerated included categories and stated exclusions.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - legal/contracts/nda
+  tags:
+  - definition
+  - confidentiality
+  rationale: An NDA without a clear definition is unenforceable and creates ambiguity about what is protected.
+  following_examples:
+  - The NDA defines Confidential Information as 'all technical, business, and financial information disclosed by the Disclosing
+    Party, whether orally, in writing, or electronically, excluding information that is publicly available.'
+  violation_examples:
+  - The NDA states 'all information shared is confidential' without specifying categories or exclusions.
+  applicable_subject_types: &id001
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+- statement: 'The NDA MUST contain standard exclusions: (a) publicly available information, (b) independently developed information,
+    (c) information received from a third party without restriction, (d) information already known to the Receiving Party.'
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/contracts/nda
+  tags:
+  - exclusions
+  - standard-carve-outs
+  rationale: Standard exclusions are necessary for enforceability and prevent overbroad confidentiality claims.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: Confidentiality obligations MUST specify a fixed duration. Open-ended obligations MUST NOT be accepted without
+    legal review and explicit approval.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/contracts/nda
+  tags:
+  - duration
+  - term
+  rationale: Perpetual obligations may not be enforceable in all jurisdictions and create indefinite liability.
+  following_examples:
+  - Obligations continue for 3 years from the date of disclosure.
+  violation_examples:
+  - The NDA states obligations last 'in perpetuity' with no sunset clause.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: A mutual NDA MUST impose symmetric obligations on both parties. One-sided confidentiality in a mutual NDA SHOULD
+    be flagged for renegotiation.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/contracts/nda
+  tags:
+  - mutuality
+  - symmetry
+  rationale: Asymmetric obligations in a mutual NDA create unfair risk allocation.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: The NDA MUST NOT permit disclosure to third parties without prior written consent of the Disclosing Party, except
+    as required by law or court order.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - legal/contracts/nda
+  tags:
+  - disclosure
+  - third-party
+  rationale: Unrestricted third-party sharing defeats the purpose of the NDA.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: The NDA SHOULD include a return-or-destroy clause requiring the Receiving Party to return or certify destruction
+    of Confidential Information upon termination or request.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - legal/contracts/nda
+  tags:
+  - termination
+  - return-destroy
+  rationale: Without a return/destroy obligation, confidential materials may remain accessible indefinitely.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: The NDA MUST NOT include non-compete or non-solicitation clauses disguised within the confidentiality section.
+    Such restrictions belong in separate, clearly labeled clauses.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - legal/contracts/nda
+  tags:
+  - non-compete
+  - scope-creep
+  rationale: Embedding restrictive covenants in NDA sections obscures their impact and may not satisfy separate enforceability
+    requirements.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: NDAs involving cross-border disclosure MUST specify the governing law and jurisdiction for dispute resolution.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/contracts/nda
+  tags:
+  - governing-law
+  - jurisdiction
+  - cross-border
+  rationale: Cross-border NDAs without governing law create uncertainty about which court and law applies.
+  following_examples:
+  - This Agreement shall be governed by the laws of Japan. Disputes shall be submitted to the exclusive jurisdiction of the
+    Tokyo District Court.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: The NDA SHOULD specify permitted disclosure to the Receiving Party's employees, contractors, and advisors who
+    have a need to know and are bound by similar confidentiality obligations.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - legal/contracts/nda
+  tags:
+  - permitted-recipients
+  - need-to-know
+  rationale: Practical NDA compliance requires sharing with internal team members; the NDA should anticipate this.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: The NDA MUST specify the method of giving notices (e.g., written notice to a designated address or email).
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - legal/contracts/nda
+  tags:
+  - notices
+  - communication
+  rationale: Unclear notice provisions create disputes about whether obligations were properly triggered.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: Residual knowledge clauses ('residuals clauses') that allow retention of general knowledge SHOULD be reviewed
+    carefully and MUST NOT be so broad as to negate the confidentiality obligations.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - legal/contracts/nda
+  tags:
+  - residuals
+  - knowledge-retention
+  rationale: Overly broad residuals clauses can render the entire NDA meaningless in practice.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: The NDA SHOULD include a clause acknowledging that monetary damages may be insufficient and that the Disclosing
+    Party is entitled to seek injunctive relief.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - legal/contracts/nda
+  tags:
+  - remedies
+  - injunctive-relief
+  rationale: Confidential information, once disclosed, cannot be 'undisclosed' — injunctive relief is the practical remedy.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: The NDA MUST NOT contain automatic renewal clauses without explicit notification provisions allowing either party
+    to decline renewal.
+  modality: MUST_NOT
+  severity: MEDIUM
+  scope:
+  - legal/contracts/nda
+  tags:
+  - renewal
+  - auto-renewal
+  rationale: Silent auto-renewal traps parties in obligations they may no longer need or want.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: If the NDA covers trade secrets, it SHOULD reference applicable trade secret law and note that trade secret protections
+    may survive the NDA's expiration.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - legal/contracts/nda
+  tags:
+  - trade-secrets
+  - statutory-protection
+  rationale: Trade secrets receive statutory protection independent of contract; the NDA should acknowledge this.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual
+- statement: The NDA MUST be signed by authorized representatives of both parties. Electronic signatures are acceptable where
+    legally recognized.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/contracts/nda
+  tags:
+  - execution
+  - signatures
+  - authority
+  rationale: An NDA signed by someone without authority may not bind the organization.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: contractual

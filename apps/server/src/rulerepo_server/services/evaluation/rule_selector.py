@@ -33,6 +33,7 @@ async def select_rules(
     federation_id: str | None = None,
     environment: str | None = None,
     agent_id: str | None = None,
+    subject_type: str | None = None,
 ) -> list[dict[str, Any]]:
     """Select rules applicable to the given evaluation context.
 
@@ -142,6 +143,19 @@ async def select_rules(
         all_rules.append(rule)
 
     logger.info("rule_selector_stage1", candidates=len(all_rules))
+
+    # Stage 1.5: Filter by applicable_subject_types (Phase 7b)
+    if subject_type:
+        pre_subject = len(all_rules)
+        all_rules = [
+            r for r in all_rules if subject_type in (getattr(r, "applicable_subject_types", None) or ["code_change"])
+        ]
+        logger.info(
+            "rule_selector_subject_filter",
+            subject_type=subject_type,
+            before=pre_subject,
+            after=len(all_rules),
+        )
 
     # Stage 2: Severity and modality filter (in-memory)
     filtered = []

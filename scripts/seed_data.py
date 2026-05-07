@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
 """Seed the database with sample rules for development and demo.
 
+Loads inline sample rules via POST /api/v1/rules, then loads all YAML
+templates from sample_rules/templates/ via POST /api/v1/rules/import.
+
 Usage:
     uv run python scripts/seed_data.py
 """
 
+from __future__ import annotations
+
 import asyncio
 import os
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "apps", "server", "src"))
+
+ROOT = Path(__file__).resolve().parent.parent
+TEMPLATES_DIR = ROOT / "sample_rules" / "templates"
 
 SAMPLE_RULES = [
     {
@@ -119,7 +128,78 @@ async def main() -> None:
             else:
                 print(f"  [{i + 1}/{len(SAMPLE_RULES)}] Failed ({resp.status_code}): {rule_data['statement'][:60]}")
 
-        print("Seed data loaded.")
+        print(f"Seed data loaded: {len(SAMPLE_RULES)} inline rules.")
+
+        # --- Load YAML templates ---
+        await _load_templates(client)
+
+
+async def _load_templates(client) -> None:  # type: ignore[no-untyped-def]
+    """Load all YAML templates via the bulk import endpoint."""
+    try:
+        import yaml
+    except ImportError:
+        print("PyYAML not installed — skipping template loading.")
+        return
+
+    if not TEMPLATES_DIR.is_dir():
+        print(f"Templates directory not found: {TEMPLATES_DIR}")
+        return
+
+    yaml_files = sorted(TEMPLATES_DIR.glob("*.yaml"))
+    if not yaml_files:
+        print("No YAML templates found.")
+        return
+
+    total_rules = 0
+    for yaml_path in yaml_files:
+        data = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
+        if not data:
+            continue
+
+        # Extract rules — always at top level in canonical template format
+        rules_list: list[dict] = data.get("rules", [])
+        if not rules_list:
+            continue
+
+        if not rules_list:
+            continue
+
+        # Convert to import format — pass through all supported fields
+        import_rules = []
+        for rule in rules_list:
+            item: dict = {
+                "statement": rule.get("statement", ""),
+                "modality": rule.get("modality", "MUST"),
+                "severity": rule.get("severity", "MEDIUM"),
+                "scope": rule.get("scope", []),
+                "tags": rule.get("tags", []),
+                "rationale": rule.get("rationale", ""),
+                "context": rule.get("context", ""),
+                "following_examples": rule.get("following_examples", []),
+                "violation_examples": rule.get("violation_examples", []),
+            }
+            # Phase 7b fields
+            for field in ("applicable_subject_types", "jurisdiction", "legal_force", "review_cadence"):
+                if rule.get(field):
+                    item[field] = rule[field]
+            import_rules.append(item)
+
+        payload = {
+            "version": data.get("version", 1),
+            "rules": import_rules,
+        }
+
+        resp = await client.post("/api/v1/rules/import", json=payload)
+        if resp.status_code == 201:
+            result = resp.json()
+            created = result.get("created", len(import_rules))
+            total_rules += created
+            print(f"  Template {yaml_path.name}: {created} rules imported")
+        else:
+            print(f"  Template {yaml_path.name}: FAILED ({resp.status_code})")
+
+    print(f"Templates loaded: {total_rules} rules from {len(yaml_files)} templates.")
 
 
 if __name__ == "__main__":

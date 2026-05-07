@@ -175,6 +175,10 @@ class Rule:
     sensitivity: Sensitivity = Sensitivity.INTERNAL
     regulatory_severity: RegulatorySeverity = RegulatorySeverity.NONE
     equivalence_id: str | None = None
+    applicable_subject_types: list[str] = field(default_factory=lambda: ["code_change"])
+    jurisdiction: str = "global"
+    legal_force: str = "policy"
+    review_cadence: str | None = None
     governance: Governance = field(default_factory=lambda: Governance(owner="system"))
 
     # Derived

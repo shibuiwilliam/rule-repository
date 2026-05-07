@@ -1,0 +1,290 @@
+version: 1
+template:
+  name: advertising-yakukiho
+  description: Japanese pharmaceutical and health product advertising rules covering claims, disclaimers, endorsements, and
+    prohibited expressions
+  tags:
+  - compliance
+  - advertising
+  - japan
+  - pharmaceutical
+  - yakukiho
+  - medical-device
+rules:
+- statement: Advertising of pharmaceuticals, medical devices, or cosmetics MUST NOT contain false or exaggerated claims about
+    efficacy, effects, or performance.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - false-claims
+  - exaggeration
+  - prohibition
+  rationale: Pharmaceutical and Medical Device Act Article 66(1) prohibits false or exaggerated advertising.
+  source_refs:
+  - statute: Pharmaceutical and Medical Device Act
+    article: '66'
+    paragraph: '1'
+  applicable_subject_types: &id001
+  - marketing_copy
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Advertising MUST NOT guarantee or imply guaranteed efficacy or safety of any pharmaceutical product.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - guarantee
+  - efficacy
+  - safety
+  rationale: Article 66(2) prohibits guarantee-type expressions. No medical product can guarantee outcomes.
+  source_refs:
+  - statute: Pharmaceutical and Medical Device Act
+    article: '66'
+    paragraph: '2'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Advertising of pharmaceuticals MUST NOT use the name or statement of a medical professional, pharmacist, or academic
+    to imply endorsement of a specific product's efficacy, unless in approved materials.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - endorsement
+  - medical-professional
+  - authority-abuse
+  rationale: Article 66(2) restricts use of professional authority to mislead consumers.
+  source_refs:
+  - statute: Pharmaceutical and Medical Device Act
+    article: '66'
+    paragraph: '2'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Advertising of prescription-only drugs (処方箋医薬品) to the general public MUST NOT be conducted except for disease-awareness
+    campaigns that do not mention specific product names.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - prescription-drugs
+  - dtc-advertising
+  - general-public
+  rationale: MHLW Notification prohibits direct-to-consumer advertising of prescription drugs. Disease awareness without brand
+    mention is permitted.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Health food and supplement advertising MUST NOT use pharmaceutical efficacy claims (e.g., 'cures', 'treats',
+    'prevents disease') unless the product is registered as a pharmaceutical.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/advertising/jp/pharma
+  - compliance/advertising/jp/health-foods
+  tags:
+  - health-foods
+  - supplements
+  - efficacy-claims
+  rationale: Using pharmaceutical claims for non-pharmaceutical products violates Article 68 (unauthorized advertising of
+    non-drugs as drugs).
+  source_refs:
+  - statute: Pharmaceutical and Medical Device Act
+    article: '68'
+  violation_examples:
+  - A supplement website claims the product 'prevents diabetes' without pharmaceutical registration.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Before-and-after comparisons in advertising MUST include appropriate disclaimers noting that individual results
+    may vary, and MUST NOT imply universal efficacy.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - before-after
+  - disclaimers
+  - individual-variation
+  rationale: Before-after comparisons without disclaimers constitute implied efficacy guarantees.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Advertising of quasi-drugs (医薬部外品) MUST clearly identify the product as a quasi-drug and MUST limit efficacy
+    claims to the approved range.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - quasi-drug
+  - labeling
+  - approved-claims
+  rationale: Quasi-drugs have limited approved efficacy claims; exceeding them is a regulatory violation.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Cosmetic advertising MUST NOT claim medical effects. Only approved cosmetic efficacy expressions (56 categories)
+    MAY be used.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - compliance/advertising/jp/pharma
+  - compliance/advertising/jp/cosmetics
+  tags:
+  - cosmetics
+  - efficacy-claims
+  - 56-categories
+  rationale: MHLW Notification defines 56 permissible cosmetic efficacy expressions; claims beyond these are pharmaceutical
+    claims.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Medical device advertising MUST include the approval/certification number and MUST NOT claim effects beyond the
+    approved indications.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - medical-devices
+  - approval-number
+  - indications
+  rationale: Medical devices must be advertised within their approved scope of use.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Online pharmaceutical advertising MUST comply with the same restrictions as offline advertising. The medium does
+    not reduce the regulatory obligations.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - online
+  - digital
+  - medium-neutral
+  rationale: MHLW and PMDA have confirmed that online advertising rules mirror offline requirements.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: User-generated testimonials about pharmaceutical products on company-controlled platforms MUST be monitored and
+    non-compliant testimonials removed promptly.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - testimonials
+  - ugc
+  - monitoring
+  rationale: Companies are responsible for advertising on platforms they control, including user testimonials.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Influencer marketing of health products MUST disclose the commercial relationship and MUST NOT make pharmaceutical
+    efficacy claims.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - influencer
+  - disclosure
+  - stealth-marketing
+  rationale: Undisclosed influencer marketing violates the Premiums and Representations Act and yakukiho if pharmaceutical
+    claims are made.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: All pharmaceutical advertising materials MUST be reviewed and approved by the company's regulatory affairs department
+    before publication or distribution.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - review-process
+  - pre-approval
+  - regulatory-affairs
+  rationale: Pre-publication review is the primary control for advertising compliance.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Advertising materials for pharmaceuticals SHOULD be reviewed against the JARO (Japan Advertising Review Organization)
+    self-regulatory guidelines in addition to statutory requirements.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - jaro
+  - self-regulation
+  - industry-standards
+  rationale: JARO guidelines often exceed statutory minimums and represent industry best practice.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Copies of all published pharmaceutical advertising materials MUST be retained for at least 3 years with records
+    of approval, distribution channels, and publication dates.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - record-keeping
+  - retention
+  - audit-trail
+  rationale: Records enable regulatory response and internal audit of advertising compliance.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: When advertising is found to be non-compliant, corrective action MUST be taken promptly including withdrawal
+    of the material and notification to the regulatory authority if required.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - corrective-action
+  - withdrawal
+  - notification
+  rationale: Continued distribution of non-compliant advertising compounds the violation.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Comparative advertising against competitor products MUST be based on objectively verifiable facts and MUST NOT
+    disparage competitor products.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - comparative-advertising
+  - fairness
+  - substantiation
+  rationale: Fair Competition Code and Premiums and Representations Act restrict unfounded comparative claims.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Advertising MUST NOT use anxiety-inducing expressions that unduly frighten consumers into purchasing pharmaceutical
+    products.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - compliance/advertising/jp/pharma
+  tags:
+  - fear-appeal
+  - anxiety
+  - consumer-protection
+  rationale: MHLW advertising standards prohibit fear-based marketing for health products.
+  violation_examples:
+  - Ad states 'If you don't take this supplement, you will develop serious health problems' to sell a vitamin.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory

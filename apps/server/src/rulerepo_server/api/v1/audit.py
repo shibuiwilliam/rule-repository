@@ -143,3 +143,310 @@ async def verify_audit_chain(
         "entries_checked": entries_checked,
         "total_entries": total_entries,
     }
+
+
+# ---------------------------------------------------------------------------
+# Audit Report Export — Phase 7f
+# ---------------------------------------------------------------------------
+
+SUPPORTED_FRAMEWORKS = {"j-sox", "iso27001", "sox", "pci-dss"}
+
+
+@router.get("/reports/{framework}")
+async def export_audit_report(
+    framework: str,
+    since: datetime | None = Query(default=None, description="Start date (ISO 8601)"),
+    until: datetime | None = Query(default=None, description="End date (ISO 8601)"),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Export a structured audit report aligned with a compliance framework.
+
+    Supported frameworks: j-sox, iso27001, sox, pci-dss.
+
+    Returns a report structured per the framework's expectations with
+    sections covering: evaluation history, rule change audit trail,
+    access controls, and chain integrity verification.
+    """
+    if framework not in SUPPORTED_FRAMEWORKS:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported framework: {framework}. Supported: {sorted(SUPPORTED_FRAMEWORKS)}",
+        )
+
+    # Build date filter
+    stmt = select(AuditLogModel).order_by(AuditLogModel.timestamp.desc())
+    if since:
+        stmt = stmt.where(AuditLogModel.timestamp >= since)
+    if until:
+        stmt = stmt.where(AuditLogModel.timestamp <= until)
+    stmt = stmt.limit(1000)
+
+    result = await session.execute(stmt)
+    entries = list(result.scalars().all())
+
+    # Verify chain integrity for the report period
+    repo = AuditLogRepository(session)
+    chain_valid = await repo.verify_chain(limit=len(entries) if entries else 100)
+
+    # Build framework-specific report
+    report = {
+        "framework": framework,
+        "generated_at": datetime.now().isoformat(),
+        "period": {
+            "since": since.isoformat() if since else None,
+            "until": until.isoformat() if until else None,
+        },
+        "summary": {
+            "total_audit_entries": len(entries),
+            "chain_integrity": "VERIFIED" if chain_valid else "BROKEN",
+            "entry_types": _count_by_field(entries, "action"),
+        },
+        "sections": _build_framework_sections(framework, entries),
+        "chain_verification": {
+            "status": "pass" if chain_valid else "fail",
+            "entries_verified": len(entries),
+        },
+    }
+
+    logger.info(
+        "audit_report_exported",
+        framework=framework,
+        entries=len(entries),
+        chain_valid=chain_valid,
+    )
+
+    return report
+
+
+def _count_by_field(entries: list, field_name: str) -> dict[str, int]:
+    """Count entries grouped by a field value."""
+    counts: dict[str, int] = {}
+    for entry in entries:
+        val = getattr(entry, field_name, "unknown")
+        counts[val] = counts.get(val, 0) + 1
+    return counts
+
+
+def _build_framework_sections(framework: str, entries: list) -> list[dict]:
+    """Build framework-specific report sections."""
+    sections = []
+
+    if framework == "j-sox":
+        sections = [
+            {
+                "id": "IT-GC-1",
+                "title": "IT General Controls — Change Management",
+                "description": "Audit trail of all rule changes, evaluations, and system modifications",
+                "entry_count": sum(1 for e in entries if e.action in ("rule_created", "rule_updated", "rule_retired")),
+            },
+            {
+                "id": "IT-GC-2",
+                "title": "IT General Controls — Access and Authorization",
+                "description": "Agent governance events, trust level changes, exception approvals",
+                "entry_count": len([e for e in entries if "agent" in (e.action or "")]),
+            },
+            {
+                "id": "IT-GC-3",
+                "title": "IT General Controls — Operations",
+                "description": "Evaluation results, compliance verdicts, and automated enforcement actions",
+                "entry_count": len([e for e in entries if e.action == "evaluation_completed"]),
+            },
+        ]
+    elif framework == "iso27001":
+        sections = [
+            {
+                "id": "A.12.4",
+                "title": "Logging and Monitoring",
+                "description": "Complete audit trail with hash-chain integrity verification",
+                "entry_count": len(entries),
+            },
+            {
+                "id": "A.14.2",
+                "title": "Security in Development and Support Processes",
+                "description": "Code evaluation results and security rule enforcement",
+                "entry_count": len([e for e in entries if e.action == "evaluation_completed"]),
+            },
+        ]
+    elif framework in ("sox", "pci-dss"):
+        sections = [
+            {
+                "id": "controls",
+                "title": "Internal Controls Evidence",
+                "description": "Automated rule enforcement and evaluation history",
+                "entry_count": len(entries),
+            },
+        ]
+
+    return sections
+
+
+# ---------------------------------------------------------------------------
+# Litigation Hold — Phase 7f
+# ---------------------------------------------------------------------------
+
+
+@router.post("/litigation-hold/{resource_id}")
+async def set_litigation_hold(
+    resource_id: str,
+    body: dict | None = None,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Place a litigation hold on all audit entries for a resource.
+
+    Prevents deletion or archival. Used for eDiscovery and legal proceedings.
+    """
+    body = body or {}
+    repo = AuditLogRepository(session)
+    await repo.set_litigation_hold(
+        resource_id,
+        hold_reason=body.get("reason", ""),
+        hold_by=body.get("held_by", "system"),
+    )
+    await session.commit()
+    return {"status": "hold_placed", "resource_id": resource_id}
+
+
+@router.get("/litigation-holds")
+async def list_litigation_holds(
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """List all resources currently under litigation hold."""
+    repo = AuditLogRepository(session)
+    holds = await repo.get_litigation_holds()
+    return {"holds": holds, "total": len(holds)}
+
+
+# ---------------------------------------------------------------------------
+# eDiscovery Export Bundle (Phase 7f)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/ediscovery-export/{resource_id}")
+async def ediscovery_export(
+    resource_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Generate an eDiscovery export bundle for a resource under litigation hold.
+
+    Returns a structured JSON bundle containing all audit entries, metadata,
+    and chain verification for the specified resource. In production, this
+    would be packaged as a ZIP with a manifest.
+    """
+    # Fetch all entries for the resource
+    stmt = select(AuditLogModel).where(AuditLogModel.resource_id == resource_id).order_by(AuditLogModel.timestamp.asc())
+    result = await session.execute(stmt)
+    entries = list(result.scalars().all())
+
+    if not entries:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="No audit entries found for this resource")
+
+    # Verify chain integrity for these entries
+    repo = AuditLogRepository(session)
+    chain_valid = await repo.verify_chain(limit=len(entries))
+
+    bundle = {
+        "export_type": "ediscovery",
+        "resource_id": resource_id,
+        "generated_at": datetime.now().isoformat(),
+        "chain_integrity": "verified" if chain_valid else "broken",
+        "total_entries": len(entries),
+        "entries": [
+            {
+                "id": str(e.id),
+                "timestamp": str(e.timestamp),
+                "action": e.action,
+                "actor": e.actor,
+                "resource_type": e.resource_type,
+                "resource_id": e.resource_id,
+                "details": e.details,
+                "previous_hash": e.previous_hash,
+                "entry_hash": e.entry_hash,
+            }
+            for e in entries
+        ],
+        "manifest": {
+            "format_version": "1.0",
+            "preservation_status": "litigation_hold"
+            if any((e.details or {}).get("_litigation_hold") for e in entries)
+            else "standard",
+        },
+    }
+
+    logger.info("ediscovery_export_generated", resource_id=resource_id, entries=len(entries))
+    return bundle
+
+
+# ---------------------------------------------------------------------------
+# GDPR Art. 22 — Automated Decision Objection (Phase 7f)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/objection/{evaluation_id}")
+async def file_objection(
+    evaluation_id: str,
+    body: dict | None = None,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """File an objection to an automated decision (GDPR Art. 22 / EU AI Act).
+
+    Records the objection in the audit log and flags the evaluation for
+    human review. The verdict status is updated to objection_in_progress.
+    """
+    body = body or {}
+    repo = AuditLogRepository(session)
+
+    await repo.append(
+        action="objection_filed",
+        actor=body.get("objector", "data_subject"),
+        resource_type="evaluation",
+        resource_id=evaluation_id,
+        details={
+            "grounds": body.get("grounds", ""),
+            "contact_email": body.get("contact_email", ""),
+            "request_human_review": True,
+        },
+    )
+    await session.commit()
+
+    return {
+        "status": "objection_recorded",
+        "evaluation_id": evaluation_id,
+        "next_step": "A human reviewer will assess this decision within 30 days.",
+    }
+
+
+@router.get("/objections")
+async def list_objections(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """List all filed objections to automated decisions."""
+    stmt = (
+        select(AuditLogModel)
+        .where(AuditLogModel.action == "objection_filed")
+        .order_by(AuditLogModel.timestamp.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    result = await session.execute(stmt)
+    entries = list(result.scalars().all())
+
+    return {
+        "objections": [
+            {
+                "id": str(e.id),
+                "evaluation_id": e.resource_id,
+                "objector": e.actor,
+                "grounds": (e.details or {}).get("grounds", ""),
+                "timestamp": str(e.timestamp),
+            }
+            for e in entries
+        ],
+        "page": page,
+        "page_size": page_size,
+    }

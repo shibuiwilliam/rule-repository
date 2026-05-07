@@ -1,0 +1,308 @@
+version: 1
+template:
+  name: expense-claim-jp
+  description: Japanese corporate expense claim rules covering travel, entertainment, receipts, approvals, and tax compliance
+  tags:
+  - finance
+  - expenses
+  - japan
+  - travel
+  - entertainment
+  - tax
+rules:
+- statement: Expense reports MUST be submitted within 30 calendar days of the expense date. Reports older than 60 days MUST
+    NOT be accepted without CFO approval.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  tags:
+  - submission
+  - timeliness
+  rationale: Timely submission ensures accurate period accounting and prevents fiscal-year-end backlogs.
+  following_examples:
+  - Employee incurs expense on March 1 and submits the report on March 25 — within 30-day window.
+  violation_examples:
+  - Employee submits a report 45 days after the expense without any justification.
+  applicable_subject_types: &id001
+  - expense_claim
+  jurisdiction: jp
+  legal_force: policy
+- statement: All expense claims exceeding 1,000 JPY MUST be accompanied by an original receipt or a legally compliant electronic
+    substitute.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  tags:
+  - receipts
+  - documentation
+  rationale: Tax authorities require documentary evidence for deductible business expenses.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Expense claims MUST NOT include personal expenses. Mixed-use expenses MUST be split with only the business portion
+    claimed.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - finance/expenses/jp
+  tags:
+  - personal-expenses
+  - fraud-prevention
+  rationale: Claiming personal expenses as business expenses constitutes fraud and tax evasion.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Domestic travel allowance (日当) MUST NOT exceed the company's published per-diem schedule. The schedule MUST distinguish
+    between day trips and overnight stays.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  - finance/travel
+  tags:
+  - per-diem
+  - travel
+  - allowance
+  rationale: Per-diem rates above reasonable levels may be treated as taxable income by the NTA.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Domestic airfare MUST be economy class for flights under 4 hours. Business class requires prior manager approval.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - finance/expenses/jp
+  - finance/travel
+  tags:
+  - airfare
+  - travel-class
+  rationale: Cost control on short-haul domestic flights; business class reserved for longer trips or medical necessity.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: International travel MUST be pre-approved by the department head before booking. Post-facto approval is not permitted
+    except for emergencies.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  - finance/travel
+  tags:
+  - international-travel
+  - pre-approval
+  rationale: International travel involves significant cost and visa/compliance implications requiring advance planning.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Hotel accommodation MUST NOT exceed the company's published nightly rate cap for the destination city tier.
+  modality: MUST_NOT
+  severity: MEDIUM
+  scope:
+  - finance/expenses/jp
+  - finance/travel
+  tags:
+  - accommodation
+  - rate-cap
+  rationale: Rate caps prevent excessive spending while allowing reasonable comfort.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Taxi expenses for trips with available public transit alternatives SHOULD include a brief justification (e.g.,
+    late night, heavy luggage, client meeting).
+  modality: SHOULD
+  severity: LOW
+  scope:
+  - finance/expenses/jp
+  - finance/travel
+  tags:
+  - taxi
+  - justification
+  - transport
+  rationale: Encourages cost-conscious transport choices without rigid prohibition.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Entertainment expenses (接待交際費) MUST record the date, venue, attendees (names and affiliations), business purpose,
+    and amount.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  - finance/entertainment
+  tags:
+  - entertainment
+  - documentation
+  - tax
+  rationale: Corporation Tax Act requires detailed records for entertainment expense deductions. Missing details may trigger
+    tax adjustments.
+  source_refs:
+  - statute: Corporation Tax Act
+    article: 61-4
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Per-person entertainment spending MUST NOT exceed 5,000 JPY (tax-excluded) to qualify for the small-scale entertainment
+    expense exemption.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  - finance/entertainment
+  tags:
+  - entertainment
+  - 5000-yen-rule
+  - tax
+  rationale: The 5,000 JPY per-person threshold is the NTA criterion for the simplified entertainment expense treatment.
+  source_refs:
+  - statute: Measures for Tax Base Erosion Prevention
+    note: Rental Tax Special Measures Act Art. 61-4(1)
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Entertainment of government officials MUST NOT be conducted without prior compliance-team approval.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - finance/expenses/jp
+  - compliance/anti-bribery
+  tags:
+  - entertainment
+  - government-officials
+  - anti-bribery
+  rationale: Entertainment of public officials carries bribery risk under the Penal Code and National Public Service Ethics
+    Act.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Expense claims under 50,000 JPY MUST be approved by the direct manager. Claims of 50,000 JPY or more MUST be
+    approved by the department head.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  tags:
+  - approval
+  - authority-matrix
+  rationale: Tiered approval ensures appropriate oversight proportional to expenditure.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Expense claims over 300,000 JPY MUST be approved by the CFO or finance director in addition to the department
+    head.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  tags:
+  - approval
+  - high-value
+  - cfo
+  rationale: High-value claims require senior finance oversight for budget control.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: 'Invoices submitted for payment MUST comply with the Qualified Invoice System (インボイス制度) requirements: registered
+    invoice issuer number, applicable tax rate, and tax amount.'
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  - finance/invoices
+  tags:
+  - invoice
+  - qualified-invoice
+  - consumption-tax
+  rationale: Since October 2023, only qualified invoices support input tax credit claims.
+  source_refs:
+  - statute: Consumption Tax Act
+    article: 57-4
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Vendor invoices without a valid registered invoice issuer number (T+13 digits) MUST be flagged for review and
+    the reduced tax-credit treatment applied.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  - finance/invoices
+  tags:
+  - invoice
+  - issuer-number
+  - tax-credit
+  rationale: Non-qualified invoices receive reduced (then zero) input tax credit under the transitional rules.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Foreign-currency expenses MUST be converted to JPY using the exchange rate on the transaction date or the company's
+    published monthly rate, whichever the policy specifies.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - finance/expenses/jp
+  tags:
+  - currency
+  - exchange-rate
+  - foreign
+  rationale: Consistent exchange rate application prevents manipulation and aligns with accounting standards.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Foreign transaction fees and currency conversion charges MAY be claimed as part of the expense.
+  modality: MAY
+  severity: LOW
+  scope:
+  - finance/expenses/jp
+  tags:
+  - currency
+  - fees
+  rationale: Bank fees for foreign transactions are a legitimate business cost.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Expense claims MUST NOT be split across multiple submissions to circumvent approval thresholds.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - finance/expenses/jp
+  tags:
+  - splitting
+  - fraud-prevention
+  rationale: Expense splitting is a common fraud pattern and violates internal controls.
+  violation_examples:
+  - Employee splits a 70,000 JPY dinner into two 35,000 JPY claims to avoid department-head approval.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: All expense records MUST be retained for at least 7 years in accordance with the Corporation Tax Act.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  tags:
+  - retention
+  - compliance
+  - tax
+  rationale: The Corporation Tax Act requires retention of accounting records for 7 years from the end of the fiscal year.
+  source_refs:
+  - statute: Corporation Tax Act
+    article: '126'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy
+- statement: Corporate credit card statements MUST be reconciled monthly. Unreconciled charges older than 45 days MUST be
+    escalated to the cardholder's manager.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/expenses/jp
+  tags:
+  - credit-card
+  - reconciliation
+  - controls
+  rationale: Monthly reconciliation prevents unauthorized charges from going undetected and ensures timely expense categorization.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: policy

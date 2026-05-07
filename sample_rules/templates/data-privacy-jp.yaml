@@ -1,0 +1,300 @@
+version: 1
+template:
+  name: data-privacy-jp
+  description: Japanese data privacy rules based on the APPI covering collection, use, storage, transfer, and individual rights
+  tags:
+  - compliance
+  - privacy
+  - japan
+  - appi
+  - personal-information
+rules:
+- statement: The purpose of use of personal information MUST be specified as concretely as possible and MUST be publicly announced
+    or notified to the individual before or at the time of collection.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - purpose-specification
+  - notice
+  rationale: APPI Articles 17 and 21 require purpose specification and notification.
+  source_refs:
+  - statute: APPI
+    article: 17, 21
+  applicable_subject_types: &id001
+  - document_revision
+  - hr_event
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Personal information MUST NOT be used beyond the scope of the specified purpose of use without the individual's
+    prior consent.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - purpose-limitation
+  - consent
+  rationale: APPI Article 18 prohibits use beyond the notified purpose.
+  source_refs:
+  - statute: APPI
+    article: '18'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Collection of personal information by deception or other improper means MUST NOT be conducted.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - proper-acquisition
+  - deception
+  rationale: APPI Article 20 prohibits improper acquisition.
+  source_refs:
+  - statute: APPI
+    article: '20'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Special care-required personal information (要配慮個人情報) — race, creed, social status, medical history, criminal
+    record, disability — MUST NOT be collected without the individual's prior consent.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - sensitive-data
+  - special-care
+  - consent
+  rationale: APPI Article 20(2) requires opt-in consent for sensitive categories.
+  source_refs:
+  - statute: APPI
+    article: 20(2)
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: A business operator handling personal information MUST take necessary and appropriate measures for the security
+    control of personal data.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - security
+  - safeguards
+  rationale: APPI Article 23 requires appropriate security measures.
+  source_refs:
+  - statute: APPI
+    article: '23'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Employees handling personal data MUST be supervised appropriately, and the operator MUST ensure employees do
+    not disclose data to unauthorized persons.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - employee-supervision
+  - access-control
+  rationale: APPI Article 24 requires employee supervision.
+  source_refs:
+  - statute: APPI
+    article: '24'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: When outsourcing the handling of personal data, the operator MUST exercise necessary and appropriate supervision
+    over the contractor.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - outsourcing
+  - contractor-supervision
+  rationale: APPI Article 25 extends security obligations to outsourced processing.
+  source_refs:
+  - statute: APPI
+    article: '25'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Personal data that is no longer needed for the specified purpose SHOULD be deleted without delay.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - data-minimization
+  - deletion
+  rationale: APPI Article 22 encourages effort to keep data accurate and delete when unnecessary.
+  source_refs:
+  - statute: APPI
+    article: '22'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Personal data MUST NOT be provided to a third party without the individual's prior consent, except in cases permitted
+    by law.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - third-party-transfer
+  - consent
+  rationale: APPI Article 27 requires opt-in consent for third-party provision.
+  source_refs:
+  - statute: APPI
+    article: '27'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: When providing personal data to a third party, the operator MUST record the date, the recipient, and the items
+    of data provided. Records MUST be retained for 3 years.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - transfer-records
+  - traceability
+  rationale: APPI Article 29 requires transfer record-keeping.
+  source_refs:
+  - statute: APPI
+    article: '29'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: 'Cross-border transfer of personal data to a foreign third party MUST satisfy one of: (a) the individual''s consent,
+    (b) the recipient country has equivalent protections, or (c) the recipient has an appropriate framework.'
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - cross-border
+  - international-transfer
+  rationale: APPI Article 28 imposes additional requirements on international transfers.
+  source_refs:
+  - statute: APPI
+    article: '28'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: When an individual requests disclosure of their retained personal data, the operator MUST disclose the data without
+    delay, in the format requested by the individual where practicable.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - disclosure-request
+  - individual-rights
+  rationale: APPI Article 33 grants individuals the right to request disclosure.
+  source_refs:
+  - statute: APPI
+    article: '33'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: When an individual requests correction, addition, or deletion of their personal data because it is inaccurate,
+    the operator MUST investigate and take appropriate action without delay.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - correction-request
+  - accuracy
+  rationale: APPI Article 34 grants correction/deletion rights.
+  source_refs:
+  - statute: APPI
+    article: '34'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: When an individual requests cessation of use or erasure of their personal data because it was collected improperly
+    or is being used beyond the stated purpose, the operator MUST comply without delay.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - cessation-request
+  - erasure
+  rationale: APPI Article 35 grants use-cessation rights.
+  source_refs:
+  - statute: APPI
+    article: '35'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: In the event of a data breach likely to harm individuals' rights and interests, the operator MUST notify the
+    Personal Information Protection Commission (PPC) and the affected individuals without delay.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - breach-notification
+  - ppc
+  - mandatory
+  rationale: 2022 APPI amendment (Article 26) made breach notification mandatory for qualifying incidents.
+  source_refs:
+  - statute: APPI
+    article: '26'
+  violation_examples:
+  - Company discovers a breach affecting 500 customers but delays notification by 3 months.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Anonymously processed information (匿名加工情報) MUST be processed so that the individual cannot be identified and
+    the original personal information cannot be restored.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - anonymization
+  - de-identification
+  rationale: APPI Article 43 defines the standard for anonymously processed information.
+  source_refs:
+  - statute: APPI
+    article: '43'
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: Pseudonymously processed information (仮名加工情報) MUST NOT be used to identify the individual and MUST NOT be provided
+    to third parties except in limited circumstances.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - pseudonymization
+  - restrictions
+  rationale: APPI Articles 41-42 impose use restrictions on pseudonymously processed information.
+  source_refs:
+  - statute: APPI
+    article: 41-42
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory
+- statement: The operator MUST designate a person responsible for the handling of personal information (個人情報保護管理者) and make
+    their contact information available.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - compliance/privacy/jp
+  tags:
+  - data-protection-officer
+  - accountability
+  rationale: PPC guidelines recommend designation of a responsible person for accountability.
+  applicable_subject_types: *id001
+  jurisdiction: jp
+  legal_force: statutory

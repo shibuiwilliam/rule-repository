@@ -34,7 +34,16 @@ PROMPTS_DIR = Path(__file__).parent / "prompts"
 _VERDICT_SCHEMA = {
     "type": "object",
     "properties": {
-        "verdict": {"type": "string", "enum": ["ALLOW", "DENY", "NEEDS_CONFIRMATION"]},
+        "verdict": {
+            "type": "string",
+            "enum": [
+                "ALLOW",
+                "DENY",
+                "NEEDS_CONFIRMATION",
+                "ALLOW_WITH_CONDITIONS",
+                "REQUIRES_DISCLOSURE",
+            ],
+        },
         "confidence": {"type": "number"},
         "reasoning": {"type": "string"},
         "issue_description": {"type": "string"},
@@ -99,11 +108,81 @@ def _hash_content(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:16]
 
 
+# Per-subject prompt file mapping. Falls back to generic prompts if missing.
+_SUBJECT_PROMPT_MAP: dict[str, str] = {
+    "code_change": "evaluate_code_change.txt",
+    "hr_event": "evaluate_hr_event.txt",
+    "contract_clause": "evaluate_contract_clause.txt",
+    "expense_claim": "evaluate_expense_claim.txt",
+}
+
+
+def _build_prompt(
+    *,
+    rule: dict[str, Any],
+    context: EvaluationContext,
+    subject_type: str | None,
+    rule_rationale: str,
+    rule_context: str,
+    rule_preconditions: str,
+    rule_exceptions: str,
+    rule_following: str,
+    rule_violations: str,
+) -> str:
+    """Build the evaluation prompt, dispatching on subject_type.
+
+    Subject-specific prompts provide domain-tailored framing. Falls back
+    to the generic code_change or facts prompt for unknown types.
+    """
+    common_vars = {
+        "rule_statement": rule["statement"],
+        "modality": rule["modality"],
+        "severity": rule["severity"],
+        "rationale": rule_rationale or "Not specified",
+        "context": rule_context or "Not specified",
+        "preconditions": rule_preconditions,
+        "exceptions": rule_exceptions,
+        "following_examples": rule_following,
+        "violation_examples": rule_violations,
+    }
+
+    # Try subject-specific prompt first
+    if subject_type and subject_type in _SUBJECT_PROMPT_MAP:
+        prompt_file = _SUBJECT_PROMPT_MAP[subject_type]
+        prompt_path = PROMPTS_DIR / prompt_file
+        if prompt_path.exists():
+            template = _load_prompt(prompt_file)
+            # Subject prompts use {context} for the formatted payload
+            facts_str = json.dumps(context.facts, indent=2, default=str)
+            narrative = context.narrative or context.intent or ""
+            context_text = narrative + ("\n\n" + facts_str if context.facts else "")
+            return template.format(**common_vars, context=context_text)
+
+    # Fallback: code change vs facts
+    if context.diff:
+        template = _load_prompt("evaluate_code_change.txt")
+        return template.format(
+            **common_vars,
+            diff=context.diff[:8000],
+            file_paths=", ".join(context.file_paths),
+        )
+
+    template = _load_prompt("evaluate_facts.txt")
+    facts_str = json.dumps(context.facts, indent=2, default=str)
+    return template.format(
+        **common_vars,
+        narrative=context.narrative or context.intent or "",
+        facts=facts_str,
+    )
+
+
 async def evaluate_rule(
     rule: dict[str, Any],
     context: EvaluationContext,
     gemini_client: genai.Client,
     cache_repo: Any | None = None,
+    *,
+    subject_type: str | None = None,
 ) -> tuple[RuleVerdict, str, int]:
     """Evaluate a single rule against the context using LLM-as-Judge.
 
@@ -131,38 +210,18 @@ async def evaluate_rule(
     rule_following = "; ".join(rule.get("following_examples", []) or []) or "None"
     rule_violations = "; ".join(rule.get("violation_examples", []) or []) or "None"
 
-    # Select prompt based on context type
-    if context.diff:
-        template = _load_prompt("evaluate_code_change.txt")
-        prompt = template.format(
-            rule_statement=rule["statement"],
-            modality=rule["modality"],
-            severity=rule["severity"],
-            rationale=rule_rationale or "Not specified",
-            context=rule_context or "Not specified",
-            preconditions=rule_preconditions,
-            exceptions=rule_exceptions,
-            following_examples=rule_following,
-            violation_examples=rule_violations,
-            diff=context.diff[:8000],  # cap diff size for token budget
-            file_paths=", ".join(context.file_paths),
-        )
-    else:
-        template = _load_prompt("evaluate_facts.txt")
-        facts_str = json.dumps(context.facts, indent=2, default=str)
-        prompt = template.format(
-            rule_statement=rule["statement"],
-            modality=rule["modality"],
-            severity=rule["severity"],
-            rationale=rule_rationale or "Not specified",
-            context=rule_context or "Not specified",
-            preconditions=rule_preconditions,
-            exceptions=rule_exceptions,
-            following_examples=rule_following,
-            violation_examples=rule_violations,
-            narrative=context.narrative or context.intent or "",
-            facts=facts_str,
-        )
+    # Select prompt based on subject_type, falling back to context-based dispatch
+    prompt = _build_prompt(
+        rule=rule,
+        context=context,
+        subject_type=subject_type,
+        rule_rationale=rule_rationale,
+        rule_context=rule_context,
+        rule_preconditions=rule_preconditions,
+        rule_exceptions=rule_exceptions,
+        rule_following=rule_following,
+        rule_violations=rule_violations,
+    )
 
     # Compute cache key (CLAUDE_ENHANCE.md §0.2)
     prompt_version = _hash_content(prompt)

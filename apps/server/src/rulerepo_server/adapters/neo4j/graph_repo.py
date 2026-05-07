@@ -200,3 +200,63 @@ class Neo4jGraphRepository:
             if record:
                 return {"nodes": record["nodes"], "edges": record["edges"]}
             return {"nodes": [], "edges": []}
+
+    # --- Polyglot Rules: TRANSLATES relationship (Phase 7c) ---
+
+    async def create_translation_link(
+        self,
+        source_id: UUID,
+        target_id: UUID,
+        *,
+        source_language: str,
+        target_language: str,
+    ) -> None:
+        """Create a TRANSLATES relationship between two polyglot rule versions.
+
+        Args:
+            source_id: The source-language rule UUID.
+            target_id: The target-language rule UUID.
+            source_language: BCP-47 language tag of the source (e.g., "en").
+            target_language: BCP-47 language tag of the target (e.g., "ja").
+        """
+        query = """
+            MATCH (a:Rule {id: $source_id})
+            MATCH (b:Rule {id: $target_id})
+            MERGE (a)-[r:TRANSLATES]->(b)
+            SET r.source_language = $source_lang,
+                r.target_language = $target_lang
+        """
+        async with self._driver.session(**self._session_kwargs()) as session:
+            await session.run(
+                query,
+                source_id=str(source_id),
+                target_id=str(target_id),
+                source_lang=source_language,
+                target_lang=target_language,
+            )
+        logger.info(
+            "translation_link_created",
+            source_id=str(source_id),
+            target_id=str(target_id),
+            languages=f"{source_language}->{target_language}",
+        )
+
+    async def get_translations(self, rule_id: UUID) -> list[dict[str, Any]]:
+        """Get all translation variants of a rule.
+
+        Args:
+            rule_id: The rule's UUID.
+
+        Returns:
+            List of dicts with translated rule info and language metadata.
+        """
+        query = """
+            MATCH (a:Rule {id: $id})-[r:TRANSLATES]-(b:Rule)
+            RETURN b.id AS translated_id,
+                   r.source_language AS source_language,
+                   r.target_language AS target_language,
+                   properties(b) AS props
+        """
+        async with self._driver.session(**self._session_kwargs()) as session:
+            result = await session.run(query, id=str(rule_id))
+            return [record.data() async for record in result]

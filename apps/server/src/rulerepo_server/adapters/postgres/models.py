@@ -136,6 +136,12 @@ class RuleModel(Base):
     # Polyglot rules — shared equivalence_id groups translations
     equivalence_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
 
+    # Subject abstraction — which subject types this rule applies to
+    applicable_subject_types: Mapped[list] = mapped_column(JSONB, nullable=False, default=lambda: ["code_change"])
+    jurisdiction: Mapped[str] = mapped_column(String(50), nullable=False, default="global")
+    legal_force: Mapped[str] = mapped_column(String(20), nullable=False, default="policy")
+    review_cadence: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
     # Embedding stored as float array (for pgvector compatibility later)
     embedding: Mapped[list | None] = mapped_column(ARRAY(Float), nullable=True)
 
@@ -468,6 +474,9 @@ class EvaluationRecordModel(Base):
 
     # Encrypted evaluation context — PII-safe at rest (AES-GCM, key from core/secrets)
     context_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+
+    # Subject type — records what kind of entity was evaluated
+    subject_type: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
     # Cost ledger — token counts and estimated cost per evaluation
     input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)

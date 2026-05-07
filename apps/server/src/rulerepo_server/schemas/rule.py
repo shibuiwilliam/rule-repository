@@ -66,6 +66,10 @@ class RuleCreate(BaseModel):
     )
     sensitivity: Sensitivity = Sensitivity.INTERNAL
     regulatory_severity: RegulatorySeverity = RegulatorySeverity.NONE
+    applicable_subject_types: list[str] = Field(default_factory=lambda: ["code_change"])
+    jurisdiction: str = "global"
+    legal_force: str = "policy"
+    review_cadence: str | None = None
     source_refs: list[SourceRefSchema] = Field(default_factory=list)
     effective_period: EffectivePeriodSchema = Field(default_factory=EffectivePeriodSchema)
     governance: GovernanceSchema = Field(default_factory=GovernanceSchema)
@@ -88,6 +92,10 @@ class RuleUpdate(BaseModel):
     violation_examples: list[str] | None = None
     sensitivity: Sensitivity | None = None
     regulatory_severity: RegulatorySeverity | None = None
+    applicable_subject_types: list[str] | None = None
+    jurisdiction: str | None = None
+    legal_force: str | None = None
+    review_cadence: str | None = None
     source_refs: list[SourceRefSchema] | None = None
     effective_period: EffectivePeriodSchema | None = None
     governance: GovernanceSchema | None = None
@@ -121,6 +129,10 @@ class RuleResponse(BaseModel):
     violation_examples: list[str] = Field(default_factory=list)
     sensitivity: str = "INTERNAL"
     regulatory_severity: str = "NONE"
+    applicable_subject_types: list[str] = Field(default_factory=lambda: ["code_change"])
+    jurisdiction: str = "global"
+    legal_force: str = "policy"
+    review_cadence: str | None = None
     source_refs: list[SourceRefSchema]
     effective_period: EffectivePeriodSchema
     governance: GovernanceSchema
@@ -194,6 +206,13 @@ class RuleImportItem(BaseModel):
     violation_examples: list[str] = Field(default_factory=list)
     source: str | None = None
     confidence: float | None = None
+    # Phase 7b fields
+    applicable_subject_types: list[str] | None = None
+    jurisdiction: str | None = None
+    legal_force: str | None = None
+    review_cadence: str | None = None
+    sensitivity: str | None = None
+    regulatory_severity: str | None = None
 
 
 class RulesImportRequest(BaseModel):

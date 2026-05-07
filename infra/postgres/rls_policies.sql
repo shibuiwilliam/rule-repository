@@ -1,58 +1,55 @@
 -- Row-Level Security (RLS) Policies for Multi-Tenant Isolation
 -- =============================================================
 --
--- This file defines the planned RLS policies for tenant isolation
--- at the database layer. These policies ensure that each tenant
--- can only access their own data, even if application-level
--- checks are bypassed.
+-- These policies ensure each tenant can only access their own data,
+-- even if application-level checks are bypassed.
 --
 -- PREREQUISITES:
---   1. All major tables must have a `tenant_id` column (UUID, NOT NULL).
---   2. The application sets `rulerepo.current_tenant_id` per session
---      via a SQLAlchemy event listener before executing any query.
---   3. A superuser role bypasses RLS for administrative tasks
---      (migrations, reconciliation scripts).
+--   1. The `rules` table has a `tenant_id` column (added in migration 024).
+--   2. The application sets `rulerepo.current_tenant_id` per session.
+--   3. The application connects with a non-superuser role (e.g., `rule`).
 --
--- USAGE:
---   The application session sets the tenant context with:
---     SET LOCAL rulerepo.current_tenant_id = '<tenant-uuid>';
---
--- STATUS: PLANNED (Tier 3)
--- This file is a stub. Policies will be activated once tenant_id
--- columns are added to all major tables via Alembic migrations.
---
+-- STATUS: ACTIVE for rules table. Other tables will be enabled as
+-- their tenant_id columns are added.
 -- =============================================================
 
--- Enable RLS on major tables (uncomment when tenant_id columns exist):
+-- Safe default so queries don't fail when no tenant is set
+ALTER DATABASE ruledb SET rulerepo.current_tenant_id = '00000000-0000-0000-0000-000000000000';
 
--- ALTER TABLE rules ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE evaluations ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE source_documents ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE rule_revisions ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE proposals ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE agent_profiles ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE rule_packages ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE snapshots ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE federations ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+-- ---------------------------------------------------------------
+-- Rules table — RLS active
+-- ---------------------------------------------------------------
 
--- Example policy for the rules table:
+ALTER TABLE rules ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation_rules_select ON rules
+    FOR SELECT
+    USING (tenant_id::text = current_setting('rulerepo.current_tenant_id', true));
+
+CREATE POLICY tenant_isolation_rules_insert ON rules
+    FOR INSERT
+    WITH CHECK (tenant_id::text = current_setting('rulerepo.current_tenant_id', true));
+
+CREATE POLICY tenant_isolation_rules_update ON rules
+    FOR UPDATE
+    USING (tenant_id::text = current_setting('rulerepo.current_tenant_id', true))
+    WITH CHECK (tenant_id::text = current_setting('rulerepo.current_tenant_id', true));
+
+CREATE POLICY tenant_isolation_rules_delete ON rules
+    FOR DELETE
+    USING (tenant_id::text = current_setting('rulerepo.current_tenant_id', true));
+
+ALTER TABLE rules FORCE ROW LEVEL SECURITY;
+
+-- ---------------------------------------------------------------
+-- Pattern for additional tables (apply as tenant_id columns are added):
 --
--- CREATE POLICY tenant_isolation_rules ON rules
---     USING (tenant_id = current_setting('rulerepo.current_tenant_id')::uuid)
---     WITH CHECK (tenant_id = current_setting('rulerepo.current_tenant_id')::uuid);
---
--- The USING clause restricts SELECT, UPDATE, DELETE.
--- The WITH CHECK clause restricts INSERT, UPDATE.
---
--- Similar policies would be created for each table listed above.
--- The pattern is identical: filter rows where tenant_id matches
--- the session-level setting.
-
--- Force RLS for the application role (uncomment when ready):
--- ALTER TABLE rules FORCE ROW LEVEL SECURITY;
--- (Repeat for each table)
-
--- Superuser bypass: by default, table owners and superusers bypass RLS.
--- The application should connect with a non-superuser role.
+--   ALTER TABLE <table> ENABLE ROW LEVEL SECURITY;
+--   CREATE POLICY tenant_isolation_<table>_select ON <table>
+--       FOR SELECT
+--       USING (tenant_id::text = current_setting('rulerepo.current_tenant_id', true));
+--   CREATE POLICY tenant_isolation_<table>_insert ON <table>
+--       FOR INSERT
+--       WITH CHECK (tenant_id::text = current_setting('rulerepo.current_tenant_id', true));
+--   ALTER TABLE <table> FORCE ROW LEVEL SECURITY;
+-- ---------------------------------------------------------------

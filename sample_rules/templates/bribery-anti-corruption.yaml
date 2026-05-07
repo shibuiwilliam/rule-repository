@@ -1,0 +1,268 @@
+version: 1
+template:
+  name: bribery-anti-corruption
+  description: Anti-bribery and anti-corruption rules covering FCPA, UK Bribery Act, and JP Unfair Competition Prevention
+    Act
+  tags:
+  - compliance
+  - anti-bribery
+  - anti-corruption
+  - fcpa
+  - uk-bribery-act
+rules:
+- statement: Employees MUST NOT offer, promise, give, or authorize the giving of anything of value to any government official,
+    political party, or candidate to influence official action or obtain an improper advantage.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - prohibition
+  - government-officials
+  - fcpa
+  rationale: Core prohibition under FCPA Section 78dd-1, UK Bribery Act Section 1, and JP Penal Code Article 198.
+  following_examples:
+  - Company pays a standard published filing fee through official channels.
+  violation_examples:
+  - Employee offers concert tickets to a government procurement officer during a bidding process.
+  applicable_subject_types: &id001
+  - hr_event
+  - expense_claim
+  - transaction
+  jurisdiction: global
+  legal_force: statutory
+- statement: The prohibition on bribery applies equally to indirect payments made through agents, consultants, intermediaries,
+    or any third party acting on the company's behalf.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - indirect-payments
+  - third-party
+  - agents
+  rationale: Both FCPA and UK Bribery Act impose liability for payments made through intermediaries with corrupt intent.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: Facilitation payments (small unofficial payments to expedite routine government actions) MUST NOT be made. No
+    exception is permitted regardless of local custom.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - facilitation-payments
+  - zero-tolerance
+  rationale: While FCPA has a narrow facilitation payments exception, UK Bribery Act does not. Company policy prohibits all
+    facilitation payments for simplicity and compliance.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: Employees MUST NOT offer or accept kickbacks, secret commissions, or undisclosed payments in connection with
+    business transactions.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - kickbacks
+  - commercial-bribery
+  rationale: Commercial bribery violates the JP Unfair Competition Prevention Act and can constitute fraud.
+  source_refs:
+  - statute: Unfair Competition Prevention Act
+    article: '18'
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: Gifts to business partners MUST NOT exceed 10,000 JPY (or local equivalent) per occasion and MUST be reported
+    to the compliance team if above 5,000 JPY.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - gifts
+  - thresholds
+  - reporting
+  rationale: Gift thresholds prevent gradual relationship corruption and ensure transparency.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: Charitable donations made on behalf of a business contact or at their request MUST be pre-approved by compliance.
+    Such donations MUST NOT be directed to entities controlled by the contact.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - charitable-donations
+  - disguised-payments
+  rationale: Charitable donations can be used to disguise bribery payments.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: Third-party agents, consultants, and intermediaries MUST undergo anti-corruption due diligence before engagement,
+    including verification of beneficial ownership and screening against sanctions lists.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/anti-bribery
+  - compliance/due-diligence
+  tags:
+  - due-diligence
+  - third-party
+  - screening
+  rationale: UK Bribery Act Section 7 requires 'adequate procedures' to prevent bribery by associated persons.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: Agent commission rates MUST be documented, commercially reasonable, and benchmarked against market standards.
+    Above-market rates require compliance approval.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - agent-commissions
+  - reasonableness
+  rationale: Excessive agent commissions are a red flag for pass-through bribery.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: All contracts with agents and intermediaries MUST include anti-corruption representations, warranties, and audit
+    rights.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - contract-clauses
+  - audit-rights
+  rationale: Contractual anti-corruption provisions establish expectations and provide enforcement mechanisms.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: All payments, gifts, entertainment, and hospitality MUST be accurately recorded in the company's books and records
+    with sufficient detail to identify the nature and purpose.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - books-and-records
+  - fcpa
+  - accuracy
+  rationale: FCPA books-and-records provisions (Section 78m) require accurate recording of all transactions.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: Off-books accounts, unrecorded funds, or false entries in books and records are MUST NOT exist regardless of
+    purpose.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - off-books
+  - false-entries
+  - fcpa
+  rationale: Off-books accounts violate FCPA internal controls provisions and are strong indicators of corruption.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: All employees in customer-facing, procurement, or government-relations roles MUST complete anti-corruption training
+    annually.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - training
+  - annual
+  rationale: Regular training is a key element of 'adequate procedures' under the UK Bribery Act.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: Employees MUST report suspected bribery or corruption through the designated reporting channel (hotline or compliance
+    officer). Retaliation against good-faith reporters is prohibited.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - whistleblowing
+  - reporting
+  - retaliation
+  rationale: Effective reporting channels are essential for detection and are required by sentencing guidelines.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: Anti-corruption due diligence MUST be conducted on acquisition targets before closing. Identified issues MUST
+    be reported to the board and factored into the transaction.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/anti-bribery
+  - compliance/m-and-a
+  tags:
+  - m-and-a
+  - due-diligence
+  - successor-liability
+  rationale: Acquiring companies inherit corruption liability. DOJ and SEC credit pre-acquisition due diligence.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: Business operations in countries ranked below 40 on the Transparency International CPI MUST have enhanced compliance
+    monitoring and quarterly compliance reviews.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - high-risk
+  - enhanced-monitoring
+  - cpi
+  rationale: Higher-risk jurisdictions require proportionately stronger controls.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: Government contract bids in any jurisdiction MUST be reviewed by the compliance team before submission.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - government-contracts
+  - bid-review
+  rationale: Government contracting is a high-risk area requiring proactive compliance review.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: Political contributions MUST NOT be made with company funds without board approval and compliance review, regardless
+    of jurisdiction.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - political-contributions
+  - board-approval
+  rationale: Political contributions can constitute illegal bribes in many jurisdictions.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory
+- statement: The company MUST maintain a compliance program that is proportionate to its bribery risk, regularly reviewed,
+    and updated in response to regulatory changes.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - compliance/anti-bribery
+  tags:
+  - compliance-program
+  - proportionality
+  - review
+  rationale: Adequate procedures defense under UK Bribery Act Section 7(2) requires a proportionate, actively maintained program.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: statutory

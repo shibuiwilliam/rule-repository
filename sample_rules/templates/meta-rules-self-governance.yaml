@@ -1,0 +1,161 @@
+version: 1
+template:
+  name: meta-rules-self-governance
+  description: Self-governance meta-rules — rules about how the Rule Repository manages its own rules
+  tags:
+  - meta
+  - governance
+  - self-governance
+  - system
+rules:
+- statement: Every LLM call that produces a verdict MUST log the model ID, prompt version hash, input summary, and output
+    in the audit trail.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - meta/governance
+  - meta/audit
+  tags:
+  - audit
+  - llm
+  - traceability
+  rationale: Verdicts must be reproducible and auditable. Without model and prompt versioning, debugging verdict drift is
+    impossible.
+  applicable_subject_types: &id001
+  - code_change
+  - document_revision
+  jurisdiction: global
+  legal_force: policy
+- statement: Every new HIGH or CRITICAL severity rule MUST have at least one following_example and one violation_example before
+    being promoted to STABLE maturity.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - meta/governance
+  - meta/quality
+  tags:
+  - examples
+  - quality
+  - maturity
+  rationale: Rules without examples are harder for LLMs to evaluate correctly and harder for humans to understand.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: policy
+- statement: Every CRITICAL rule with a DENY verdict MUST use consensus voting (two independent LLM calls) before the verdict
+    is final.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - meta/governance
+  - meta/evaluation
+  tags:
+  - consensus
+  - critical-rules
+  - reliability
+  rationale: Single-call verdicts on critical rules carry unacceptable false-positive risk.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: policy
+- statement: The audit log hash chain MUST be verified at least weekly. Any chain break MUST trigger an immediate alert.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - meta/governance
+  - meta/audit
+  tags:
+  - audit
+  - integrity
+  - chain-verification
+  rationale: The hash chain is the foundation of audit log integrity. Undetected breaks undermine the entire compliance story.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: policy
+- statement: 'Rule templates distributed as reference material MUST be marked as expert_reviewed: false unless they have been
+    reviewed by a qualified domain expert.'
+  modality: MUST
+  severity: HIGH
+  scope:
+  - meta/governance
+  - meta/templates
+  tags:
+  - templates
+  - expert-review
+  - trust
+  rationale: Users must know whether a template has been validated by domain experts or is a reference draft only.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: policy
+- statement: Changes to PROJECT.md, CLAUDE.md, or IMPROVEMENT.md SHOULD follow the same proposal workflow as rule changes.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - meta/governance
+  - meta/documentation
+  tags:
+  - documentation
+  - proposals
+  - governance
+  rationale: System specification documents are themselves rules. They deserve the same governance rigor.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: policy
+- statement: Every new domain adapter MUST include at least 3 golden test cases in the eval harness before being marked as
+    IMPLEMENTED.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - meta/governance
+  - meta/testing
+  tags:
+  - testing
+  - adapters
+  - eval-harness
+  rationale: Untested adapters provide false confidence. Golden test cases ensure baseline quality.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: policy
+- statement: The spec audit tool MUST be run at least weekly. Features marked [IMPLEMENTED] in documentation that are actually
+    [MISSING] in code MUST be corrected within one sprint.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - meta/governance
+  - meta/documentation
+  tags:
+  - spec-audit
+  - accuracy
+  - documentation
+  rationale: Spec-implementation drift erodes the documentation's authority and wastes contributor time.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: policy
+- statement: Rule effectiveness scores SHOULD be reviewed monthly. Rules with effectiveness below 40% for more than 60 days
+    SHOULD be retired or revised.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - meta/governance
+  - meta/lifecycle
+  tags:
+  - effectiveness
+  - lifecycle
+  - retirement
+  rationale: Low-effectiveness rules add noise without value. Periodic review prevents rule corpus bloat.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: policy
+- statement: Business-domain templates (HR, legal, finance, compliance) MUST NOT be used for actual regulatory compliance
+    without expert review, regardless of how comprehensive they appear.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - meta/governance
+  - meta/templates
+  tags:
+  - templates
+  - regulatory
+  - disclaimer
+  rationale: AI-generated rule templates cannot substitute for qualified legal, tax, or compliance advice.
+  applicable_subject_types: *id001
+  jurisdiction: global
+  legal_force: policy

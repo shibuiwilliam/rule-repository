@@ -209,14 +209,27 @@ async def import_rules(
 
     for item in body.rules:
         try:
-            data = RuleCreate(
-                statement=item.statement,
-                modality=item.modality,
-                severity=item.severity,
-                scope=item.scope,
-                tags=item.tags + (["imported"] if "imported" not in item.tags else []),
-                rationale=item.rationale or "",
-            )
+            create_kwargs: dict = {
+                "statement": item.statement,
+                "modality": item.modality,
+                "severity": item.severity,
+                "scope": item.scope,
+                "tags": item.tags + (["imported"] if "imported" not in item.tags else []),
+                "rationale": item.rationale or "",
+            }
+            if item.following_examples:
+                create_kwargs["following_examples"] = item.following_examples
+            if item.violation_examples:
+                create_kwargs["violation_examples"] = item.violation_examples
+            if item.applicable_subject_types:
+                create_kwargs["applicable_subject_types"] = item.applicable_subject_types
+            if item.jurisdiction:
+                create_kwargs["jurisdiction"] = item.jurisdiction
+            if item.legal_force:
+                create_kwargs["legal_force"] = item.legal_force
+            if item.review_cadence:
+                create_kwargs["review_cadence"] = item.review_cadence
+            data = RuleCreate(**create_kwargs)
             result = await service.create_rule(data, project_id=project_id)
             rule_ids.append(str(result["id"]))
             created += 1

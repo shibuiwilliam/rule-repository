@@ -1,6 +1,6 @@
 # MCP Server
 
-The Rule Repository exposes a Model Context Protocol (MCP) server that allows AI coding agents to search, evaluate, and retrieve rules directly through the MCP interface.
+The Rule Repository exposes a Model Context Protocol (MCP) server that allows AI agents to search, evaluate, govern, and retrieve rules directly through the MCP interface.
 
 ## Transport Modes
 
@@ -11,41 +11,23 @@ The Rule Repository exposes a Model Context Protocol (MCP) server that allows AI
 
 ## Tools
 
-The MCP server provides 12 tools:
+The MCP server provides 12 tools organized into three categories: search and context, evaluation and compliance, and governance.
 
-### `search_rules`
+### Search and Context
+
+#### `search_rules`
 
 Search the rule corpus by keyword or natural language query.
 
 **Parameters:** `query` (string), `scope` (string, optional), `limit` (integer, optional)
 
-### `evaluate_compliance`
+#### `explain_rule`
 
-Evaluate a code change against applicable rules.
-
-**Parameters:** `diff` (string), `file_path` (string), `intent` (string, optional), `environment` (string, optional -- when provided, evaluates against the snapshot deployed to this environment instead of the live rule corpus; valid values: `production`, `staging`, `development`)
-
-### `explain_rule`
-
-Get a detailed explanation of a rule, including its rationale and relationships.
+Get a detailed explanation of a rule, including its rationale, context, preconditions, exceptions, and relationships.
 
 **Parameters:** `rule_id` (string)
 
-### `find_conflicts`
-
-Find rules that conflict with each other within a scope or across scopes.
-
-**Parameters:** `scope` (string, optional), `rule_id` (string, optional)
-
-### `discover_rules`
-
-Scan project artifacts (configuration files, documentation) to discover implicit rules.
-
-**Parameters:** `file_paths` (array of strings), `repository` (string, optional)
-
-Returns a list of candidate rules discovered from the provided files, with confidence scores and suggested metadata.
-
-### `get_rules_for_context`
+#### `get_rules_for_context`
 
 Retrieve rules applicable to specific files, formatted for agent consumption. This is the primary tool for agent integrations.
 
@@ -63,6 +45,74 @@ Default format is `instructions`.
 
 When `federation` is provided (a federation node ID), rules are resolved through the federation hierarchy for that node, returning the effective rule set after applying inheritance and overrides.
 
+#### `find_conflicts`
+
+Find rules that conflict with each other within a scope or across scopes.
+
+**Parameters:** `scope` (string, optional), `rule_id` (string, optional)
+
+#### `discover_rules`
+
+Scan project artifacts (configuration files, documentation) to discover implicit rules.
+
+**Parameters:** `file_paths` (array of strings), `repository` (string, optional)
+
+Returns a list of candidate rules discovered from the provided files, with confidence scores and suggested metadata.
+
+### Evaluation and Compliance
+
+#### `evaluate_compliance`
+
+Evaluate a code change or action against applicable rules.
+
+**Parameters:** `diff` (string), `file_path` (string), `intent` (string, optional), `environment` (string, optional -- when provided, evaluates against the snapshot deployed to this environment instead of the live rule corpus; valid values: `production`, `staging`, `development`)
+
+#### `submit_feedback`
+
+Submit a correction when an agent disagrees with or improves upon a rule verdict. Feeds the self-improving flywheel.
+
+**Parameters:** `rule_id` (string), `evaluation_id` (string, optional), `correction` (string), `reason` (string, optional)
+
+### Governance
+
+#### `create_proposal`
+
+Create a governance proposal for rule changes (create, amend, retire, merge, split, override). Proposals go through draft, review, approval, and enactment stages.
+
+**Parameters:** `type` (string), `title` (string), `description` (string), `rule_id` (string, optional), `changes` (object, optional)
+
+#### `get_proposal_status`
+
+Check the current status, votes, and comments on a governance proposal.
+
+**Parameters:** `proposal_id` (string)
+
+#### `register_agent`
+
+Register an AI agent with the governance system. Enables personalized rule delivery, trust level progression, and governance participation.
+
+**Parameters:** `agent_id` (string), `agent_type` (string), `capabilities` (array of strings, optional)
+
+#### `get_personalized_rules`
+
+Get rules personalized to the agent's history and current task. Mastered rules are suppressed, and historically-violated rules are weighted higher.
+
+**Parameters:** `agent_id` (string), `file_paths` (array of strings, optional), `task_context` (string, optional)
+
+#### `challenge_verdict`
+
+Challenge a verdict the agent disagrees with. Creates an audit trail and may trigger rule improvements if similar challenges accumulate.
+
+**Parameters:** `verdict_id` (string), `reason` (string), `proposed_verdict` (string, optional)
+
+#### `request_exception`
+
+Request a formal exception to a rule for a specific context. If similar exceptions are requested frequently, the system may auto-draft a rule amendment proposal.
+
+**Parameters:** `rule_id` (string), `context` (string), `justification` (string)
+
+---
+
 ## Resources
 
 | URI Pattern | Description |
@@ -70,39 +120,15 @@ When `federation` is provided (a federation node ID), rules are resolved through
 | `rule://{id}` | A single rule by its ID |
 | `ruleset://{scope}` | All rules within a given scope |
 
-### `create_proposal`
-
-Create a governance proposal for rule changes (create, amend, retire, merge, split, override). Proposals go through draft, review, approval, and enactment stages.
-
-### `get_proposal_status`
-
-Check the current status, votes, and comments on a governance proposal.
-
-### `register_agent`
-
-Register an AI agent with the governance system. Enables personalized rule delivery, trust level progression, and governance participation.
-
-### `get_personalized_rules`
-
-Get rules personalized to the agent's history and current task. Mastered rules are suppressed, and historically-violated rules are weighted higher.
-
-### `challenge_verdict`
-
-Challenge a verdict the agent disagrees with. Creates an audit trail and may trigger rule improvements if similar challenges accumulate.
-
-### `request_exception`
-
-Request a formal exception to a rule for a specific context. If similar exceptions are requested frequently, the system may auto-draft a rule amendment proposal.
-
 ---
 
 ## Prompts
 
 The MCP server exposes 3 prompt templates:
 
-- **review-against-rules** -- Review code changes against all applicable rules
-- **explain-violations** -- Explain why specific rules were violated
-- **suggest-fix** -- Suggest a fix for a rule violation
+- **compliance_check** -- Systematic compliance evaluation against applicable rules
+- **rule_summary** -- Executive summary of rules by scope
+- **impact_analysis** -- Proposed change impact assessment
 
 ## Configuration
 
@@ -160,7 +186,22 @@ Output:
 - Never raise bare Exception; use the project exception hierarchy.
 ```
 
+## Example: Agent Governance Flow
+
+A coding agent can register, receive personalized rules, and challenge verdicts:
+
+```
+1. register_agent(agent_id="claude-code-1", agent_type="coding_assistant")
+2. get_personalized_rules(agent_id="claude-code-1", file_paths=["src/api/auth.py"])
+   -> Returns rules tailored to this agent's history (mastered rules suppressed)
+3. evaluate_compliance(diff="...", file_path="src/api/auth.py")
+   -> DENY on rule-42
+4. challenge_verdict(verdict_id="v-123", reason="Rule does not apply to internal endpoints")
+   -> Challenge recorded; if pattern accumulates, may auto-draft rule amendment
+```
+
 ## See Also
 
 - [Agent Hooks](agent-hooks.md) -- CLI-based agent integration (alternative to MCP)
 - [Agentic Client SDK](../sdks/agentic-client.md) -- Python SDK for programmatic access
+- [Agent Tracking](../intelligence/agent-tracking.md) -- Agent performance analytics
