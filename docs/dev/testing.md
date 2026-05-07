@@ -127,4 +127,4 @@ Use fixtures in `tests/fixtures/` for:
 ## See Also
 
 - [Contributing](contributing.md) -- setup and coding conventions
-- [CLAUDE.md](../../CLAUDE.md) -- full testing policy and conventions
+- [CLAUDE.md](https://github.com/shibuiwilliam/rule-repository/blob/main/CLAUDE.md) -- full testing policy and conventions

@@ -155,14 +155,16 @@ CREATE TABLE evaluations (
 2. Reuse `services/discovery/analyzers/claude_md.py`, `linter_config.py`, `code_patterns.py` for local execution
 3. `POST /api/v1/rules/import/yaml` — New server endpoint for bulk import
 
-### Correction-to-Rule Flywheel
+### Correction-to-Rule Flywheel (Completed)
 
 **Goal**: Corrections automatically generate draft rules.
 
-**Plan**:
-1. `services/feedback/auto_drafter.py` — Cluster corrections by similarity, draft rules from clusters
-2. Wire into arq worker as daily cron job at 4am
-3. Threshold: 3+ corrections in 14 days with confidence > 0.8
+**Implemented** in Phase 5/6:
+1. `services/feedback/auto_drafter.py` -- Clusters corrections by cosine similarity, drafts rules via Gemini
+2. Wired into arq worker as `cluster_corrections` daily cron job at 5am
+3. Threshold: 3+ corrections in 14 days with confidence > 0.8 (`SIMILARITY_THRESHOLD=0.8`)
+4. Creates `DraftRuleProposalModel` entries reviewed via `GET /api/v1/feedback/proposals`
+5. Approved proposals create rules with `experimental` maturity (shadow mode)
 
 ### Infrastructure Tiers
 

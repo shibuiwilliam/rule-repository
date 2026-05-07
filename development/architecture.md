@@ -42,6 +42,9 @@ src/rulerepo_server/
 │       ├── snapshots.py            #   snapshot CRUD, deploy, rollback, simulate, deployments
 │       ├── proposals.py            #   governance proposal lifecycle (create, submit, vote, enact, revert, close, comments, notifications)
 │       ├── agent_governance.py     #   agent profiles, trust levels, personalized rules, mastery, exceptions, negotiations, sessions
+│       ├── review.py               #   two-tier activity review (rough triage + detailed evaluation)
+│       ├── audit.py                #   audit log entries with filters and hash-chain verification
+│       └── marketplace.py          #   rule package CRUD, publishing, subscriptions, conflict resolution
 ├── core/
 │   ├── config.py                   # Settings (Pydantic BaseSettings)
 │   ├── logging.py                  # structlog JSON logger
@@ -156,7 +159,7 @@ src/rulerepo_server/
     ├── agent_governance.py
 ```
 
-### ORM Models (29 total in `adapters/postgres/models.py`)
+### ORM Models (35 total in `adapters/postgres/models.py`)
 
 | Model | Table | Purpose |
 |---|---|---|
@@ -287,7 +290,7 @@ If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.
 
 ## Alembic Migrations
 
-22 migrations in `apps/server/alembic/versions/`:
+24 migrations in `apps/server/alembic/versions/` (001-026, skipping 020):
 
 | Migration | Description |
 |---|---|
@@ -312,6 +315,10 @@ If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.
 | `019_add_agent_governance` | Agent profiles, exception requests, negotiations, governance sessions |
 | `021_add_rule_context` | Context column on rules for document provenance |
 | `022_add_rule_examples` | Following/violation examples on rules for evaluation accuracy |
+| `023_add_sensitivity_and_context_encrypted` | Sensitivity classification and encrypted context fields |
+| `024_add_tenant_cost_polyglot` | Multi-tenancy, cost tracking, and polyglot validation fields |
+| `025_add_regulatory_severity` | Regulatory severity field for compliance-domain rules |
+| `026_add_subject_jurisdiction_fields` | Subject type and jurisdiction fields (Phase 7b) |
 
 ---
 
@@ -358,7 +365,7 @@ The FastAPI application applies three middleware layers (outermost first):
 
 ## Frontend Pages
 
-The Next.js frontend has 23 pages (including nested routes):
+The Next.js frontend has 27+ pages (including nested routes):
 
 | Route | Purpose |
 |---|---|
@@ -383,3 +390,7 @@ The Next.js frontend has 23 pages (including nested routes):
 | `/notifications` | Notification inbox for proposal activity |
 | `/agents` | Agent compliance leaderboard and trust levels |
 | `/agents/[id]` | Agent detail (mastery, exceptions, negotiations) |
+| `/review` | Two-tier activity review (rough triage + detailed LLM evaluation) |
+| `/audit` | Immutable audit log with hash-chain verification |
+| `/tutor` | Conversational Q&A about rules with LLM-powered explanations |
+| `/marketplace` | Rule package browsing, subscriptions, and publishing |

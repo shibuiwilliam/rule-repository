@@ -35,7 +35,7 @@ After setup, verify the services are running:
 
 ## Coding Conventions
 
-The full coding conventions are documented in [CLAUDE.md](../../CLAUDE.md). Here is a brief summary.
+The full coding conventions are documented in [CLAUDE.md](https://github.com/shibuiwilliam/rule-repository/blob/main/CLAUDE.md). Here is a brief summary.
 
 ### Python (server and SDKs)
 
@@ -101,6 +101,6 @@ This runs:
 
 ## See Also
 
-- [CLAUDE.md](../../CLAUDE.md) -- full operational guide and coding conventions
-- [PROJECT.md](../../PROJECT.md) -- project vision, domain model, and roadmap
+- [CLAUDE.md](https://github.com/shibuiwilliam/rule-repository/blob/main/CLAUDE.md) -- full operational guide and coding conventions
+- [PROJECT.md](https://github.com/shibuiwilliam/rule-repository/blob/main/PROJECT.md) -- project vision, domain model, and roadmap
 - [Testing](testing.md) -- test commands and strategy

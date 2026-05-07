@@ -31,8 +31,16 @@ PostgreSQL 17 holds the canonical data. All writes go through PostgreSQL first. 
 | `rule_set_deployments` | Snapshot-to-environment deployment tracking. |
 | `evaluations` | Persistent per-rule evaluation records for analytics. |
 | `draft_rule_proposals` | Rule proposals auto-drafted from correction clusters (flywheel). |
+| `projects` | Top-level organizational boundary scoping all resources. |
+| `proposals` | Governance proposal lifecycle (create, amend, retire, merge, split, override). |
+| `proposal_comments` | Threaded comments on governance proposals. |
+| `notifications` | User notifications for proposal activity. |
+| `agent_profiles` | Registered agent identities, trust levels, compliance metrics, mastery data. |
+| `agent_exception_requests` | Agent requests for rule exceptions. |
+| `agent_negotiations` | Agent-initiated verdict challenges and negotiations. |
+| `governance_sessions` | Multi-agent governance session tracking. |
 
-27+ tables across 16 Alembic migrations. Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
+35+ tables across 22 Alembic migrations. Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
 
 Note: The `rules` table includes `maturity_level` (experimental/stable/proven), `false_positive_count`, and `true_positive_count` columns for the progressive enforcement model.
 

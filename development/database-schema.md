@@ -1,7 +1,7 @@
 # Database Schema & ER Diagram
 
-> PostgreSQL 17 — source of truth for the Rule Repository.
-> 38+ tables across 22 Alembic migrations.
+> PostgreSQL 17 -- source of truth for the Rule Repository.
+> 35+ tables across 24 Alembic migrations (001-026, skipping 020).
 
 ---
 

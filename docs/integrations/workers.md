@@ -19,15 +19,17 @@ Both services are included in `docker-compose.yml` and start automatically with 
 
 ## Scheduled Jobs
 
-The arq worker runs five cron jobs. All are fully implemented with real database operations.
+The arq worker runs seven scheduled jobs. All are fully implemented with real database operations.
 
 | Job | Schedule | Description |
 |---|---|---|
-| `compute_health_scores` | 2:00 AM daily | Recomputes rule health scores. Creates alerts for unhealthy (score < 40) and dormant (0 evaluations) rules. |
+| `compute_health_scores` | 2:00 AM daily | Recomputes rule health scores (6 dimensions). Creates alerts for unhealthy (score < 40), dormant (0 evaluations), and effectiveness decline (score < 30 with 10+ judgments) rules. |
 | `generate_recommendations_task` | 3:00 AM daily | Analyzes rule usage patterns, generates improvement recommendations. Alerts on high deny rate (> 50%). |
-| `auto_promote_rules` | 4:00 AM daily | Promotes rules through maturity levels (experimental → stable → proven) based on false-positive rate. Demotes if FP exceeds 10%. |
+| `auto_promote_rules` | 4:00 AM daily | Promotes rules through maturity levels (experimental -> stable -> proven) based on false-positive rate. Demotes if FP exceeds 10%. |
 | `cluster_corrections` | 5:00 AM daily | Clusters similar corrections by embedding similarity, auto-drafts rule proposals via Gemini. Creates `DraftRuleProposalModel` entries for human review. |
 | `compute_correction_stats` | Every hour | Aggregates correction statistics by analysis_type and status. |
+| `send_weekly_digest` | Monday 9:00 AM | Generates weekly governance digest (compliance trends, top violations, most effective rules, declining rules, pending actions). Sends to `DIGEST_WEBHOOK_URL` if configured. |
+| `verdict_drift_monitor` | Daily | Monitors verdict distribution changes over time. Creates alerts when significant drift is detected. |
 
 Jobs are idempotent and safe to run concurrently with API requests.
 

@@ -63,6 +63,8 @@ nav:
   - Development:
     - Contributing: dev/contributing.md
     - Testing: dev/testing.md
+  - Reference:
+    - Scope Naming: scope-naming.md
   - ADR:
     - "001: Three-Store Architecture": adr/001-three-store-architecture.md
 
