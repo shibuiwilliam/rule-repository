@@ -1,20 +1,25 @@
-# PROJECT.md
+# Rule Repository
 
-> **Rule Repository** — a software platform for managing, searching, serving, and enforcing natural-language rules across an entire organization. Laws, contracts, internal policies, HR regulations, financial controls, marketing standards, engineering guidelines, and documentation conventions all live as first-class, governed assets, interpreted at runtime by LLMs and AI agents.
+> A **cross-organizational normative management platform** for storing, searching, evaluating, and enforcing natural-language rules — laws, regulations, contracts, internal policies, engineering standards, marketing claims, financial controls, HR policies — across every department of an organization, using LLMs and AI agents.
 
 ---
 
 ## 1. Project Overview
 
-The **Rule Repository** stores human-authored rules in their original natural-language form and makes them operationally useful: searchable, applicable, and enforceable across business systems, document workflows, and software development environments. Where traditional rule engines require translating human rules into a formal language (and losing nuance in the process), the Rule Repository keeps each rule as written and uses LLMs and AI agents to interpret, search, evaluate, and enforce them at runtime.
+The **Rule Repository** is the system of record for an organization's rules. It stores rules in their original natural-language form and makes them operationally useful: searchable, applicable, evaluable, and enforceable across business systems, document workflows, financial transactions, marketing content, and software development environments. Where traditional rule engines require translating human rules into a formal language (and losing nuance along the way), the Rule Repository keeps rules as written and uses LLMs to interpret, search, and enforce them at runtime.
 
-This approach is inspired by, and generalizes, the concept of **Semantic Governance** (e.g., Google Cloud's Semantic Governance Policies), which uses natural-language constraints as runtime guardrails for AI agents. The Rule Repository extends that idea in three directions:
+This positioning is intentional and has three implications that shape every architectural decision:
 
-- **Wider scope of rules.** Not just AI-agent guardrails, but laws, contracts, HR policies, financial controls, marketing standards, engineering guidelines, and documentation conventions.
-- **Wider scope of consumers.** Human users, business systems (HR, ERP, CRM, contract management), document workflows, IDEs, CI pipelines, and AI agents.
-- **Wider scope of time.** Pre-flight checks (block before action), post-hoc audits (review after the fact), and continuous compliance monitoring.
+1. **Cross-organizational** means Legal, HR, Finance, Sales, Marketing, IT, Operations, Engineering, and Executive functions are all first-class users. The system is not specialized for any one domain.
+2. **Normative management** means rules are first-class assets with provenance, lineage, ownership, classification, lifecycle, audit trail — not configuration values attached to applications.
+3. **Platform** means rules are decoupled from any single consumer. The same rule corpus drives runtime guardrails for AI agents, pre-flight checks for business transactions, post-hoc audits for compliance, and reference material for human reviewers.
 
-The Rule Repository is, fundamentally, an **organization-wide rule repository**, not a coding-rule manager. Coding governance is one important use case among many; HR, legal, finance, sales/marketing, and regulatory compliance are equally first-class.
+This approach is inspired by, and generalizes, the concept of **Semantic Governance** (Google Cloud's Semantic Governance Policies), which uses natural-language constraints as runtime guardrails for AI agents. The Rule Repository extends that idea in four directions:
+
+- **Wider scope of rules**: not only AI agent guardrails, but laws, regulations, contracts, HR policies, financial controls, marketing claim restrictions, and engineering conventions.
+- **Wider scope of consumers**: human users, business systems, IDEs, CI pipelines, AI agents, and audit tools.
+- **Wider scope of subjects**: not only agent tool-call attempts, but contract clauses, attendance events, financial transactions, marketing creatives, KYC profiles, and code changes.
+- **Wider scope of time**: pre-flight checks, post-hoc audits, continuous monitoring, and historical re-evaluation under prior rule versions.
 
 ---
 
@@ -24,13 +29,14 @@ Most rules that govern organizations are written in natural language. Translatin
 
 The Rule Repository fills a gap that no current category of software addresses cleanly:
 
-- **Document management systems** store the source documents but do not understand the rules inside them.
+- **Document management systems** (SharePoint, Confluence, Notion) store source documents but do not understand the rules inside them.
 - **Rule engines** (Drools, DMN, OPA) require formal encoding and lose the original semantics.
-- **GRC platforms** track compliance status but do not enforce rules at the point of action.
+- **GRC platforms** (ServiceNow GRC, Workiva, MetricStream) track compliance status but do not enforce rules at the point of action.
+- **Contract review tools** (Ironclad AI, LinkSquares) operate only on contracts.
+- **Code governance tools** (linters, SAST, code review platforms) operate only on code.
 - **Semantic Governance products** apply natural-language constraints, but bind them to specific AI agents rather than treating rules as first-class, organization-wide assets.
-- **Coding-rule tools** (linters, ruleset products) cover engineering guidelines only and do not generalize to laws or contracts.
 
-The Rule Repository treats **rules themselves as first-class, versioned, governed assets** — decoupled from any single consumer, reusable across the entire organization, and interpretable by LLMs in their original natural-language form.
+The Rule Repository treats **rules themselves as first-class, versioned, governed, and classified assets**, decoupled from any single consumer and reusable across every department of an organization. The strategic claim is that the chain "law → regulation → internal policy → departmental rule → operational procedure → contract clause → engineering standard" is a single graph and should be governed as such, not as separate document silos.
 
 ---
 
@@ -38,95 +44,103 @@ The Rule Repository treats **rules themselves as first-class, versioned, governe
 
 ### 3.1 Goals
 
-- Store rules in natural language with full traceability to their source documents.
+- Store rules in natural language with full traceability to source documents and upstream legal authorities.
 - Provide rich search (full-text, vector, category, hybrid, intent-based) over rule corpora.
-- Enable runtime evaluation: *"given this context and intent, is this action compliant with the relevant rules?"* — across many domains, not just code.
+- Enable runtime evaluation across multiple subject types: code diffs, contract clauses, business events, financial transactions, marketing creatives, identity profiles, and arbitrary documents.
 - Support pre-flight, post-hoc, and sidecar enforcement modes.
-- Detect conflicts, redundancies, and dead rules across the corpus.
-- Make rule provenance, rationale, jurisdiction, legal force, and revision history first-class.
-- Provide ergonomic SDKs and connectors so business systems and AI agents can integrate easily.
-- Support cross-organizational sharing of high-quality rule packages through a marketplace.
+- Detect conflicts, redundancies, and dormant rules across the corpus.
+- Make rule provenance, rationale, ownership, classification, and revision history first-class.
+- Model the organization's functional structure (Legal, HR, Finance, etc.) explicitly, with rule ownership and approval routing tied to it.
+- Provide compliance-grade audit trails suitable for SOX, J-SOX, ISO 27001, and GDPR procedures.
+- Provide ergonomic SDKs and connectors so business systems, AI agents, and document repositories can integrate easily.
+- Support multi-jurisdictional deployments with locale-aware rules and parallel-language consistency.
 
 ### 3.2 Non-Goals
 
 - Replacing IAM, RBAC, ABAC, or network-layer access control. The Rule Repository is a **complementary semantic layer**, not a substitute for baseline security.
-- Replacing legal counsel or compliance officers. The system surfaces issues; humans resolve them.
+- Replacing legal counsel, compliance officers, auditors, or HR specialists. The system surfaces issues; humans resolve them.
 - Acting as a general-purpose document management system. Document storage is a dependency, not a deliverable.
 - Authoring legally binding contracts on behalf of users.
-- Functioning as a primary system of record for HR, ERP, or CRM data.
+- Enforcing rules outside the scope of subjects the system understands. Subject coverage is explicit; out-of-scope situations are surfaced rather than silently allowed.
 
 ---
 
 ## 4. Architecture
 
-### 4.1 High-Level View
+The system is composed of layered components, designed so that the existing engineering-focused capabilities and the new cross-organizational capabilities share the same core.
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│                       Rule Management Server                          │
-│                                                                       │
-│  Extraction    Search (5)    Evaluation       Intelligence            │
-│  Pipeline      BM25+Vec      Engine           Health + Recommend      │
-│  (multi-       +Project      (Subject-aware,  Effectiveness           │
-│   source)      filter        batched,         Digest + Compare        │
-│                              conflict-aware)  Flywheel                │
-│                                                Agent + Persona        │
-│                                                                       │
-│  Discovery     Federation    Snapshots        Playground              │
-│  (code +       (org/team/    (versioned,      (sandbox + tests)       │
-│   business)    project)      env-deployed)                            │
-│                                                                       │
-│  Proposals     Agent Gov     Marketplace      Subject Adapters        │
-│  (lifecycle,   (trust,       (packages,       code_change             │
-│   voting,      challenge,    subscribe,       hr_event                │
-│   comments)    sessions)     conflicts)       contract_clause         │
-│                                                expense_claim          │
-│                                                marketing_copy         │
-│                                                document_revision      │
-│                                                transaction            │
-│                                                                       │
-│  PostgreSQL    Elasticsearch   Neo4j      Redis      Audit Log        │
-│  (truth)       (search)        (graph)    (jobs)     (immutable +     │
-│                                                       hash-chained +  │
-│                                                       optional WORM)  │
-│                                                                       │
-│  REST API │ Intent API │ Evaluate API │ Gateway API │ MCP             │
-└─────┼──────────┼─────────┼──────────────┼───────────┼─────────────────┘
-      │          │         │              │           │
-   Rule SDK  Agentic   MCP Server     CLI Tools    Business
-   (Python)  Client    (12 tools)     (CI/hooks)   Connectors
-                                                   (HR, ERP,
-                                                    contracts,
-                                                    chat, ITSM,
-                                                    docs, IdP)
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       Rule Management Server                              │
+│                                                                           │
+│   Extraction      Search(5)       Domain Evaluation Engines              │
+│   Pipeline        BM25+Vector     ┌─────────────────────────────────┐    │
+│   ─ Code           ─ Hybrid       │ Code Diff │ Contract │ Event   │    │
+│   ─ Policy PDF     ─ Project      │ Transaction │ Creative │ ID    │    │
+│   ─ DOCX           ─ Intent       │  ─ shared Rule Selector        │    │
+│   ─ Confluence                    │  ─ shared Verdict Aggregator   │    │
+│   ─ Regulation                    │  ─ subject-specific Subject    │    │
+│   ─ Linter cfg                    │      Adapter + Prompt           │    │
+│                                   └─────────────────────────────────┘    │
+│                                                                           │
+│   Discovery       Intelligence    Federation     Marketplace              │
+│   (multi-source)  ─ Health        ─ Org/Dept     ─ Packages              │
+│                   ─ Effectiveness ─ Inheritance  ─ Subscribe             │
+│   Proposals       ─ Trends        ─ Override     ─ Conflicts             │
+│   ─ Lifecycle     ─ Recommend     ─ Capacity                              │
+│   ─ Voting        ─ Digest                                                │
+│                                                                           │
+│   Agent Gov       Classification  Compliance     Multilingual            │
+│   ─ Trust         ─ PUBLIC/...    Audit          ─ Locales               │
+│   ─ Mastery       ─ RLS           ─ Hash chain   ─ Jurisdiction          │
+│   ─ Sessions      ─ PII           ─ WORM mirror                           │
+│   ─ Exceptions    ─ Clearance     ─ Evidence                              │
+│                                   ─ Legal hold                            │
+│                                   ─ Regulator export                      │
+│                                                                           │
+│   Feedback        Playground      Snapshots      Alerts                  │
+│   ─ PR diffs      ─ Sandbox       ─ Versioned    ─ Dormant               │
+│   ─ Decisions     ─ Test cases    ─ Environment  ─ High deny             │
+│   ─ Approvals     ─ Counter-      ─ Rollback     ─ Health decline        │
+│   ─ Audits        │   examples    ─ Simulation                            │
+│   ─ Disputes                                                              │
+│                                                                           │
+│   PostgreSQL    Elasticsearch   Neo4j      Redis     Audit (PG+WORM)     │
+│                                                                           │
+│   REST │ Intent │ Evaluate │ Gateway │ MCP │ Integration                  │
+└─────┬──────┬──────┬───────────┬─────────┬───────────────────────────────┘
+      │      │      │           │         │
+   Rule    Agentic  CLI    Department  Connector Catalog
+   SDK     SDK      Tools  UIs (HR/    (HR / ERP / Contract /
+                           Legal/Fin)   Document Repos / iPaaS)
+      │      │      │           │         │
+      ▼      ▼      ▼           ▼         ▼
+   Business  HR/Contract   CI/Hooks   Department    SAP / Workday /
+   systems   /Finance      GitHub PR  Operators     Salesforce /
+             systems       Agents     (non-eng)     Confluence / etc.
 ```
 
-**Three data stores, one source of truth.** PostgreSQL holds canonical rules and history. Elasticsearch is a derived search index. Neo4j is a derived relationship graph. If they disagree, Postgres wins and the others are rebuilt.
+### 4.1 Architectural Layers
 
-### 4.2 The Pluggable Subject Architecture
+**Subject Layer** (new, foundational). Every evaluation flows through a `Subject` abstraction with a discriminator (`SubjectKind`). Concrete subjects supply parsing, feature extraction, prompt construction, and remediation generation. The rest of the evaluation pipeline is subject-agnostic.
 
-The architectural cornerstone is that the **subject of evaluation is pluggable**. The system does not assume that what is being evaluated is a code change. Instead, every evaluation request carries a typed `Subject` envelope, and a `SubjectAdapter` for that type knows how to parse the payload, gather domain context, format the LLM prompt, and interpret remediations.
+**Rule Layer**. Rules are first-class natural-language statements with structured metadata (modality, scope, severity, classification, ownership, lineage, locale, jurisdiction, lifecycle).
 
-```
-EvaluateRequest:
-  subject:
-    type: code_change | hr_event | contract_clause | expense_claim
-        | marketing_copy | vendor_onboarding | meeting_minutes
-        | email_draft | document_revision | transaction | custom
-    payload: <typed schema per subject type>
-    context: <attached metadata>
-  scope: list[str]
-  intent: str
-```
+**Organizational Layer** (new, foundational). Departments, capacities, and rule ownership are explicit. Approval routing, notifications, marketplace publishing, and audit access derive from this layer.
 
-This abstraction lets a single evaluation engine, audit log, search index, and governance workflow serve every domain, while keeping each domain's idiosyncrasies (clause segmentation in contracts, line items in expenses, copy phrasing in marketing) cleanly encapsulated.
+**Storage Layer**. PostgreSQL (system of record, append-only audit log with hash chain), Elasticsearch (derived search index), Neo4j (derived relationship graph), Redis (job queue), pluggable WORM storage (immutable audit mirror).
 
-### 4.3 Trust and Data Boundaries
+**Service Layer**. Domain evaluation engines, discovery analyzers, intelligence services, federation, marketplace, governance proposals, agent governance, feedback loop, playground.
+
+**Delivery Layer**. REST API, Intent API, Gateway API, MCP server, integration connectors, CLI tools, SDKs.
+
+### 4.2 Trust and Data Boundaries
 
 - The server is the only component that holds the canonical rule corpus.
-- Clients receive only the rules and judgments they are authorized to see.
-- All evaluation calls produce immutable audit records on the server side.
-- For regulated domains, audit records can be dual-written to a WORM store and time-stamped by an external TSA.
+- Clients receive only the rules and judgments they are authorized to see, governed by the user's department, capacity, and clearance.
+- All evaluation calls produce immutable audit records on the server side, with optional mirroring to WORM storage for compliance-grade scenarios.
+- PII in evaluation context is masked in audit logs by default; explicit opt-in is required for retaining it.
+- Cross-tenant isolation is enforced at the database (Row-Level Security) and search-index (document-level security) layers, not only at the API.
 
 ---
 
@@ -140,84 +154,125 @@ A rule is the central first-class object. It is **not** a regex or a code expres
 |---|---|
 | `id` | Stable identifier |
 | `statement` | The rule text in natural language (the canonical form) |
+| `locales` | Optional `dict[locale, LocalizedStatement]` for multilingual rules |
 | `source_refs` | Pointers to the source document, section, and offset |
-| `scope` | Who/what the rule applies to (org units, roles, systems, regions) |
-| `applicable_subject_types` | Which subject types this rule can evaluate (e.g., `[contract_clause]`) |
+| `scope` | Who/what the rule applies to (org units, roles, systems, jurisdictions, file globs) |
+| `subject_kinds` | The set of `SubjectKind`s this rule can evaluate (e.g., `[CLAUSE_SET]`, `[CODE_DIFF, DOCUMENT]`) |
 | `modality` | MUST / MUST_NOT / SHOULD / MAY / INFO (RFC 2119-style) |
-| `jurisdiction` | Where the rule applies legally (`jp`, `us-ca`, `eu`, `global`, etc.) |
-| `legal_force` | `advisory` / `policy` / `regulatory` / `statutory` |
 | `effective_period` | `valid_from` / `valid_until` |
-| `review_cadence` | When the rule must be reviewed (`semiannual`, `on-statute-change`, etc.) |
 | `preconditions` | Facts required to evaluate the rule |
 | `exceptions` | References to other rules or carve-outs |
 | `rationale` | Why the rule exists (purpose, intent) |
+| `context` | Surrounding document text, regulatory authority, qualifying conditions |
 | `severity` | LOW / MEDIUM / HIGH / CRITICAL |
+| `classification` | PUBLIC / INTERNAL / CONFIDENTIAL / RESTRICTED |
 | `tags` | Free-form taxonomic labels |
-| `governance` | Owner, approvers, revision history |
-| `maturity_level` | `experimental` / `stable` / `proven` |
+| `following_examples` | Concrete examples of compliant behavior |
+| `violation_examples` | Concrete examples of non-compliant behavior |
+| `governance` | `RuleOwnership` — owner department, delegated approvers, revision history |
+| `maturity_level` | EXPERIMENTAL / STABLE / PROVEN |
 | `embedding` | Vector representation (derived) |
 
 The `statement` is the **source of truth**. Structured fields exist for indexing, filtering, and prioritization — never to override the meaning of the statement.
 
-### 5.2 Rule Relationships
+### 5.2 The `Subject` Entity (Polymorphic)
+
+A subject is what gets evaluated against rules. The `Subject` protocol is the central architectural abstraction enabling cross-domain coverage.
+
+```
+SubjectKind:
+    CODE_DIFF       # software development
+    CLAUSE_SET      # legal / contracts
+    EVENT           # HR, operations (single event with optional sequence context)
+    TRANSACTION     # finance, procurement (with optional graph context)
+    CREATIVE        # marketing (text, image, video, multi-modal)
+    DECISION        # operations (approval, denial, exception grants)
+    IDENTITY        # KYC, sanctions, beneficial ownership
+    DOCUMENT        # arbitrary text (policies, communications, drafts)
+```
+
+Each subject carries:
+
+- `kind`: discriminator
+- `identifier`: stable identity for audit
+- `facts`: domain-specific structured payload
+- `attachments`: binary or referenced evidence (PDFs, images, transcripts)
+- `locale`: ISO language tag for locale-aware rule selection
+- `jurisdiction`: legal jurisdiction (JP, US, EU, ...)
+- `pii_fields`: which fact paths contain PII (used for redaction)
+
+Subject classes own their `render_for_llm()` implementation, which produces the prompt-friendly representation. This is the seam at which domain knowledge enters the evaluation pipeline.
+
+### 5.3 The `Department` and `Capacity` Entities
+
+The organizational model is first-class and mandatory.
+
+```
+Department:
+    id, name, type (LEGAL / HR / FINANCE / SALES / MARKETING / IT /
+                    OPERATIONS / RND / EXECUTIVE / CUSTOM)
+    parent_id, head, cost_center, locale
+
+RuleOwnership:
+    rule_id, owner_department_id, delegated_to,
+    classification (PUBLIC / INTERNAL / CONFIDENTIAL / RESTRICTED)
+
+CapacityAssignment:
+    department_id, user_or_group, capacity (OWNER / REVIEWER /
+                                            SUBSCRIBER / AUDITOR),
+    rule_filter
+```
+
+The implications are pervasive: approval routing, notifications, marketplace publishing rights, and audit access are all derived from this model. A change to a rule owned by Legal Department routes to Legal's REVIEWERs; alerts about HR rules notify HR's REVIEWERs; only a department's AUDITORs can read its restricted-classification audit records.
+
+### 5.4 Rule Relationships
 
 Rules form a graph, not a flat list. Modeling these relationships explicitly turns the repository from a list into a **provenance and impact graph**.
 
 | Relationship | Meaning |
 |---|---|
-| `refines` | A specific rule operationalizes a more abstract one |
-| `overrides` | A rule takes precedence over another |
-| `conflicts_with` | Two rules contradict each other (must be resolved) |
+| `refines` | A specific rule that operationalizes a more abstract one |
+| `overrides` | A rule that takes precedence over another |
+| `conflicts_with` | Two rules that contradict each other (must be resolved) |
 | `depends_on` | Evaluation requires another rule's verdict |
 | `derives_from` | This rule originates from a higher-level rule (e.g., a law) |
-| `succeeds` | A new revision replaces a prior version |
-| `translates` | Two rules express the same content in different languages |
+| `succeeds` | A new revision that replaces a prior version |
+| `localizes` | This rule is the locale-translation of another rule |
 
-### 5.3 Subjects and Adapters
+The lineage chain "law → regulation → industry guideline → internal policy → departmental rule → contract clause" is expressed entirely through `derives_from`. When an upstream node changes, the system identifies all downstream nodes and proposes review.
 
-A `Subject` is the thing being evaluated. The set of subject types is open and extensible:
+### 5.5 Verdict and Reason Graph
 
-- `code_change` — diff, file paths, language metadata.
-- `hr_event` — employee context, attendance / leave / overtime data.
-- `contract_clause` — clause text, contract metadata, counterparty.
-- `expense_claim` — line items, receipts, submitter context.
-- `marketing_copy` — copy text, distribution channel, target audience.
-- `vendor_onboarding` — vendor data, jurisdictions, screening results.
-- `meeting_minutes` — text, attendees, decisions.
-- `email_draft` — draft text, recipients, attachments.
-- `document_revision` — revision diff, document classification.
-- `transaction` — amount, parties, jurisdictions, instrument.
-- `custom` — for tenant-defined types not covered above.
+Every evaluation produces:
 
-Each subject type is served by a `SubjectAdapter` that parses payloads, assembles context, picks the right prompt template, and interprets remediations. Adding a new subject type is a contained extension — no changes to the evaluation core, audit log, or governance workflow.
+- `Verdict`: ALLOW / DENY / NEEDS_CONFIRMATION
+- `confidence`: model confidence on a 0–1 scale
+- `reason_graph`: structured DAG of which facts triggered which conditions in which rules
+- `remediations`: structured `Remediation` array with `auto_applicable` flags
+- `evidence_refs`: optional pointers to supporting documents
 
-### 5.4 Verdicts
+For experimental-maturity rules, DENY is downgraded to NEEDS_CONFIRMATION with `[SHADOW]` prefix.
 
-The evaluation engine returns one of:
+### 5.6 Evidence
 
-- `ALLOW` — the action is compliant with all relevant rules.
-- `DENY` — the action violates at least one rule.
-- `NEEDS_CONFIRMATION` — ambiguous; requires human review.
-- `ALLOW_WITH_CONDITIONS` — permitted only after specified conditions are met (e.g., higher-rank approver above an amount threshold).
-- `REQUIRES_DISCLOSURE` — permitted but triggers a disclosure obligation (e.g., conflict-of-interest, related-party transaction).
+Evaluations may attach evidence — signed approvals, prior verdicts, reviewer comments, supporting documents.
 
-Each verdict carries a structured **reason graph** explaining which facts triggered which conditions in which rules, and a **provenance lineage** showing the genealogy from source law / policy down to the rule that fired.
+```
+EvidenceRef:
+    type (DOCUMENT / VERDICT / APPROVAL / COMMENT / EXTERNAL),
+    storage_uri (content-addressed),
+    hash, classification, attached_at, attached_by
+```
 
-### 5.5 Remediations
+Evidence is content-addressed; tampering is detectable. Storage backend is pluggable (`adapters/evidence_storage`).
 
-When a verdict is `DENY` or `ALLOW_WITH_CONDITIONS`, the engine returns one or more remediations indicating how to bring the action into compliance. Remediations are typed by subject:
+### 5.7 Audit Entry
 
-- `CodeRemediation` — file edit (replace / insert / delete).
-- `ContractClauseRemediation` — clause-level edit, addition, or deletion.
-- `HrEventRemediation` — return for revision, request additional information, route to higher approver.
-- `ExpenseRemediation` — adjust amount, request receipt, change account code.
-- `WorkflowRemediation` — re-route approval, escalate.
+Every evaluation, rule mutation, governance action, and access to restricted data is recorded in an append-only audit log with hash chaining. For `RESTRICTED` and `CONFIDENTIAL` classifications, mirroring to WORM storage is mandatory.
 
-Each remediation carries an `auto_applicable` flag whose meaning is defined per subject type.
+### 5.8 Meta-Rules
 
-### 5.6 Meta-Rules
-
-The system supports **rules about rules** (e.g., "Any contract clause must not contradict the procurement policy"). Meta-rules are evaluated by the same engine but scoped to govern the rule corpus itself.
+The system supports **rules about rules** ("Any contract clause must not contradict the procurement policy"; "All HR rules must have a designated owner in HR Department"; "Rules of CRITICAL severity require two approvers"). Meta-rules use the same evaluation pipeline but operate over the rule corpus itself.
 
 ---
 
@@ -225,239 +280,310 @@ The system supports **rules about rules** (e.g., "Any contract clause must not c
 
 ### 6.1 Rule Management Server
 
-The server is the system of record for all rules.
+The server is the system of record. It exposes:
 
-- **Rule CRUD** with revision history and effective-date semantics.
-- **Extraction pipeline** — multi-source: document parsing for PDFs (work regulations, contracts, regulator circulars), DOCX (contract templates, internal handbooks), text and markdown (CLAUDE.md, README), HTML (statutory databases, intranet), and structured sources (linter configs, SaaS APIs).
-- **Search APIs** — full-text, vector, category/tag, hybrid (BM25 + vector reranking), context search (given facts, return applicable rules), impact search (given a rule change, return affected rules).
-- **Intent API** — natural-language endpoint that classifies and routes (`lookup_rule`, `check_compliance`, `find_conflicts`, `explain_rule`, `simulate_change`).
-- **Evaluation engine** — see §6.4.
-- **Audit log** — append-only, hash-chained record of all evaluations including subject type, inputs, applied rules, model identity, and verdict. Optional WORM dual-write and TSA time-stamping for regulated domains.
-- **Governance** — role-based access (Owner / Approver / Reader) per rule category, revision approval workflow, effective-date scheduling.
+- **REST API** at `/api/v1/...` for CRUD on rules, documents, evaluations, departments, capacities.
+- **Evaluate API** at `/api/v1/evaluate` accepting `subject_kind` and dispatching to the matching domain engine.
+- **Intent API** at `/api/v1/intent` classifying natural-language queries (`lookup_rule`, `check_compliance`, `find_conflicts`, `explain_rule`, `simulate_change`).
+- **Gateway API** at `/api/v1/gateway/...` for webhook-driven enforcement.
+- **Intelligence API** for health, effectiveness, comparison, digest, agent analytics.
+- **Discovery API** for multi-source rule discovery.
+- **Federation API** for organizational hierarchy.
+- **Proposals, Marketplace, Agent Governance, Snapshots, Playground, Alerts** as in the existing implementation, generalized for non-engineering domains.
 
-### 6.2 Rule Client (Python SDK)
+**Capabilities** include rule CRUD with revision history and effective-date semantics; multi-source extraction (code, PDF, DOCX, Confluence, SharePoint, Notion, regulation feeds); five search modalities plus context and impact search; LLM-as-Judge evaluation via subject-aware engines; append-only audit log with hash chaining and WORM mirror; classification-aware access control; department-aware governance.
 
-A thin, ergonomic wrapper over the server APIs.
+### 6.2 Subject Adapters
 
-```python
-from rulerepo import RuleClient
+Located under `services/evaluation/subjects/`, one module per `SubjectKind`. Each implements the `Subject` protocol, owns a prompt template directory, and provides feature extraction and remediation parsing tailored to its domain.
 
-async with RuleClient("http://localhost:8000") as client:
-    rules = await client.search.hybrid("overtime monthly limit", scope="hr/attendance/jp")
-    result = await client.intent.ask("What are the rules for refunding orders over $500?")
+The **Subject Registry** in `services/evaluation/subject_registry.py` maps `SubjectKind` values to adapter classes and is the single dispatch point.
+
+### 6.3 Domain Evaluation Engines
+
+The shared evaluation orchestrator (`services/evaluation/service.py`) is subject-agnostic: it assembles context, narrows rules through the rule selector, calls the appropriate subject's prompt, and aggregates verdicts. Each domain engine consists of (a) a Subject Adapter, (b) prompt templates, and optionally (c) domain-specific aggregation logic.
+
+#### 6.3.1 Code Diff Engine
+
+The original engine, refactored to operate behind `CodeDiffSubject`. Continues to support unified diffs, file paths, language detection, function extraction, and line-level remediation. Powers GitHub PR review, CI gating, and Claude Code integration.
+
+#### 6.3.2 Contract Clause Engine (Legal)
+
+Operates on `ClauseSetSubject` containing structured clauses extracted from a contract draft, with contract type, counterparty profile, and deal metadata. Supports modes: self-conformance against company standard clauses, cross-contract conflict detection, regulatory compliance, and risk scoring. Returns clause-scoped remediations with proposed rewrites.
+
+New components: `adapters/contract_parser.py`, `adapters/contract_compare.py`, `services/evaluation/clause_aggregator.py`, `RuleVerdict.clause_remediation` extending `Remediation`.
+
+#### 6.3.3 Event Engine (HR / Operations)
+
+Operates on `EventSubject` with optional `EventWindow` (temporal context). Supports modes: single-event compliance, sequence-aware evaluation (monthly accumulations), and calendar-aware evaluation (annual ceilings, special-clause activation thresholds).
+
+Used for attendance, expense, leave, business trip approvals. Connects via HR system adapters to systems like Workday, SAP SuccessFactors, SmartHR, freee人事労務.
+
+#### 6.3.4 Transaction Engine (Finance / Procurement)
+
+Operates on `TransactionSubject` with optional graph context (related transactions, accounts, parties). Supports modes: authorization (segregation of duties, approval limits), anti-fraud (anomalous patterns), tax compliance (invoice format, withholding, transfer pricing), sanctions (counterparty screening, beneficial owner traversal).
+
+This engine's output is operationally bound to SOX/J-SOX requirements; compliance-grade audit (§6.7) is a prerequisite.
+
+#### 6.3.5 Creative Engine (Marketing)
+
+Operates on `CreativeSubject` carrying multi-modal content (text, image, video) via Gemini Files API. Supports modes: 景表法 (JFTC Act), 薬機法 (PMD Act), industry-specific claim restrictions, brand guideline enforcement.
+
+#### 6.3.6 Identity Engine (KYC / Sanctions)
+
+Operates on `IdentitySubject` carrying customer/counterparty profile data. Supports modes: PEP/sanctions screening with name fuzzy matching, adverse media via Google Search grounding, beneficial owner graph traversal, country-risk scoring.
+
+### 6.4 Multi-Source Discovery
+
+Discovery is the cold-start engine. It analyzes existing artifacts to propose rules.
+
+**Code-based analyzers** (existing, retained):
+
+- `claude_md.py` — CLAUDE.md parsing
+- `linter_config.py` — ruff, eslint, tsconfig, prettier
+- `code_patterns.py` — static analysis of conventions
+
+**Policy-based analyzers** (new):
+
+- `pdf_policy.py` — regulation/policy PDFs via Gemini Files API
+- `docx_policy.py` — Word policy documents
+- `contract_corpus.py` — extract de-facto standard clauses from historical contracts
+- `regulation_feed.py` — e-Gov API, FSA notices, industry feeds, with `derives_from` linkage
+
+**Source connectors** (new):
+
+- `confluence_space.py`, `sharepoint_site.py`, `notion_workspace.py`, `google_drive_folder.py`, `box_folder.py`
+
+The **`DocumentSource` Protocol** unifies sources. The **`IncrementalSource`** variant supports continuous ingestion: when an upstream regulation amends, descendants are flagged for review automatically.
+
+All discovered rules pass through a human review queue before activation.
+
+### 6.5 Federation and Organizational Model
+
+The `Federation` model captures hierarchical rule composition (organization → team → project) and is now combined with the `Department` model (§5.3) for functional organizational structure. Rules at higher levels apply to descendants; descendants override locally.
+
+The **Federation Resolver** walks the ancestor chain and applies overrides. The **Department Resolver** maps a user or system to its departments and capacities.
+
+Rule ownership, approval routing, and notification fan-out flow through the Department Resolver. Marketplace publishing rights, audit access, and classification-based filtering flow through the Federation Resolver in conjunction with classification.
+
+### 6.6 Classification and Multi-Tenancy
+
+Classification is a property of rules, documents, evaluations, and audit entries:
+
+- `PUBLIC` — readable by all authenticated users
+- `INTERNAL` — readable by org members
+- `CONFIDENTIAL` — readable by department members and approved subscribers
+- `RESTRICTED` — readable by named individuals or auditors only
+
+Enforcement happens at three layers:
+
+1. **PostgreSQL Row-Level Security**: every session sets `current_user_clearance` and `current_user_departments`. Queries return only rows the user can read.
+2. **Elasticsearch document-level security**: mirrors RLS in the search index.
+3. **MCP-side clearance**: agents register with a clearance level. The MCP server filters rule retrieval and evaluation context to the agent's clearance.
+
+PII fields are marked at `Subject` construction time and are redacted in audit logs by default.
+
+### 6.7 Compliance-Grade Audit
+
+The audit subsystem provides:
+
+- **Append-only PostgreSQL audit log** with hash chaining (each entry includes the hash of the previous entry).
+- **WORM storage mirror** for `RESTRICTED` and `CONFIDENTIAL` audit entries via pluggable backends (S3 Object Lock, Azure Blob Immutable Storage, GCS Bucket Locks).
+- **Separation of duties**: application DB user has no SELECT on audit tables; only the `auditor` DB role does, and its access is itself logged.
+- **Public hash anchoring**: periodic anchoring of the chain head to a transparency log (Sigstore Rekor or independent timestamp service).
+- **Legal hold** primitives: `LegalHoldModel` ties scope filters to retention enforcement.
+- **Evidence attachment**: content-addressed `EvidenceRef` array on `EvaluationRecord`.
+- **Regulator export**: `POST /api/v1/audit/export?format=jsox|sox|fsa|gdpr` produces formatted artifacts satisfying specific frameworks. Each format is a separate adapter.
+
+### 6.8 Multi-Source Feedback Loop
+
+The feedback abstraction generalizes the existing PR-diff flywheel.
+
+```
+FeedbackEvent:
+    kind: CODE_CORRECTION / DECISION_OVERRIDE / APPROVAL_OVERRIDE /
+          EXCEPTION_GRANTED / AUDIT_FINDING / DISPUTE_OUTCOME /
+          POLICY_CLARIFICATION / EXPLICIT_VERDICT_OVERRIDE
+    original_verdict, corrected_verdict, reason, evidence_refs
 ```
 
-### 6.3 Agentic Rule Client (Python SDK)
+Capture implementations:
 
-A higher-level client that wraps `RuleClient` and adds capabilities for systems that need to **enforce** rules, not just query them.
+| Capture | Domain |
+|---|---|
+| `pr_capture.py` (existing) | Software (PR diffs) |
+| `contract_capture.py` | Legal (final vs drafted clauses, reviewer comments) |
+| `decision_capture.py` | HR / Ops (reversed denials, exception grants) |
+| `audit_capture.py` | Finance (auditor findings, correcting entries) |
+| `deal_capture.py` | Sales (legal-review modifications, rejected deals) |
+| `dispute_capture.py` | Legal (dispute outcomes, settlements) |
+| `explicit_capture.py` | All (direct human "this verdict was wrong" feedback) |
 
-- **Automatic context gathering** — pull related facts from surrounding systems before evaluation.
-- **Two-stage evaluation** — first narrow the rule set by metadata and embeddings, then evaluate the narrow set with a high-quality model.
-- **Result caching** — hash-keyed; auto-invalidated on rule revision.
-- **Reason graphs** — structured DAG of facts → conditions → rules.
-- **Repair suggestions** — minimum modification that would make the action compliant.
-- **Three integration modes** — `preflight`, `posthoc`, `sidecar`.
+`auto_drafter.py` becomes subject-aware: clustering uses subject-specific embedding spaces, drafting uses subject-specific prompts. The flywheel survives but generalizes across domains.
 
-```python
-from rulerepo_agentic import AgenticRuleClient
+### 6.9 Agent Context Delivery (MCP)
 
-async with AgenticRuleClient("http://localhost:8000", scope="hr/attendance/jp") as client:
-    result = await client.evaluate(
-        subject={
-            "type": "hr_event",
-            "payload": {"employee_id": "E001", "month": "2025-04", "overtime_hours": 50},
-        },
-        intent="register_overtime",
-        mode="preflight",
-    )
-```
+Exposes the Rule Repository to AI agents via the Model Context Protocol. Agents register with type and clearance; subjects are formed from agent context; verdicts are returned with reasoning.
 
-### 6.4 Subject-Aware Evaluation Engine
+Agent types are no longer engineering-only:
 
-The evaluation engine is the core differentiator. It accepts a typed `Subject`, maps it to relevant rules via `applicable_subject_types` and `scope` filters, and returns verdicts with subject-appropriate remediations.
+- `coding_assistant`, `code_reviewer`, `security_scanner`, `deployment_agent` (existing)
+- `contract_reviewer`, `clause_negotiator` (legal)
+- `hr_processor` (HR)
+- `expense_auditor`, `kyc_screener` (finance / compliance)
+- `creative_reviewer` (marketing)
+- `custom`
 
-**Pipeline**: Subject Adapter → Context Assembly → Rule Selection → LLM-as-Judge → Verdict Aggregation.
+Each type has an `AgentTypeProfile` defining domain-appropriate trust thresholds, mastery measurement (e.g., "code rule mastery" vs "clause-pattern mastery"), and exception semantics.
 
-- **Subject Adapter** — chooses the per-subject parser, context assembler, prompt template, and remediation interpreter.
-- **Context Assembler** — gathers domain-specific facts. For `hr_event`, this includes employee record, leave balances, prior attendance. For `contract_clause`, counterparty credit, prior-deal history, applicable internal policy. For `code_change`, file structure and surrounding code.
-- **Rule Selector** — narrows the corpus to ~5–20 relevant rules via `applicable_subject_types`, scope, severity, modality, jurisdiction, and tag filtering, then semantic ranking.
-- **Evaluation Core** — runs selected rules against the context using Gemini with structured JSON output. Tiered model selection by severity: Flash for LOW/MEDIUM, Flash + medium thinking for HIGH, Pro + high thinking for CRITICAL.
-- **Verdict Aggregator** — combines per-rule verdicts (any DENY → overall DENY; any REQUIRES_DISCLOSURE bubbles up) and produces a unified remediation summary.
+MCP tools (12+) include: `search_rules`, `evaluate_compliance`, `explain_rule`, `find_conflicts`, `get_rules_for_context`, `register_agent`, `get_personalized_rules`, `challenge_verdict`, `request_exception`, `create_proposal`, `get_proposal_status`.
 
-### 6.5 Agent Context Delivery (MCP)
+### 6.10 Marketplace
 
-The Rule Repository exposes itself to AI agents via the Model Context Protocol. This is one consumer of the engine, not the engine itself.
+Versioned rule packages with publishing, subscribing, composition conflict detection, and quality scoring. Quality scoring is **domain-aware**: code packages weight evaluation accuracy; legal packages weight deal closure rate and dispute absence; HR packages weight policy stability.
 
-- **MCP Server** — FastMCP with stdio (Claude Code) and streamable-http (remote agents).
-- **Tools** — `search_rules`, `evaluate_compliance`, `explain_rule`, `find_conflicts`, `get_rules_for_context`, `discover_rules`, plus tools for proposals, marketplace, and agent governance.
-- **Resources** — `rule://{id}`, `ruleset://{scope}`.
-- **Prompts** — `compliance_check`, `rule_summary`, `impact_analysis`.
-- **Rule Formatter** — three output formats (`instructions`, `checklist`, `detailed`).
+`quality_score_breakdown` is exposed so subscribers understand how the score was computed.
 
-### 6.6 Business-System Connector Ecosystem
+### 6.11 Governance Proposals
 
-To deliver organization-wide enforcement, the system integrates with the SaaS where business actions actually happen.
+Structured rule change management with:
 
-| Category | Reference systems | Integration purpose |
-|---|---|---|
-| Attendance | KING OF TIME, jobcan, freee人事労務 | Webhook on registration → preflight evaluation |
-| Expenses | freee, MoneyForward, Concur, RakuRaku Seisan | Webhook on submission → policy check |
-| Contracts | DocuSign, CloudSign, Holmes, SmartContract | Draft upload → dangerous-clause detection |
-| HR core | SmartHR, Workday, SAP SuccessFactors | Sync employee lifecycle and policy revisions |
-| ITSM | ServiceNow, Jira Service Management | Change tickets → CAB-rule compliance |
-| CRM | Salesforce, kintone | Discount / credit policy on opportunities and quotes |
-| Chat | Slack, Microsoft Teams | Message scanning for policy violations |
-| Doc storage | Google Drive, SharePoint, Box | Upload → confidentiality classification |
-| Identity | Okta, Azure AD, Google Workspace | Sync RBAC at hire / leave / transfer |
+- **Proposal lifecycle**: Draft → Review → Approved → Enacted, with revertable enactment.
+- **Multi-approver voting** with thresholds derived from rule severity and classification.
+- **Department-aware routing**: proposals route to OWNER and REVIEWER capacity holders of the rule's owning department.
+- **Threaded comments** with inline suggestions.
+- **Conflict analysis** (Neo4j) and **impact preview** (replay historical evaluations) before enactment.
+- **Notification inbox** with capacity-aware fan-out.
 
-All connectors normalize inbound payloads to a common `BusinessEvent` schema, and dispatch outbound actions (return-for-revision, comment, notification) through a uniform `Action Dispatcher`.
+Meta-rules (§5.8) govern proposal lifecycle (e.g., "CRITICAL severity rules require N approvers from the owning department").
 
-### 6.7 Rule Discovery (Code and Business)
+### 6.12 Playground and Test Cases
 
-Solves the cold-start problem: instead of writing rules from scratch, the system discovers rules already implicit in an organization's artifacts.
+Sandbox evaluation that does not persist to audit log, cache, or rule store. Per-rule test cases support manual creation, auto-generation from historical evaluations, and Gemini-generated examples (compliant + non-compliant).
 
-**Code sources** — CLAUDE.md parser, linter config parser (ruff/eslint/tsconfig/prettier), code-pattern analyzer, GitHub URL import.
+Playground variants per `SubjectKind`:
 
-**Business sources** —
-- Work regulation PDFs.
-- Standard contract templates (DOCX).
-- Regulator circulars (PDF / HTML).
-- National statutory databases (e-Gov, EUR-Lex, federalregister.gov) via dedicated legal pipeline.
-- SharePoint, Confluence, Notion, kintone pages.
-- Email archives (operational rules propagated by mail).
-- Meeting minutes (decisions that become rules).
-- Spreadsheet-based procedure books.
+- Code Playground (existing)
+- Contract Playground — paste a draft clause, test rules
+- HR Playground — paste an event JSON, test rules
+- Transaction Playground — paste a journal entry or PO
 
-**Pipeline** — pattern detection with confidence scoring, candidate generation by Gemini, human review queue, batch approval for high-confidence (>0.9) candidates.
+### 6.13 Snapshots and Environment Deployment
 
-**Rule anthropology mode** — mines past judgments (email approvals, "is this OK?" Slack threads, meeting decisions) to surface rules that exist as senior tacit knowledge but were never formalized.
+Versioned, deployable rule sets per environment (development, staging, production). Atomic deployment, rollback, and impact simulation. Evaluation API accepts `environment` to use only rules from the active snapshot.
 
-### 6.8 Persona-Based Operator Console
+### 6.14 Proactive Alerts
 
-The frontend supports multiple personas with tailored dashboards:
+Background workers detect dormant rules, high deny rates, health decline, effectiveness decline, locale inconsistency, classification mismatch, and rule conflicts. Alert types are extensible. Webhook delivery to Slack, email, or generic endpoints.
 
-- `Compliance Officer` — regulatory progress, unresolved alerts, audit readiness.
-- `Legal Counsel` — contracts awaiting review, dangerous-clause detections, litigation-hold scope.
-- `HR Manager` — labor-law violation early warnings, unused paid leave, harassment-report status.
-- `Finance Controller` — expense-policy violations, credit-line breaches, revenue-recognition uncertainty.
-- `Engineering Lead` — code rule violations, agent performance, top broken rules.
-- `Sales Manager` — discount approval queue, special-pricing requests, advertising-law alerts.
-- `Executive` — company-wide compliance index, regulatory-cost trend, risk heatmap.
+### 6.15 Multilingual and Jurisdictional Support
 
-A single global compliance score is replaced with per-domain scores (HR / Legal / Finance / IT / Sales / ESG), surfaced as a heatmap.
+`Rule.locales` holds parallel-language rule statements. A cron job verifies semantic equivalence between locales using Gemini and raises `conflict_locale` alerts on divergence. Evaluation prefers the rule locale matching the subject's locale.
 
-### 6.9 Rule Intelligence and Observability
+`scope.jurisdiction` filters applicable rules during evaluation. The frontend supports i18n with parallel JA/EN content.
 
-- **Health Scorer** — per-rule score (0–100) across completeness, clarity, test coverage, freshness, activity, owner engagement.
-- **Effectiveness Score** — precision (verdict accuracy), prevention rate (did corrections decrease after activation?), agent adoption.
-- **Recommender** — suggests retiring dormant rules, clarifying ambiguous ones, escalating persistent violations, strengthening SHOULD → MUST.
-- **Conflict Detector** — continuous scan for `conflicts_with` candidates.
-- **Verdict Drift Detection** — temporal, model, semantic.
-- **Weekly Digest** — compliance trend, top violations, attention-needed rules, pending actions, delivered via webhook.
+### 6.16 Integrations Catalog
 
-### 6.10 Rule Enforcement Gateway
+Connectors under `adapters/integrations/` organized by category, each implementing one or more of `DocumentSource`, `EventStream`, `TransactionStream`, `IdentityStream`.
 
-Event-driven, zero-code rule enforcement via webhooks. Receives `BusinessEvent` payloads from any source, matches them to enforcement policies, runs the evaluation engine, and dispatches actions.
+Phase A (highest priority):
 
-### 6.11 Correction Feedback Loop (Flywheel)
+- HR: SmartHR, freee人事労務, Workday, SAP SuccessFactors
+- Finance: freee会計, MoneyForward, SAP, Oracle EBS
+- Contract: ContractS, Hubble, DocuSign, Ironclad
+- Documents: Confluence, SharePoint, Notion, Google Drive, Box
 
-Captures human corrections of AI- or system-produced output and converts them into rule improvements:
+Phase B:
 
-- **PR-based capture** — compares evaluated diff with final merged diff.
-- **Agent-hook capture** — detects human edits to files recently modified by an agent.
-- **Business-action capture** — detects when a business action was returned-for-revision, edited by an approver, or rejected.
+- CRM: Salesforce, HubSpot
+- ERP: SAP S/4HANA, Oracle Fusion, NetSuite
+- Data: Snowflake, BigQuery, Databricks
+- Identity: Okta, Azure AD, Google Workspace (organizational source for §5.3)
 
-Corrections are clustered, and clusters with sufficient size and confidence trigger Gemini to draft a rule proposal. Approved proposals start in shadow mode (`maturity_level=experimental`) and graduate automatically based on observed accuracy.
-
-### 6.12 Federation, Snapshots, Playground, Alerts, Marketplace, Proposals, Agent Governance
-
-These features (described in detail in `/development/` docs) provide:
-
-- **Federation** — org/team/project hierarchy with inheritance and overrides.
-- **Snapshots** — versioned, environment-deployed rule sets with rollback and impact simulation.
-- **Playground** — sandbox evaluation with no persistence; per-rule test cases.
-- **Proactive Alerts** — background workers detect dormant rules, high deny rates, health decline.
-- **Marketplace** — cross-team and cross-organization rule package publishing and subscription.
-- **Proposals** — Draft → Review → Approve workflow with multi-approver voting and impact preview.
-- **Agent Governance** — agent profiles, trust levels, personalized rules, verdict challenges, exception requests, multi-agent governance sessions.
-
-### 6.13 Audit and Compliance-Grade Traceability
-
-- **Hash-chained audit log** — append-only, with each row referencing the hash of the previous row.
-- **Optional WORM dual-write** — for regulated domains (financial, medical, public-sector).
-- **Optional TSA time-stamping** — strengthens admissibility of audit records as legal evidence.
-- **eDiscovery / litigation hold** — preservation mode locks deletion; export bundles for disclosure.
-- **Audit-report export** — endpoints aligned with J-SOX, SOX, ISO 27001, PCI DSS expectations.
-- **Automated-decision controls** — for GDPR Article 22 / EU AI Act compliance, includes user-notification and objection paths.
+iPaaS compatibility (Workato, Zapier, n8n) is mandatory; every integration must also be reachable from the public REST API.
 
 ---
 
 ## 7. Key Features
 
 ### 7.1 Foundational
-- Natural-language rule storage with full provenance.
-- Multi-modal search (full-text, vector, category, hybrid, intent).
+
+- Natural-language rule storage with full provenance to source documents.
+- Subject-polymorphic evaluation across code, contracts, events, transactions, creatives, identities, decisions, and documents.
+- Multi-source discovery (code artifacts and policy documents).
+- Multi-modal search (full-text, vector, category, hybrid, intent, context, impact).
 - Rule lifecycle: draft → review → approved → effective → superseded → retired.
-- REST, Intent, Evaluate, and Gateway APIs.
-- Python SDK (Rule Client) and Agentic SDK.
+- First-class organizational model (Department, Capacity, Ownership).
+- Classification-aware multi-tenancy with RLS and document-level security.
+- REST API, Intent API, Evaluate API, Gateway API, Integration API.
+- Python SDKs (Rule Client, Agentic Rule Client) and TypeScript SDK.
 
 ### 7.2 Differentiating
-- **Pluggable Subject** — code, HR, contracts, expenses, marketing, transactions, and beyond, on one engine.
-- **Conflict Detector** — continuous scanning for contradictions.
-- **Counterexample Generator** — minimal compliant and non-compliant examples per rule.
-- **Rule Coverage** — dormant and over-triggered rules from event logs.
-- **Change Impact Simulator** — replays history against proposed rule revisions.
-- **Refinement Feedback Loop** — corrections propose rule rewrites.
-- **Polyglot Rules** — semantically equivalent rule pairs across languages.
-- **Provenance Lineage** — Law → Policy → Department Rule → Contract Clause.
-- **Rule Tutor** — conversational explainer for new employees and project members.
-- **Why API** — multi-level rationale traversing `rationale` and `source_refs`.
-- **Automatic Rule Discovery** — code and business sources.
-- **Cross-Project Federation** — org/team/project inheritance with overrides.
-- **Rule Playground** — interactive sandbox before deployment.
-- **Proactive Alerts** — workers detect problems and notify.
-- **Versioned Snapshots** — atomic deployment with rollback.
-- **Marketplace** — cross-team and cross-org rule sharing.
-- **Persona Dashboards** — Compliance, Legal, HR, Finance, Engineering, Sales, Executive.
-- **Audit-grade Traceability** — WORM, TSA, eDiscovery, framework-aligned reports.
+
+- **Subject Polymorphism**: one platform, many evaluation domains.
+- **Single Provenance Graph**: law → regulation → policy → rule → clause as one Neo4j graph traversable end-to-end.
+- **Compliance-Grade Audit**: WORM, separation of duties, public anchoring, legal hold, evidence attachment, regulator export.
+- **Multi-Source Cold-Start**: Day-one experience populated from existing policy libraries, contract corpora, regulation feeds — not just code.
+- **Conflict Detector**: continuously scans for `conflicts_with` candidates across the corpus.
+- **Counterexample Generator**: minimal compliant and non-compliant examples for every rule.
+- **Rule Coverage**: dormant and over-triggered rule detection from event logs.
+- **Change Impact Simulator**: replay historical events against proposed rule revisions.
+- **Refinement Feedback Loop**: multi-domain feedback drives rule rewrites.
+- **Polyglot Rules**: parallel-locale rule pairs with continuous equivalence verification.
+- **Provenance Lineage**: upstream regulation changes auto-flag downstream rules for review.
+- **Why API**: multi-level rationale traversing `rationale`, `context`, `source_refs`.
+- **Automatic Rule Discovery**: bootstraps rules from many source types — solves the cold-start problem.
+- **Cross-Project Federation**: org → team → project rule inheritance with overrides.
+- **Department-Aware Governance**: ownership, approval, and notification routing through functional organization.
+- **Rule Marketplace**: versioned packages, domain-aware quality scoring.
+- **Autonomous Agent Governance**: per-agent profiles, trust levels, mastery, exception negotiation.
 
 ### 7.3 Cross-Cutting
-- Immutable audit log with hash-chained integrity, optional WORM and TSA.
-- Tiered LLM strategy: small/fast for screening, large/accurate for high severity, consensus voting for CRITICAL.
-- PII sanitization on inputs and masking on logs.
-- RBAC per rule category with Owner / Approver / Reader.
-- Multi-tenant ready (`tenant_id` reserved on all tables).
-- i18n (UI strings) plus Polyglot Rules (rule statements).
+
+- Immutable audit log with hash chain and optional WORM mirror.
+- Tiered LLM strategy: model selection by `(subject_kind, severity, historical_disagreement_rate)`.
+- PII-aware redaction in evaluation context and audit logs.
+- Classification-aware RBAC: capacity (OWNER / REVIEWER / SUBSCRIBER / AUDITOR) per department.
+- Pluggable LLM provider layer (Gemini default; Anthropic, OpenAI, self-hosted as alternatives).
+- Per-department LLM quotas and rate limits.
+- Latency budgets per subject (sub-second for code preflight, tens of seconds for contract review, sub-second for HR events).
+- Evaluation request tracing with model ID, prompt version, latency, classification.
 
 ---
 
 ## 8. Use Cases
 
-The Rule Repository serves a wide set of organizational rule domains. The following are representative; the system is not limited to these.
-
 ### 8.1 HR / Attendance Management
-The HR system registers attendance and overtime. The Rule Repository holds the work regulations (Labor Standards Act, internal rules, 36-Agreement). The Agentic Rule Client validates each registration in `preflight` mode and alerts on violations such as monthly overtime exceeding the legal limit or missing 36-Agreement filing.
+
+The HR system registers attendance and overtime events. The Rule Repository holds work regulations from the Labor Standards Act, the company's work rules, and any 36-Agreement special clauses. The Agentic Rule Client validates each registration in `preflight` mode and alerts on violations: monthly overtime exceeding the legal cap, annual ceilings approached, missing 36-Agreement filings. Event sequences over windows of varying lengths are evaluated together, not in isolation.
 
 ### 8.2 Contract Management
-The contract management system stores contracts under negotiation. The Rule Repository holds internal procurement rules and prior contract clauses. When a new contract is registered, the Agentic Rule Client checks for contradictions with internal policy and conflicts with prior contracts. Dangerous clauses (unlimited liability, exclusive jurisdiction in counterparty's country) trigger warnings.
 
-### 8.3 Financial Controls and Expense Compliance
-Expense submissions in Concur or freee are evaluated against travel-expense, entertainment-expense, and tax-deductibility rules. Procurement requests are checked for sub-contracting law (下請法) compliance and budget adherence. Revenue recognition is validated against the new revenue standard.
+A legal team negotiates contracts using a contract management system. The Rule Repository holds internal procurement policies, prior contract terms, and sector regulations. When a counterparty draft is uploaded, the Contract Clause Engine extracts clauses, compares them against the company's standard clauses, detects conflicts with prior contracts, checks regulatory compliance (subcontracting law, antitrust), and proposes clause-level rewrites. Final contracts feed back through `contract_capture.py` to refine standard-clause rules.
 
-### 8.4 Marketing and Advertising Compliance
-Advertising copy is scanned against pharmaceutical-affairs (薬機法), premiums-and-representations (景表法), and specified-commercial-transactions (特商法) regulations before publication. Sales pricing is checked against antitrust constraints.
+### 8.3 Software Development
 
-### 8.5 Regulatory Compliance
-A financial institution stores regulations (consumer protection, AML, KYC) in the repository, with derived internal procedures linked via `derives_from`. When a regulation is amended, the Provenance Lineage and Change Impact Simulator together identify all downstream procedures that need review.
+The Rule Repository stores engineering coding standards, security policies, documentation conventions, and architectural decisions. CI pipelines use `rulerepo-check` to evaluate pull requests; the GitHub App posts structured review comments. Claude Code uses MCP to receive applicable rules at edit time and after edit. Discovery bootstraps initial rules from CLAUDE.md, linter configs, and code patterns. Corrections flow into the flywheel and refine rules.
 
-### 8.6 AI-Assisted Software Development
-A team uses Claude Code with the Rule Repository. Rule Discovery bootstraps 50 rules from existing CLAUDE.md, linter configs, and code conventions. Agents receive applicable rules via MCP and write compliant code from the start. When a human reviews AI-generated code and makes corrections, the Correction Feedback Loop captures the delta, proposes new rules, and the correction rate drops over time.
+### 8.4 Regulatory Compliance
 
-### 8.7 Document Workflow and Communication
-Outgoing emails are checked against confidentiality and conflict-of-interest rules. Slack messages are scanned (with privacy controls) for policy violations. Document uploads to Google Drive are classified and assigned retention periods.
+A financial institution stores consumer-protection laws, FSA notices, AML/KYC requirements, and internal procedures derived from them via `derives_from`. When a regulation is amended (auto-detected via the regulation feed), the Provenance Lineage and Change Impact Simulator identify all downstream procedures that need review. Compliance officers review proposals routed to them through the Department-aware governance flow. The audit trail satisfies regulatory examination procedures.
 
-### 8.8 Cross-Organizational Rule Sharing
-A consortium of pharmaceutical companies publishes a curated, expert-reviewed pharmaceutical-affairs ruleset to the Marketplace. Member companies subscribe and receive updates as regulations change. Each company can override individual rules locally for its own operating context.
+### 8.5 Marketing and Creative Review
+
+Marketing produces ad copy, landing pages, social posts, and product label content. The Creative Engine reviews each item against 景表法, 薬機法 (when applicable), industry-specific claim restrictions, and brand guidelines. Multi-modal content (text + image) flows through Gemini Files API. Reviewer overrides feed back through `decision_capture.py` to refine rules.
+
+### 8.6 Finance / SOX
+
+Procurement, accounts payable, and finance teams operate on transactions in ERP. The Transaction Engine evaluates each authorization, payment, and journal entry against segregation-of-duties controls, approval-limit policies, anti-fraud signals, and tax compliance requirements. Audit findings feed back to refine controls. The audit trail is WORM-mirrored for SOX/J-SOX procedures and exportable in regulator-friendly formats.
+
+### 8.7 KYC / Sanctions
+
+Customer onboarding screens new accounts. The Identity Engine performs PEP/sanctions screening, adverse media checks (via Google Search grounding), beneficial owner graph traversal, and country-risk scoring. Edge cases route to compliance reviewers; resolution feeds back through `explicit_capture.py`.
+
+### 8.8 AI-Assisted Development
+
+A team uses Claude Code with the Rule Repository. Discovery bootstraps 50 rules from CLAUDE.md, linter configs, and code conventions in an afternoon. Agents receive applicable rules via MCP. Human corrections flow through the flywheel. Organization-wide engineering standards propagate via Federation, with project-specific overrides.
 
 ---
 
@@ -467,98 +593,99 @@ A consortium of pharmaceutical companies publishes a curated, expert-reviewed ph
 |---|---|
 | Backend | Python 3.13, FastAPI, SQLAlchemy (async), Alembic |
 | Frontend | TypeScript, React 19, Next.js 15, Tailwind CSS |
-| LLM | Gemini 3 Flash + Gemini 3.1 Pro via `google-genai` |
-| Document parsing / OCR | Gemini Files API + document understanding |
-| Relational store | PostgreSQL 17 (with `pgvector` available) |
-| Search | Elasticsearch 8.17 |
-| Graph store | Neo4j 5 |
-| Job queue | Redis 7 + arq |
-| MCP | FastMCP (mcp ≥ 1.9), 12 tools |
-| Audit storage | Append-only Postgres tables; optional S3 Object Lock (WORM); optional TSA |
+| LLM | Gemini 3 Flash + Gemini 3.1 Pro via `google-genai` (pluggable) |
+| Document parsing | Gemini Files API (PDF), `python-docx` (DOCX), markdown parsers |
+| Search | Elasticsearch 8.x with kNN |
+| Graph | Neo4j 5.x |
+| Relational | PostgreSQL 17 with pgvector (embeddings), RLS for multi-tenancy |
+| Cache & queue | Redis 7 + arq |
+| WORM storage | S3 Object Lock / Azure Immutable Blob / GCS Bucket Lock (pluggable) |
+| Public anchoring | Sigstore Rekor (default) or pluggable timestamp authority |
+| MCP | FastMCP (mcp >= 1.9), 12+ tools |
 | Auth | OIDC / OAuth2 |
-| Deployment | Container-native, Kubernetes-ready, Docker Compose for local dev |
+| Quality | ruff + mypy, ESLint + Prettier, pre-commit hooks |
+| Deployment | Container-native, Kubernetes-ready |
 
-The architecture intentionally keeps the LLM interface abstract; the `Evaluator` interface accepts any model that can perform structured judgment. Today's implementation is Gemini-first.
+The architecture intentionally avoids hard-coding a single LLM provider. The `LLMProvider` interface accepts any model that can perform structured judgment.
 
 ---
 
 ## 10. Roadmap
 
-The project has progressed through Phases 1–6 and is now extending into Phase 7 — the cross-organizational rebrand.
+The project is structured in phases. Phases 1 through 6 represent the existing implementation; phases 7 through 10 represent the cross-organizational expansion described in this document.
 
-### Phases 1–6 (largely complete)
-- **Phase 1 — Foundation**: storage, search, extraction pipeline, basic governance.
-- **Phase 2 — Enforcement**: evaluation engine, MCP, GitHub PR review, CI CLI, agent hooks.
-- **Phase 3 — Discovery & Learning**: rule discovery, correction feedback loop, federation.
-- **Phase 3.5 — Adoption Acceleration**: GitHub import, PR correction capture, impact preview, conflict transparency.
-- **Phase 4 — Testing & Deployment Safety**: playground, test cases, alerts, snapshots.
-- **Phase 5 — Self-Improving Governance**: batched evaluation, evaluation persistence, outcome dashboard, flywheel, active rule injection, structured remediation, maturity model, advanced intelligence.
-- **Phase 6 — Platform & Ecosystem**: collaborative governance proposals, autonomous agent governance loop, cross-organization marketplace.
+### Phase 1 — Foundation [COMPLETE]
 
-### Phase 7 — Cross-Organizational Generalization (in progress)
+Storage and search: rule data model, document ingestion, multi-modal search, REST/Intent APIs, Python SDK, basic governance.
 
-#### 7a. Branding fix (high impact, low cost)
-- Add ≥ 6 business-domain templates (HR, contracts, expenses, advertising, compliance) — push catalog past 200 rules.
-- Rewrite README and PROJECT.md so use cases lead with contracts, HR, sales, and compliance.
-- Formalize and publish the Scope naming guideline, treating engineering and business symmetrically.
-- Promote `sample_rules/sales_team_rules/` and add `sample_rules/hr_rules/`, `sample_rules/contract_rules/`, etc., to first-class status.
+### Phase 2 — Enforcement [COMPLETE]
 
-#### 7b. Subject abstraction
-- Introduce `SubjectType` enum and `SubjectAdapter` interface.
-- Migrate existing `code_change` to the new adapter system, preserving full backward compatibility.
-- Implement `hr_event` and `contract_clause` adapters first.
-- Add subject-typed `Remediation` subclasses.
-- Add subject-typed prompt templates.
+Code-Aware Evaluation Engine, Agent Context Delivery (MCP), GitHub PR review, CI CLI, agent hooks, Enforcement Gateway, Rule Intelligence.
 
-#### 7c. Discovery and ingestion expansion
-- PDF / DOCX policy ingestion pipeline.
-- Dedicated legal-document pipeline with chapter/article structure and amendment tracking.
-- SharePoint, Confluence, Notion, kintone connectors.
-- Polyglot Rules — full implementation.
+### Phase 3 — Discovery and Learning [COMPLETE]
 
-#### 7d. Business-system integrations
-- Common `BusinessEvent` normalization layer.
-- Attendance, expense, contract, HR-core, ITSM, CRM, chat, doc-storage, identity connectors.
-- Privacy-aware Slack / Teams scanning.
+Automatic Rule Discovery (code-based), Agent Correction Feedback Loop (PR-based), Cross-Project Rule Federation.
 
-#### 7e. Persona-based UX
-- Persona switcher (Compliance / Legal / HR / Finance / Engineering / Sales / Executive).
-- Domain-segmented heatmap dashboards.
-- JP / EN i18n.
-- Onboarding wizard for business users.
+### Phase 4 — Testing and Deployment Safety [COMPLETE]
 
-#### 7f. Governance and audit hardening
-- Audit-export reports (J-SOX, ISO 27001, SOX, PCI DSS).
-- Optional WORM dual-write.
-- Optional TSA time-stamping.
-- New `Rule` fields: `jurisdiction`, `legal_force`, `review_cadence`, `applicable_subject_types`.
+Rule Playground, per-rule test cases, proactive alerts, versioned snapshots, environment-based evaluation.
 
-#### 7g. Multi-tenancy foundation
-- `tenant_id` migration across all tables.
-- Tenant-isolation authorization layer.
-- Cross-organization Marketplace publishing.
-- Privacy-preserving federated correction aggregation.
+### Phase 5 — Self-Improving Governance [COMPLETE]
 
-### Phase 8 — Industry Specialization (planned)
-- Industry-specific rule packs (financial services, healthcare, manufacturing, public sector).
-- Expert-review workflow for rule package certification.
-- Regulator-feed integrations for automatic statutory updates.
+Batched evaluation, evaluation persistence, outcome-oriented dashboard, correction-to-rule flywheel, active rule injection, zero-config bootstrapping, structured remediation, rule maturity model, advanced intelligence.
+
+### Phase 6 — Platform and Ecosystem [PARTIALLY COMPLETE]
+
+Collaborative Governance Workflow (Proposals) [DONE], Autonomous Agent Governance Loop [DONE], Rule Marketplace [DONE].
+
+### Phase 7 — De-coding the Foundation [COMPLETE]
+
+The pivot from engineering-centric to cross-organizational. All four streams shipped: Subject Polymorphism (`SubjectKind` enum, `@register` decorator, subject-agnostic orchestrator), Department/Capacity model (`DepartmentService`, `resolve_owner`/`resolve_approvers`/`resolve_audience`), Classification and RLS (PostgreSQL RLS policies, `with_user_context`, Elasticsearch document-level security, PII redactor), and Domain Template Pack v1 (60 rules across HR attendance, contract NDA/MSA, and expense policy packs with 100% field coverage). 500 tests pass with zero regressions.
+
+**Value delivered**: Legal, HR, and Finance can put their actual rules in this system, trust who sees them, and route approvals through functional ownership.
+
+### Phase 8 — Domain Engines and Discovery
+
+- **Contract Clause Engine** with self-conformance, cross-contract conflict, regulatory compliance, risk scoring.
+- **Event Engine** with single-event, sequence-aware, calendar-aware evaluation.
+- **Document Discovery analyzers**: PDF, DOCX, Confluence, SharePoint, Notion, Google Drive, contract corpus mining, regulation feeds with `derives_from` linkage.
+- **Domain-aware UX**: `/contracts/review/[id]`, `/events/[id]`, no-code rule editor, intent-first search, department-aware home dashboards.
+
+**Value delivered**: The system understands contracts and events, and discovery works against existing policy libraries.
+
+### Phase 9 — Compliance Grade
+
+- **Audit hardening**: WORM storage, separation of duties, public hash anchoring, legal hold, evidence attachment, regulator export (J-SOX, SOX, FSA, GDPR).
+- **Multilingual and Jurisdiction**: `Rule.locales`, locale consistency cron, locale-aware evaluation, frontend i18n, `scope.jurisdiction`.
+
+**Value delivered**: Auditors can run their procedures against the system as-is. Global enterprises can adopt across jurisdictions.
+
+### Phase 10 — Expansion (continuous)
+
+- **Integration catalog**: Phase A (HR systems, ERP, contract platforms, document repositories), then Phase B (CRM, data lakes, identity).
+- **Transaction, Creative, Identity engines**: financial controls, marketing claim review, KYC.
+- **Feedback diversification**: contract, decision, audit, deal, dispute, explicit capture implementations.
+- **Domain-adaptive model selection**: `(subject_kind, severity, disagreement_rate) → model`.
+
+**Value delivered**: The system reaches into every domain where rules govern work, and learns from every domain's feedback signals.
 
 ---
 
 ## 11. Success Metrics
 
-- **Coverage** — percentage of target source documents successfully extracted and registered.
-- **Latency** — p50 / p95 / p99 evaluation latency in `preflight` mode.
-- **Accuracy** — human-rated correctness on a held-out test set; precision and recall on conflict detection.
-- **Adoption** — number of integrated systems and active rules; volume of evaluation requests per day.
-- **Governance health** — percentage of rules with complete metadata, current rationale, active owners.
-- **Time-to-comply on regulatory change** — median time between a source-law amendment and the corresponding internal rule revision being approved.
-- **Cross-domain balance** — share of rules in non-coding domains (target: > 60% by end of Phase 7).
-- **Shadow-to-enforcement rate** — > 70% of experimental rules reach stable within 60 days.
-- **Auto-fix rate** — > 40% of SHOULD violations auto-fixed via structured remediations (where applicable).
-- **Flywheel throughput** — > 5 rules/month auto-drafted from correction clusters.
-- **Marketplace adoption** — number of subscribed rule packages per tenant.
+- **Coverage**: percentage of rules in target source documents successfully extracted and registered, per domain.
+- **Latency**: p50 / p95 / p99 evaluation latency in `preflight` mode, broken down by `SubjectKind`.
+- **Accuracy**: human-rated correctness of verdicts on held-out test sets, per domain; precision and recall on conflict detection.
+- **Adoption**: number of integrated systems and active rules; volume of evaluation requests per day, broken down by `SubjectKind` and department.
+- **Cross-domain breadth**: number of `SubjectKind`s with active rules and >100 evaluations per month.
+- **Governance health**: percentage of rules with complete metadata, current rationale, classified properly, and an active owner department.
+- **Time-to-comply on regulatory change**: median time between a source-law amendment and the corresponding internal rule revision being approved.
+- **Audit readiness**: time required to assemble regulator export for a defined audit scope; should be sub-hour for routine scopes.
+- **Shadow-to-enforcement rate**: >70% of experimental rules reach stable within 60 days.
+- **Auto-fix rate**: >40% of SHOULD-level violations auto-fixed via structured remediations (where applicable).
+- **Flywheel throughput**: >5 rules/month auto-drafted from correction clusters (per active domain); correction rate decreases >30% after flywheel rule activation.
+- **Time-to-rule**: <1 week from correction pattern detection to approved rule.
+- **Cross-org adoption signal**: percentage of departments (Legal/HR/Finance/Marketing/etc.) with active rule sets and active OWNERs.
 
 ---
 
@@ -567,49 +694,59 @@ The project has progressed through Phases 1–6 and is now extending into Phase 
 | Risk | Mitigation |
 |---|---|
 | LLM verdicts are non-deterministic and may be wrong | Always log full evaluation context; require human review on high-severity denials; consensus voting for CRITICAL rules; refinement feedback loop. |
-| Rule wording ambiguity leads to inconsistent verdicts | Counterexample generator surfaces ambiguity; refinement loop suggests rewrites; require unit tests on each rule. |
-| LLM costs scale poorly with rule corpus size | Two-stage evaluation (metadata pre-filter + LLM); aggressive caching; tiered model selection; batched evaluation. |
-| Sensitive data leaks through evaluation context | Input sanitization; log masking; tenant isolation; optional fully self-hosted model deployment. |
+| Subject Polymorphism refactor breaks existing engineering integrations | Existing code path isolated as `CodeDiffSubject`; default `subject_kind=CODE_DIFF` preserves backward compatibility; existing tests must pass before new subjects ship. |
+| Rule wording ambiguity leads to inconsistent verdicts | Counterexample generator surfaces ambiguity; refinement loop suggests rewrites; per-rule test cases required for `STABLE` graduation. |
+| LLM costs scale poorly with rule corpus size | Two-stage evaluation (metadata pre-filter, then LLM); aggressive caching with rule-revision invalidation; tiered model selection; batched evaluation. |
+| Sensitive data leaks through evaluation context | Subject-level PII marking; mandatory redaction in audit logs; per-classification storage isolation; pluggable self-hosted LLM. |
 | Rule changes break dependent systems | Change Impact Simulator; staged rollouts via `effective_period`; sidecar mode for shadow testing; snapshot rollback. |
 | Over-reliance reduces human judgment | Position the system as decision support, not decision replacement; preserve rationale visibility; require human approval for rule revisions. |
-| Conflicts with existing IAM / GRC tools | Position the Rule Repository as a complementary semantic layer; provide integration points rather than competing with baseline controls. |
-| Low-quality business templates damage credibility | Mark templates `expert_reviewed: true / false (reference only)`; gated marketplace publishing; partnerships with domain experts. |
-| Drift back toward code-only positioning | Cross-domain balance metric in §11; review at quarterly cadence; ensure new features have non-code use cases. |
-| Audit / regulatory rejection of LLM-based decisions | WORM dual-write; TSA time-stamping; framework-aligned reports; clear automated-decision-making notices and objection paths. |
+| Conflicts with existing IAM / GRC tools | Position as a complementary semantic layer; provide integration points; do not replace baseline access control. |
+| Compliance audit accepts the system as evidence | WORM storage with public anchoring; separation of duties on audit access; regulator-export adapters. |
+| Cross-domain expansion outpaces team capacity | Subject Polymorphism enables domains to be added independently; templates and connectors are parallel work streams; community contribution path via marketplace. |
+| Multilingual divergence creates legal risk | Locale consistency cron; explicit `localizes` relationship; alerts on divergence; locale-tagged audit. |
 
 ---
 
 ## 13. Glossary
 
-- **Rule** — a natural-language normative statement plus structured metadata, managed as a first-class object.
-- **Statement** — the canonical natural-language text of a rule.
-- **Modality** — strength of the obligation (MUST / MUST_NOT / SHOULD / MAY / INFO).
-- **Scope** — set of subjects, systems, or contexts to which a rule applies.
-- **Jurisdiction** — geographic or legal scope of authority (`jp`, `us-ca`, `eu`, `global`, ...).
-- **Legal force** — `advisory` / `policy` / `regulatory` / `statutory`.
-- **Subject** — the thing being evaluated (a code change, an HR event, a contract clause, etc.).
-- **Subject Adapter** — the per-subject-type module that parses payload, assembles context, formats prompt, and interprets remediation.
-- **Verdict** — result of an evaluation (ALLOW / DENY / NEEDS_CONFIRMATION / ALLOW_WITH_CONDITIONS / REQUIRES_DISCLOSURE).
-- **Reason graph** — structured DAG explaining which facts triggered which conditions in which rules.
-- **Provenance lineage** — chain of derivation from a higher-level source (e.g., a law) down to operational rules and contract clauses.
-- **Meta-rule** — a rule whose subject is other rules.
-- **Preflight / Posthoc / Sidecar** — three modes of integration: before-action, after-action, parallel-observation.
-- **LLM-as-Judge** — architectural pattern of using an LLM to evaluate compliance with a natural-language rule.
-- **Maturity level** — `experimental` (shadow mode) / `stable` / `proven`.
-- **BusinessEvent** — normalized inbound payload schema from any business-system connector.
+- **Rule**: a natural-language normative statement, plus structured metadata, managed as a first-class object.
+- **Statement**: the canonical natural-language text of a rule.
+- **Subject**: the polymorphic input to evaluation — code diff, clause set, event, transaction, creative, decision, identity, or document.
+- **SubjectKind**: discriminator for `Subject`. Determines which adapter, prompt, and aggregator are used.
+- **Modality**: the strength of the obligation (MUST, MUST_NOT, SHOULD, MAY, INFO).
+- **Classification**: data sensitivity tier (PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED).
+- **Scope**: the set of subjects, systems, jurisdictions, or contexts to which a rule applies.
+- **Department**: a functional organizational unit (Legal, HR, Finance, etc.) with rule-ownership rights.
+- **Capacity**: a user's relationship to a rule set within a department (OWNER, REVIEWER, SUBSCRIBER, AUDITOR).
+- **Verdict**: the result of an evaluation (ALLOW, DENY, NEEDS_CONFIRMATION).
+- **Reason graph**: a structured DAG explaining which facts triggered which conditions in which rules.
+- **Meta-rule**: a rule whose subject is other rules.
+- **Provenance lineage**: the chain of derivation from a higher-level source (e.g., a law) down to operational rules and contract clauses.
+- **Preflight / Posthoc / Sidecar**: three modes of integration corresponding to before-action, after-action, and parallel-observation enforcement.
+- **LLM-as-Judge**: the architectural pattern of using a large language model to evaluate whether an action complies with a natural-language rule.
+- **Maturity Level**: rule lifecycle stage (EXPERIMENTAL → STABLE → PROVEN).
+- **Shadow Mode**: experimental rules return NEEDS_CONFIRMATION instead of DENY, with `[SHADOW]` reasoning prefix.
+- **WORM**: Write-Once-Read-Many storage, used for compliance-grade audit mirroring.
+- **Federation**: hierarchical rule composition (organization → team → project) with inheritance and override.
+- **Locale / Jurisdiction**: language and legal-jurisdiction tags for rules and subjects.
+- **Effectiveness Score**: 0–100 composite of precision, prevention rate, and adoption.
 
 ---
 
 ## 14. Open Questions
 
-Most original open questions have been resolved. Remaining:
+These will be resolved during ongoing design iterations:
 
-- **Multi-tenant isolation model.** Single-tenant deployments are first-class; full multi-tenant with per-tenant data isolation, key separation, and connector scoping is the Phase 7g target. Final decision on identity isolation (per-tenant Postgres schema vs row-level security) is pending.
-- **External-data refresh strategy.** Rules that depend on external data (approved-vendor list, sanctioned-party list, exchange rates) need a refresh contract. Pending: a generic `ExternalDataSource` interface vs per-domain custom adapters.
-- **Audit log retention beyond seven years.** Current default is 7 years (matching Japanese tax law). Some industries require permanent retention. Pending: a tiered storage model (hot Postgres → warm S3 → cold Glacier) with auto-migration.
-- **Cross-organization data sovereignty.** Marketplace subscriptions cross tenant boundaries. Pending: a clear data-flow model documenting what crosses, what stays, and how privacy is preserved (especially for federated correction aggregation).
-- **Connector certification.** As the connector ecosystem grows, third-party-built connectors will appear. Pending: a certification process and trust model.
+- What is the canonical schema for `scope`? Free-form tags vs. structured org/role/system/region/jurisdiction tuples vs. a hybrid.
+- How should the system handle rules that depend on external data sources (e.g., a list of approved vendors that changes daily)?
+- What is the expected SLO for `preflight` evaluations per `SubjectKind`? This drives model selection and caching strategy per domain.
+- Should the audit log be exposed to tenants in raw form, or only as derived reports? Should regulator-export formats be tenant-customizable?
+- What is the multi-tenant isolation model? Single-tenant deployments for highly-regulated customers, multi-tenant for SaaS, or both with shared codebase?
+- How are deprecated rules archived without losing the ability to re-evaluate historical events? What is the WORM retention policy default?
+- How should `auto_applicable=true` remediations be governed for non-code subjects? Auto-applying contract changes is dangerous; auto-applying SHOULD-level lint fixes is fine. Per-subject defaults are needed.
+- Should agent governance allow agents to *propose* rule changes (not just challenge verdicts)? If so, with what governance gating?
+- What is the policy for cross-organization marketplace? Public publishing is feature 6.10; permissions, attribution, and quality gates need definition.
 
 ---
 
-*This document is the canonical specification for the Rule Repository project. It is itself subject to revision, and changes should follow the same review process expected of high-importance rules: proposed in draft, reviewed by stakeholders, and approved before taking effect. See `IMPROVEMENT.md` for the gap analysis that motivated Phase 7.*
+*This document is the canonical specification for the Rule Repository project. It is itself subject to revision, and changes should follow the same review process expected of high-importance rules: proposed in draft, reviewed by stakeholders, and approved before taking effect.*

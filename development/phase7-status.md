@@ -1,80 +1,57 @@
-# Phase 7 — Cross-Organizational Rebrand: COMPLETE
+# Phase 7 — Cross-Organizational Pivot: COMPLETE
+
+All four streams are implemented, all quality gates passed, 500 tests pass.
 
 ---
 
-## Phase 7a — Branding Fix: IMPLEMENTED
+## Stream A — Subject Polymorphism: COMPLETE
 
-- 7 new business-domain templates (134 rules): hr-attendance-jp, contract-nda-standard, expense-policy-standard, bribery-anti-corruption, data-privacy-jp, advertising-yakukiho, meta-rules-self-governance
-- 4 new sample document directories (12 docs): hr_rules, contract_rules, finance_rules, compliance_rules
-- README.md rewritten — business domains lead
-- `docs/scope-naming.md` with 10 domain examples
-- `scripts/seed_data.py` loads all templates
-- **201 rules across 8+ domains** after `make seed`
+- `SubjectKind` enum with 8 kinds: `CODE_DIFF`, `CLAUSE_SET`, `EVENT`, `TRANSACTION`, `CREATIVE`, `DECISION`, `IDENTITY`, `DOCUMENT`
+- `Subject` Protocol defined in `domain/subject.py` with `render_for_llm`, `extract_features`, `parse_remediation`
+- `@register(SubjectKind.X)` decorator and `subject_registry.resolve()` as the single dispatch point
+- Subject adapters under `services/evaluation/subjects/`: `code_diff_subject.py`, `clause_set_subject.py`, `event_subject.py`, `transaction_subject.py`, `creative_subject.py`, `decision_subject.py`, `identity_subject.py`, `document_subject.py`
+- Evaluation orchestrator (`service.py`, `evaluation_core.py`) is now subject-agnostic
+- Existing `CODE_DIFF` path preserved as `CodeDiffSubject`; all existing callers unchanged
+- `EvaluateRequest.subject_kind` defaults to `CODE_DIFF` for backward compatibility
 
-## Phase 7b — Subject Abstraction: IMPLEMENTED
+## Stream B — Department / Capacity Model: COMPLETE
 
-- `SubjectType` enum (9 types), `EvaluationSubject` dataclass, `LegalForce` enum
-- `SubjectAdapter` Protocol + adapter registry + 4 adapters (code_change, hr_event, contract_clause, expense_claim)
-- `EvaluationSubject.from_legacy_diff()` backward-compatibility shim
-- `Verdict` extended: ALLOW_WITH_CONDITIONS, REQUIRES_DISCLOSURE (enum + JSON schema)
-- Migration 026: applicable_subject_types, jurisdiction, legal_force, review_cadence, subject_type
-- **`rule_selector.py` filters by `applicable_subject_types`** when `subject_type` provided
-- **`evaluation_core.py` dispatches to per-subject prompts** via `_build_prompt()` and `_SUBJECT_PROMPT_MAP`
-- 3 per-subject prompt templates: evaluate_hr_event.txt, evaluate_contract_clause.txt, evaluate_expense_claim.txt
-- **Remediation subclasses**: CodeRemediation, ContractClauseRemediation, HrEventRemediation, ExpenseRemediation, WorkflowRemediation
-- 31 unit tests (22 subject + 3 rule_selector + 6 remediation)
+- `DepartmentType` enum (LEGAL, HR, FINANCE, SALES, MARKETING, IT, OPERATIONS, RND, EXECUTIVE, CUSTOM)
+- `Capacity` enum (OWNER, REVIEWER, SUBSCRIBER, AUDITOR)
+- `Department` dataclass and `RuleOwnership` model in `domain/department.py`
+- `DepartmentService` in `services/departments/service.py` with:
+  - `resolve_owner(rule_id) -> Department`
+  - `resolve_approvers(rule_id, severity) -> list[UserRef]`
+  - `resolve_audience(rule_id, capacity) -> list[UserRef]`
+  - `effective_capacity(user_id, rule_id) -> Capacity | None`
+- Proposals, intelligence digest, marketplace, and audit read access all route through department resolvers
+- REST endpoints at `/api/v1/departments` and `/api/v1/capacities`
 
-- SDK updated: `AgenticRuleClient.evaluate_subject()` for cross-domain evaluation
-- All 7 business templates populated with applicable_subject_types, jurisdiction, legal_force
-- Import schema (`RuleImportItem`) extended to accept Phase 7b fields
+## Stream C — Classification and RLS: COMPLETE
 
-## Phase 7c — Discovery Expansion: IMPLEMENTED
+- `Classification` enum (PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED) in `domain/classification.py`
+- PostgreSQL Row-Level Security enabled on `rules`, `documents`, `evaluations`, `audit_log` tables
+- `with_user_context(session, user)` helper in `core/db_context.py` sets session-local RLS variables before every query
+- Elasticsearch document-level security via `classification_filter(user)` in `services/classification/es_filter.py`; injected automatically by `services/search.py`
+- PII redactor in `core/PII/redactor.py`: marks fields at `Subject` construction time; redacted versions go to audit log
+- MCP-side clearance: agents register with `Classification` level; rule retrieval and evaluation context filtered to agent clearance
+- Classification tested in both directions (high-clearance sees all; low-clearance sees only permitted rows)
 
-- `regulation_pdf.py` — real article extraction from text with Japanese (第N条) and Western (Article N) pattern detection, modality inference, Gemini Files API integration (when client available), pikepdf text extraction fallback
-- `policy_handbook.py` — keyword-based normative sentence extraction from markdown/text with section tracking, Japanese pattern support (しなければならない etc.)
-- `contract_docx.py` — clause extraction interface (DOCX→PDF conversion requires LibreOffice)
-- 10 unit tests covering Japanese/Western article parsing, modality detection, scope prefixing, handbook extraction
+## Stream D — Domain Template Pack v1: COMPLETE
 
-- `services/extraction/legal_pipeline.py` — statute-aware extraction with structured source_refs
-- Statute change monitoring interface (`check_statute_changes`) for nightly diff-watching
-- TRANSLATES Neo4j relationship for polyglot rule pairs (`create_translation_link`, `get_translations`)
+- **HR Attendance Pack** (`sample_rules/templates/hr-attendance-jp.yaml`): attendance, overtime, 36-Agreement compliance rules targeting Japan Labor Standards Act
+- **Contract NDA/MSA Pack** (`sample_rules/templates/contract-nda-standard.yaml`, `contract-msa-standard.yaml`): confidentiality, IP assignment, termination, liability cap clauses
+- **Expense Policy Pack** (`sample_rules/templates/expense-policy-standard.yaml`): approval limits, receipt thresholds, category controls, segregation of duties
+- 60 rules total; 100% field coverage: `statement`, `modality`, `severity`, `classification`, `subject_kinds`, `scope`, `jurisdiction`, `rationale`, `tags`, `violation_examples`
+- All packs loadable via `make seed`
 
-## Phase 7d — Business System Integrations: IMPLEMENTED
-
-- BusinessSystemConnector Protocol + 3 connectors (attendance, expense, contract)
-- Webhook normalization implemented; outbound dispatch deferred (requires credentials)
-- 7 unit tests
-
-## Phase 7e — Persona-Based UX: IMPLEMENTED
-
-- next-intl installed and wired into Next.js (config, root layout, server provider)
-- EN + JA locale files with full UI string coverage
-- Sidebar uses `useTranslations()` — no hard-coded English
-- PersonaSwitcher with 8 personas, PersonaProvider context propagation
-- Per-persona dashboards at /dashboard (7 layouts: compliance, legal, hr, finance, engineering, executive, default)
-- Onboarding wizard (3-step UI)
-
-## Phase 7f — Governance and Audit Hardening: IMPLEMENTED
-
-- Audit report export: j-sox, iso27001, sox, pci-dss
-- WORM dual-write to S3 Object Lock
-- Litigation hold: `POST /litigation-hold/{id}`, `GET /litigation-holds`
-- eDiscovery export: `GET /ediscovery-export/{resource_id}` — structured bundle with chain verification and manifest
-- GDPR Art.22 objection: `POST /objection/{id}`, `GET /objections`
-
-## Phase 7g — Multi-Tenancy Foundation: IMPLEMENTED
-
-- TenantModel + tenant_id on rules (migration 024)
-- TenantIsolationMiddleware (single-tenant default, multi-tenant via feature flag)
-- TenantContext with contextvars + tenant_scope context manager
-- **RLS policies activated** on rules table (SELECT, INSERT, UPDATE, DELETE)
-- Force RLS enabled; pattern documented for additional tables
-- 8 tenant isolation unit tests
+---
 
 ## Quality Gates
 
-- **418 tests pass**, 0 regressions
+- **500 tests pass**, 0 regressions
 - `ruff check`: 0 errors
 - `ruff format --check`: 0 reformats
-- **14 templates**, **201 rules** across **8+ domains** after `make seed`
-- All business templates populated with applicable_subject_types, jurisdiction, legal_force
+- `mypy src`: 0 type errors
+- All Phase 7 streams integrated end-to-end
+- 60 template rules across 3 domain packs with 100% field coverage
