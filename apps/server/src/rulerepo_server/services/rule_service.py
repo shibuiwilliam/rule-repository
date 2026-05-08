@@ -1,4 +1,4 @@
-"""Rule service — orchestrates rule CRUD across Postgres, Elasticsearch, and Neo4j."""
+"""Rule service — orchestrates rule CRUD across Postgres and optional search/graph stores."""
 
 from __future__ import annotations
 
@@ -8,9 +8,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rulerepo_server.adapters.elasticsearch.rule_index import ElasticsearchRuleIndex
 from rulerepo_server.adapters.gemini.embeddings import generate_embedding
-from rulerepo_server.adapters.neo4j.graph_repo import Neo4jGraphRepository
 from rulerepo_server.adapters.postgres.audit_repo import AuditLogRepository
 from rulerepo_server.adapters.postgres.rule_repo import PostgresRuleRepository
 from rulerepo_server.core.logging import get_logger
@@ -31,13 +29,13 @@ class RuleService:
     def __init__(
         self,
         session: AsyncSession,
-        es_index: ElasticsearchRuleIndex,
-        graph_repo: Neo4jGraphRepository,
+        search_index: Any,
+        graph_repo: Any,
         gemini_client: Any | None = None,
     ) -> None:
         self._rule_repo = PostgresRuleRepository(session)
         self._audit_repo = AuditLogRepository(session)
-        self._es_index = es_index
+        self._es_index = search_index
         self._graph_repo = graph_repo
         self._gemini_client = gemini_client
         self._session = session

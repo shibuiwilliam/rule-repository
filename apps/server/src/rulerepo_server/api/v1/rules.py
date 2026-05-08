@@ -1,11 +1,11 @@
 """REST API routes for rule CRUD operations."""
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rulerepo_server.adapters.neo4j.graph_repo import Neo4jGraphRepository
 from rulerepo_server.adapters.postgres.session import get_db_session
 from rulerepo_server.core.deps import get_graph_repo, get_rule_service
 from rulerepo_server.core.logging import get_logger
@@ -115,7 +115,7 @@ async def get_rule_why(
     rule_id: UUID,
     depth: int = Query(default=3, ge=1, le=MAX_LINEAGE_DEPTH),
     session: AsyncSession = Depends(get_db_session),
-    graph_repo: Neo4jGraphRepository = Depends(get_graph_repo),
+    graph_repo: Any = Depends(get_graph_repo),
 ) -> dict:
     """Get multi-level rationale and provenance lineage for a rule.
 

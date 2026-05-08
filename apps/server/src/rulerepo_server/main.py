@@ -20,33 +20,66 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Manage application startup and shutdown.
 
-    Initializes database connections, search clients, and graph driver
-    on startup, and tears them down on shutdown.
+    Initializes database connections and, depending on the deployment
+    tier, search clients and graph drivers.  Tier 1 (Postgres-only)
+    skips Elasticsearch and Neo4j entirely.
     """
     setup_logging()
     settings = get_settings()
-    logger.info("starting_server", host=settings.server_host, port=settings.server_port)
+
+    from rulerepo_server.core.feature_flags import get_feature_flags
+
+    flags = get_feature_flags()
+    flags.log_tier_info()
+
+    logger.info(
+        "starting_server",
+        host=settings.server_host,
+        port=settings.server_port,
+        tier=flags.tier,
+    )
 
     # Import adapters lazily to avoid import-time side effects
-    from rulerepo_server.adapters.elasticsearch.client import (
-        close_es_client,
-        create_es_client,
-    )
-    from rulerepo_server.adapters.neo4j.client import close_neo4j_driver, create_neo4j_driver
     from rulerepo_server.adapters.postgres.session import create_engine, dispose_engine
 
-    # Initialize connections
+    # Postgres is always required
     create_engine()
-    await create_es_client()
-    await create_neo4j_driver()
-    logger.info("all_connections_initialized")
+
+    # Elasticsearch — Tier 2/3 only
+    if flags.elasticsearch_enabled:
+        from rulerepo_server.adapters.elasticsearch.client import create_es_client
+
+        await create_es_client()
+        logger.info("elasticsearch_initialized")
+    else:
+        logger.info("elasticsearch_disabled", fallback="postgres_fts")
+
+    # Neo4j — Tier 3 only
+    if flags.neo4j_enabled:
+        from rulerepo_server.adapters.neo4j.client import create_neo4j_driver
+
+        await create_neo4j_driver()
+        logger.info("neo4j_initialized")
+    else:
+        logger.info("neo4j_disabled", fallback="postgres_adjacency")
+
+    logger.info("all_connections_initialized", tier=flags.tier)
 
     yield
 
     # Teardown
     logger.info("shutting_down")
-    await close_neo4j_driver()
-    await close_es_client()
+
+    if flags.neo4j_enabled:
+        from rulerepo_server.adapters.neo4j.client import close_neo4j_driver
+
+        await close_neo4j_driver()
+
+    if flags.elasticsearch_enabled:
+        from rulerepo_server.adapters.elasticsearch.client import close_es_client
+
+        await close_es_client()
+
     await dispose_engine()
     logger.info("shutdown_complete")
 
@@ -120,11 +153,19 @@ def create_app() -> FastAPI:
 
     @app.get("/readyz", tags=["health"])
     async def readyz() -> dict[str, object]:
-        """Readiness probe — checks connectivity to all downstream services."""
+        """Readiness probe — checks connectivity to downstream services.
+
+        Only checks services that are enabled for the current tier.
+        Tier 1 checks Postgres only; Tier 2 adds Elasticsearch;
+        Tier 3 adds Neo4j.
+        """
+        from rulerepo_server.core.feature_flags import get_feature_flags
+
+        flags = get_feature_flags()
         checks: dict[str, str] = {}
         healthy = True
 
-        # Postgres
+        # Postgres — always required
         try:
             from rulerepo_server.adapters.postgres.session import get_engine
 
@@ -136,31 +177,38 @@ def create_app() -> FastAPI:
             checks["postgres"] = f"error: {exc}"
             healthy = False
 
-        # Elasticsearch
-        try:
-            from rulerepo_server.adapters.elasticsearch.client import get_es_client
+        # Elasticsearch — Tier 2/3 only
+        if flags.elasticsearch_enabled:
+            try:
+                from rulerepo_server.adapters.elasticsearch.client import get_es_client
 
-            es = get_es_client()
-            await es.info()
-            checks["elasticsearch"] = "ok"
-        except Exception as exc:
-            checks["elasticsearch"] = f"error: {exc}"
-            healthy = False
+                es = get_es_client()
+                await es.info()
+                checks["elasticsearch"] = "ok"
+            except Exception as exc:
+                checks["elasticsearch"] = f"error: {exc}"
+                healthy = False
+        else:
+            checks["elasticsearch"] = "disabled (tier 1)"
 
-        # Neo4j
-        try:
-            from rulerepo_server.adapters.neo4j.client import get_neo4j_driver
+        # Neo4j — Tier 3 only
+        if flags.neo4j_enabled:
+            try:
+                from rulerepo_server.adapters.neo4j.client import get_neo4j_driver
 
-            driver = get_neo4j_driver()
-            await driver.verify_connectivity()
-            checks["neo4j"] = "ok"
-        except Exception as exc:
-            checks["neo4j"] = f"error: {exc}"
-            healthy = False
+                driver = get_neo4j_driver()
+                await driver.verify_connectivity()
+                checks["neo4j"] = "ok"
+            except Exception as exc:
+                checks["neo4j"] = f"error: {exc}"
+                healthy = False
+        else:
+            checks["neo4j"] = "disabled (tier 1/2)"
 
         return {
             "status": "ok" if healthy else "degraded",
             "checks": checks,
+            "tier": flags.tier,
         }
 
     # --- Prometheus metrics endpoint ---

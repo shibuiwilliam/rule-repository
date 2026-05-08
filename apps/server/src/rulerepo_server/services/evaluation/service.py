@@ -126,10 +126,18 @@ class EvaluationService:
         # 4. Resolve relationship graph for conflict-aware evaluation
         rule_id_list = [r["id"] for r in rules]
         try:
-            from rulerepo_server.adapters.neo4j.client import get_neo4j_driver
-            from rulerepo_server.adapters.neo4j.graph_repo import Neo4jGraphRepository
+            from rulerepo_server.core.feature_flags import get_feature_flags
 
-            graph_repo = Neo4jGraphRepository(get_neo4j_driver())
+            flags = get_feature_flags()
+            if flags.neo4j_enabled:
+                from rulerepo_server.adapters.neo4j.client import get_neo4j_driver
+                from rulerepo_server.adapters.neo4j.graph_repo import Neo4jGraphRepository
+
+                graph_repo = Neo4jGraphRepository(get_neo4j_driver())
+            else:
+                from rulerepo_server.adapters.graph.postgres_adjacency import PostgresGraphRepository
+
+                graph_repo = PostgresGraphRepository(self._session)
             plan = await resolve_evaluation_plan(rule_id_list, graph_repo)
         except Exception as exc:
             logger.warning("graph_resolution_skipped", error=str(exc))

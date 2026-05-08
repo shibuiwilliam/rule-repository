@@ -1,0 +1,68 @@
+# Tier 1 — Postgres-only deployment.
+# Recommended for pilots, demos, and development.
+#
+# Usage:
+#   docker compose -f infra/compose/tier1.yml --project-directory . up --build
+#   make up.tier1
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: rule
+      POSTGRES_PASSWORD: rule
+      POSTGRES_DB: ruledb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rule -d ruledb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: .
+      dockerfile: infra/docker/server.Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://rule:rule@postgres:5432/ruledb
+      ELASTICSEARCH_ENABLED: "false"
+      NEO4J_ENABLED: "false"
+      REDIS_ENABLED: "false"
+      MCP_ENABLED: "false"
+    ports:
+      - "8000:8000"
+    volumes:
+      - file_storage:/tmp/rulerepo-files
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/frontend.Dockerfile
+      target: dev
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+      INTERNAL_API_URL: http://server:8000
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  file_storage:
