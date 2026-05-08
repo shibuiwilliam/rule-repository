@@ -27,6 +27,7 @@ from rulerepo_server.api.v1.operability import router as operability_router
 from rulerepo_server.api.v1.playground import router as playground_router
 from rulerepo_server.api.v1.projects import router as projects_router
 from rulerepo_server.api.v1.proposals import router as proposals_router
+from rulerepo_server.api.v1.regulatory import router as regulatory_router
 from rulerepo_server.api.v1.relationships import router as relationships_router
 from rulerepo_server.api.v1.review import router as review_router
 from rulerepo_server.api.v1.risks import router as risks_router
@@ -67,6 +68,7 @@ v1_router.include_router(feedback_router)
 v1_router.include_router(playground_router)
 v1_router.include_router(projects_router)
 v1_router.include_router(proposals_router)
+v1_router.include_router(regulatory_router)
 v1_router.include_router(snapshots_router)
 v1_router.include_router(translations_router)
 
