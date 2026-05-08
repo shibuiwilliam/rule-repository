@@ -1,0 +1,222 @@
+version: 1
+template:
+  name: legal-contract-review
+  description: Contract clause review rules covering indemnification, liability caps, governing law, termination, and force majeure
+  tags:
+  - legal
+  - contracts
+  - clause-review
+  - risk-management
+rules:
+- statement: Indemnification clauses MUST specify a monetary cap. Unlimited indemnification obligations MUST NOT be accepted without
+    General Counsel approval.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - legal/contracts/review
+  tags:
+  - indemnification
+  - liability-cap
+  - risk
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: Unlimited indemnification exposes the company to unbounded financial liability. A cap aligned with contract value
+    or insurance coverage is standard risk management.
+  source_refs:
+  - authority: Standard commercial contract practice
+    note: Indemnification caps are a fundamental risk allocation mechanism in commercial agreements.
+  preconditions:
+  - The contract contains an indemnification clause.
+  exceptions:
+  - Indemnification for third-party IP infringement claims may be uncapped in certain industries where the indemnifying party
+    controls the risk (e.g., software licensing), but this must be flagged for legal review.
+  - Indemnification for willful misconduct or gross negligence is typically uncapped by market convention.
+  following_examples:
+  - Indemnification is capped at 2x the total contract value over the preceding 12-month period.
+  violation_examples:
+  - The contract states the vendor shall indemnify the client 'for all losses, without limitation' with no monetary cap.
+
+- statement: Limitation of liability clauses MUST include both a general cap and carve-outs for uncapped categories (e.g., IP
+    infringement, data breach, confidentiality breach).
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/contracts/review
+  tags:
+  - liability
+  - limitation
+  - carve-outs
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: A liability cap without carve-outs may inadvertently limit recovery for serious breaches. Conversely, too many
+    carve-outs may render the cap meaningless.
+  source_refs:
+  - authority: Standard commercial contract practice
+    note: Balanced liability provisions are critical for equitable risk sharing.
+  preconditions:
+  - The contract contains a limitation of liability section.
+  exceptions:
+  - Contracts with government entities may have statutory liability provisions that override negotiated caps.
+  following_examples:
+  - General liability is capped at the total fees paid in the prior 12 months, with carve-outs for IP infringement, data breach,
+    and confidentiality obligations capped at 3x annual fees.
+  violation_examples:
+  - The liability cap applies to all claims including data breaches involving personal data, effectively capping data breach
+    liability at a nominal amount.
+
+- statement: Every commercial contract MUST specify a governing law and dispute resolution mechanism (litigation or arbitration,
+    with venue identified).
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/contracts/review
+  tags:
+  - governing-law
+  - dispute-resolution
+  - jurisdiction
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: Without governing law and dispute resolution provisions, parties face uncertainty about applicable law and forum,
+    increasing litigation costs.
+  source_refs:
+  - authority: Standard commercial contract practice
+    note: Governing law clauses are essential in all commercial agreements, especially cross-border.
+  preconditions:
+  - The parties are entering into a binding commercial agreement.
+  exceptions:
+  - Consumer-facing terms of service may be subject to mandatory consumer protection laws that override choice-of-law clauses.
+  following_examples:
+  - This Agreement shall be governed by the laws of Japan. Any dispute arising out of this Agreement shall be submitted to binding
+    arbitration under the JCAA rules, with the seat in Tokyo.
+  violation_examples:
+  - A cross-border services agreement has no governing law clause and no dispute resolution provision.
+
+- statement: Termination clauses MUST include both termination for cause (with cure period) and termination for convenience (with
+    reasonable notice period). One-sided termination rights SHOULD be flagged for renegotiation.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/contracts/review
+  tags:
+  - termination
+  - cure-period
+  - convenience
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: Balanced termination provisions protect both parties from being locked into an unworkable relationship and provide
+    orderly wind-down.
+  source_refs:
+  - authority: Standard commercial contract practice
+    note: Termination provisions are a core element of commercial agreements.
+  preconditions:
+  - The contract has a defined term or ongoing obligations.
+  exceptions:
+  - Short-term project contracts (under 3 months) may omit termination for convenience if the scope is fixed and well-defined.
+  following_examples:
+  - Either party may terminate for cause upon 30 days' written notice if the other party fails to cure a material breach within
+    the notice period. Either party may terminate for convenience upon 90 days' written notice.
+  violation_examples:
+  - Only the client may terminate for convenience; the vendor has no corresponding right and cannot exit even if the relationship
+    becomes commercially unviable.
+
+- statement: Force majeure clauses MUST enumerate specific triggering events and MUST include a termination right if the force
+    majeure event continues beyond a specified period.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - legal/contracts/review
+  tags:
+  - force-majeure
+  - risk
+  - business-continuity
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: Vague force majeure clauses create disputes about what qualifies. Without a long-stop termination right, parties
+    may be indefinitely suspended.
+  source_refs:
+  - authority: Standard commercial contract practice
+    note: Post-pandemic drafting best practice recommends explicit enumeration and a long-stop date.
+  preconditions:
+  - The contract includes a force majeure clause.
+  exceptions:
+  - Financial obligations (payment of accrued fees) are typically excluded from force majeure relief.
+  following_examples:
+  - Force majeure events include natural disasters, pandemics, war, government orders, and cyberattacks. If the event continues
+    for more than 90 days, either party may terminate upon written notice.
+  violation_examples:
+  - The force majeure clause states 'any event beyond reasonable control' with no enumeration and no termination right regardless
+    of duration.
+
+- statement: Assignment clauses MUST require written consent of the non-assigning party for assignment of rights or obligations,
+    except for assignments to affiliates or in connection with a merger or acquisition.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - legal/contracts/review
+  tags:
+  - assignment
+  - change-of-control
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: Unrestricted assignment allows a party to transfer obligations to an entity that may not have the capability or
+    creditworthiness to perform.
+  source_refs:
+  - authority: Standard commercial contract practice
+    note: Anti-assignment clauses protect both parties from unwanted counterparty changes.
+  preconditions:
+  - The contract contains ongoing obligations for either party.
+  exceptions:
+  - Assignments in connection with a corporate reorganization within the same corporate group may be pre-approved.
+  following_examples:
+  - Neither party may assign this Agreement without the prior written consent of the other party, which shall not be unreasonably
+    withheld. Assignment to an affiliate or successor in a merger is permitted with written notice.
+  violation_examples:
+  - The contract is silent on assignment, allowing either party to freely assign to any third party.
+
+- statement: Contracts with automatic renewal clauses MUST include a notification provision requiring advance written notice of
+    renewal and a clear opt-out mechanism with at least 30 days' notice before renewal.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - legal/contracts/review
+  tags:
+  - renewal
+  - auto-renewal
+  - opt-out
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: Silent auto-renewal traps organizations into unwanted commitments and creates budget surprises.
+  source_refs:
+  - authority: Standard commercial contract practice
+    note: Auto-renewal without adequate notice is a frequent source of commercial disputes.
+  preconditions:
+  - The contract contains an automatic renewal mechanism.
+  exceptions:
+  - Month-to-month agreements with termination on 30 days' notice do not require a separate auto-renewal opt-out.
+  following_examples:
+  - The contract auto-renews for successive one-year terms unless either party provides written notice of non-renewal at least
+    60 days before the end of the current term.
+  violation_examples:
+  - The contract auto-renews annually with only a 7-day opt-out window, and the renewal notice is sent by mail with no email
+    option.

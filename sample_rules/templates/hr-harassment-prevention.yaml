@@ -1,0 +1,203 @@
+version: 1
+template:
+  name: hr-harassment-prevention
+  description: Workplace harassment prevention rules covering sexual harassment, power harassment, reporting, investigation, and organizational obligations
+  tags:
+  - hr
+  - harassment
+  - prevention
+  - compliance
+  - workplace-safety
+rules:
+- statement: All forms of workplace harassment including sexual harassment (セクハラ), power harassment (パワハラ), and maternity harassment
+    (マタハラ) MUST NOT be tolerated. The organization MUST maintain a zero-tolerance policy communicated to all employees.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/harassment/prevention
+  tags:
+  - zero-tolerance
+  - policy
+  - organizational-duty
+  applicable_subject_types:
+  - communication
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Japan's Labor Measures Comprehensive Promotion Act (パワハラ防止法) and Equal Employment Opportunity Act require employers
+    to take measures to prevent harassment. A clear zero-tolerance policy is the foundation.
+  source_refs:
+  - statute: Labor Measures Comprehensive Promotion Act (労働施策総合推進法)
+    article: 30-2
+  - statute: Equal Employment Opportunity Act (男女雇用機会均等法)
+    article: '11'
+  preconditions:
+  - The organization employs one or more employees.
+  exceptions:
+  - None. Anti-harassment obligations apply to all employers regardless of size.
+  following_examples:
+  - The company publishes a harassment prevention policy, distributes it to all employees, and includes it in new-hire onboarding
+    materials.
+  violation_examples:
+  - The company has no written harassment policy, or the policy exists but has never been communicated to employees.
+
+- statement: Employers MUST establish a confidential reporting channel for harassment complaints that allows employees to report
+    incidents without fear of retaliation. At least two reporting paths MUST be available (e.g., direct manager and an independent
+    HR contact or external hotline).
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - hr/harassment/prevention
+  tags:
+  - reporting
+  - confidentiality
+  - whistleblower
+  applicable_subject_types:
+  - communication
+  jurisdiction: global
+  legal_force: statutory
+  classification: confidential
+  rationale: A single reporting channel creates a bottleneck if the harasser is the manager. Multiple channels ensure employees
+    always have a safe path to report.
+  source_refs:
+  - statute: Labor Measures Comprehensive Promotion Act (労働施策総合推進法)
+    article: 30-2
+    note: Employers must establish consultation and complaint mechanisms.
+  preconditions:
+  - The organization has employees.
+  exceptions:
+  - Very small organizations (under 5 employees) may designate an external advisor as one of the two channels.
+  following_examples:
+  - Employees can report harassment to their direct manager, the HR department, or an external whistleblower hotline operated
+    by a third-party law firm.
+  violation_examples:
+  - The only reporting channel is the employee's direct manager, who is the alleged harasser.
+
+- statement: All harassment complaints MUST be investigated promptly. An initial response acknowledging receipt MUST be provided
+    within 3 business days, and the investigation MUST be completed within 30 business days unless complexity requires an extension
+    with documented justification.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - hr/harassment/prevention
+  tags:
+  - investigation
+  - timeliness
+  - due-process
+  applicable_subject_types:
+  - communication
+  jurisdiction: global
+  legal_force: policy
+  classification: confidential
+  rationale: Delayed investigations cause ongoing harm to the complainant, allow evidence to deteriorate, and may constitute
+    a failure to meet the employer's duty of care.
+  source_refs:
+  - authority: HR best practice and employment law
+    note: Japan's guidelines on power harassment prevention require prompt and appropriate action.
+  preconditions:
+  - A harassment complaint has been filed through any reporting channel.
+  exceptions:
+  - Complaints involving external parties (clients, vendors) may require coordination with the external organization and may
+    take longer, but the initial response timeline remains the same.
+  following_examples:
+  - HR acknowledges receipt of the complaint within 2 business days, assigns an investigator, interviews the complainant within
+    1 week, and completes the investigation within 25 business days.
+  violation_examples:
+  - A harassment complaint is filed in January and no investigation begins until April, with no communication to the complainant.
+
+- statement: Employers MUST NOT retaliate or permit retaliation against any employee who files a harassment complaint or participates
+    in a harassment investigation in good faith. Retaliatory actions include termination, demotion, transfer, or exclusion from
+    projects.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/harassment/prevention
+  tags:
+  - retaliation
+  - whistleblower-protection
+  - good-faith
+  applicable_subject_types:
+  - communication
+  jurisdiction: global
+  legal_force: statutory
+  classification: confidential
+  rationale: Retaliation discourages reporting, perpetuates harassment, and creates significant legal liability. Anti-retaliation
+    protections are required by law in most jurisdictions.
+  source_refs:
+  - statute: Equal Employment Opportunity Act (男女雇用機会均等法)
+    article: '11'
+    note: Prohibition on disadvantageous treatment of employees who consult about harassment.
+  - statute: Whistleblower Protection Act (公益通報者保護法)
+  preconditions:
+  - An employee has filed a harassment complaint or participated in an investigation.
+  exceptions:
+  - Complaints filed in bad faith (fabricated allegations with malicious intent) may result in disciplinary action against the
+    complainant, but this must be clearly established through investigation.
+  following_examples:
+  - After filing a complaint, the employee continues in their role with no changes to responsibilities, compensation, or working
+    conditions during and after the investigation.
+  violation_examples:
+  - An employee files a harassment complaint and is transferred to a less desirable position the following week.
+
+- statement: All managers and employees MUST complete harassment prevention training at least annually. Training records MUST
+    be maintained for at least 3 years.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/harassment/prevention
+  tags:
+  - training
+  - annual
+  - record-keeping
+  applicable_subject_types:
+  - communication
+  jurisdiction: global
+  legal_force: policy
+  classification: confidential
+  rationale: Regular training ensures employees understand what constitutes harassment, know how to report it, and are aware of
+    the consequences. Training records demonstrate the employer's compliance efforts.
+  source_refs:
+  - statute: Labor Measures Comprehensive Promotion Act (労働施策総合推進法)
+    article: 30-2
+    note: Employers must take measures to enlighten and educate employees on harassment prevention.
+  preconditions:
+  - The organization has employees.
+  exceptions:
+  - New hires must complete training within 30 days of joining, even if the annual training cycle has recently passed.
+  following_examples:
+  - The company conducts annual harassment prevention training for all employees, with separate sessions for managers covering
+    their additional responsibilities. Attendance is tracked in the HR system.
+  violation_examples:
+  - No training has been conducted in 2 years, and the company cannot produce training records when requested by a labor inspector.
+
+- statement: When a harassment complaint is substantiated, the employer MUST take appropriate disciplinary action proportional
+    to the severity of the conduct and MUST implement measures to prevent recurrence.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/harassment/prevention
+  tags:
+  - disciplinary-action
+  - remediation
+  - recurrence-prevention
+  applicable_subject_types:
+  - communication
+  jurisdiction: global
+  legal_force: policy
+  classification: confidential
+  rationale: Substantiated harassment without consequences signals that the organization does not enforce its policy, encouraging
+    further violations.
+  source_refs:
+  - authority: HR best practice and employment law
+    note: Japan's harassment prevention guidelines require employers to take corrective measures for substantiated cases.
+  preconditions:
+  - A harassment investigation has concluded with a finding that harassment occurred.
+  exceptions:
+  - The specific disciplinary measure depends on the severity, whether it is a first offense, and applicable employment regulations.
+    The measure must be proportional.
+  following_examples:
+  - Following a substantiated complaint, the harasser receives a formal written warning, is required to attend additional training,
+    and is moved to a different team. The complainant is offered counseling support.
+  violation_examples:
+  - An investigation substantiates repeated harassment but the harasser receives only an informal verbal reminder and continues
+    to manage the complainant.

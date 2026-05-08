@@ -1,0 +1,194 @@
+version: 1
+template:
+  name: hr-evaluation-fairness
+  description: Performance evaluation rules for bias prevention, documentation requirements, calibration, and appeals processes
+  tags:
+  - hr
+  - evaluation
+  - fairness
+  - bias-prevention
+  - compliance
+rules:
+- statement: Performance evaluation comments MUST be based on observable, documented behaviors and measurable outcomes. Subjective
+    character judgments MUST NOT be used as the basis for ratings.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/evaluation/fairness
+  tags:
+  - objectivity
+  - evidence-based
+  - documentation
+  applicable_subject_types:
+  - evaluation_comment
+  jurisdiction: global
+  legal_force: policy
+  classification: confidential
+  rationale: Evaluations based on subjective impressions rather than documented performance are vulnerable to unconscious bias
+    and create legal risk if challenged.
+  source_refs:
+  - authority: HR best practice
+    note: Evidence-based evaluations are a foundational principle of fair performance management and are recommended by EEOC
+      guidance.
+  preconditions:
+  - A manager is writing a performance evaluation for a direct report.
+  exceptions:
+  - Leadership competency assessments may include qualitative assessments of interpersonal skills, but these must still reference
+    specific observed behaviors.
+  following_examples:
+  - Evaluation states 'Completed 15 of 16 sprint deliverables on time with a defect rate below 2%, exceeding the team average of 85% on-time delivery.'
+  violation_examples:
+  - Evaluation states 'This employee has a bad attitude and is not a team player' without citing any specific incidents or behaviors.
+
+- statement: Evaluation language MUST NOT reference protected characteristics including age, gender, race, ethnicity, religion,
+    disability, pregnancy, sexual orientation, family status, or national origin.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/evaluation/fairness
+  tags:
+  - discrimination
+  - protected-characteristics
+  - legal-risk
+  applicable_subject_types:
+  - evaluation_comment
+  jurisdiction: global
+  legal_force: statutory
+  classification: confidential
+  rationale: References to protected characteristics in evaluations constitute evidence of discriminatory intent and expose the
+    organization to discrimination claims.
+  source_refs:
+  - authority: Equal Employment Opportunity laws
+    note: Applicable across jurisdictions including Japan's Equal Employment Opportunity Act (男女雇用機会均等法), US Title VII, and
+      EU Employment Equality Directive.
+  preconditions:
+  - A performance evaluation is being written or reviewed.
+  exceptions:
+  - None. References to protected characteristics are never acceptable in performance evaluations.
+  following_examples:
+  - Evaluation focuses entirely on project deliverables, quality metrics, and professional development goals.
+  violation_examples:
+  - Evaluation states 'As a working mother, she may struggle to commit the hours needed for this role.'
+  - Evaluation states 'Given his age, he may find it difficult to adapt to our new technology stack.'
+
+- statement: Performance ratings MUST be calibrated across teams within the same department to ensure consistent application of
+    rating standards. Calibration sessions MUST be held before ratings are finalized.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/evaluation/fairness
+  tags:
+  - calibration
+  - consistency
+  - cross-team
+  applicable_subject_types:
+  - evaluation_comment
+  jurisdiction: global
+  legal_force: policy
+  classification: confidential
+  rationale: Without calibration, rating standards vary by manager, creating unfairness and undermining the credibility of the
+    evaluation system.
+  source_refs:
+  - authority: HR best practice
+    note: Calibration is a widely adopted practice to reduce rating inflation and inter-rater variability.
+  preconditions:
+  - Performance evaluation cycle is in progress and managers have drafted initial ratings.
+  exceptions:
+  - Departments with a single team or fewer than 5 employees may use cross-departmental calibration instead.
+  following_examples:
+  - The engineering department holds a calibration session where all managers present their ratings and discuss borderline cases
+    before finalizing.
+  violation_examples:
+  - Each manager independently submits final ratings without any cross-team discussion, resulting in one team having 80% top
+    ratings and another having 20%.
+
+- statement: Employees MUST receive written performance feedback at least twice per year (mid-year and year-end). Feedback MUST
+    include specific improvement areas with actionable recommendations.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/evaluation/fairness
+  tags:
+  - feedback-frequency
+  - improvement
+  - development
+  applicable_subject_types:
+  - evaluation_comment
+  jurisdiction: global
+  legal_force: policy
+  classification: confidential
+  rationale: Infrequent feedback deprives employees of the opportunity to improve and makes adverse actions (demotion, termination)
+    legally vulnerable due to lack of documented progressive feedback.
+  source_refs:
+  - authority: HR best practice
+    note: Regular feedback is both a legal risk mitigation and employee engagement best practice.
+  preconditions:
+  - The employee has been employed for more than 6 months.
+  exceptions:
+  - Employees on probation may receive more frequent feedback (monthly or quarterly) per the probation policy.
+  following_examples:
+  - Employee receives a mid-year review in June documenting 3 strengths and 2 areas for improvement with specific development
+    activities, followed by a year-end review in December tracking progress.
+  violation_examples:
+  - Employee receives no written feedback for 18 months, then is placed on a performance improvement plan citing issues that
+    were never previously communicated.
+
+- statement: Evaluation forms MUST NOT use gender-coded language (e.g., 'aggressive' vs. 'assertive', 'emotional' vs. 'passionate').
+    HR SHOULD provide a bias-free language guide to managers before each evaluation cycle.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - hr/evaluation/fairness
+  tags:
+  - gender-bias
+  - language
+  - unconscious-bias
+  applicable_subject_types:
+  - evaluation_comment
+  jurisdiction: global
+  legal_force: policy
+  classification: confidential
+  rationale: Research consistently shows that gender-coded language in evaluations disadvantages women and non-binary employees,
+    leading to disparate outcomes in promotion and compensation decisions.
+  source_refs:
+  - authority: HR research
+    note: Stanford VMware Women's Leadership Innovation Lab research on gendered language in performance reviews.
+  preconditions:
+  - A performance evaluation is being written.
+  exceptions:
+  - None. Gender-neutral language is always required in evaluations.
+  following_examples:
+  - Evaluation describes the employee as 'demonstrates strong leadership by rallying the team during the product launch crisis.'
+  violation_examples:
+  - Evaluation describes a female employee as 'abrasive' for behavior that a male colleague's evaluation describes as 'decisive.'
+
+- statement: Employees MUST have the right to submit a written response to their performance evaluation, which MUST be attached
+    to the evaluation record. Employees MUST be informed of the appeals process at the time the evaluation is delivered.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - hr/evaluation/fairness
+  tags:
+  - appeals
+  - employee-response
+  - due-process
+  applicable_subject_types:
+  - evaluation_comment
+  jurisdiction: global
+  legal_force: policy
+  classification: confidential
+  rationale: The right to respond ensures due process, gives employees voice in the evaluation process, and creates a documented
+    record if the evaluation is later disputed.
+  source_refs:
+  - authority: HR best practice
+    note: Employee response rights are a fundamental element of fair evaluation systems and may be legally required in some
+      jurisdictions.
+  preconditions:
+  - An employee has received their performance evaluation.
+  exceptions:
+  - None. The right to respond applies to all evaluations.
+  following_examples:
+  - The evaluation delivery meeting includes a handout explaining the appeals process, timeline for submitting a written response
+    (14 days), and the name of the HR contact for escalation.
+  violation_examples:
+  - Employee disagrees with the evaluation but is told there is no formal process for appealing or responding.

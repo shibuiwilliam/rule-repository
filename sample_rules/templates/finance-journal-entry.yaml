@@ -1,0 +1,192 @@
+version: 1
+template:
+  name: finance-journal-entry
+  description: Journal entry rules covering segregation of duties, approval thresholds, description requirements, and period-end controls
+  tags:
+  - finance
+  - journal-entry
+  - internal-controls
+  - accounting
+rules:
+- statement: Journal entries MUST NOT be both prepared and approved by the same individual. Segregation of duties between preparer
+    and approver is mandatory for all journal entries.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - finance/journal-entry
+  tags:
+  - segregation-of-duties
+  - internal-controls
+  - fraud-prevention
+  applicable_subject_types:
+  - journal_entry
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Segregation of duties is a fundamental internal control that prevents fraud and errors. A single person controlling
+    both preparation and approval creates an unacceptable risk.
+  source_refs:
+  - authority: COSO Internal Control Framework
+    note: Segregation of duties is a core principle of the COSO framework for internal controls.
+  - authority: J-SOX (Financial Instruments and Exchange Act, 金融商品取引法)
+    article: '24'
+    note: Internal control reporting requirements for listed companies.
+  preconditions:
+  - A journal entry is being created in the accounting system.
+  exceptions:
+  - Automated system-generated entries (e.g., depreciation, accruals) where the logic is pre-approved may have a reduced approval
+    requirement, but must still be reviewed periodically.
+  following_examples:
+  - Staff accountant prepares a journal entry; the accounting manager reviews and approves it before posting.
+  violation_examples:
+  - The controller prepares and posts a manual journal entry without any independent review.
+
+- statement: All manual journal entries MUST include a clear, specific description explaining the business reason for the entry.
+    Generic descriptions such as 'adjustment' or 'correction' MUST NOT be used without additional detail.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/journal-entry
+  tags:
+  - description
+  - documentation
+  - audit-trail
+  applicable_subject_types:
+  - journal_entry
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Clear descriptions enable auditors, reviewers, and future accountants to understand the purpose of each entry. Vague
+    descriptions are a red flag in audits.
+  source_refs:
+  - authority: Audit standards and best practice
+    note: PCAOB and JICPA auditing standards require auditors to evaluate the appropriateness of journal entry descriptions.
+  preconditions:
+  - A manual journal entry is being prepared.
+  exceptions:
+  - Recurring standard entries (e.g., monthly rent accrual) may reference the recurring template ID instead of repeating the
+    full description each time.
+  following_examples:
+  - "Description reads 'Reclassify Q3 software license expense from OPEX to CAPEX per ASC 350 assessment, invoice #INV-2025-0042,
+    approved by CFO on 2025-10-15.'"
+  violation_examples:
+  - Description reads 'Adjustment' with no supporting detail or reference.
+
+- statement: Journal entries exceeding 1,000,000 JPY MUST be approved by the accounting manager. Entries exceeding 10,000,000
+    JPY MUST be approved by the CFO or finance director.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/journal-entry
+  tags:
+  - approval-threshold
+  - authority-matrix
+  - materiality
+  applicable_subject_types:
+  - journal_entry
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: Tiered approval thresholds ensure that high-value entries receive proportionate scrutiny, reducing the risk of material
+    misstatement.
+  source_refs:
+  - authority: Company accounting policy
+    note: Approval thresholds should be reviewed annually and aligned with the company's materiality level.
+  preconditions:
+  - A manual journal entry has been prepared.
+  exceptions:
+  - System-generated entries above the threshold that follow pre-approved logic (e.g., automated revenue recognition) require
+    periodic review rather than per-entry approval.
+  following_examples:
+  - A 5,000,000 JPY reclassification entry is approved by the accounting manager. A 15,000,000 JPY impairment entry is approved
+    by the CFO.
+  violation_examples:
+  - A staff accountant posts a 12,000,000 JPY adjusting entry with only the accounting manager's approval, bypassing CFO review.
+
+- statement: Journal entries posted after the period-end close date MUST be flagged as post-close adjustments and MUST include
+    documented justification and CFO approval regardless of amount.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/journal-entry
+  tags:
+  - period-end
+  - post-close
+  - controls
+  applicable_subject_types:
+  - journal_entry
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Post-close entries alter financial statements that may have already been reviewed or reported. Strict controls prevent
+    unauthorized changes to closed periods.
+  source_refs:
+  - authority: Company accounting policy
+    note: Post-close entry controls are a key element of SOX/J-SOX compliance.
+  preconditions:
+  - The accounting period has been closed and a journal entry is being posted to that period.
+  exceptions:
+  - Audit adjustments requested by the external auditor follow the audit adjustment process and are documented separately.
+  following_examples:
+  - A correction to Q3 revenue recognized after the Q3 close is documented with the reason, posted as a post-close adjustment,
+    and approved by the CFO.
+  violation_examples:
+  - An accountant reopens the prior month and posts an adjustment without informing the CFO or flagging it as post-close.
+
+- statement: All journal entries MUST maintain debit-credit balance. The accounting system MUST reject any entry where total debits
+    do not equal total credits.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - finance/journal-entry
+  tags:
+  - double-entry
+  - balance
+  - system-control
+  applicable_subject_types:
+  - journal_entry
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Double-entry bookkeeping is the foundation of accounting. An unbalanced entry indicates an error and will cause the
+    trial balance to be out of balance.
+  source_refs:
+  - authority: Generally Accepted Accounting Principles (GAAP / JGAAP)
+    note: Double-entry bookkeeping is a fundamental accounting principle.
+  preconditions:
+  - A journal entry is being created or posted.
+  exceptions:
+  - None. All journal entries must balance.
+  following_examples:
+  - A journal entry debits Accounts Receivable 100,000 JPY and credits Revenue 100,000 JPY.
+  violation_examples:
+  - A journal entry debits Accounts Receivable 100,000 JPY but credits Revenue only 90,000 JPY, leaving a 10,000 JPY imbalance.
+
+- statement: Reversing entries MUST reference the original entry number and MUST be posted in the immediately following period
+    unless documented otherwise.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - finance/journal-entry
+  tags:
+  - reversing-entry
+  - cross-reference
+  - accruals
+  applicable_subject_types:
+  - journal_entry
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Reversing entries without cross-references create confusion and make it difficult to trace the full lifecycle of
+    accruals and adjustments.
+  source_refs:
+  - authority: Company accounting policy
+    note: Standard accrual accounting practice.
+  preconditions:
+  - A reversing entry is being created for a prior-period accrual or adjustment.
+  exceptions:
+  - Multi-period amortization entries may be reversed over multiple periods as documented in the amortization schedule.
+  following_examples:
+  - Reversing entry description reads 'Reversal of accrual JE-2025-0342 (Q3 bonus accrual) per standard reversal schedule.'
+  violation_examples:
+  - A reversing entry is posted with no reference to the original entry, making it impossible to trace the accrual lifecycle.

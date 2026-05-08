@@ -1,0 +1,196 @@
+version: 1
+template:
+  name: hr-overtime-compliance
+  description: Overtime work compliance rules covering 36 agreement limits, rest periods, health management, and manager obligations
+  tags:
+  - hr
+  - overtime
+  - compliance
+  - labor-law
+  - japan
+rules:
+- statement: Overtime work MUST NOT be assigned without confirming that a valid 36 Agreement (三六協定) covering the current fiscal
+    year has been filed with the Labor Standards Inspection Office.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/overtime/compliance
+  tags:
+  - 36-agreement
+  - prerequisite
+  - legal-compliance
+  applicable_subject_types:
+  - overtime_request
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Overtime without a valid 36 Agreement is a criminal offense under the Labor Standards Act. Managers must verify
+    the agreement is current before assigning overtime.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '36'
+    paragraph: '1'
+  preconditions:
+  - A manager is assigning or approving overtime work.
+  exceptions:
+  - Emergency situations under Article 33 (disaster, urgent necessity) allow temporary overtime without a 36 Agreement, subject
+    to post-facto notification to the LSIO.
+  following_examples:
+  - Manager checks the HR system confirming the current 36 Agreement is filed and valid through March 31 before approving overtime.
+  violation_examples:
+  - Manager routinely assigns overtime without knowing whether a 36 Agreement exists or has expired.
+
+- statement: Managers MUST track each employee's cumulative monthly overtime hours and MUST NOT allow any employee to exceed the
+    applicable monthly limit (45 hours general, or the special-clause limit if invoked).
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/overtime/compliance
+  tags:
+  - monthly-tracking
+  - limit-enforcement
+  - manager-duty
+  applicable_subject_types:
+  - overtime_request
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: The 2019 Work Style Reform Act made overtime caps legally binding with criminal penalties. Managers are personally
+    responsible for compliance.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '36'
+    paragraph: 4-6
+  preconditions:
+  - Employees are performing overtime work.
+  exceptions:
+  - Employees in new technology R&D roles under Article 36(11) are exempt from the monthly cap but require enhanced health measures.
+  following_examples:
+  - Manager reviews the overtime dashboard weekly and flags employees approaching 35 hours, proactively redistributing work.
+  violation_examples:
+  - Manager does not check overtime totals and an employee reaches 55 hours in a month under a general 36 Agreement.
+
+- statement: When an employee's monthly overtime (including holiday work) reaches 80 hours, the employer MUST offer a medical
+    examination by an occupational physician. The employee's acceptance or refusal MUST be documented.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/overtime/compliance
+  tags:
+  - health-management
+  - occupational-physician
+  - 80-hour-threshold
+  applicable_subject_types:
+  - overtime_request
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: The 80-hour threshold is the recognized karoshi (death from overwork) risk level. Occupational health intervention
+    is legally mandated.
+  source_refs:
+  - statute: Industrial Safety and Health Act (労働安全衛生法)
+    article: '66'
+    paragraph: '8'
+  preconditions:
+  - An employee's monthly overtime (including holiday work) has reached or exceeded 80 hours.
+  exceptions:
+  - If the employee refuses the examination, the refusal must be documented and the employee must be informed in writing of
+    the health risks.
+  following_examples:
+  - HR detects an employee at 82 hours of overtime, schedules an appointment with the occupational physician within 1 week, and
+    records the employee's attendance.
+  violation_examples:
+  - An employee works 90 hours of overtime in a month and no medical examination is offered or documented.
+
+- statement: Employees MUST be granted at least 11 consecutive hours of rest between the end of one workday and the start of the
+    next (inter-day rest period / 勤務間インターバル).
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/overtime/compliance
+  tags:
+  - rest-period
+  - inter-day
+  - health
+  applicable_subject_types:
+  - overtime_request
+  jurisdiction: JP
+  legal_force: policy
+  classification: confidential
+  rationale: The Work Style Reform Act encourages employers to implement inter-day rest periods (勤務間インターバル制度). While currently
+    an effort obligation, it is considered best practice for preventing overwork-related health issues.
+  source_refs:
+  - statute: Labor Measures Comprehensive Promotion Act (労働施策総合推進法)
+    article: '4'
+    note: Effort obligation for employers to secure inter-day rest intervals.
+  preconditions:
+  - An employee is working overtime that extends into late evening hours.
+  exceptions:
+  - Emergency response situations may require shorter rest periods, but compensatory rest must be provided within 48 hours.
+  following_examples:
+  - Employee finishes work at 23:00; the next day's start time is adjusted to 10:00 to ensure 11 hours of rest.
+  violation_examples:
+  - Employee works until midnight and is expected to start at 8:00 the next morning (only 8 hours of rest).
+
+- statement: Special-clause 36 Agreement provisions MUST NOT be invoked for more than 6 months in any 12-month period. The invocation
+    MUST be documented with the specific business reason each time.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/overtime/compliance
+  tags:
+  - special-clause
+  - invocation-limit
+  - documentation
+  applicable_subject_types:
+  - overtime_request
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: The 6-month annual limit on special-clause invocations is a statutory requirement. Each invocation must be justified
+    to prevent routine use of exceptional provisions.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '36'
+    paragraph: '5'
+  preconditions:
+  - The employer is invoking the special-clause provision to exceed the 45-hour monthly overtime limit.
+  exceptions:
+  - None. The 6-month limit is absolute and cannot be extended by agreement.
+  following_examples:
+  - The special clause has been invoked for 4 months this year. HR documents the business reason (product launch deadline) and
+    tracks remaining invocations.
+  violation_examples:
+  - The special clause has been invoked for 7 months in the fiscal year with no tracking or documentation.
+
+- statement: Overtime records MUST accurately reflect actual hours worked. Managers MUST NOT instruct or allow employees to under-report
+    overtime (service overtime / サービス残業).
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/overtime/compliance
+  tags:
+  - service-overtime
+  - accurate-reporting
+  - fraud
+  applicable_subject_types:
+  - overtime_request
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Service overtime is illegal, constitutes wage theft, and exposes the company to back-pay claims, penalties, and
+    reputational damage. The Labor Standards Inspection Office actively investigates and prosecutes these cases.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '32, 37'
+    note: Guidelines on Appropriate Recording of Working Hours (労働時間の適正な把握のために使用者が講ずべき措置に関するガイドライン).
+  preconditions:
+  - Employees are performing overtime work.
+  exceptions:
+  - None. Accurate overtime reporting is always required.
+  following_examples:
+  - The company uses objective time-tracking (IC card + PC login logs) and reconciles discrepancies monthly. Managers are trained
+    to never discourage overtime reporting.
+  violation_examples:
+  - A manager instructs team members to clock out at 18:00 even when continuing to work until 21:00.
+  - The company culture pressures employees not to report overtime under 15 minutes.

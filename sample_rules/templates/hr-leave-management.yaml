@@ -1,0 +1,188 @@
+version: 1
+template:
+  name: hr-leave-management
+  description: Leave request rules covering approval requirements, notice periods, carry-over limits, and documentation standards
+  tags:
+  - hr
+  - leave
+  - approval
+  - compliance
+rules:
+- statement: All leave requests exceeding 3 consecutive business days MUST be submitted at least 14 calendar days in advance,
+    except for emergency or sick leave.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/leave/management
+  tags:
+  - advance-notice
+  - planning
+  applicable_subject_types:
+  - leave_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Advance notice enables managers to plan workload coverage and ensures business continuity during extended absences.
+  source_refs:
+  - authority: Company leave policy
+    note: Standard workforce management control.
+  preconditions:
+  - The employee is requesting planned leave (not sick leave or emergency leave).
+  - The leave duration exceeds 3 consecutive business days.
+  exceptions:
+  - Bereavement leave does not require advance notice and follows the bereavement leave policy.
+  - Sick leave with medical documentation is exempt from the advance notice requirement.
+  following_examples:
+  - Employee submits a request for 5 days of vacation leave 3 weeks before the intended start date.
+  violation_examples:
+  - Employee requests a 5-day vacation starting in 2 days with no prior notice or emergency justification.
+
+- statement: Leave requests MUST be approved by the employee's direct manager before the leave begins. Requests for leave exceeding
+    10 consecutive business days MUST also be approved by the department head.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/leave/management
+  tags:
+  - approval
+  - authority-matrix
+  applicable_subject_types:
+  - leave_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Tiered approval ensures appropriate oversight and prevents staffing gaps during extended absences.
+  source_refs:
+  - authority: Company leave policy
+    note: Standard approval hierarchy for workforce management.
+  preconditions:
+  - An employee has submitted a leave request.
+  exceptions:
+  - Emergency sick leave may be approved retroactively within 2 business days of the employee's return.
+  following_examples:
+  - Employee requests 2 weeks of leave; direct manager approves, then the department head provides secondary approval.
+  violation_examples:
+  - Employee takes 12 days of leave with only the direct manager's approval, bypassing the department head.
+
+- statement: Unused annual paid leave MUST NOT be carried over beyond the maximum carry-over limit specified in the company policy.
+    Employees SHOULD be reminded of expiring leave at least 60 days before the carry-over deadline.
+  modality: MUST_NOT
+  severity: MEDIUM
+  scope:
+  - hr/leave/management
+  tags:
+  - carry-over
+  - expiration
+  - notification
+  applicable_subject_types:
+  - leave_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Excessive leave accumulation creates financial liability for the company and indicates employees may not be taking
+    adequate rest.
+  source_refs:
+  - authority: Company leave policy
+    note: Carry-over limits vary by jurisdiction. Japan's Labor Standards Act allows 2-year carry-over as a statutory minimum.
+  preconditions:
+  - The carry-over deadline is approaching and the employee has unused leave.
+  exceptions:
+  - Employees on extended sick leave or maternity/paternity leave may receive carry-over extensions per company policy.
+  - Jurisdictions with statutory carry-over minimums (e.g., Japan's 2-year rule) override company policy if the policy is less
+    generous.
+  following_examples:
+  - HR system sends an automated reminder 90 days and 60 days before the carry-over deadline listing the employee's unused leave
+    balance.
+  violation_examples:
+  - Employee has 15 unused days from 2 years ago and is never notified; the days expire silently.
+
+- statement: Leave requests MUST NOT be denied solely due to workload unless the manager documents the specific business-critical
+    reason and proposes alternative dates within 5 business days.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - hr/leave/management
+  tags:
+  - denial
+  - documentation
+  - employee-rights
+  applicable_subject_types:
+  - leave_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Employees have a right to use their leave entitlement. Arbitrary denial undermines morale and may violate labor
+    laws in jurisdictions with mandatory leave requirements.
+  source_refs:
+  - authority: Company leave policy
+    note: Japan's Labor Standards Act Article 39(5) limits the employer's right to change leave timing (時季変更権) to cases of
+      significant business disruption.
+  preconditions:
+  - An employee has submitted a leave request and the manager is considering denial.
+  exceptions:
+  - Critical business events (e.g., fiscal year-end close, product launch) may justify temporary denial if alternative dates
+    are offered.
+  following_examples:
+  - Manager denies leave for the week of fiscal year-end close, documenting the reason, and offers the following week as an alternative.
+  violation_examples:
+  - Manager denies multiple leave requests over several months citing 'too busy' without documentation or alternative proposals.
+
+- statement: All leave balances MUST be accurately maintained in the HR system and reconciled at least quarterly. Discrepancies
+    MUST be resolved within 10 business days of discovery.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/leave/management
+  tags:
+  - record-keeping
+  - reconciliation
+  - accuracy
+  applicable_subject_types:
+  - leave_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Inaccurate leave balances lead to disputes, incorrect payroll calculations, and compliance failures with statutory
+    leave tracking requirements.
+  source_refs:
+  - authority: Company leave policy
+    note: Accurate record-keeping is required under Japan's Labor Standards Act Article 109.
+  preconditions:
+  - The company maintains a leave management system.
+  exceptions:
+  - None. Leave balance accuracy is always required.
+  following_examples:
+  - HR reconciles leave balances against time-tracking records at the end of each quarter and resolves 3 discrepancies within
+    a week.
+  violation_examples:
+  - An employee's leave balance shows 5 days but they have actually taken 8 days; the discrepancy is not discovered until year-end.
+
+- statement: Sick leave exceeding 3 consecutive days MUST be supported by a medical certificate submitted within 5 business days
+    of the employee's return.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - hr/leave/management
+  tags:
+  - sick-leave
+  - medical-certificate
+  - documentation
+  applicable_subject_types:
+  - leave_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Medical documentation protects both the employee's right to sick leave and the company's ability to verify legitimate
+    use.
+  source_refs:
+  - authority: Company leave policy
+    note: Standard sick leave verification practice.
+  preconditions:
+  - The employee has taken more than 3 consecutive days of sick leave.
+  exceptions:
+  - Employees in jurisdictions where medical certificate requirements are limited by law must follow local requirements.
+  - Mental health leave may accept documentation from a licensed counselor or psychologist in addition to a physician.
+  following_examples:
+  - Employee returns after 5 days of sick leave and submits a doctor's certificate within 3 business days.
+  violation_examples:
+  - Employee takes 7 days of sick leave and provides no medical documentation despite repeated reminders.
