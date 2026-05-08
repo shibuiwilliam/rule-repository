@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     # Auth
     auth_required: bool = False
 
+    # OIDC (RR-007)
+    oidc_provider_url: str = ""
+    oidc_client_id: str = ""
+    oidc_client_secret: str = ""
+    default_tenant_id: str = "default"
+
     # Redis
     redis_url: str = "redis://localhost:6379/0"
 
