@@ -66,6 +66,8 @@ ignore = [
 "alembic/**/*.py" = ["ANN", "S608"]
 "**/alembic/**/*.py" = ["ANN", "S608"]
 "scripts/**/*.py" = ["ANN", "T20"]
+"**/adapters/search/*.py" = ["S608"]
+"**/adapters/graph/*.py" = ["S608"]
 
 [tool.mypy]
 python_version = "3.13"

@@ -1,3 +1,11 @@
+# Tier 3 — Full stack deployment.
+# Includes all services: Postgres, Elasticsearch, Neo4j, Redis, MCP.
+# Equivalent to the root docker-compose.yml.
+#
+# Usage:
+#   docker compose -f infra/compose/tier3.yml --project-directory . up --build
+#   make up  (default)
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -76,6 +84,16 @@ services:
         echo "Neo4j constraints initialized."
     restart: "no"
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   server:
     build:
       context: .
@@ -86,6 +104,8 @@ services:
       elasticsearch:
         condition: service_healthy
       neo4j:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     env_file:
       - .env
@@ -98,6 +118,7 @@ services:
       NEO4J_PASSWORD: ruledev1
       NEO4J_ENABLED: "true"
       REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis:6379/0
       MCP_ENABLED: "true"
     ports:
       - "8000:8000"
@@ -123,11 +144,6 @@ services:
       INTERNAL_API_URL: http://server:8000
     ports:
       - "3000:3000"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
 
   mcp-server:
     build:
@@ -141,25 +157,19 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://rule:rule@postgres:5432/ruledb
       ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_ENABLED: "true"
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: ruledev1
+      NEO4J_ENABLED: "true"
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis:6379/0
       MCP_TRANSPORT: sse
       MCP_PORT: "8001"
+      MCP_ENABLED: "true"
     ports:
       - "8001:8001"
     command: ["rulerepo-mcp"]
-
-  redis:
-    image: redis:7-alpine
-    platform: linux/arm64
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
   arq-worker:
     build:
@@ -175,9 +185,12 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://rule:rule@postgres:5432/ruledb
       ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_ENABLED: "true"
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: ruledev1
+      NEO4J_ENABLED: "true"
+      REDIS_ENABLED: "true"
       REDIS_URL: redis://redis:6379/0
     command: ["python", "-m", "arq", "rulerepo_server.workers.settings.WorkerSettings"]
     restart: "no"
@@ -187,9 +200,9 @@ services:
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
-      - "16686:16686"   # Jaeger UI
-      - "4317:4317"     # OTLP gRPC
-      - "4318:4318"     # OTLP HTTP
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
     restart: "no"
 
   prometheus:

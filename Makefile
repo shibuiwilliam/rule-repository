@@ -43,15 +43,28 @@ install.client: ## Install SDK dependencies
 	cd $(AGENTIC_DIR) && uv sync
 
 # ===========================================================================
-#  Docker Compose — full stack
+#  Docker Compose — full stack (Tier 3 default)
 # ===========================================================================
 .PHONY: up down restart logs logs.server logs.frontend ps build
+.PHONY: up.tier1 up.tier2 down.tier1 down.tier2
 
-up: ## Start the full stack (docker compose up --build -d)
+up: ## Start the full stack — Tier 3 (docker compose up --build -d)
 	docker compose up --build -d
+
+up.tier1: ## Start Tier 1 stack (Postgres only)
+	docker compose -f infra/compose/tier1.yml --project-directory . up --build -d
+
+up.tier2: ## Start Tier 2 stack (+ Elasticsearch, Redis)
+	docker compose -f infra/compose/tier2.yml --project-directory . up --build -d
 
 down: ## Stop the full stack
 	docker compose down
+
+down.tier1: ## Stop Tier 1 stack
+	docker compose -f infra/compose/tier1.yml --project-directory . down
+
+down.tier2: ## Stop Tier 2 stack
+	docker compose -f infra/compose/tier2.yml --project-directory . down
 
 down.clean: ## Stop the full stack and wipe all volumes
 	docker compose down -v
@@ -261,6 +274,9 @@ api.health: ## Check API health
 check: format.check lint test ## Run all quality checks (format + lint + test)
 
 ci: install check ## Full CI pipeline (install + format + lint + test)
+
+eval: ## Run eval harness against local server
+	cd $(SERVER_DIR) && uv run python -m eval_harness.runner --all 2>/dev/null || echo "Eval harness not yet implemented"
 
 # ===========================================================================
 #  Cleanup

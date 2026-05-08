@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+asyncpg://rule:rule@localhost:5432/ruledb"
 
+    # Tier toggles — control which optional services are required
+    elasticsearch_enabled: bool = False
+    neo4j_enabled: bool = False
+    redis_enabled: bool = False
+    mcp_enabled: bool = False
+
     # Elasticsearch
     elasticsearch_url: str = "http://localhost:9200"
 

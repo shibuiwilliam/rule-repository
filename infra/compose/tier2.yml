@@ -1,0 +1,133 @@
+# Tier 2 — Postgres + Elasticsearch + Redis.
+# Standard production deployment with improved search quality and
+# background job processing.
+#
+# Usage:
+#   docker compose -f infra/compose/tier2.yml --project-directory . up --build
+#   make up.tier2
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: rule
+      POSTGRES_PASSWORD: rule
+      POSTGRES_DB: ruledb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rule -d ruledb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  elasticsearch:
+    image: elasticsearch:8.17.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  es-setup:
+    image: curlimages/curl:latest
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - ./infra/elasticsearch:/setup:ro
+    entrypoint: ["/bin/sh", "/setup/setup.sh"]
+    restart: "no"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: .
+      dockerfile: infra/docker/server.Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://rule:rule@postgres:5432/ruledb
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_ENABLED: "true"
+      NEO4J_ENABLED: "false"
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis:6379/0
+      MCP_ENABLED: "false"
+    ports:
+      - "8000:8000"
+    volumes:
+      - file_storage:/tmp/rulerepo-files
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  arq-worker:
+    build:
+      context: .
+      dockerfile: infra/docker/server.Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://rule:rule@postgres:5432/ruledb
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_ENABLED: "true"
+      NEO4J_ENABLED: "false"
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis:6379/0
+    command: ["python", "-m", "arq", "rulerepo_server.workers.settings.WorkerSettings"]
+    restart: "no"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/frontend.Dockerfile
+      target: dev
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+      INTERNAL_API_URL: http://server:8000
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  esdata:
+  file_storage:

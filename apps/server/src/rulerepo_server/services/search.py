@@ -1,13 +1,18 @@
-"""Search service — coordinates multi-modal search across Elasticsearch and Postgres."""
+"""Search service — coordinates multi-modal search across the rule corpus.
+
+Supports both Elasticsearch (Tier 2/3) and Postgres FTS (Tier 1) as the
+underlying search index.  The service uses duck typing: any object that
+implements ``search_fulltext``, ``search_vector``, ``search_hybrid``, and
+``search_category`` with the standard signature can serve as the index.
+"""
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Protocol
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rulerepo_server.adapters.elasticsearch.rule_index import ElasticsearchRuleIndex
 from rulerepo_server.adapters.gemini.embeddings import generate_embedding
 from rulerepo_server.adapters.postgres.rule_repo import PostgresRuleRepository
 from rulerepo_server.core.logging import get_logger
@@ -15,20 +20,63 @@ from rulerepo_server.core.logging import get_logger
 logger = get_logger(__name__)
 
 
+class SearchIndex(Protocol):
+    """Protocol for search index adapters (ES or Postgres FTS)."""
+
+    async def search_fulltext(
+        self,
+        query: str,
+        *,
+        filters: dict[str, Any] | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[tuple[str, float]], int]: ...
+
+    async def search_vector(
+        self,
+        embedding: list[float],
+        *,
+        filters: dict[str, Any] | None = None,
+        page: int = 1,
+        page_size: int = 20,
+        k: int = 50,
+    ) -> tuple[list[tuple[str, float]], int]: ...
+
+    async def search_hybrid(
+        self,
+        query: str,
+        embedding: list[float],
+        *,
+        filters: dict[str, Any] | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[tuple[str, float]], int]: ...
+
+    async def search_category(
+        self,
+        *,
+        filters: dict[str, Any],
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[tuple[str, float]], int]: ...
+
+
 class SearchService:
     """Multi-modal search over the rule corpus.
 
-    Searches ES for IDs and scores, then hydrates full Rule objects from Postgres.
+    Accepts any ``SearchIndex``-compatible adapter (Elasticsearch or
+    Postgres FTS).  Searches the index for IDs and scores, then
+    hydrates full Rule objects from Postgres.
     """
 
     def __init__(
         self,
         session: AsyncSession,
-        es_index: ElasticsearchRuleIndex,
+        search_index: SearchIndex,
         gemini_client: Any | None = None,
     ) -> None:
         self._rule_repo = PostgresRuleRepository(session)
-        self._es_index = es_index
+        self._search_index = search_index
         self._gemini_client = gemini_client
 
     async def fulltext_search(
@@ -50,7 +98,7 @@ class SearchService:
         Returns:
             Search results with rule data and scores.
         """
-        hits, total = await self._es_index.search_fulltext(query, filters=filters, page=page, page_size=page_size)
+        hits, total = await self._search_index.search_fulltext(query, filters=filters, page=page, page_size=page_size)
         return await self._hydrate_results(hits, total, page, page_size, query)
 
     async def vector_search(
@@ -80,7 +128,7 @@ class SearchService:
             logger.warning("vector_search_no_embedding", query=query[:100])
             return {"items": [], "total": 0, "page": page, "page_size": page_size, "query": query}
 
-        hits, total = await self._es_index.search_vector(embedding, filters=filters, page=page, page_size=page_size)
+        hits, total = await self._search_index.search_vector(embedding, filters=filters, page=page, page_size=page_size)
         return await self._hydrate_results(hits, total, page, page_size, query)
 
     async def hybrid_search(
@@ -110,12 +158,14 @@ class SearchService:
                 logger.warning("hybrid_embedding_failed", error=str(exc))
 
         if embedding:
-            hits, total = await self._es_index.search_hybrid(
+            hits, total = await self._search_index.search_hybrid(
                 query, embedding, filters=filters, page=page, page_size=page_size
             )
         else:
             # Fall back to fulltext if embedding unavailable
-            hits, total = await self._es_index.search_fulltext(query, filters=filters, page=page, page_size=page_size)
+            hits, total = await self._search_index.search_fulltext(
+                query, filters=filters, page=page, page_size=page_size
+            )
 
         return await self._hydrate_results(hits, total, page, page_size, query)
 
@@ -136,7 +186,7 @@ class SearchService:
         Returns:
             Search results with rule data.
         """
-        hits, total = await self._es_index.search_category(filters=filters, page=page, page_size=page_size)
+        hits, total = await self._search_index.search_category(filters=filters, page=page, page_size=page_size)
         return await self._hydrate_results(hits, total, page, page_size, "")
 
     async def context_search(
