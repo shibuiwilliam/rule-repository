@@ -42,3 +42,15 @@
 2026-05-09 — RR-030 [Phase 4] merged: Marketplace publication guards (role, visibility, PII, quality). Eval delta: n/a.
 2026-05-09 — RR-031 [Phase 4] merged: Pre-ingest secrets/PII scanner (7 tests). Eval delta: n/a.
 2026-05-09 — RR-039 [Phase 4] merged: Per-domain effectiveness weights for 8 domains. Eval delta: n/a.
+
+## Phase 4 (continued)
+
+2026-05-09 — RR-028 [Phase 4] merged: DR runbook with recovery procedures and drill tracking. Eval delta: n/a.
+2026-05-09 — RR-033 [Phase 4] merged: Duplicate/near-duplicate rule detector. Eval delta: n/a.
+2026-05-09 — RR-034 [Phase 4] merged: Coverage heatmap (scope x artifact_type). Eval delta: n/a.
+2026-05-09 — RR-035 [Phase 4] merged: Extraction quality metrics. Eval delta: n/a.
+2026-05-09 — RR-036 [Phase 4] merged: /upcoming-changes endpoint. Eval delta: n/a.
+2026-05-09 — RR-037 [Phase 4] merged: Human trust profiles. Eval delta: n/a.
+2026-05-09 — RR-038 [Phase 4] merged: Change Communication Service. Eval delta: n/a.
+
+## ALL RR-001 THROUGH RR-040 COMPLETE
