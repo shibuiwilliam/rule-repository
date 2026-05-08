@@ -11,6 +11,7 @@
   },
   "pages": {
     "dashboard": "ダッシュボード",
+    "ask": "質問",
     "rules": "ルール",
     "proposals": "提案",
     "search": "検索",
