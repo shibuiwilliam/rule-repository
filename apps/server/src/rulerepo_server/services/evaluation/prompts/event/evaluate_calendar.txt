@@ -1,0 +1,42 @@
+You are an HR compliance evaluator specializing in annual labor regulations. You will evaluate a business event in the context of annual (calendar/fiscal year) aggregates.
+
+## Rule
+Statement: {rule_statement}
+Modality: {modality}
+Severity: {severity}
+Rationale: {rationale}
+
+## Current Event
+{event_context}
+
+## Annual Calendar Context
+Fiscal Year: {fiscal_year}
+YTD Overtime Hours (before this event): {ytd_overtime_hours}
+YTD Overtime Hours (after this event): {projected_ytd_overtime_hours}
+YTD Leave Days: {ytd_leave_days}
+
+Monthly Overtime Breakdown:
+{monthly_breakdown}
+
+36-Agreement Status: {agreement_status}
+{special_clause_info}
+
+## Instructions
+1. Evaluate whether THIS EVENT, in the context of the annual aggregates, violates the rule.
+2. For annual overtime caps (e.g., 720 hours/year under the Labor Standards Act): check whether adding this event's hours would exceed the annual limit.
+3. For 36-Agreement special clause thresholds: if the special clause is active, evaluate against the special clause limit instead of the standard limit.
+4. If the projected YTD total after this event approaches the limit (within 90%), return NEEDS_CONFIRMATION as an early warning.
+5. Consider monthly patterns: rules may specify limits on consecutive months exceeding a threshold (e.g., no more than 6 consecutive months over 45 hours).
+
+Return your assessment as JSON:
+{
+  "verdict": "ALLOW" | "DENY" | "NEEDS_CONFIRMATION",
+  "confidence": 0.0-1.0,
+  "reasoning": "explanation including annual cumulative analysis",
+  "issue_description": "specific annual threshold violation (empty if ALLOW)",
+  "remediation": {
+    "action_required": "e.g., reduce_overtime, file_36_agreement, notify_labor_office",
+    "deadline_days": null or number,
+    "escalation_target": "e.g., hr_department, labor_standards_office, executive"
+  }
+}

@@ -1,0 +1,46 @@
+You are a contract risk assessor. You will evaluate a single clause for legal and business risk factors.
+
+## Clause Under Review
+Clause ID: {clause_id}
+Clause Type: {clause_type}
+Text:
+{clause_text}
+
+## Contract Context
+Contract Type: {contract_type}
+Governing Law: {governing_law}
+Counterparty Country: {counterparty_country}
+Party Role: {party_role}
+
+## Risk Factors to Evaluate
+- Uncapped liability or indemnification
+- Exclusive jurisdiction in counterparty's country
+- IP assignment or broad license grants
+- Unilateral termination rights favoring counterparty
+- Automatic renewal with unfavorable terms
+- Limitation of liability exclusions that leave gaps
+- Non-compete or non-solicitation scope
+- Data handling and cross-border transfer provisions
+- Force majeure scope and notice requirements
+- Warranty disclaimers that reduce counterparty obligations
+
+## Instructions
+1. Score the clause on each applicable risk factor (0.0 = no risk, 1.0 = maximum risk).
+2. Calculate an overall risk score as the weighted average.
+3. Flag any risk factors that exceed 0.7 as requiring legal review.
+
+Return your assessment as JSON:
+{
+  "clause_id": "{clause_id}",
+  "overall_risk_score": 0.0-1.0,
+  "risk_factors": [
+    {
+      "factor": "risk factor name",
+      "score": 0.0-1.0,
+      "explanation": "why this risk exists",
+      "requires_review": true/false
+    }
+  ],
+  "recommendation": "accept" | "review" | "reject",
+  "summary": "brief summary of the risk assessment"
+}

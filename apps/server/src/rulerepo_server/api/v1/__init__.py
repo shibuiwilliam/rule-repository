@@ -5,9 +5,11 @@ from fastapi import APIRouter
 from rulerepo_server.api.v1.agent_governance import router as agent_governance_router
 from rulerepo_server.api.v1.alerts import router as alerts_router
 from rulerepo_server.api.v1.audit import router as audit_router
+from rulerepo_server.api.v1.contract import router as contract_router
 from rulerepo_server.api.v1.departments import router as departments_router
 from rulerepo_server.api.v1.discovery import router as discovery_router
 from rulerepo_server.api.v1.evaluation import router as evaluation_router
+from rulerepo_server.api.v1.event import router as event_router
 from rulerepo_server.api.v1.extraction import router as extraction_router
 from rulerepo_server.api.v1.federation import router as federation_router
 from rulerepo_server.api.v1.feedback import router as feedback_router
@@ -30,6 +32,8 @@ v1_router.include_router(audit_router)
 v1_router.include_router(departments_router)
 v1_router.include_router(rules_router)
 v1_router.include_router(search_router)
+v1_router.include_router(contract_router)
+v1_router.include_router(event_router)
 v1_router.include_router(evaluation_router)
 v1_router.include_router(review_router)
 v1_router.include_router(relationships_router)
