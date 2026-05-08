@@ -31,3 +31,14 @@
 2026-05-08 — RR-026 [Phase 2] merged: Real Prometheus metrics on /metrics endpoint. Eval delta: n/a.
 2026-05-08 — RR-020 [Phase 2] merged: Polyglot rules with translation management and verification. Eval delta: n/a.
 2026-05-08 — RR-021 [Phase 2] merged: Per-scope approval workflows (8 default workflows, 15 tests). Eval delta: n/a.
+
+## Phase 3
+
+2026-05-09 — RR-012 [Phase 3] merged: Regulatory source feed with amendment propagation. Eval delta: n/a.
+2026-05-09 — RR-018 [Phase 3] merged: Sales, Communications, Governance domain modules. Eval delta: +30 cases (3 domains).
+2026-05-09 — RR-022 [Phase 3] merged: Conformal prediction calibration (7 tests). Eval delta: n/a.
+2026-05-09 — RR-023 [Phase 3] merged: Multi-judge consensus for CRITICAL evaluations. Eval delta: n/a.
+2026-05-09 — RR-024 [Phase 3] merged: Verdict drift detection with alert system (9 tests). Eval delta: n/a.
+2026-05-09 — RR-030 [Phase 4] merged: Marketplace publication guards (role, visibility, PII, quality). Eval delta: n/a.
+2026-05-09 — RR-031 [Phase 4] merged: Pre-ingest secrets/PII scanner (7 tests). Eval delta: n/a.
+2026-05-09 — RR-039 [Phase 4] merged: Per-domain effectiveness weights for 8 domains. Eval delta: n/a.
