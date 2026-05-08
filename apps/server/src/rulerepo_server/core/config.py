@@ -67,6 +67,15 @@ class Settings(BaseSettings):
     github_app_private_key: str = ""
     github_webhook_secret: str = ""
 
+    # LLM provider abstraction (RR-010)
+    llm_provider_primary: str = "gemini"
+    llm_provider_fallback: str = ""
+    llm_provider_self_hosted_url: str = ""
+    llm_provider_self_hosted_api_key: str = ""
+    llm_tenant_overrides: str = "{}"
+    anthropic_api_key: str = ""
+    openai_api_key: str = ""
+
     # LLM cost guardrails (RR-027)
     llm_tenant_monthly_budget_usd: float = 0.0
     llm_tenant_budget_warning_threshold: float = 0.8

@@ -4,8 +4,8 @@ This is a stub implementation that raises NotImplementedError
 until a local LLM endpoint is configured. To enable this provider:
 
 1. Run Ollama or vLLM locally (e.g., ollama serve)
-2. Set LOCAL_LLM_ENDPOINT in .env (default: http://localhost:11434)
-3. Set LLM_PROVIDER_RESTRICTED=local for sensitivity=RESTRICTED rules
+2. Set LLM_PROVIDER_SELF_HOSTED_URL in .env
+3. Configure LLM_TENANT_OVERRIDES for sensitivity-based routing
 
 This provider is intended for handling RESTRICTED-sensitivity rules
 that must not be sent to external cloud LLM providers.
@@ -19,7 +19,7 @@ from typing import Any
 class LocalProvider:
     """Local/self-hosted LLM provider (Ollama, vLLM, etc.).
 
-    Requires LOCAL_LLM_ENDPOINT environment variable to be set.
+    Requires LLM_PROVIDER_SELF_HOSTED_URL environment variable to be set.
     Communicates with the local LLM server via its OpenAI-compatible
     HTTP API.
 
@@ -28,6 +28,21 @@ class LocalProvider:
     """
 
     name: str = "local"
+
+    @property
+    def model_id(self) -> str:
+        """Return the default model ID."""
+        return "local"
+
+    @property
+    def cost_per_1k_input_tokens(self) -> float:
+        """Return the cost in USD per 1,000 input tokens (zero for self-hosted)."""
+        return 0.0
+
+    @property
+    def cost_per_1k_output_tokens(self) -> float:
+        """Return the cost in USD per 1,000 output tokens (zero for self-hosted)."""
+        return 0.0
 
     async def generate(
         self,
@@ -50,7 +65,29 @@ class LocalProvider:
         """
         raise NotImplementedError(
             "Local LLM provider not configured. "
-            "Set LOCAL_LLM_ENDPOINT environment variable and ensure the LLM server is running."
+            "Set LLM_PROVIDER_SELF_HOSTED_URL environment variable and ensure the LLM server is running."
+        )
+
+    async def generate_structured(
+        self,
+        prompt: str,
+        schema: dict[str, Any],
+        *,
+        model: str | None = None,
+    ) -> dict[str, Any]:
+        """Generate structured output using the local LLM.
+
+        Args:
+            prompt: The input prompt text.
+            schema: JSON Schema the output must conform to.
+            model: Optional model ID override.
+
+        Raises:
+            NotImplementedError: Always, until the provider is configured.
+        """
+        raise NotImplementedError(
+            "Local LLM provider not configured. "
+            "Set LLM_PROVIDER_SELF_HOSTED_URL environment variable and ensure the LLM server is running."
         )
 
     async def embed(self, text: str) -> list[float]:
@@ -64,5 +101,19 @@ class LocalProvider:
         """
         raise NotImplementedError(
             "Local LLM provider not configured. "
-            "Set LOCAL_LLM_ENDPOINT environment variable and ensure the LLM server is running."
+            "Set LLM_PROVIDER_SELF_HOSTED_URL environment variable and ensure the LLM server is running."
+        )
+
+    async def count_tokens(self, text: str) -> int:
+        """Estimate token count for a text string.
+
+        Args:
+            text: The input text.
+
+        Raises:
+            NotImplementedError: Always, until the provider is configured.
+        """
+        raise NotImplementedError(
+            "Local LLM provider not configured. "
+            "Set LLM_PROVIDER_SELF_HOSTED_URL environment variable and ensure the LLM server is running."
         )
