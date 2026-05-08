@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 const DEPT_LEAVE = [
   { department: "Engineering", totalEmployees: 45, avgBalance: 12.3, compulsoryMet: 38, compulsoryTotal: 45 },
   { department: "Sales", totalEmployees: 22, avgBalance: 8.5, compulsoryMet: 18, compulsoryTotal: 22 },
