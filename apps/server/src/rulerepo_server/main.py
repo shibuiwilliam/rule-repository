@@ -12,6 +12,7 @@ from rulerepo_server.core.config import get_settings
 from rulerepo_server.core.errors import RuleRepoError
 from rulerepo_server.core.logging import get_logger, setup_logging
 from rulerepo_server.core.middleware import RequestIdMiddleware
+from rulerepo_server.core.pii_middleware import PIIScrubMiddleware
 
 logger = get_logger(__name__)
 
@@ -102,6 +103,7 @@ def create_app() -> FastAPI:
 
     # --- Middleware (outermost first) ---
     app.add_middleware(RequestIdMiddleware)
+    app.add_middleware(PIIScrubMiddleware)
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     app.add_middleware(
         CORSMiddleware,
