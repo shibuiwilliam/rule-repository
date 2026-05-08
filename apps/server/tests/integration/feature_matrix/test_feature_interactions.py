@@ -315,9 +315,9 @@ class TestMarketplaceRemoved:
         router_path = Path(__file__).parents[3] / "src" / "rulerepo_server" / "api" / "v1" / "marketplace.py"
         assert not router_path.exists(), "Marketplace router should not exist (was removed)"
 
-    def test_no_marketplace_service(self) -> None:
-        """Marketplace service directory does not exist."""
+    def test_marketplace_guards_exist(self) -> None:
+        """Marketplace publication guards exist (RR-030)."""
         from pathlib import Path
 
-        svc_path = Path(__file__).parents[3] / "src" / "rulerepo_server" / "services" / "marketplace"
-        assert not svc_path.exists(), "Marketplace service should not exist (was removed)"
+        guards_path = Path(__file__).parents[3] / "src" / "rulerepo_server" / "services" / "marketplace" / "guards.py"
+        assert guards_path.exists(), "Marketplace guards should exist (RR-030)"
