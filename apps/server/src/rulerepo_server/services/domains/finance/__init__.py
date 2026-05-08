@@ -1,7 +1,7 @@
-"""Finance domain module stub — journal entries, expenses, POs, invoices.
+"""Finance domain module — journal entries, expenses, POs, invoices.
 
-This is a minimal skeleton that satisfies the ``DomainModule`` protocol.
-Full implementation is planned for Phase 2 (see IMPROVEMENT.md RR-012).
+Handles journal_entry, expense_request, po_request, and invoice artifact types.
+See IMPROVEMENT.md RR-016.
 """
 
 from __future__ import annotations
@@ -16,19 +16,6 @@ from rulerepo_server.services.domains._protocol import (
     DomainEvaluator,
     RuleSelector,
 )
-
-
-class _FinanceContextAssembler:
-    async def assemble(self, evaluable: dict[str, Any]) -> str:
-        payload = evaluable.get("payload", {})
-        parts: list[str] = []
-        if entry := payload.get("entry"):
-            parts.append(f"Entry:\n{entry}")
-        if request := payload.get("request"):
-            parts.append(f"Request:\n{request}")
-        if invoice := payload.get("invoice"):
-            parts.append(f"Invoice:\n{invoice}")
-        return "\n\n".join(parts) if parts else str(payload)
 
 
 class _FinanceRuleSelector:
@@ -54,16 +41,6 @@ class _FinanceRuleSelector:
         )
 
 
-class _FinanceEvaluator:
-    async def evaluate(
-        self,
-        context: str,
-        rules: list[dict[str, Any]],
-        **kwargs: Any,
-    ) -> list[dict[str, Any]]:
-        return []
-
-
 class FinanceModule:
     """Concrete implementation of the ``DomainModule`` protocol for finance."""
 
@@ -76,16 +53,26 @@ class FinanceModule:
         return ["journal_entry", "expense_request", "po_request", "invoice"]
 
     def context_assembler(self) -> ContextAssembler:
-        return _FinanceContextAssembler()
+        from rulerepo_server.services.domains.finance.evaluation.context_assembler import (
+            FinanceContextAssembler,
+        )
+
+        return FinanceContextAssembler()
 
     def rule_selector(self) -> RuleSelector:
         return _FinanceRuleSelector()
 
     def evaluator(self) -> DomainEvaluator:
-        return _FinanceEvaluator()
+        from rulerepo_server.services.domains.finance.evaluation.evaluator import FinanceEvaluator
+
+        return FinanceEvaluator()
 
     def discovery_analyzers(self) -> list[DiscoveryAnalyzer]:
-        return []
+        from rulerepo_server.services.domains.finance.discovery.policy_analyzer import (
+            FinancePolicyAnalyzer,
+        )
+
+        return [FinancePolicyAnalyzer()]
 
     def connectors(self) -> list[Connector]:
         return []
