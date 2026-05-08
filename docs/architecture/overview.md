@@ -2,25 +2,25 @@
 
 ## Deployable Components
 
-The Rule Repository consists of ten services (plus setup containers and observability), all orchestrated locally via Docker Compose. The backend exposes 18 API routers backed by 20+ service directories. Rules are scoped to projects for multi-team organization.
+The Rule Repository consists of twelve services (plus setup containers and observability), all orchestrated locally via Docker Compose. The backend exposes 22 API routers backed by 20+ service directories. Rules are scoped to projects and departments for multi-team, cross-organizational governance.
 
 | Component | Technology | Port | Role |
 |---|---|---|---|
-| **Backend API** | Python 3.13 / FastAPI | 8000 | System of record. REST, Evaluate, Intent, Gateway, and Integration APIs (18 routers). |
-| **MCP Server** | Python / FastMCP | 8001 | Exposes rule search, evaluation, governance, and context delivery to AI agents via the Model Context Protocol (12 tools). |
-| **Frontend** | TypeScript / Next.js 15 / Tailwind | 3000 | Operator console with 23+ pages for browsing, searching, uploading documents, reviewing evaluations, governance proposals, agent management, and more. Persona-aware navigation. |
-| **PostgreSQL** | PostgreSQL 17 | 5432 | Relational store for rules, revisions, relationships, documents, audit log, policies, evaluations, proposals, agent profiles, snapshots, federations, and cache. |
-| **Elasticsearch** | Elasticsearch 8.17 | 9200 | Full-text (BM25) and vector (768-dim cosine) search index for rules and documents. |
-| **Neo4j** | Neo4j 5 Community | 7474 / 7687 | Directed graph of rule relationships (refines, overrides, conflicts_with, depends_on, derives_from, succeeds). |
+| **Backend API** | Python 3.13 / FastAPI | 8000 | System of record. REST, Evaluate, Intent, Gateway, and Integration APIs (22 routers). |
+| **MCP Server** | Python / FastMCP | 8001 | Exposes rule search, evaluation, governance, and context delivery to AI agents via the Model Context Protocol (12+ tools). |
+| **Frontend** | TypeScript / Next.js 15 / Tailwind | 3000 | Operator console with 30+ pages for browsing, searching, uploading documents, reviewing evaluations, governance proposals, agent management, department-specific surfaces, and more. Persona-aware navigation with English/Japanese i18n. |
+| **PostgreSQL** | PostgreSQL 17 | 5432 | Relational store with Row-Level Security for classification-based access control. Stores rules, revisions, relationships, documents, audit log, policies, evaluations, proposals, agent profiles, snapshots, federations, departments, capacities, and cache. |
+| **Elasticsearch** | Elasticsearch 8.17 | 9200 | Full-text (BM25) and vector (768-dim cosine) search index for rules and documents, with document-level security filtering. |
+| **Neo4j** | Neo4j 5 Community | 7474 / 7687 | Directed graph of rule relationships (REFINES, OVERRIDES, CONFLICTS_WITH, DEPENDS_ON, DERIVES_FROM, SUCCEEDS, LOCALIZES). |
 | **Redis** | Redis 7 Alpine | 6379 | Job queue and result backend for background workers. |
-| **arq-worker** | Python 3.13 / arq | -- | Background worker running 6 scheduled cron jobs (health scoring, recommendations, rule promotion, correction clustering, verdict drift, weekly digest). |
-| **Jaeger** | Jaeger | 16686 | Distributed tracing via OpenTelemetry. |
-| **Prometheus** | Prometheus | 9090 | Metrics collection. |
+| **arq-worker** | Python 3.13 / arq | -- | Background worker running 9+ scheduled cron jobs (health scoring, recommendations, rule promotion, correction clustering, verdict drift, weekly digest, conflict scanning, policy review cycle, archival). |
+| **Jaeger** | Jaeger 1.62 | 16686 | Distributed tracing via OpenTelemetry (OTLP gRPC on 4317, OTLP HTTP on 4318). |
+| **Prometheus** | Prometheus v3.4 | 9090 | Metrics collection from the backend `/metrics` endpoint. |
 
 ## Data Store Roles
 
-- **PostgreSQL** is the system of record. All rule data, revisions, evaluations, proposals, agent profiles, and audit records live here.
-- **Elasticsearch** is a derived search index. It is rebuilt from PostgreSQL on rule changes. Also indexes documents for document search.
+- **PostgreSQL** is the system of record. All rule data, revisions, evaluations, proposals, agent profiles, departments, classifications, and audit records live here. Row-Level Security enforces classification-based access control on rules, documents, evaluations, and audit log tables.
+- **Elasticsearch** is a derived search index. It is rebuilt from PostgreSQL on rule changes. Also indexes documents for document search. Document-level security filters enforce classification at query time.
 - **Neo4j** is a derived relationship graph. PostgreSQL wins if they disagree; the `reconcile_graph.py` script can rebuild Neo4j from scratch.
 
 ## Layering Rule
@@ -35,7 +35,51 @@ api/  -->  services/  -->  domain/
 - `api/` (routers) depends on `services/` only.
 - `services/` depends on `domain/` (pure business objects) and `adapters/` (Postgres, Elasticsearch, Neo4j, Gemini, LLM providers).
 - `domain/` depends on nothing else in the project.
+- `mcp/`, `gateway/`, `integrations/` are parallel to `api/` -- they call services directly.
 - No layer imports upward.
+
+## Subject Polymorphism
+
+The evaluation engine is domain-agnostic. Eight subject kinds are supported:
+
+| Subject Kind | Domain | Example |
+|---|---|---|
+| `CODE_DIFF` | Engineering | Code changes, diffs, file edits |
+| `CLAUSE_SET` | Legal | Contract clauses, NDA terms |
+| `EVENT` | HR / Operations | Overtime registrations, leave requests |
+| `TRANSACTION` | Finance | Expense submissions, purchase orders |
+| `CREATIVE` | Marketing | Ad copy, promotional materials |
+| `DECISION` | Management | Approval decisions, policy exceptions |
+| `IDENTITY` | Compliance | KYC checks, sanctions screening |
+| `DOCUMENT` | General | Policy documents, handbooks |
+
+Each subject kind has its own adapter, prompt templates, and aggregation logic under `services/evaluation/subjects/`. The orchestrator (`services/evaluation/service.py`) calls `subject_registry.resolve(subject_kind)` and never branches on the kind directly.
+
+## Department-Aware Governance
+
+Rules belong to departments (Legal, HR, Finance, Sales, Marketing, IT, Operations, R&D, Executive, Custom). The `DepartmentService` resolves:
+
+- **Owners** -- who is responsible for a rule
+- **Approvers** -- who must approve proposals (severity-based thresholds)
+- **Audiences** -- who gets notifications for a capacity (OWNER, REVIEWER, SUBSCRIBER, AUDITOR)
+
+Proposals, intelligence digests, marketplace publishing, and audit read access all route through department resolvers.
+
+## Classification and Access Control
+
+Every rule, document, evaluation, and audit entry carries a classification:
+
+| Classification | Access |
+|---|---|
+| `PUBLIC` | All authenticated users |
+| `INTERNAL` | Organization members |
+| `CONFIDENTIAL` | Department members + approved subscribers |
+| `RESTRICTED` | Named individuals or AUDITORs only |
+
+Access is enforced at three layers:
+1. **PostgreSQL RLS** -- `with_user_context()` sets session-local variables before every query
+2. **Elasticsearch** -- `classification_filter(user)` is injected into all search queries
+3. **MCP** -- agents register with a clearance level; rule delivery is filtered accordingly
 
 ## Key Data Flows
 
@@ -54,14 +98,15 @@ api/  -->  services/  -->  domain/
 
 ### Evaluation
 
-1. Client sends a diff, file list, or free-form facts to `POST /api/v1/evaluate`.
-2. The evaluation engine selects relevant rules (metadata filtering + effective_period enforcement + semantic ranking). When `agent_id` is provided, historically-violated rules are boosted.
-3. The graph resolver fetches Neo4j relationships (OVERRIDES, CONFLICTS_WITH, DEPENDS_ON) between selected rules and builds an evaluation plan.
-4. The **batched evaluator** sends all selected rules to Gemini in a single API call with structured JSON output requesting per-rule verdicts. For DENY + CRITICAL rules, a Pro model confirmation pass re-evaluates those specific rules. If the batch call fails, the system falls back to per-rule concurrent evaluation.
-5. Each evaluation result is persisted to the `evaluations` table for analytics.
-6. The conflict-aware aggregator applies overrides, resolves conflicts (severity > modality > specificity tiebreak), and skips rules whose prerequisite was denied.
-7. The response includes violations, warnings, code locations, fix suggestions, structured remediations, and `conflict_resolutions[]` explaining any relationship-based decisions.
-8. The full evaluation is logged to the audit trail.
+1. Client sends a diff, file list, business event, or free-form facts to `POST /api/v1/evaluate`, optionally specifying `subject_kind`.
+2. The subject registry resolves the appropriate adapter for the subject kind (defaults to `CODE_DIFF`).
+3. The evaluation engine selects relevant rules (metadata filtering + effective_period enforcement + semantic ranking). When `agent_id` is provided, historically-violated rules are boosted.
+4. The graph resolver fetches Neo4j relationships (OVERRIDES, CONFLICTS_WITH, DEPENDS_ON) between selected rules and builds an evaluation plan.
+5. The **batched evaluator** sends all selected rules to Gemini in a single API call with structured JSON output requesting per-rule verdicts. For DENY + CRITICAL rules, a Pro model confirmation pass re-evaluates those specific rules. If the batch call fails, the system falls back to per-rule concurrent evaluation.
+6. Each evaluation result is persisted to the `evaluations` table for analytics.
+7. The conflict-aware aggregator applies overrides, resolves conflicts (severity > modality > specificity tiebreak), and skips rules whose prerequisite was denied.
+8. The response includes violations, warnings, code locations, fix suggestions, structured remediations, and `conflict_resolutions[]` explaining any relationship-based decisions.
+9. The full evaluation is logged to the audit trail.
 
 See [Batched Evaluation](batch-evaluation.md) for the detailed architecture.
 
@@ -73,15 +118,15 @@ See [Batched Evaluation](batch-evaluation.md) for the detailed architecture.
 
 ### Context Delivery (MCP)
 
-1. An AI agent connects to the MCP server.
+1. An AI agent connects to the MCP server (stdio or streamable-HTTP transport).
 2. The agent calls `get_rules_for_context` with its current working context (file paths, format preference, optional federation node).
-3. The MCP server resolves scopes from file paths, selects applicable rules, and returns them in a format optimized for LLM consumption (instructions, checklist, or detailed).
+3. The MCP server resolves scopes from file paths, selects applicable rules filtered by the agent's clearance level, and returns them in a format optimized for LLM consumption (instructions, checklist, or detailed).
 
 ### Rule Discovery
 
 1. Client submits project artifacts to `POST /api/v1/discover/scan` -- or uses **one-click GitHub import** via `POST /api/v1/discover/import` with a repository URL.
 2. For GitHub import: the importer fetches CLAUDE.md, pyproject.toml, eslint config, tsconfig, and other key files via the GitHub Contents API.
-3. Source analyzers (CLAUDE.md, linter config, code patterns, policy documents) extract candidate rules; the pattern detector deduplicates and scores them.
+3. Source analyzers (CLAUDE.md, linter config, code patterns, policy documents, Confluence, Notion, Google Drive, SharePoint, e-Gov, EUR-Lex) extract candidate rules; the pattern detector deduplicates and scores them.
 4. Gemini refines candidates into well-formed rule statements with suggested metadata.
 5. Candidates enter a human review queue for approval or dismissal.
 
@@ -114,22 +159,22 @@ See [Batched Evaluation](batch-evaluation.md) for the detailed architecture.
 ### Governance Proposals
 
 1. A user creates a proposal (create, amend, retire, merge, split, override) via `POST /api/v1/proposals`.
-2. The proposal is submitted for review, triggering conflict analysis and impact preview.
+2. The proposal is submitted for review, triggering conflict analysis and impact preview. Approvers are resolved from the owning department based on severity.
 3. Approvers vote; the system auto-transitions on all-approve or any-reject.
 4. Enacted proposals are applied by the enactor (creates rules, updates fields, retires originals, etc.).
 
 ### Agent Governance
 
-1. An agent registers via MCP or API with capabilities and type.
+1. An agent registers via MCP or API with capabilities, type, and clearance level.
 2. The system tracks compliance rate, builds a mastery profile, and adjusts trust level.
 3. Personalized rule delivery suppresses mastered rules and boosts weak areas.
 4. Agents can challenge verdicts or request exceptions, which create audit trails and may trigger rule improvements.
 
 ### Playground Evaluation
 
-1. Client sends a rule definition and sample code to `POST /api/v1/playground/evaluate`.
+1. Client sends a rule definition and sample code/scenario to `POST /api/v1/playground/evaluate`.
 2. The sandbox pipeline runs the same Gemini evaluation but skips audit logging, LLM caching, and persistence.
-3. Returns a verdict, confidence, reasoning, and fix suggestion.
+3. Returns a verdict, confidence, reasoning, and fix suggestion. Supports counterexample generation.
 
 ### Snapshots and Environments
 
@@ -143,6 +188,15 @@ See [Batched Evaluation](batch-evaluation.md) for the detailed architecture.
 1. Background workers (health refresh cron) and the evaluation pipeline detect conditions such as dormant rules, high deny rates, health declines, verdict drift, effectiveness decline, and conflicts.
 2. Alerts are created in the alerts table and surfaced via `GET /api/v1/alerts` and the dashboard banner.
 3. Operators acknowledge or resolve alerts through the API or the dashboard alerts panel.
+
+### Compliance-Grade Audit
+
+1. Every evaluation, rule change, proposal action, and evidence attachment is recorded in the append-only, hash-chained audit log.
+2. For `RESTRICTED` and `CONFIDENTIAL` entries, the audit service queues WORM storage mirroring (S3 Object Lock, Azure Immutable Blob, or GCS Bucket Lock).
+3. Hash chain heads are periodically anchored to Sigstore Rekor (or configured timestamp authority).
+4. PII fields marked at Subject construction time are redacted before logging.
+5. Legal holds prevent deletion or modification of matching entries.
+6. Regulator export adapters produce J-SOX, SOX, FSA, and GDPR-compliant artifacts.
 
 ## Further Reading
 

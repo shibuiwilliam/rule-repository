@@ -8,6 +8,23 @@ Whether the rules come from **labor regulations, contract standards, expense pol
 
 ---
 
+## Table of Contents
+
+- [What You Can Do](#what-you-can-do)
+- [Rule Templates](#rule-templates)
+- [Sample Rule Documents](#sample-rule-documents)
+- [Getting Started](#getting-started)
+- [Architecture](#architecture)
+- [Scope Naming](#scope-naming)
+- [Frontend Pages](#frontend-pages)
+- [SDKs and CLI](#sdks-and-cli)
+- [Development](#development)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
 ## What You Can Do
 
 ### Enforce HR and labor compliance
@@ -50,9 +67,13 @@ POST /api/v1/evaluate
    rule_verdicts: [{ rule_id, verdict, fix_suggestion, remediations }]
 ```
 
+### Evaluate across domains with Subject Polymorphism
+
+The evaluation engine is domain-agnostic. Eight subject kinds (`CODE_DIFF`, `CLAUSE_SET`, `EVENT`, `TRANSACTION`, `CREATIVE`, `DECISION`, `IDENTITY`, `DOCUMENT`) each have their own adapter, prompt templates, and aggregation logic. Adding a new domain means adding a new adapter -- not modifying the orchestrator.
+
 ### Get rules delivered to AI agents automatically
 
-The **session context API** resolves file paths to scopes and returns formatted rules. The MCP server exposes 12 tools for deeper integration. CLI hooks inject rules before file writes and evaluate after.
+The **session context API** resolves file paths to scopes and returns formatted rules. The MCP server exposes 12+ tools for deeper integration. CLI hooks inject rules before file writes and evaluate after.
 
 ### Discover rules from existing documents
 
@@ -74,7 +95,7 @@ Ask questions about your rules in natural language and get LLM-powered explanati
 
 ## Rule Templates
 
-Thirteen pre-built rule sets covering 7 domains:
+Fifteen pre-built rule sets covering 7+ domains:
 
 | Template | Rules | Domain |
 |----------|-------|--------|
@@ -89,10 +110,13 @@ Thirteen pre-built rule sets covering 7 domains:
 | `security-owasp` | 10 | Engineering / Security |
 | `api-design` | 10 | Engineering / API Design |
 | `testing-standards` | 10 | Engineering / Testing |
-| `documentation-standards` | -- | Engineering / Documentation |
+| `documentation-standards` | 10 | Engineering / Documentation |
+| `meta-rules-self-governance` | -- | Governance / Meta-Rules |
 | `nda-template` | -- | Legal / NDA Review |
 
-**Important:** All business-domain templates are marked `expert_reviewed: false (reference only)`. They must be reviewed by qualified domain counsel before use for actual regulatory compliance.
+Each template rule includes: `statement`, `modality`, `severity`, `classification`, `subject_kinds`, `scope`, `jurisdiction`, `rationale`, `tags`, `violation_examples`, and more.
+
+> **Important:** All business-domain templates are marked `expert_reviewed: false (reference only)`. They must be reviewed by qualified domain counsel before use for actual regulatory compliance.
 
 ---
 
@@ -116,8 +140,8 @@ Thirteen pre-built rule sets covering 7 domains:
 
 ### Prerequisites
 
-- [Docker](https://docs.docker.com/get-started/) and Docker Compose
-- A [Gemini API key](https://ai.google.dev/gemini-api/docs)
+- [Docker](https://docs.docker.com/get-started/) and Docker Compose (v2)
+- A [Gemini API key](https://ai.google.dev/gemini-api/docs) (optional -- the stack starts without one, but LLM features will be unavailable)
 
 ### Run the full stack
 
@@ -132,70 +156,56 @@ After about a minute:
 
 | Service | URL | Purpose |
 |---|---|---|
-| Backend API | http://localhost:8000 | FastAPI with 18 API routers |
+| Backend API | http://localhost:8000 | FastAPI with 22 API routers |
 | Swagger UI | http://localhost:8000/docs | Interactive API explorer |
 | Frontend | http://localhost:3000 | Compliance dashboard + operator pages |
-| MCP Server | localhost:8001 | AI agent tool integration (12 tools) |
-| PostgreSQL | localhost:5432 | System of record |
+| MCP Server | localhost:8001 | AI agent tool integration (12+ tools) |
+| PostgreSQL | localhost:5432 | System of record (35+ ORM models) |
 | Elasticsearch | localhost:9200 | Full-text and vector search |
 | Neo4j | localhost:7474 | Rule relationship graph |
 | Redis | localhost:6379 | Background job queue |
 | Jaeger | localhost:16686 | Distributed tracing UI |
 | Prometheus | localhost:9090 | Metrics collection |
 
----
+### Try it out
 
-## Scope Naming
+**Search for rules:**
 
-Rules are organized by scope using the pattern `<domain>/<area>[/<region>][/<sub>]`. See [docs/scope-naming.md](docs/scope-naming.md) for the full convention and examples across engineering, HR, legal, finance, compliance, sales, marketing, infosec, and ESG domains.
+```bash
+curl -X POST http://localhost:8000/api/v1/search/fulltext \
+  -H "Content-Type: application/json" \
+  -d '{"query": "overtime limit"}'
+```
 
----
+**Upload a document for rule extraction:**
 
-## Additional Capabilities
+```bash
+curl -X POST http://localhost:8000/api/v1/documents/upload \
+  -F "file=@path/to/policy.pdf"
+```
 
-### See if your rules are working -- at a glance
+**Evaluate a code change:**
 
-The **home dashboard** shows compliance rate with trends, rules by status, pending actions, top violated rules, recent corrections, and critical alert banners.
+```bash
+curl -X POST http://localhost:8000/api/v1/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"diff": "...", "intent": "Add new API endpoint"}'
+```
 
-### Organize by project
+**Evaluate with a specific subject kind:**
 
-Rules belong to **projects**. A project selector scopes everything: rules, documents, evaluations, discovery, search.
+```bash
+curl -X POST http://localhost:8000/api/v1/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"subject_kind": "event", "facts": {"employee_id": "E001", "overtime_hours": 50}}'
+```
 
-### Search multiple ways -- with project filtering
+### Tear down
 
-Hybrid (BM25 + vector), full-text, semantic, temporal, citation, subject-aware, conflict-aware, and document search.
-
-### Measure rule effectiveness
-
-**Effectiveness score**: precision (false positive rate), prevention rate (did corrections decrease?), and agent adoption (first-attempt pass rate).
-
-### Test rules safely
-
-The **Playground** supports Code and Scenario input modes. Generate test inputs via LLM. Per-rule test cases with auto-generation.
-
-### Enforce everywhere
-
-- **GitHub PR Review** -- webhook posts structured review comments
-- **CI Pipeline** -- `rulerepo-check` exits 0/1/2 with `--format github-actions`
-- **Agent Hooks** -- `rulerepo-hook preflight` / `posthoc` with `--agent-id`
-- **Gateway** -- webhook-driven enforcement (GitHub, Slack, Teams, Email) with policy dispatch
-- **Alerts** -- background workers detect dormant rules, high deny rates, health decline, verdict drift
-
-### Propose rule changes collaboratively
-
-Governance proposals with multi-approver voting, threaded comments, conflict analysis, and impact preview.
-
-### Let agents self-govern
-
-Agent profiles with trust levels, personalized rules, verdict challenges, and exception requests.
-
-### Organize rules hierarchically
-
-**Federation** provides org-team-project hierarchy with inheritance and overrides. **Snapshots** capture versioned, deployable rule sets.
-
-### Proactive alerts and digest
-
-Six background workers (arq + Redis) run daily health scoring, recommendation generation, correction clustering, rule auto-promotion, verdict drift monitoring, and a weekly governance digest.
+```bash
+docker compose down       # stop containers, keep data
+docker compose down -v    # stop containers and delete all volumes
+```
 
 ---
 
@@ -207,27 +217,57 @@ Six background workers (arq + Redis) run daily health scoring, recommendation ge
 |                                                                      |
 |  Extraction   Search(8+)  Evaluation    Intelligence   Discovery     |
 |  Pipeline     BM25+Vec    Engine        Health+Recs    + Import      |
-|  (bulk +      +Temporal   (batched +    Effectiveness   Federation   |
-|   contract    +Citation   conflict-     Digest+Compare  Snapshots    |
-|   clause)     +Subject    aware +       Flywheel        Alerts       |
-|               +Conflict   remediation   Agent Tracking  Playground   |
-|                           + review)                                  |
-|  Proposals    Agent Gov                                              |
-|  (lifecycle,  (trust,     Provenance    Conflict        Gateway      |
-|   voting,     challenge,  Lineage       Scanner         (5 sources   |
-|   comments)   sessions)   (Why API)     (daily)          + policy)   |
-|                                                                      |
+|  (bulk +      +Temporal   (subject-     Effectiveness   Federation   |
+|   contract    +Citation   polymorphic   Digest+Compare  Snapshots    |
+|   clause)     +Subject    batched +     Flywheel        Alerts       |
+|               +Conflict   conflict-     Agent Tracking  Playground   |
+|                           aware +                                    |
+|  Proposals    Agent Gov   remediation   Departments     Gateway      |
+|  (lifecycle,  (trust,     + review)     Capacity        (5 sources   |
+|   voting,     challenge,                Classification   + policy)   |
+|   comments)   sessions)   Provenance    + RLS                        |
+|                           Lineage                                    |
 |  PostgreSQL    Elasticsearch   Neo4j       Redis       Audit Log     |
-|  (truth)       (search)        (graph)     (jobs)      (immutable)   |
+|  (truth+RLS)   (search+DLS)   (graph)     (jobs)      (immutable)   |
 |                                                                      |
-|  18 routers  |  MCP Server (12 tools)  |  Gateway  |  GitHub App    |
+|  22 routers  |  MCP Server (12+ tools)  |  Gateway  |  GitHub App   |
 +----------------------------------------------------------------------+
                |                         |           |
     Rule    Agentic    MCP     CLI     GitHub    Gateway   arq-worker
     SDK      SDK      Server  Tools    App      (webhooks)  (cron)
 ```
 
-**Three data stores, one source of truth.** PostgreSQL holds canonical data. Elasticsearch is a derived search index. Neo4j is a derived relationship graph. If they disagree, Postgres wins.
+**Three data stores, one source of truth.** PostgreSQL holds canonical data with Row-Level Security for classification-based access control. Elasticsearch is a derived search index with document-level security. Neo4j is a derived relationship graph. If they disagree, Postgres wins.
+
+**Subject-agnostic evaluation.** The evaluation pipeline does not know about code diffs, contract clauses, or HR events. It calls `subject_registry.resolve(subject_kind)` to obtain the correct adapter, then orchestrates the pipeline. Eight subject kinds are supported: `CODE_DIFF`, `CLAUSE_SET`, `EVENT`, `TRANSACTION`, `CREATIVE`, `DECISION`, `IDENTITY`, `DOCUMENT`.
+
+**Department-aware governance.** Rules belong to departments. Proposals, intelligence digests, and notifications route through department resolvers to reach the right owners, approvers, and audiences.
+
+**Classification-based access control.** Every rule, document, evaluation, and audit entry carries a classification level (`PUBLIC`, `INTERNAL`, `CONFIDENTIAL`, `RESTRICTED`). PostgreSQL RLS, Elasticsearch filters, and MCP clearance enforce access boundaries.
+
+---
+
+## Scope Naming
+
+Rules are organized by scope using the pattern `<domain>/<area>[/<region>][/<sub>]`. See [docs/scope-naming.md](docs/scope-naming.md) for the full convention and examples across engineering, HR, legal, finance, compliance, sales, marketing, infosec, and ESG domains.
+
+---
+
+## Frontend Pages
+
+The operator console at `http://localhost:3000` provides 30+ pages organized by workflow:
+
+| Section | Pages |
+|---------|-------|
+| **Manage** | Rules, New Rule, Rule Detail, Proposals, Search, Documents, Discover, Federations, Playground, Snapshots, Tutor, Onboarding |
+| **Observe** | Intelligence, Feedback, Notifications, Agents, Audit |
+| **Enforce** | Review, Gateway, Integrations |
+| **Settings** | Projects |
+| **Domain** | Contracts Review, HR Events, Finance Transactions, Marketing Creatives |
+
+A **persona switcher** (All / Compliance / Legal / HR / Finance / Engineering / Sales / Executive) filters the navigation to show the most relevant pages for each role.
+
+The frontend supports **English and Japanese** via `next-intl`.
 
 ---
 
@@ -257,29 +297,97 @@ async with AgenticRuleClient("http://localhost:8000") as client:
 ### CLI Tools
 
 ```bash
+# Evaluate code changes in CI
 rulerepo check --diff "$(git diff main...HEAD)" --format github-actions
+
+# Agent hooks (inject rules before edits, evaluate after)
 rulerepo hook preflight --file src/api/handler.py --agent-id claude-code
+rulerepo hook posthoc --file src/api/handler.py
+
+# Import rules from documents
 rulerepo ingest --source pdf --file ./labor-standards-act.pdf --scope hr/attendance/jp
+
+# Export rules
 rulerepo export --project backend-api --output rules.yaml
+
+# Generate CLAUDE.md context from rules
 rulerepo context generate --server http://localhost:8000 --project my-project
-rulerepo doctor                        # health check
-rulerepo audit verify                  # verify audit chain integrity
+
+# Project initialization
+rulerepo init
+
+# Health check
+rulerepo doctor
+
+# Verify audit chain integrity
+rulerepo audit verify
 ```
+
+### MCP Server
+
+The MCP server exposes 12+ tools for AI agent integration:
+
+```bash
+# stdio mode (for Claude Code local integration)
+uv run rulerepo-mcp
+
+# HTTP mode (for remote agents)
+MCP_TRANSPORT=streamable-http uv run rulerepo-mcp
+```
+
+Tools include: `search_rules`, `explain_rule`, `evaluate_code`, `get_rules_for_context`, `discover_rules`, `submit_feedback`, and more.
 
 ---
 
-## Frontend Pages
+## Additional Capabilities
 
-The operator console at `http://localhost:3000` provides 23+ pages organized by workflow:
+### Compliance dashboard
 
-| Section | Pages |
-|---------|-------|
-| **Manage** | Rules, New Rule, Rule Detail, Proposals, Search, Documents, Discover, Federations, Playground, Snapshots, Tutor |
-| **Observe** | Intelligence, Feedback, Notifications, Agents, Audit |
-| **Enforce** | Review, Gateway, Integrations |
-| **Settings** | Projects |
+The **home dashboard** shows compliance rate with trends, rules by status, pending actions, top violated rules, recent corrections, and critical alert banners -- scoped to the user's department(s).
 
-A **persona switcher** (All / Compliance / Engineering / AI Operator) filters the navigation to show the most relevant pages for each role.
+### Organize by project
+
+Rules belong to **projects**. A project selector scopes everything: rules, documents, evaluations, discovery, search.
+
+### Search multiple ways
+
+Hybrid (BM25 + vector), full-text, semantic, temporal, citation, subject-aware, conflict-aware, and document search -- all with classification-based filtering.
+
+### Measure rule effectiveness
+
+**Effectiveness score**: precision (false positive rate), prevention rate (did corrections decrease?), and agent adoption (first-attempt pass rate).
+
+### Test rules safely
+
+The **Playground** supports Code and Scenario input modes. Generate test inputs via LLM. Per-rule test cases with auto-generation and counterexample creation.
+
+### Enforce everywhere
+
+- **GitHub PR Review** -- webhook posts structured review comments
+- **CI Pipeline** -- `rulerepo check` exits 0/1/2 with `--format github-actions`
+- **Agent Hooks** -- `rulerepo hook preflight` / `posthoc` with `--agent-id`
+- **Gateway** -- webhook-driven enforcement (GitHub, Slack, Teams, Email) with policy dispatch
+- **Alerts** -- background workers detect dormant rules, high deny rates, health decline, verdict drift
+
+### Propose rule changes collaboratively
+
+Governance proposals with multi-approver voting, threaded comments, conflict analysis, and impact preview.
+
+### Let agents self-govern
+
+Agent profiles with trust levels, personalized rules, verdict challenges, and exception requests.
+
+### Organize rules hierarchically
+
+**Federation** provides org-team-project hierarchy with inheritance and overrides. **Snapshots** capture versioned, deployable rule sets with rollback and impact simulation.
+
+### Proactive alerts and digest
+
+Background workers (arq + Redis) run health scoring, recommendation generation, correction clustering, rule auto-promotion, verdict drift monitoring, conflict scanning, policy review cycle alerting, and a weekly governance digest.
+
+### Compliance-grade audit
+
+Append-only, hash-chained audit log in PostgreSQL. WORM storage mirroring for `RESTRICTED` and `CONFIDENTIAL` entries. Periodic anchoring to Sigstore Rekor transparency log. Regulator export formats (J-SOX, SOX, FSA, GDPR).
 
 ---
 
@@ -301,8 +409,8 @@ make dev.frontend         # Next.js with hot-reload
 | Backend | Python 3.13, FastAPI, SQLAlchemy (async), Alembic |
 | Frontend | TypeScript, React 19, Next.js 15, Tailwind CSS |
 | LLM | Gemini 3 Flash + Gemini 3.1 Pro via `google-genai` |
-| Data | PostgreSQL 17, Elasticsearch 8.17, Neo4j 5, Redis 7 |
-| MCP | FastMCP (mcp >= 1.9), 12 tools |
+| Data | PostgreSQL 17 (with RLS), Elasticsearch 8.17, Neo4j 5, Redis 7 |
+| MCP | FastMCP (mcp >= 1.9), 12+ tools |
 | Observability | OpenTelemetry, Prometheus, Jaeger |
 | Quality | ruff + mypy, ESLint + Prettier, pre-commit hooks |
 | Package Management | uv (Python), pnpm (Node.js) |
@@ -310,13 +418,22 @@ make dev.frontend         # Next.js with hot-reload
 ### Running tests
 
 ```bash
-make test                 # all tests
+make test                 # all tests (500+)
 make test.server          # backend only
 make test.frontend        # frontend only
-make test.client          # SDK tests
+make test.client          # SDK tests only
 make test.unit            # unit tests only
 make test.integration     # integration tests only
 make test.cov             # with coverage report
+```
+
+### Quality gates
+
+```bash
+make lint                 # ruff + mypy + ESLint + tsc
+make format               # ruff format + ruff check --fix
+make format.check         # check without modifying (CI mode)
+make ci                   # full CI pipeline: install + check
 ```
 
 ---
@@ -327,9 +444,11 @@ make test.cov             # with coverage report
 |---|---|
 | [PROJECT.md](PROJECT.md) | Vision, domain model, roadmap |
 | [CLAUDE.md](CLAUDE.md) | Operational guide -- conventions, Gemini rules, implementation notes |
-| [docs/scope-naming.md](docs/scope-naming.md) | Scope naming convention with domain examples |
+| [IMPROVEMENT.md](IMPROVEMENT.md) | Diagnosis and improvement plan |
 | [docs/](docs/) | Full documentation site (architecture, API reference, SDKs, integrations) |
-| [development/](development/) | Technical development docs (database schema, evaluation engine, testing) |
+| [docs/scope-naming.md](docs/scope-naming.md) | Scope naming convention with domain examples |
+| [development/](development/) | Technical development docs (architecture, database schema, evaluation engine, testing) |
+| [development/adr/](development/adr/) | Architecture Decision Records |
 | [Swagger UI](http://localhost:8000/docs) | Interactive API docs (when stack is running) |
 
 ---
@@ -338,9 +457,9 @@ make test.cov             # with coverage report
 
 1. Read [CLAUDE.md](CLAUDE.md)
 2. Run `make precommit.install`
-3. Branch from `main`, use Conventional Commits
+3. Branch from `main`, use Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`)
 4. Run `make check` before pushing
-5. Mock Gemini in tests
+5. Mock Gemini in tests (never call real LLM in unit tests)
 
 ---
 

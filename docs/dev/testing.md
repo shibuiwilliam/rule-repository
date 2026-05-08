@@ -1,5 +1,7 @@
 # Testing
 
+The project has **500+ tests** across backend, frontend, and SDK packages.
+
 ## Commands
 
 | Command | What It Runs |
@@ -53,6 +55,7 @@ Pure logic tests with no external dependencies. These test domain models, utilit
 - Located in `tests/unit/` within each package
 - No database, no Elasticsearch, no Neo4j, no network calls
 - Fast: should complete in seconds
+- Covers: domain models, evaluation pipeline stages, diff parsing, context assembly, verdict aggregation, conflict aggregation, PII sanitization, health scoring, gateway normalization, discovery analyzers, playground, context delivery formatting
 
 ### Integration Tests
 
@@ -61,6 +64,28 @@ Tests that run against the Docker Compose services (PostgreSQL, Elasticsearch, N
 - Located in `tests/integration/` within each package
 - Require `docker compose up` to be running
 - Test actual database queries, search indexing, and graph operations
+- Covers: rules CRUD API, search API, intent API, relationships API, proposals lifecycle, agent governance
+
+### Subject-Specific Tests
+
+Each `SubjectKind` has dedicated tests validating the adapter, prompt rendering, and aggregation logic.
+
+- Located in `tests/evaluation/subjects/test_<kind>_subject.py`
+- Test that the subject adapter correctly renders facts for LLM, extracts features, and parses remediations
+
+### Classification Tests
+
+Every endpoint that returns classified data has tests verifying access control in both directions:
+
+- High-clearance users see all data (PUBLIC through RESTRICTED)
+- Low-clearance users see only what their classification level permits
+
+### Audit Tests
+
+Every action that should be audit-logged has tests verifying:
+
+- The audit entry is created with correct fields
+- Hash chain integrity is maintained after the action
 
 ### LLM Tests
 

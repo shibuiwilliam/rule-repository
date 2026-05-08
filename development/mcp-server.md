@@ -1,6 +1,6 @@
 # MCP Server
 
-The Rule Repository exposes an MCP (Model Context Protocol) server that allows AI coding agents (Claude Code, Cursor, etc.) to search rules, evaluate compliance, and understand rule relationships through a standardized tool interface.
+The Rule Repository exposes an MCP (Model Context Protocol) server that allows AI agents (Claude Code, Cursor, and other MCP-compatible clients) to search rules, evaluate compliance, manage governance, and understand rule relationships through a standardized tool interface. Agents register with a classification clearance level; all rule retrieval and evaluation context is filtered by the agent's clearance.
 
 Source code: `apps/server/src/rulerepo_server/mcp/`
 

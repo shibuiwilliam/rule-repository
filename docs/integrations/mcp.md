@@ -89,9 +89,9 @@ Check the current status, votes, and comments on a governance proposal.
 
 #### `register_agent`
 
-Register an AI agent with the governance system. Enables personalized rule delivery, trust level progression, and governance participation.
+Register an AI agent with the governance system. Enables personalized rule delivery, trust level progression, and governance participation. Agents register with a classification clearance level that determines which rules they can access.
 
-**Parameters:** `agent_id` (string), `agent_type` (string), `capabilities` (array of strings, optional)
+**Parameters:** `agent_id` (string), `agent_type` (string), `capabilities` (array of strings, optional), `clearance` (string, optional -- one of `public`, `internal`, `confidential`, `restricted`; defaults to `internal`)
 
 #### `get_personalized_rules`
 

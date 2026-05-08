@@ -4,28 +4,50 @@ Technical documentation for developing and extending the Rule Repository.
 
 ---
 
+## Current Status
+
+**Phase 7 (Cross-Organizational Pivot): COMPLETE** -- Subject polymorphism, department/capacity model, classification-based RLS, and domain template packs are all implemented. 500 tests pass.
+
+**Phase 8 (Domain Engines and Discovery): IN PROGRESS** -- Contract clause engine, event engine temporal modes, document discovery analyzers, and domain-aware UX. See [phase-8-backlog.md](phase-8-backlog.md).
+
+---
+
 ## Documents
 
 | Document | Description |
 |---|---|
-| [architecture.md](architecture.md) | System architecture: 10 deployable services, server module map (18 routers, 20+ service areas), layering rules, data flows, 22 migrations, 35 ORM models |
-| [evaluation-engine.md](evaluation-engine.md) | How the Evaluation Engine works: batched evaluation, diff parsing, context assembly, rule selection (with project + environment scoping), verdict aggregation, shadow mode, structured remediations, domain adapters (code, business event, communication, document diff, documentation) |
-| [api-reference.md](api-reference.md) | All API endpoints (18 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects, proposals, agent-governance, review, marketplace |
-| [mcp-server.md](mcp-server.md) | MCP tools (12 tools), resources, prompts, and transport configuration (stdio + HTTP) |
-| [integrations.md](integrations.md) | GitHub App, CI CLI, agent hooks, rule ingestion, background workers (arq + Redis, 6 cron jobs), and webhook gateway (5 sources: GitHub, Slack, Teams, Email, generic) |
-| [testing.md](testing.md) | Test strategy (23+ test files, 212+ tests), running tests, writing new tests, LLM mocking, and linting |
+| [architecture.md](architecture.md) | System architecture: 12 deployable services, server module map (22 routers, 20+ service areas), layering rules, data flows, 26 migrations, 35+ ORM models |
+| [evaluation-engine.md](evaluation-engine.md) | How the Evaluation Engine works: subject-polymorphic batched evaluation, diff parsing, context assembly, rule selection (with project + environment scoping), verdict aggregation, shadow mode, structured remediations, 8 subject kinds with adapters |
+| [api-reference.md](api-reference.md) | All API endpoints (22 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects, proposals, agent-governance, review, audit, marketplace, departments, capacities, classifications, contracts, events |
+| [mcp-server.md](mcp-server.md) | MCP tools (12+ tools), resources, prompts, and transport configuration (stdio + streamable-HTTP) |
+| [integrations.md](integrations.md) | GitHub App, CI CLI, agent hooks, rule ingestion, background workers (arq + Redis, 9+ cron jobs), and webhook gateway (5 sources: GitHub, Slack, Teams, Email, generic) |
+| [testing.md](testing.md) | Test strategy (500+ tests), running tests, writing new tests, LLM mocking, classification bidirectional tests, and linting |
 | [feedback-flywheel.md](feedback-flywheel.md) | Correction capture -> analysis -> auto-drafting -> rule improvement loop (flywheel with clustering + proposals + auto-promotion) |
 | [rule-registration-workflows.md](rule-registration-workflows.md) | Sequence diagrams for all 4 rule registration paths: manual, extraction, discovery, feedback. Data store sync matrix |
-| [database-schema.md](database-schema.md) | Database schema: 35 ORM models across 22 Alembic migrations, ER diagram, design decisions |
+| [database-schema.md](database-schema.md) | Database schema: 35+ ORM models across 26 Alembic migrations, ER diagram, design decisions |
 | [intelligence-dashboard-plan.md](intelligence-dashboard-plan.md) | Intelligence Dashboard implementation plan (completed) |
 | [playground-enhancement-plan.md](playground-enhancement-plan.md) | Playground multi-mode input support (completed) -- Code + Scenario evaluation, rule picker, suggest-by-LLM |
 | [project-entity-plan.md](project-entity-plan.md) | Project entity as top-level organizational boundary (completed) |
 | [phase5-improvements.md](phase5-improvements.md) | Phase 5 self-improving governance: batched evaluation, evaluation persistence, dashboard summary, outcome-oriented home page, maturity model, remediation, flywheel |
 | [agent-integration-and-analytics.md](agent-integration-and-analytics.md) | Seamless agent integration (scope resolution, session context API), rule impact analytics (effectiveness score, weekly digest, team comparison), rule templates library, bulk import API |
 | [proactive-delivery-and-quality.md](proactive-delivery-and-quality.md) | CLAUDE.md context generator CLI, effectiveness visibility (rule detail, dashboard, rules list, digest), alert banner, effectiveness-based alerts |
-| [phase7-status.md](phase7-status.md) | Phase 7a (branding fix) status: COMPLETE. 13 templates with 181 rules across 7 domains. Next: Phase 7b (Subject Abstraction) |
+| [phase7-status.md](phase7-status.md) | Phase 7 status: COMPLETE. 4 streams delivered: Subject Polymorphism, Department/Capacity, Classification/RLS, Domain Templates (60 rules across 3 domain packs). 500 tests pass. |
+| [phase-8-backlog.md](phase-8-backlog.md) | Phase 8 backlog: IN PROGRESS. 4 streams: Contract Clause Engine, Event Engine Temporal Modes, Document Discovery Analyzers, Domain-Aware UX |
+| [orientation.md](orientation.md) | Cross-organizational pivot orientation: gap analysis (now resolved), Phase 7 streams, execution order, closure notes |
 | [spec_implementation_audit.md](spec_implementation_audit.md) | Code-only audit of PROJECT.md/CLAUDE.md specs vs. implementation: 174/176 features (98.9%) implemented |
 | [feature_interactions.md](feature_interactions.md) | Cross-feature interaction pairs: intended vs. actual behavior, gap analysis, and remediations (federation x snapshot, proposal x federation, agent governance x federation) |
+
+---
+
+## Architecture Decision Records
+
+| ADR | Title | Status |
+|---|---|---|
+| [0001](adr/0001-subject-polymorphism.md) | Subject Polymorphism | Accepted |
+| [0002](adr/0002-department-capacity-model.md) | Department / Capacity Model | Accepted |
+| 0003 | Classification and RLS | Planned (Phase 7 -- implemented, ADR pending) |
+| 0004 | Contract Clause Engine | Planned (Phase 8) |
+| 0005 | Event Engine Temporal Modes | Planned (Phase 8) |
 
 ---
 
@@ -105,7 +127,7 @@ make db.history        # Show migration history
 
 ```bash
 make build.all         # Build all Docker images + SDK wheel
-make seed              # Load sample rules into a running stack
+make seed              # Load sample rules and templates into a running stack
 make reconcile         # Rebuild Neo4j graph from PostgreSQL
 make health            # Check backend liveness (/healthz)
 make ready             # Check backend readiness (all stores)

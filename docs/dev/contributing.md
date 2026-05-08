@@ -96,8 +96,11 @@ This runs:
 
 - **Never commit secrets.** No API keys or passwords in code. Use `.env`.
 - **Never delete rules** in the database. Use `effective_period.valid_until` to retire them.
+- **Never bypass RLS context.** Use `with_user_context()` before every query against classified tables.
+- **Never put domain logic in the evaluation orchestrator.** Subject-specific logic belongs in `services/evaluation/subjects/`.
 - **Update PROJECT.md and CLAUDE.md** when introducing new dependencies, services, or architectural decisions.
 - **Mock the LLM in tests.** Never call Gemini in unit tests. Gate live LLM tests behind `RULEREPO_LIVE_LLM=1`.
+- **Test classification in both directions.** High-clearance users see all data; low-clearance users see only what they should.
 
 ## See Also
 

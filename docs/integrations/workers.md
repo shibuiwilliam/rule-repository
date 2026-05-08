@@ -19,7 +19,7 @@ Both services are included in `docker-compose.yml` and start automatically with 
 
 ## Scheduled Jobs
 
-The arq worker runs seven scheduled jobs. All are fully implemented with real database operations.
+The arq worker runs nine scheduled jobs. All are fully implemented with real database operations.
 
 | Job | Schedule | Description |
 |---|---|---|
@@ -30,6 +30,15 @@ The arq worker runs seven scheduled jobs. All are fully implemented with real da
 | `compute_correction_stats` | Every hour | Aggregates correction statistics by analysis_type and status. |
 | `send_weekly_digest` | Monday 9:00 AM | Generates weekly governance digest (compliance trends, top violations, most effective rules, declining rules, pending actions). Sends to `DIGEST_WEBHOOK_URL` if configured. |
 | `verdict_drift_monitor` | Daily | Monitors verdict distribution changes over time. Creates alerts when significant drift is detected. |
+| `conflict_scanner` | Daily | Detects conflicting rules across the corpus. Creates alerts for newly discovered conflicts. |
+| `policy_review_cycle` | 6:00 AM daily | Alerts for rules due for review. Escalation logic triggers at 30 days and 60 days overdue. |
+
+Additional workers that may be enabled:
+
+| Job | Description |
+|---|---|
+| `archival` | Rule archival and retention policy enforcement. Respects legal holds. |
+| `polyglot_validator` | Multi-language code validation for rules targeting polyglot codebases. |
 
 Jobs are idempotent and safe to run concurrently with API requests.
 
@@ -37,8 +46,8 @@ Jobs are idempotent and safe to run concurrently with API requests.
 
 The maturity promotion worker implements progressive enforcement:
 
-- **experimental → stable**: rule is 30+ days old, has 20+ evaluations, and false-positive rate < 5%
-- **stable → proven**: rule is 60+ days old and false-positive rate < 1%
+- **experimental -> stable**: rule is 30+ days old, has 20+ evaluations, and false-positive rate < 5%
+- **stable -> proven**: rule is 60+ days old and false-positive rate < 1%
 - **demotion**: any stable/proven rule with FP rate > 10% is demoted back to experimental
 
 ### cluster_corrections (Flywheel)
@@ -51,6 +60,15 @@ The correction-to-rule flywheel worker:
 4. For clusters with 3+ corrections and average confidence > 0.8, drafts a rule via Gemini
 5. Stores proposals as `DraftRuleProposalModel` entries with status "pending"
 6. Proposals are reviewed at `GET /api/v1/feedback/proposals` and approved/dismissed via the API
+
+### policy_review_cycle
+
+The policy review cycle worker:
+
+1. Fires daily at 6:00 AM
+2. Identifies rules that are due for periodic review based on their review schedule
+3. Creates alerts for rules due for review
+4. Escalation: additional alerts at 30 days overdue and 60 days overdue with increasing severity
 
 ## Docker Compose Services
 

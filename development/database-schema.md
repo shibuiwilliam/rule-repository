@@ -1,7 +1,9 @@
 # Database Schema & ER Diagram
 
 > PostgreSQL 17 -- source of truth for the Rule Repository.
-> 35+ tables across 24 Alembic migrations (001-026, skipping 020).
+> 35+ tables across 26 Alembic migrations (001-026, skipping 020).
+> Row-Level Security enabled on `rules`, `documents`, `evaluations`, `audit_log` for classification-based access control.
+> Phase 7 additions: `subject_kinds`, `jurisdiction`, `classification`, `sensitivity`, department/capacity fields.
 
 ---
 

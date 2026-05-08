@@ -8,6 +8,10 @@ Interactive documentation:
 
 All API v1 endpoints are prefixed with `/api/v1`. Health endpoints are at the root level.
 
+**22 API routers** organized by domain: rules, search, evaluation, contract, event, extraction, intent, intelligence, relationships, discovery, feedback, federation, departments, playground, projects, alerts, snapshots, proposals, agent-governance, review, audit, marketplace.
+
+**Access control**: All endpoints that return classified data enforce classification-based access control via PostgreSQL RLS and Elasticsearch document-level security. The `with_user_context()` helper sets session-local RLS variables before every query.
+
 ---
 
 ## Health

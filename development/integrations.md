@@ -1,6 +1,6 @@
-# Development Workflow Integrations
+# Workflow Integrations
 
-This guide covers all workflow integrations that connect the Rule Repository to development tools: GitHub PR review, CI pipelines, coding agent hooks, rule ingestion, background workers, and alert notifications.
+This guide covers all workflow integrations that connect the Rule Repository to external tools: GitHub PR review, CI pipelines, coding agent hooks, rule ingestion, background workers, webhook gateway (GitHub, Slack, Teams, Email), and alert notifications.
 
 ---
 

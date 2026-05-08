@@ -179,6 +179,57 @@ The `rules.yaml` file is version-controllable and works with the planned `rulere
 
 ---
 
+---
+
+## rulerepo context
+
+Generates or updates a CLAUDE.md rules section from rules in the Rule Repository.
+
+### Usage
+
+```bash
+rulerepo context generate --server http://localhost:8000 --project my-project
+rulerepo context update --file CLAUDE.md
+```
+
+---
+
+## rulerepo init
+
+Initializes a new project with default configuration.
+
+### Usage
+
+```bash
+rulerepo init
+```
+
+---
+
+## rulerepo doctor
+
+Runs health checks against the Rule Repository server.
+
+### Usage
+
+```bash
+rulerepo doctor --server-url http://localhost:8000
+```
+
+---
+
+## rulerepo audit verify
+
+Verifies the integrity of the audit chain.
+
+### Usage
+
+```bash
+rulerepo audit verify --server-url http://localhost:8000
+```
+
+---
+
 ## Environment
 
 All commands read `RULEREPO_SERVER_URL` from the environment if `--server-url` is not provided. `rulerepo-hook` also reads `RULEREPO_AGENT_ID` for agent identity tracking.

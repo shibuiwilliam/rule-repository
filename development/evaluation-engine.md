@@ -1,8 +1,59 @@
-# Code-Aware Evaluation Engine
+# Subject-Polymorphic Evaluation Engine
 
-Technical guide for the Rule Repository evaluation engine. This is the core product: it accepts code changes (unified diffs, file paths) or free-form facts, maps them to relevant rules, and returns per-rule verdicts with code-specific remediation guidance.
+Technical guide for the Rule Repository evaluation engine. This is the core product: it accepts code changes (unified diffs, file paths), business events, contract clauses, transactions, or free-form facts, maps them to relevant rules via a subject-agnostic pipeline, and returns per-rule verdicts with domain-specific remediation guidance.
 
 Source code: `apps/server/src/rulerepo_server/services/evaluation/`
+
+---
+
+## Subject Polymorphism
+
+The evaluation engine is **subject-agnostic**. It does not know about code diffs, contract clauses, or HR events directly. Instead, it delegates to subject-specific adapters via the Subject Registry.
+
+### Subject Kinds
+
+Eight subject kinds are supported, each with its own adapter under `services/evaluation/subjects/`:
+
+| SubjectKind | Adapter | Domain | Example Inputs |
+|---|---|---|---|
+| `CODE_DIFF` | `code_diff_subject.py` | Engineering | Unified diffs, file changes |
+| `CLAUSE_SET` | `clause_set_subject.py` | Legal | Contract clauses, NDA terms |
+| `EVENT` | `event_subject.py` | HR / Operations | Overtime registrations, leave requests |
+| `TRANSACTION` | `transaction_subject.py` | Finance | Expense submissions, purchase orders |
+| `CREATIVE` | `creative_subject.py` | Marketing | Ad copy, promotional materials |
+| `DECISION` | `decision_subject.py` | Management | Approval decisions, policy exceptions |
+| `IDENTITY` | `identity_subject.py` | Compliance | KYC checks, sanctions screening |
+| `DOCUMENT` | `document_subject.py` | General | Policy documents, handbooks |
+
+### Subject Registry
+
+The registry uses a `@register(SubjectKind.X)` decorator pattern:
+
+```python
+# services/evaluation/subject_registry.py
+_REGISTRY: dict[SubjectKind, type[SubjectAdapter]] = {}
+
+def register(kind: SubjectKind):
+    def decorator(cls): ...
+
+def resolve(kind: SubjectKind) -> SubjectAdapter:
+    return _REGISTRY[kind]()
+```
+
+The orchestrator calls `subject_registry.resolve(subject_kind)` once and never branches on the kind directly. Domain logic lives entirely in the adapters.
+
+### Adding a New Subject
+
+1. Define the `facts` schema (Pydantic) for the new domain.
+2. Implement `services/evaluation/subjects/<kind>_subject.py` decorated with `@register`.
+3. Add prompt templates under `services/evaluation/subjects/prompts/<kind>/`.
+4. Implement domain-specific aggregation if needed in `services/evaluation/<kind>_aggregator.py`.
+5. Add tests under `tests/evaluation/subjects/test_<kind>_subject.py`.
+6. Update `RuleModel.subject_kinds` indexing.
+
+### Backward Compatibility
+
+`EvaluateRequest.subject_kind` defaults to `CODE_DIFF`. Existing callers (CI, GitHub App, Claude Code hooks) see no change.
 
 ---
 
@@ -14,22 +65,26 @@ The evaluation engine is a 4-stage pipeline orchestrated by `EvaluationService` 
 Input
   |
   v
+SubjectRegistry   (resolve subject adapter for the given subject_kind)
+  |
+  v
 ContextAssembler  (normalize inputs into EvaluationContext)
   |
   v
 RuleSelector      (narrow corpus to ~5-20 relevant rules)
   |                supports: environment-based snapshot, federation, or live corpus
+  |                filters by subject_kind, classification, scope
   v
-EvaluationCore    (LLM-as-Judge per rule, concurrent via asyncio.gather)
+EvaluationCore    (LLM-as-Judge per rule, subject-agnostic, concurrent via asyncio.gather)
   |
   v
 VerdictAggregator (combine per-rule verdicts, generate fix summary)
-  |
+  |                conflict-aware aggregation resolves OVERRIDES/DEPENDS_ON
   v
 EvaluationResult  (returned to caller, logged to audit)
 ```
 
-The `EvaluationService.evaluate()` method runs all four stages in sequence. It also handles audit logging after aggregation, writing model IDs, latency, file paths, and verdict counts to the audit log via `AuditLogRepository`.
+The `EvaluationService.evaluate()` method runs all stages in sequence. It also handles audit logging after aggregation, writing model IDs, latency, file paths, and verdict counts to the audit log via `AuditLogRepository`.
 
 The `evaluate()` method accepts an optional `environment` parameter. When set, the rule selector uses the snapshot deployed to that environment instead of the live rule corpus.
 
@@ -259,10 +314,12 @@ Only `verdict`, `confidence`, and `reasoning` are required fields. The rest are 
 
 ### Prompt Selection
 
-Two prompt templates are used, stored in `services/evaluation/prompts/`:
+Prompt templates are organized by subject kind. Each subject adapter owns its prompts under `services/evaluation/subjects/prompts/<kind>/`. The core evaluation pipeline also has shared templates in `services/evaluation/prompts/`:
 
-- `evaluate_code_change.txt` -- Used when `context.diff` is present. Template variables: `rule_statement`, `modality`, `severity`, `diff` (capped at 8000 chars), `file_paths`.
+- `evaluate_code_change.txt` -- Used by `CodeDiffSubject` when `context.diff` is present. Template variables: `rule_statement`, `modality`, `severity`, `diff` (capped at 8000 chars), `file_paths`.
 - `evaluate_facts.txt` -- Used for non-code evaluations. Template variables: `rule_statement`, `modality`, `severity`, `narrative`, `facts` (JSON).
+
+Each subject adapter may provide its own `render_for_llm()` method that formats facts in a domain-appropriate way before sending to the LLM.
 
 ### Concurrent Execution
 
@@ -330,6 +387,7 @@ Full evaluation pipeline. Accepts:
 
 ```json
 {
+  "subject_kind": "code_diff",
   "diff": "unified diff text",
   "files": [{"path": "src/foo.py", "content": "..."}],
   "facts": {"key": "value"},
@@ -342,6 +400,8 @@ Full evaluation pipeline. Accepts:
   "environment": "production"
 }
 ```
+
+The `subject_kind` parameter defaults to `"code_diff"` for backward compatibility. Valid values: `code_diff`, `clause_set`, `event`, `transaction`, `creative`, `decision`, `identity`, `document`.
 
 The `environment` parameter is optional. When set (e.g., `"production"`), the evaluation uses the snapshot deployed to that environment instead of the live rule corpus. This enables reproducible evaluation against a pinned rule set.
 

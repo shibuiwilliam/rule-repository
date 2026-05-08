@@ -47,7 +47,7 @@ cd packages/rule-client && uv run pytest
 
 ## Test Structure
 
-The project has **23 test files** across four locations with **212+ test functions** total (unit + integration + e2e + SDK).
+The project has **500+ test functions** across four locations (unit + integration + e2e + SDK). Test count grew significantly during Phase 7 with the addition of subject polymorphism, classification RLS, department/capacity, and domain template tests.
 
 ### Unit Tests (`apps/server/tests/unit/`)
 
