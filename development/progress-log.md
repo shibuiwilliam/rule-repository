@@ -54,3 +54,12 @@
 2026-05-09 — RR-038 [Phase 4] merged: Change Communication Service. Eval delta: n/a.
 
 ## ALL RR-001 THROUGH RR-040 COMPLETE
+
+## Quality Improvements
+
+2026-05-09 — docs: IMPROVEMENT.md §14 updated with Merged status and SHAs for all 40 items.
+2026-05-09 — fix: make format.check aligned with pre-commit ruff config (I001 exclusion).
+2026-05-09 — feat: BaseDomainEvaluator wires all 7 domain evaluators to LLM router.
+2026-05-09 — test: Tier 1 integration test suite (13 tests) covering feature flags, adapters, domain modules, eval harness, LLM router.
+2026-05-09 — verify: Tier 1 boot confirmed (readyz tier=1). Tier 3 boot confirmed (readyz tier=3, all checks ok).
+2026-05-09 — verify: 746 tests passed. 90/90 eval harness cases across 8 domains.
