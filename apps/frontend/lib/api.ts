@@ -1137,3 +1137,44 @@ export async function getAuditEntries(
 export async function verifyAuditChain(limit = 1000): Promise<AuditChainVerification> {
   return apiFetch<AuditChainVerification>(`/api/v1/audit/verify?limit=${limit}`);
 }
+
+// ---------------------------------------------------------------------------
+// Conversational Assistant (RR-005)
+// ---------------------------------------------------------------------------
+
+export interface AskCitation {
+  rule_id: string;
+  statement: string;
+  source_refs: Array<Record<string, unknown>>;
+  relevance_score: number;
+}
+
+export interface AskResponse {
+  answer: string;
+  citations: AskCitation[];
+  intent: string;
+  can_register_proposal: boolean;
+}
+
+export async function askQuestion(question: string, opts?: { scope?: string; domain?: string; max_rules?: number }): Promise<AskResponse> {
+  return apiFetch<AskResponse>('/api/v1/ask', {
+    method: 'POST',
+    body: JSON.stringify({ question, ...opts }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Onboarding (RR-004)
+// ---------------------------------------------------------------------------
+
+export interface OnboardingStatus {
+  needs_onboarding: boolean;
+  total_rules: number;
+  has_active_rules: boolean;
+  suggested_domain: string;
+  available_templates: string[];
+}
+
+export async function getOnboardingStatus(): Promise<OnboardingStatus> {
+  return apiFetch<OnboardingStatus>('/api/v1/onboarding/status');
+}

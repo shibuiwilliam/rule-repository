@@ -11,6 +11,7 @@
   },
   "pages": {
     "dashboard": "Dashboard",
+    "ask": "Ask",
     "rules": "Rules",
     "proposals": "Proposals",
     "search": "Search",

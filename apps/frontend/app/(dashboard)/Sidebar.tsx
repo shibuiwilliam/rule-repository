@@ -9,6 +9,7 @@ import { ProjectSelector } from "./ProjectSelector";
 
 const NAV_ITEMS = [
   { href: "/dashboard", key: "dashboard", section: "observe" },
+  { href: "/ask", key: "ask", section: "manage" },
   { href: "/rules", key: "rules", section: "manage" },
   { href: "/proposals", key: "proposals", section: "manage" },
   { href: "/search", key: "search", section: "manage" },
