@@ -61,6 +61,10 @@ class Settings(BaseSettings):
     github_app_private_key: str = ""
     github_webhook_secret: str = ""
 
+    # LLM cost guardrails (RR-027)
+    llm_tenant_monthly_budget_usd: float = 0.0
+    llm_tenant_budget_warning_threshold: float = 0.8
+
     # Weekly digest
     digest_webhook_url: str = ""
 
