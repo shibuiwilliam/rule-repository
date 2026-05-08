@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from rulerepo_server.api.v1.agent_governance import router as agent_governance_router
 from rulerepo_server.api.v1.alerts import router as alerts_router
 from rulerepo_server.api.v1.ask import router as ask_router
+from rulerepo_server.api.v1.attestation import router as attestation_router
 from rulerepo_server.api.v1.audit import router as audit_router
 from rulerepo_server.api.v1.compliance import router as compliance_router
 from rulerepo_server.api.v1.connectors import router as connectors_router
@@ -35,6 +36,7 @@ v1_router = APIRouter(prefix="/api/v1")
 
 v1_router.include_router(agent_governance_router)
 v1_router.include_router(alerts_router)
+v1_router.include_router(attestation_router)
 v1_router.include_router(ask_router)
 v1_router.include_router(audit_router)
 v1_router.include_router(compliance_router)
