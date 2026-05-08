@@ -2,11 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from rulerepo_server.core.logging import get_logger
-
-logger = get_logger(__name__)
+from rulerepo_server.services.domains._base_evaluator import BaseDomainEvaluator
 
 GOVERNANCE_SYSTEM_PROMPT = """You are a corporate governance compliance evaluator. You are given
 a governance artifact (disclosure document or board minute) and a set of compliance rules.
@@ -32,38 +28,8 @@ Focus on:
 """
 
 
-class GovernanceEvaluator:
-    """Evaluates governance artifacts against rules using domain-specific prompts."""
+class GovernanceEvaluator(BaseDomainEvaluator):
+    """Evaluates governance artifacts against rules via LLM."""
 
-    async def evaluate(
-        self,
-        context: str,
-        rules: list[dict[str, Any]],
-        **kwargs: Any,
-    ) -> list[dict[str, Any]]:
-        """Evaluate a governance artifact against the given rules.
-
-        In production, this calls the LLM via the router.
-        Currently returns a placeholder indicating rules need human review.
-        """
-        if not rules:
-            return []
-
-        verdicts = []
-        for rule in rules:
-            verdicts.append(
-                {
-                    "rule_id": str(rule.get("id", "")),
-                    "rule_statement": rule.get("statement", ""),
-                    "verdict": "NEEDS_CONFIRMATION",
-                    "confidence": 0.5,
-                    "reasoning": "Governance evaluation requires LLM analysis. Placeholder verdict.",
-                }
-            )
-
-        logger.info(
-            "governance_evaluation_complete",
-            rules_evaluated=len(rules),
-            verdicts=len(verdicts),
-        )
-        return verdicts
+    domain_name = "governance"
+    system_prompt = GOVERNANCE_SYSTEM_PROMPT
