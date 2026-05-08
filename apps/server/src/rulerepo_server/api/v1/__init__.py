@@ -28,6 +28,7 @@ from rulerepo_server.api.v1.projects import router as projects_router
 from rulerepo_server.api.v1.proposals import router as proposals_router
 from rulerepo_server.api.v1.relationships import router as relationships_router
 from rulerepo_server.api.v1.review import router as review_router
+from rulerepo_server.api.v1.risks import router as risks_router
 from rulerepo_server.api.v1.rules import router as rules_router
 from rulerepo_server.api.v1.search import router as search_router
 from rulerepo_server.api.v1.snapshots import router as snapshots_router
@@ -49,6 +50,7 @@ v1_router.include_router(contract_router)
 v1_router.include_router(event_router)
 v1_router.include_router(evaluation_router)
 v1_router.include_router(review_router)
+v1_router.include_router(risks_router)
 v1_router.include_router(relationships_router)
 v1_router.include_router(extraction_router)
 v1_router.include_router(facts_router)
