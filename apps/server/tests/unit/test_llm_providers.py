@@ -80,11 +80,11 @@ class TestLocalProvider:
     @pytest.mark.asyncio
     async def test_generate_raises_not_implemented(self) -> None:
         provider = LocalProvider()
-        with pytest.raises(NotImplementedError, match="LOCAL_LLM_ENDPOINT"):
+        with pytest.raises(NotImplementedError, match="LLM_PROVIDER_SELF_HOSTED_URL"):
             await provider.generate("test prompt")
 
     @pytest.mark.asyncio
     async def test_embed_raises_not_implemented(self) -> None:
         provider = LocalProvider()
-        with pytest.raises(NotImplementedError, match="LOCAL_LLM_ENDPOINT"):
+        with pytest.raises(NotImplementedError, match="LLM_PROVIDER_SELF_HOSTED_URL"):
             await provider.embed("test text")
