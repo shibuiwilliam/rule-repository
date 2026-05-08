@@ -35,6 +35,7 @@ async def select_rules(
     agent_id: str | None = None,
     subject_type: str | None = None,
     artifact_type: str | None = None,
+    scope_dimensions: dict[str, str | list[str]] | None = None,
 ) -> list[dict[str, Any]]:
     """Select rules applicable to the given evaluation context.
 
@@ -173,6 +174,25 @@ async def select_rules(
             "rule_selector_artifact_filter",
             artifact_type=artifact_type,
             before=pre_artifact,
+            after=len(all_rules),
+        )
+
+    # Stage 1.7: Filter by structured_scope.dimensions (RR-040)
+    if scope_dimensions:
+        from rulerepo_server.domain.scope import matches_scope_dimensions
+
+        pre_dims = len(all_rules)
+        filtered_dims = []
+        for r in all_rules:
+            structured = getattr(r, "structured_scope", None)
+            rule_dims = structured.get("dimensions", {}) if isinstance(structured, dict) else {}
+            if matches_scope_dimensions(rule_dims, scope_dimensions):
+                filtered_dims.append(r)
+        all_rules = filtered_dims
+        logger.info(
+            "rule_selector_dimension_filter",
+            dimensions=list(scope_dimensions.keys()),
+            before=pre_dims,
             after=len(all_rules),
         )
 
