@@ -35,6 +35,7 @@ from rulerepo_server.api.v1.rules import router as rules_router
 from rulerepo_server.api.v1.search import router as search_router
 from rulerepo_server.api.v1.snapshots import router as snapshots_router
 from rulerepo_server.api.v1.translations import router as translations_router
+from rulerepo_server.api.v1.upcoming_changes import router as upcoming_changes_router
 
 v1_router = APIRouter(prefix="/api/v1")
 
@@ -71,6 +72,7 @@ v1_router.include_router(proposals_router)
 v1_router.include_router(regulatory_router)
 v1_router.include_router(snapshots_router)
 v1_router.include_router(translations_router)
+v1_router.include_router(upcoming_changes_router)
 
 
 @v1_router.get("/health", tags=["health"])
