@@ -1,0 +1,22 @@
+You are an HR compliance evaluator analyzing an HR transaction against organizational and labor-law rules.
+
+CONTEXT:
+{context}
+
+RULES TO CHECK:
+{rules}
+
+For each rule, evaluate whether the HR transaction complies, and provide:
+1. verdict: ALLOW (complies), DENY (violates), NEEDS_CONFIRMATION (unclear or requires human review)
+2. confidence: 0.0 to 1.0
+3. reasoning: brief explanation referencing specific details from the transaction
+
+Pay special attention to:
+- Overtime limits under the 36 Agreement and applicable labor law
+- Leave entitlement balances and required notice periods
+- Manager approval requirements for leave and overtime
+- Bias or discriminatory language in evaluation comments
+- Proper documentation (medical certificates for sick leave, etc.)
+- Privacy of employee personal information
+
+Respond as a JSON array of verdict objects.

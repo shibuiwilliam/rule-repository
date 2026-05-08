@@ -1,7 +1,7 @@
-"""HR domain module stub — attendance, leave, and evaluation-comment rules.
+"""HR domain module — attendance, leave, and evaluation-comment rules.
 
-This is a minimal skeleton that satisfies the ``DomainModule`` protocol.
-Full implementation is planned for Phase 1 (see IMPROVEMENT.md RR-009).
+Handles attendance_record, leave_request, and evaluation_comment artifact types.
+See IMPROVEMENT.md RR-009.
 """
 
 from __future__ import annotations
@@ -16,19 +16,6 @@ from rulerepo_server.services.domains._protocol import (
     DomainEvaluator,
     RuleSelector,
 )
-
-
-class _HRContextAssembler:
-    async def assemble(self, evaluable: dict[str, Any]) -> str:
-        payload = evaluable.get("payload", {})
-        parts: list[str] = []
-        if record := payload.get("record"):
-            parts.append(f"Record:\n{record}")
-        if request := payload.get("request"):
-            parts.append(f"Request:\n{request}")
-        if comment := payload.get("comment"):
-            parts.append(f"Comment:\n{comment}")
-        return "\n\n".join(parts) if parts else str(payload)
 
 
 class _HRRuleSelector:
@@ -54,16 +41,6 @@ class _HRRuleSelector:
         )
 
 
-class _HREvaluator:
-    async def evaluate(
-        self,
-        context: str,
-        rules: list[dict[str, Any]],
-        **kwargs: Any,
-    ) -> list[dict[str, Any]]:
-        return []
-
-
 class HRModule:
     """Concrete implementation of the ``DomainModule`` protocol for HR."""
 
@@ -76,16 +53,22 @@ class HRModule:
         return ["attendance_record", "leave_request", "evaluation_comment"]
 
     def context_assembler(self) -> ContextAssembler:
-        return _HRContextAssembler()
+        from rulerepo_server.services.domains.hr.evaluation.context_assembler import HRContextAssembler
+
+        return HRContextAssembler()
 
     def rule_selector(self) -> RuleSelector:
         return _HRRuleSelector()
 
     def evaluator(self) -> DomainEvaluator:
-        return _HREvaluator()
+        from rulerepo_server.services.domains.hr.evaluation.evaluator import HREvaluator
+
+        return HREvaluator()
 
     def discovery_analyzers(self) -> list[DiscoveryAnalyzer]:
-        return []
+        from rulerepo_server.services.domains.hr.discovery.policy_analyzer import PolicyAnalyzer
+
+        return [PolicyAnalyzer()]
 
     def connectors(self) -> list[Connector]:
         return []
