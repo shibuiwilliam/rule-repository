@@ -36,6 +36,33 @@ class GovernanceSchema(BaseModel):
     approvers: list[str] = Field(default_factory=list)
 
 
+class AppliesToSchema(BaseModel):
+    """Declares what artifact types a rule evaluates (RR-003)."""
+
+    artifact_types: list[str] = Field(
+        default_factory=lambda: ["code_diff"],
+        description="One or more artifact types this rule applies to.",
+    )
+    artifact_schema_ref: str | None = Field(
+        default=None,
+        description="Optional JSON Schema URI for structured artifacts.",
+    )
+    triggering_events: list[str] = Field(
+        default_factory=list,
+        description="Events that trigger evaluation (e.g., on_create, on_submit).",
+    )
+
+
+class StructuredScopeSchema(BaseModel):
+    """Structured scope with hierarchical path and dimension axes (RR-003)."""
+
+    path: str = Field(default="", description="Hierarchical scope path (e.g., engineering/python/api).")
+    dimensions: dict[str, str | list[str]] = Field(
+        default_factory=dict,
+        description="Multi-axis dimension filters (jurisdiction, business_unit, etc.).",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Request schemas
 # ---------------------------------------------------------------------------
@@ -69,6 +96,8 @@ class RuleCreate(BaseModel):
     sensitivity: Sensitivity = Sensitivity.INTERNAL
     regulatory_severity: RegulatorySeverity = RegulatorySeverity.NONE
     applicable_subject_types: list[str] = Field(default_factory=lambda: ["code_diff"])
+    applies_to: AppliesToSchema = Field(default_factory=AppliesToSchema)
+    structured_scope: StructuredScopeSchema = Field(default_factory=StructuredScopeSchema)
     jurisdiction: str = "global"
     legal_force: str = "policy"
     review_cadence: str | None = None
@@ -95,6 +124,8 @@ class RuleUpdate(BaseModel):
     sensitivity: Sensitivity | None = None
     regulatory_severity: RegulatorySeverity | None = None
     applicable_subject_types: list[str] | None = None
+    applies_to: AppliesToSchema | None = None
+    structured_scope: StructuredScopeSchema | None = None
     jurisdiction: str | None = None
     legal_force: str | None = None
     review_cadence: str | None = None
@@ -133,6 +164,8 @@ class RuleResponse(BaseModel):
     sensitivity: str = "INTERNAL"
     regulatory_severity: str = "NONE"
     applicable_subject_types: list[str] = Field(default_factory=lambda: ["code_diff"])
+    applies_to: AppliesToSchema = Field(default_factory=AppliesToSchema)
+    structured_scope: StructuredScopeSchema = Field(default_factory=StructuredScopeSchema)
     jurisdiction: str = "global"
     legal_force: str = "policy"
     review_cadence: str | None = None

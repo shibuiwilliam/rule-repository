@@ -145,6 +145,18 @@ class RuleModel(Base):
     legal_force: Mapped[str] = mapped_column(String(20), nullable=False, default="policy")
     review_cadence: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
+    # RR-003: Formal applicability and structured scope
+    applies_to: Mapped[dict] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=lambda: {"artifact_types": ["code_diff"], "artifact_schema_ref": None, "triggering_events": []},
+    )
+    structured_scope: Mapped[dict] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=lambda: {"path": "", "dimensions": {}},
+    )
+
     # Embedding stored as float array (for pgvector compatibility later)
     embedding: Mapped[list | None] = mapped_column(ARRAY(Float), nullable=True)
 

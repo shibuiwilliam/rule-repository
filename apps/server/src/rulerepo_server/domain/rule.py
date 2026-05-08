@@ -11,6 +11,9 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from rulerepo_server.domain.applies_to import AppliesTo
+from rulerepo_server.domain.scope import StructuredScope
+
 _UTC = UTC
 
 
@@ -176,6 +179,8 @@ class Rule:
     regulatory_severity: RegulatorySeverity = RegulatorySeverity.NONE
     equivalence_id: str | None = None
     applicable_subject_types: list[str] = field(default_factory=lambda: ["code_diff"])
+    applies_to: AppliesTo = field(default_factory=AppliesTo)
+    structured_scope: StructuredScope = field(default_factory=StructuredScope)
     jurisdiction: str = "global"
     legal_force: str = "policy"
     review_cadence: str | None = None

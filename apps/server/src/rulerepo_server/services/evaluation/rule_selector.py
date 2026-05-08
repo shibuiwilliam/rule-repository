@@ -34,6 +34,7 @@ async def select_rules(
     environment: str | None = None,
     agent_id: str | None = None,
     subject_type: str | None = None,
+    artifact_type: str | None = None,
 ) -> list[dict[str, Any]]:
     """Select rules applicable to the given evaluation context.
 
@@ -154,6 +155,24 @@ async def select_rules(
             "rule_selector_subject_filter",
             subject_type=subject_type,
             before=pre_subject,
+            after=len(all_rules),
+        )
+
+    # Stage 1.6: Filter by applies_to.artifact_types (RR-003)
+    # This runs *before* embedding ranking to prevent cross-domain contamination.
+    if artifact_type:
+        pre_artifact = len(all_rules)
+        filtered = []
+        for r in all_rules:
+            applies_to = getattr(r, "applies_to", None)
+            types = applies_to.get("artifact_types", ["code_diff"]) if isinstance(applies_to, dict) else ["code_diff"]
+            if artifact_type in types:
+                filtered.append(r)
+        all_rules = filtered
+        logger.info(
+            "rule_selector_artifact_filter",
+            artifact_type=artifact_type,
+            before=pre_artifact,
             after=len(all_rules),
         )
 
