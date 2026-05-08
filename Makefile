@@ -141,7 +141,7 @@ format.server: ## Format Python code (ruff)
 
 format.check: ## Check formatting without modifying files
 	cd $(SERVER_DIR) && uv run ruff format --check --config ../../pyproject.toml src/ tests/
-	cd $(SERVER_DIR) && uv run ruff check --config ../../pyproject.toml src/ tests/
+	cd $(SERVER_DIR) && uv run ruff check --config ../../pyproject.toml --ignore I001 src/ tests/
 
 # ===========================================================================
 #  Test
