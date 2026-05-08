@@ -20,3 +20,14 @@
 2026-05-08 — RR-009 [Phase 1] merged: HR domain module (full implementation). Eval delta: +10 HR cases.
 2026-05-08 — RR-014 [Phase 1] merged: Attestation module with campaigns and responses. Eval delta: n/a.
 2026-05-08 — RR-040 [Phase 1] merged: Structured scope with dimension-based filtering. Eval delta: n/a.
+
+## Phase 2
+
+2026-05-08 — FIX-RR-010 [fix] merged: Fix LocalProvider test regex after env var rename. Eval delta: n/a.
+2026-05-08 — RR-016 [Phase 2] merged: Finance domain module (full implementation). Eval delta: +10 finance cases.
+2026-05-08 — RR-017 [Phase 2] merged: IT Security domain module (full implementation). Eval delta: +10 it_security cases.
+2026-05-08 — RR-019 [Phase 2] merged: Risk Register with rule-to-risk mappings and framework coverage. Eval delta: n/a.
+2026-05-08 — RR-025 [Phase 2] merged: OpenTelemetry tracing wired into startup and LLM router. Eval delta: n/a.
+2026-05-08 — RR-026 [Phase 2] merged: Real Prometheus metrics on /metrics endpoint. Eval delta: n/a.
+2026-05-08 — RR-020 [Phase 2] merged: Polyglot rules with translation management and verification. Eval delta: n/a.
+2026-05-08 — RR-021 [Phase 2] merged: Per-scope approval workflows (8 default workflows, 15 tests). Eval delta: n/a.
