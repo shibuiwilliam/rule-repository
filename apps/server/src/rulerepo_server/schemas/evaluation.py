@@ -15,13 +15,58 @@ class FileInput(BaseModel):
     content: str | None = None
 
 
-class EvaluateRequest(BaseModel):
-    """Request to evaluate a code change or action against rules."""
+class EvaluableSchema(BaseModel):
+    """Universal evaluation input (RR-004).
 
+    Clients should prefer this form for non-code evaluations.
+    Legacy fields (diff, files, facts) remain supported and are
+    auto-translated to this form.
+    """
+
+    artifact_type: str = Field(
+        default="code_diff",
+        description="Artifact type determining domain module dispatch.",
+    )
+    payload: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Artifact data — structure varies by artifact_type.",
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional context (scope, repository, agent_id, etc.).",
+    )
+    diff_against: dict[str, Any] | None = Field(
+        default=None,
+        description="Optional previous version for comparison-based evaluation.",
+    )
+
+
+class EvaluateRequest(BaseModel):
+    """Request to evaluate a code change or action against rules.
+
+    Supports two input forms:
+
+    1. **Legacy** (backwards compatible): provide ``diff``, ``files``,
+       and/or ``facts`` directly.
+    2. **Universal** (RR-004): provide an ``evaluable`` object with
+       ``artifact_type`` and ``payload``.
+
+    When both are provided, the ``evaluable`` takes precedence.
+    """
+
+    # --- Legacy fields (backwards compatible) ---
     diff: str | None = Field(default=None, description="Unified diff text")
     files: list[FileInput] | None = Field(default=None, description="Files to evaluate")
     facts: dict[str, Any] | None = Field(default=None, description="Free-form context")
     intent: str | None = Field(default=None, description="Description of the change")
+
+    # --- Universal form (RR-004) ---
+    evaluable: EvaluableSchema | None = Field(
+        default=None,
+        description="Universal evaluation input. Takes precedence over legacy fields.",
+    )
+
+    # --- Common fields ---
     scope: str | None = Field(default=None, description="Rule scope filter")
     repository: str | None = Field(default=None, description="Repository identifier")
     mode: str = Field(default="preflight", description="preflight | posthoc")
@@ -43,6 +88,40 @@ class EvaluateRequest(BaseModel):
             "Defaults to code_diff when diff is provided."
         ),
     )
+
+    def to_evaluable(self) -> EvaluableSchema:
+        """Convert this request to the universal Evaluable form.
+
+        If ``evaluable`` is set, returns it directly.
+        Otherwise, constructs one from legacy fields.
+        """
+        if self.evaluable is not None:
+            return self.evaluable
+
+        payload: dict[str, Any] = {}
+        if self.diff is not None:
+            payload["diff"] = self.diff
+        if self.files is not None:
+            payload["files"] = [f.model_dump() for f in self.files]
+        if self.facts is not None:
+            payload["facts"] = self.facts
+        if self.intent is not None:
+            payload["intent"] = self.intent
+
+        metadata: dict[str, Any] = {}
+        if self.scope is not None:
+            metadata["scope"] = self.scope
+        if self.repository is not None:
+            metadata["repository"] = self.repository
+        if self.agent_id is not None:
+            metadata["agent_id"] = self.agent_id
+
+        artifact_type = self.subject_kind or "code_diff"
+        return EvaluableSchema(
+            artifact_type=artifact_type,
+            payload=payload,
+            metadata=metadata,
+        )
 
 
 class QuickEvaluateRequest(BaseModel):
