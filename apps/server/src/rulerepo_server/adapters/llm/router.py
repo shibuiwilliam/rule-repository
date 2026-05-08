@@ -186,13 +186,31 @@ class LLMRouter:
         result = await provider.generate(prompt, model=model, **kwargs)
         elapsed = current_time_ms() - start
 
+        used_model = result.get("model", model or provider.name)
+        tokens_in = result.get("input_tokens", 0)
+        tokens_out = result.get("output_tokens", 0)
+
         trace_llm_call(
-            model=result.get("model", model or provider.name),
-            tokens_in=result.get("input_tokens", 0),
-            tokens_out=result.get("output_tokens", 0),
+            model=used_model,
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
             latency_ms=elapsed,
             domain=scope or "general",
             tenant_id="default",
+        )
+
+        # Also record in Prometheus metrics collector (RR-026)
+        from rulerepo_server.core.metrics import metrics_collector
+
+        cost = (tokens_in * 0.1 + tokens_out * 0.4) / 1_000_000
+        metrics_collector.record_llm_call(
+            model=used_model,
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
+            cost_usd=cost,
+            latency_ms=elapsed,
+            tenant_id="default",
+            domain=scope or "general",
         )
         return result
 
