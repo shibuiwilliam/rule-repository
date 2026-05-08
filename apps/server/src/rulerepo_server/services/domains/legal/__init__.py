@@ -1,7 +1,7 @@
-"""Legal domain module stub — contract evaluation, clause extraction, regulatory compliance.
+"""Legal domain module — contract evaluation, clause extraction, regulatory compliance.
 
-This is a minimal skeleton that satisfies the ``DomainModule`` protocol.
-Full implementation is planned for Phase 1 (see IMPROVEMENT.md RR-008).
+Handles contract_clause and contract_document artifact types.
+See IMPROVEMENT.md RR-008.
 """
 
 from __future__ import annotations
@@ -16,17 +16,6 @@ from rulerepo_server.services.domains._protocol import (
     DomainEvaluator,
     RuleSelector,
 )
-
-
-class _LegalContextAssembler:
-    async def assemble(self, evaluable: dict[str, Any]) -> str:
-        payload = evaluable.get("payload", {})
-        parts: list[str] = []
-        if clause := payload.get("clause"):
-            parts.append(f"Clause:\n{clause}")
-        if document := payload.get("document"):
-            parts.append(f"Document:\n{document}")
-        return "\n\n".join(parts) if parts else str(payload)
 
 
 class _LegalRuleSelector:
@@ -52,16 +41,6 @@ class _LegalRuleSelector:
         )
 
 
-class _LegalEvaluator:
-    async def evaluate(
-        self,
-        context: str,
-        rules: list[dict[str, Any]],
-        **kwargs: Any,
-    ) -> list[dict[str, Any]]:
-        return []
-
-
 class LegalModule:
     """Concrete implementation of the ``DomainModule`` protocol for legal."""
 
@@ -74,16 +53,22 @@ class LegalModule:
         return ["contract_clause", "contract_document"]
 
     def context_assembler(self) -> ContextAssembler:
-        return _LegalContextAssembler()
+        from rulerepo_server.services.domains.legal.evaluation.context_assembler import LegalContextAssembler
+
+        return LegalContextAssembler()
 
     def rule_selector(self) -> RuleSelector:
         return _LegalRuleSelector()
 
     def evaluator(self) -> DomainEvaluator:
-        return _LegalEvaluator()
+        from rulerepo_server.services.domains.legal.evaluation.evaluator import LegalEvaluator
+
+        return LegalEvaluator()
 
     def discovery_analyzers(self) -> list[DiscoveryAnalyzer]:
-        return []
+        from rulerepo_server.services.domains.legal.discovery.contract_analyzer import ContractAnalyzer
+
+        return [ContractAnalyzer()]
 
     def connectors(self) -> list[Connector]:
         return []
