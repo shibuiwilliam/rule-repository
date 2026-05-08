@@ -180,7 +180,21 @@ class LLMRouter:
             The provider's response dict.
         """
         provider = self.get_provider(scope=scope)
-        return await provider.generate(prompt, model=model, **kwargs)
+        from rulerepo_server.core.telemetry import current_time_ms, trace_llm_call
+
+        start = current_time_ms()
+        result = await provider.generate(prompt, model=model, **kwargs)
+        elapsed = current_time_ms() - start
+
+        trace_llm_call(
+            model=result.get("model", model or provider.name),
+            tokens_in=result.get("input_tokens", 0),
+            tokens_out=result.get("output_tokens", 0),
+            latency_ms=elapsed,
+            domain=scope or "general",
+            tenant_id="default",
+        )
+        return result
 
     async def generate_structured(
         self,

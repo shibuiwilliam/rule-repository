@@ -64,6 +64,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     else:
         logger.info("neo4j_disabled", fallback="postgres_adjacency")
 
+    # OpenTelemetry — initialize tracing and metrics (RR-025)
+    from rulerepo_server.core.telemetry import init_telemetry
+
+    otel_endpoint = getattr(settings, "otel_exporter_otlp_endpoint", None)
+    init_telemetry(service_name="rulerepo-server", otlp_endpoint=otel_endpoint or None)
+
     logger.info("all_connections_initialized", tier=flags.tier)
 
     yield
