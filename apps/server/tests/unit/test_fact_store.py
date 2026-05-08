@@ -106,10 +106,10 @@ class TestFactDomain:
         assert fact.status == FactStatus.RESOLVED
 
     def test_fact_status_values(self) -> None:
-        assert FactStatus.RESOLVED == "RESOLVED"
-        assert FactStatus.NOT_FOUND == "NOT_FOUND"
-        assert FactStatus.ERROR == "ERROR"
-        assert FactStatus.CACHED == "CACHED"
+        assert FactStatus.RESOLVED == "resolved"
+        assert FactStatus.NOT_FOUND == "not_found"
+        assert FactStatus.ERROR == "error"
+        assert FactStatus.CACHED == "cached"
 
     def test_fact_schema(self) -> None:
         schema = FactSchema(
@@ -150,26 +150,29 @@ class TestFactDomain:
 
 
 class TestFactProviderRegistry:
-    def test_register_and_lookup(self) -> None:
+    @pytest.mark.asyncio
+    async def test_register_and_lookup(self) -> None:
         registry = FactProviderRegistry()
         provider = MockProvider({"employee_grade": "senior"})
         registry.register(provider)
-        found = registry.get_provider("employee_grade")
+        found = await registry.get_provider("employee_grade")
         assert found is not None
         assert found.name == "mock_provider"
 
-    def test_lookup_missing_key(self) -> None:
+    @pytest.mark.asyncio
+    async def test_lookup_missing_key(self) -> None:
         registry = FactProviderRegistry()
-        assert registry.get_provider("nonexistent") is None
+        assert await registry.get_provider("nonexistent") is None
 
-    def test_list_providers(self) -> None:
+    @pytest.mark.asyncio
+    async def test_list_providers(self) -> None:
         registry = FactProviderRegistry()
         p1 = MockProvider({"fact_a": 1})
         p2 = MockProvider({"fact_b": 2})
         p2.name = "mock_provider_2"
         registry.register(p1)
         registry.register(p2)
-        providers = registry.list_providers()
+        providers = await registry.list_providers()
         assert len(providers) >= 2
 
 

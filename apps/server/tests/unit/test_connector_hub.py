@@ -10,6 +10,7 @@ from typing import Any
 
 import pytest
 
+from rulerepo_server.core.errors import NotFoundError
 from rulerepo_server.services.connectors.base import (
     ConnectorConfig,
     ConnectorHealth,
@@ -72,10 +73,10 @@ class MockConnector:
 
 class TestConnectorDomain:
     def test_connector_status_values(self) -> None:
-        assert ConnectorStatus.CONNECTED == "CONNECTED"
-        assert ConnectorStatus.DISCONNECTED == "DISCONNECTED"
-        assert ConnectorStatus.ERROR == "ERROR"
-        assert ConnectorStatus.INITIALIZING == "INITIALIZING"
+        assert ConnectorStatus.CONNECTED == "connected"
+        assert ConnectorStatus.DISCONNECTED == "disconnected"
+        assert ConnectorStatus.ERROR == "error"
+        assert ConnectorStatus.INITIALIZING == "initializing"
 
     def test_connector_health(self) -> None:
         health = ConnectorHealth(
@@ -114,13 +115,15 @@ class TestConnectorRegistry:
     def test_tenant_isolation(self) -> None:
         registry = ConnectorRegistry()
         registry.register("tenant_1", "test_mock", MockConnector())
-        assert registry.get("tenant_2", "test_mock") is None
+        with pytest.raises(NotFoundError):
+            registry.get("tenant_2", "test_mock")
 
     def test_unregister(self) -> None:
         registry = ConnectorRegistry()
         registry.register("tenant_1", "test_mock", MockConnector())
         registry.unregister("tenant_1", "test_mock")
-        assert registry.get("tenant_1", "test_mock") is None
+        with pytest.raises(NotFoundError):
+            registry.get("tenant_1", "test_mock")
 
     def test_list_for_tenant(self) -> None:
         registry = ConnectorRegistry()

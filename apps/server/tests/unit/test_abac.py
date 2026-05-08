@@ -12,6 +12,7 @@ from rulerepo_server.domain.abac import (
     PolicyCondition,
     PolicyEffect,
 )
+from rulerepo_server.domain.tenant import Principal, PrincipalKind
 
 # ---------------------------------------------------------------------------
 # ABAC domain tests
@@ -20,8 +21,8 @@ from rulerepo_server.domain.abac import (
 
 class TestABACDomain:
     def test_policy_effect_values(self) -> None:
-        assert PolicyEffect.ALLOW == "ALLOW"
-        assert PolicyEffect.DENY == "DENY"
+        assert PolicyEffect.ALLOW == "allow"
+        assert PolicyEffect.DENY == "deny"
 
     def test_policy_condition(self) -> None:
         cond = PolicyCondition(attribute="principal.role", operator="in", value=["admin", "auditor"])
@@ -51,21 +52,23 @@ class TestABACDomain:
 
 
 class TestABACEngine:
-    def _make_principal_attrs(self, **kwargs) -> dict:
-        defaults = {
+    def _make_principal(self, **kwargs) -> Principal:
+        defaults: dict = {
             "id": "u_001",
             "tenant_id": "t_001",
+            "kind": PrincipalKind.USER,
+            "display_name": "Test User",
             "department_ids": [],
             "clearance": "internal",
             "roles": [],
         }
         defaults.update(kwargs)
-        return defaults
+        return Principal(**defaults)
 
     def test_empty_engine_denies(self) -> None:
         engine = ABACEngine()
         decision = engine.evaluate(
-            self._make_principal_attrs(),
+            self._make_principal(),
             "rule",
             "read",
             {},
@@ -89,7 +92,7 @@ class TestABACEngine:
             ]
         )
         decision = engine.evaluate(
-            self._make_principal_attrs(),
+            self._make_principal(),
             "rule",
             "read",
             {},
@@ -125,7 +128,7 @@ class TestABACEngine:
             ]
         )
         decision = engine.evaluate(
-            self._make_principal_attrs(),
+            self._make_principal(),
             "rule",
             "read",
             {"classification": "restricted"},
@@ -149,7 +152,7 @@ class TestABACEngine:
             ]
         )
         decision = engine.evaluate(
-            self._make_principal_attrs(),
+            self._make_principal(),
             "rule",
             "read",
             {},
@@ -173,7 +176,7 @@ class TestABACEngine:
             ]
         )
         decision = engine.evaluate(
-            self._make_principal_attrs(),
+            self._make_principal(),
             "evaluation",
             "read",
             {},
