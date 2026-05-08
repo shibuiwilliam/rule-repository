@@ -80,6 +80,11 @@ class Settings(BaseSettings):
     llm_tenant_monthly_budget_usd: float = 0.0
     llm_tenant_budget_warning_threshold: float = 0.8
 
+    # Audit WORM (RR-011)
+    audit_worm_enabled: bool = False
+    audit_worm_s3_bucket: str = ""
+    audit_worm_s3_region: str = ""
+
     # Weekly digest
     digest_webhook_url: str = ""
 
