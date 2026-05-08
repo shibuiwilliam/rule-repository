@@ -68,6 +68,8 @@ ignore = [
 "scripts/**/*.py" = ["ANN", "T20"]
 "**/adapters/search/*.py" = ["S608"]
 "**/adapters/graph/*.py" = ["S608"]
+"eval_harness/**/*.py" = ["T20", "ANN"]
+"**/eval_harness/**/*.py" = ["T20", "ANN"]
 
 [tool.mypy]
 python_version = "3.13"

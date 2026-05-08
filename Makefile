@@ -275,8 +275,14 @@ check: format.check lint test ## Run all quality checks (format + lint + test)
 
 ci: install check ## Full CI pipeline (install + format + lint + test)
 
-eval: ## Run eval harness against local server
-	cd $(SERVER_DIR) && uv run python -m eval_harness.runner --all 2>/dev/null || echo "Eval harness not yet implemented"
+eval: ## Run eval harness (offline, all domains)
+	cd $(SERVER_DIR) && uv run python -m eval_harness.runner --all
+
+eval.domain: ## Run eval harness for a single domain (usage: make eval.domain DOMAIN=engineering)
+	cd $(SERVER_DIR) && uv run python -m eval_harness.runner --domain $(DOMAIN)
+
+eval.json: ## Run eval harness and output JSON report
+	cd $(SERVER_DIR) && uv run python -m eval_harness.runner --all --report json
 
 # ===========================================================================
 #  Cleanup
