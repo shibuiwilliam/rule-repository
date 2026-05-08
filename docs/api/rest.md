@@ -49,6 +49,18 @@ All endpoints are prefixed with `/api/v1` unless noted otherwise. Interactive do
 
 See [Evaluate API](evaluate.md) for detailed request/response documentation.
 
+## Contract Evaluation
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/evaluate/contract` | Evaluate a contract against applicable clause rules. Parses the contract, evaluates each clause, and returns clause-scoped verdicts with a contract-level aggregate. Supports review types: `self_conformance`, `cross_contract`, `regulatory_compliance`, `risk_scoring`. |
+
+## Event Evaluation
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/evaluate/event` | Evaluate a business event (attendance, overtime, leave) against applicable rules. Supports evaluation modes: `single` (default), `sequence` (monthly context), `calendar` (annual context). |
+
 ## Intent
 
 | Method | Path | Description |
@@ -172,3 +184,66 @@ See [Federation API](federation.md) for detailed request/response documentation.
 | Method | Path | Description |
 |---|---|---|
 | POST | `/api/v1/integrations/webhooks/github` | GitHub App webhook receiver. Processes pull request events, runs evaluation, and returns formatted review comments. |
+
+## Projects
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/projects` | Create a new project. |
+| GET | `/api/v1/projects` | List projects with pagination. |
+| GET | `/api/v1/projects/{project_id}` | Get a project by ID. |
+| PATCH | `/api/v1/projects/{project_id}` | Update a project. |
+
+## Proposals
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/proposals` | Create a governance proposal (create, amend, retire, merge, split, override). |
+| GET | `/api/v1/proposals` | List proposals with pagination and filters. |
+| GET | `/api/v1/proposals/{proposal_id}` | Get a proposal by ID. |
+| POST | `/api/v1/proposals/{proposal_id}/submit` | Submit a proposal for review. |
+| POST | `/api/v1/proposals/{proposal_id}/vote` | Cast a vote on a proposal. |
+| POST | `/api/v1/proposals/{proposal_id}/comments` | Add a comment to a proposal. |
+
+## Agent Governance
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/agents` | Register an agent profile. |
+| GET | `/api/v1/agents` | List agent profiles. |
+| GET | `/api/v1/agents/{agent_id}` | Get an agent profile. |
+| GET | `/api/v1/agents/{agent_id}/personalized-rules` | Get rules personalized for an agent (mastered suppressed, weak boosted). |
+| POST | `/api/v1/agents/{agent_id}/challenge` | Challenge a verdict. |
+| POST | `/api/v1/agents/{agent_id}/exception` | Request a rule exception. |
+
+## Departments
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/departments` | Create a department. |
+| GET | `/api/v1/departments` | List departments. |
+| GET | `/api/v1/departments/{department_id}` | Get a department by ID. |
+| PATCH | `/api/v1/departments/{department_id}` | Update a department. |
+
+## Audit
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v1/audit` | List audit log entries with filters (action, classification, date range). |
+| GET | `/api/v1/audit/{entry_id}` | Get a single audit log entry. |
+| POST | `/api/v1/audit/verify` | Verify hash chain integrity for a range of entries. |
+
+## Review
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/evaluate/review/rough` | Rough triage: evaluate all rules for relevance to an activity. |
+| POST | `/api/v1/evaluate/review/detailed` | Detailed evaluation: full LLM evaluation on a shortlisted set of rules. |
+
+## Marketplace
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v1/marketplace/packages` | Browse available rule packages. |
+| POST | `/api/v1/marketplace/packages` | Publish a rule package. |
+| POST | `/api/v1/marketplace/packages/{package_id}/subscribe` | Subscribe to a rule package. |

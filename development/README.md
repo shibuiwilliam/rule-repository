@@ -32,7 +32,7 @@ Technical documentation for developing and extending the Rule Repository.
 | [agent-integration-and-analytics.md](agent-integration-and-analytics.md) | Seamless agent integration (scope resolution, session context API), rule impact analytics (effectiveness score, weekly digest, team comparison), rule templates library, bulk import API |
 | [proactive-delivery-and-quality.md](proactive-delivery-and-quality.md) | CLAUDE.md context generator CLI, effectiveness visibility (rule detail, dashboard, rules list, digest), alert banner, effectiveness-based alerts |
 | [phase7-status.md](phase7-status.md) | Phase 7 status: COMPLETE. 4 streams delivered: Subject Polymorphism, Department/Capacity, Classification/RLS, Domain Templates (60 rules across 3 domain packs). 500 tests pass. |
-| [phase-8-backlog.md](phase-8-backlog.md) | Phase 8 backlog: IN PROGRESS. 4 streams: Contract Clause Engine, Event Engine Temporal Modes, Document Discovery Analyzers, Domain-Aware UX |
+| [phase-8-backlog.md](phase-8-backlog.md) | Phase 8 backlog: IN PROGRESS. Streams A (Contract Clause Engine) and B (Event Engine) substantially complete. Streams C (Document Discovery) and D (Domain UX) partially complete. |
 | [orientation.md](orientation.md) | Cross-organizational pivot orientation: gap analysis (now resolved), Phase 7 streams, execution order, closure notes |
 | [spec_implementation_audit.md](spec_implementation_audit.md) | Code-only audit of PROJECT.md/CLAUDE.md specs vs. implementation: 174/176 features (98.9%) implemented |
 | [feature_interactions.md](feature_interactions.md) | Cross-feature interaction pairs: intended vs. actual behavior, gap analysis, and remediations (federation x snapshot, proposal x federation, agent governance x federation) |
@@ -45,9 +45,9 @@ Technical documentation for developing and extending the Rule Repository.
 |---|---|---|
 | [0001](adr/0001-subject-polymorphism.md) | Subject Polymorphism | Accepted |
 | [0002](adr/0002-department-capacity-model.md) | Department / Capacity Model | Accepted |
-| 0003 | Classification and RLS | Planned (Phase 7 -- implemented, ADR pending) |
-| 0004 | Contract Clause Engine | Planned (Phase 8) |
-| 0005 | Event Engine Temporal Modes | Planned (Phase 8) |
+| [0003](adr/0003-classification-and-rls.md) | Classification and RLS | Accepted |
+| [0004](adr/0004-contract-clause-engine.md) | Contract Clause Engine | Accepted |
+| [0005](adr/0005-event-engine-temporal-modes.md) | Event Engine Temporal Modes | Accepted |
 
 ---
 

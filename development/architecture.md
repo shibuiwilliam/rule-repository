@@ -321,6 +321,68 @@ The orchestrator (`service.py`, `evaluation_core.py`) never branches on `subject
 
 ---
 
+## Plugin Architecture
+
+Domain-specific evaluators, extractors, and feedback handlers are organized as plugins under `plugins/`. Each plugin implements a base protocol (`plugins/base.py`) and registers itself with `plugins/_registry.py`.
+
+```
+plugins/
+├── _registry.py         # Plugin registration and lookup
+├── base.py              # Plugin protocol (evaluators, extractors, feedback)
+├── engineering/          # Code-aware evaluation
+│   ├── evaluators/code_change.py
+│   ├── extractors/claude_md.py, linter_config.py
+│   └── feedback/pr_capture.py
+├── legal/               # Contract and clause evaluation
+│   ├── evaluators/document_evaluator.py
+│   └── extractors/clause_extractor.py
+├── hr/                  # HR form and event evaluation
+│   ├── evaluators/form_evaluator.py
+│   └── extractors/handbook.py
+├── finance/             # Transaction evaluation
+│   └── evaluators/transaction_evaluator.py
+└── marketing/           # Content and creative evaluation
+    └── evaluators/content_evaluator.py
+```
+
+**Layering**: Plugins consume core services. The core never imports from any plugin. Each plugin owns its prompt templates under a `prompts/` subdirectory.
+
+---
+
+## Phase 8 Domain Engines
+
+### Contract Clause Engine
+
+```
+Contract (DOCX/PDF/text) --> ContractParser (adapters/) --> ClauseSetSubject --> EvaluationService --> ClauseAggregator --> ContractEvaluateResponse
+                                                       --> ContractComparator (adapters/) --> ComparisonResult
+```
+
+Components:
+- `adapters/contract_parser.py` — DOCX via python-docx, PDF via Gemini Files API, text direct
+- `adapters/contract_compare.py` — semantic clause-level diffing with similarity scoring
+- `services/evaluation/clause_aggregator.py` — clause-by-clause verdicts collapse to contract-level
+- `api/v1/contract.py` — `POST /api/v1/evaluate/contract` with review types: self_conformance, cross_contract, regulatory_compliance, risk_scoring
+- Prompt templates: `services/evaluation/prompts/clause_set/`
+
+### Event Engine with Temporal Modes
+
+```
+Event + SequenceContext --> EventSubject --> EvaluationService --> EvaluateResponse
+```
+
+Three evaluation modes:
+- **single** — evaluate event alone (default)
+- **sequence** — monthly event window with accumulations
+- **calendar** — annual aggregates (YTD overtime, 36-Agreement status)
+
+Components:
+- `domain/event_sequence.py` — `EventEvaluationMode`, `EventRecord`, `EventWindow`, `CalendarContext`, `SequenceContext`
+- `api/v1/event.py` — `POST /api/v1/evaluate/event` with `evaluation_mode` parameter
+- Prompt templates: `services/evaluation/prompts/event/`
+
+---
+
 ## Data Flows
 
 ### Rule Creation
@@ -368,6 +430,16 @@ Rule statement + sample input --> PlaygroundService.evaluate_sandbox --> Gemini 
 ### Snapshot Deploy
 ```
 Create snapshot (captures current rules matching scope filter) --> RuleSetSnapshotModel --> Deploy to environment --> RuleSetDeploymentModel --> Evaluation uses snapshot rules when environment param set
+```
+
+### Contract Clause Evaluation
+```
+Contract body --> api/v1/contract.py --> ContractParser --> ClauseSetSubject --> EvaluationService.evaluate(subject_kind=CLAUSE_SET) --> ClauseAggregator --> ContractEvaluateResponse (contract verdict + per-clause verdicts)
+```
+
+### Event Evaluation (with temporal context)
+```
+Event facts + optional SequenceContext --> api/v1/event.py --> EventSubject (with mode: single|sequence|calendar) --> EvaluationService.evaluate(subject_kind=EVENT) --> EvaluateResponse
 ```
 
 ### Alert Generation

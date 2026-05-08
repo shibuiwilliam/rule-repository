@@ -1,0 +1,844 @@
+version: "1.0"
+domain: "legal"
+description: "Golden dataset for legal/contract evaluation — NDA, liability, indemnification, governing law, data protection, IP, force majeure, termination, and compliance clauses."
+cases:
+  - id: "legal_001"
+    description: "NDA with standard mutual confidentiality and 2-year term"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "nda"
+      clauses:
+        - type: "confidentiality"
+          text: "Each party agrees to hold the other party's Confidential Information in strict confidence and not to disclose it to any third party without prior written consent."
+        - type: "term"
+          text: "This Agreement shall remain in effect for two (2) years from the Effective Date."
+        - type: "permitted_disclosure"
+          text: "Disclosure is permitted to employees, contractors, and advisors who have a need to know and are bound by confidentiality obligations no less restrictive than those herein."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["mutual", "confidentiality", "2-year", "standard"]
+    tags: ["nda", "confidentiality"]
+    difficulty: "easy"
+
+  - id: "legal_002"
+    description: "NDA missing definition of Confidential Information"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "nda"
+      clauses:
+        - type: "confidentiality"
+          text: "The Receiving Party shall not disclose any information received from the Disclosing Party."
+        - type: "term"
+          text: "This Agreement shall remain in effect for three (3) years."
+      missing_clauses: ["definition_of_confidential_information"]
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["definition", "Confidential Information", "undefined", "scope"]
+    tags: ["nda", "confidentiality"]
+    difficulty: "medium"
+
+  - id: "legal_003"
+    description: "Limitation of liability capped at contract value"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "limitation_of_liability"
+          text: "Neither party's aggregate liability under this Agreement shall exceed the total fees paid or payable under this Agreement during the twelve (12) months preceding the event giving rise to liability."
+        - type: "exclusion"
+          text: "This limitation shall not apply to breaches of confidentiality, willful misconduct, or indemnification obligations."
+      contract_value: 50000000
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["limitation", "12 months", "capped", "reasonable"]
+    tags: ["liability", "limitation"]
+    difficulty: "medium"
+
+  - id: "legal_004"
+    description: "No limitation of liability clause in high-value contract"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "services"
+          text: "Provider shall deliver custom software development services as described in Exhibit A."
+        - type: "payment"
+          text: "Client shall pay Provider the sum of JPY 200,000,000 upon delivery."
+      missing_clauses: ["limitation_of_liability"]
+      contract_value: 200000000
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["limitation of liability", "missing", "high-value", "risk"]
+    tags: ["liability", "limitation"]
+    difficulty: "medium"
+
+  - id: "legal_005"
+    description: "Unlimited liability accepted by vendor"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "limitation_of_liability"
+          text: "Provider accepts unlimited liability for all damages arising from or related to this Agreement, including consequential and indirect damages."
+      contract_value: 100000000
+      party_role: "provider"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["unlimited", "liability", "consequential", "unreasonable"]
+    tags: ["liability", "limitation"]
+    difficulty: "easy"
+
+  - id: "legal_006"
+    description: "Indemnification clause with proper scope and notice requirements"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "indemnification"
+          text: "Provider shall indemnify, defend, and hold harmless Client from any third-party claims arising from Provider's breach of this Agreement or Provider's negligence. Client shall provide prompt written notice of any such claim and reasonably cooperate in the defense thereof."
+        - type: "indemnification_cap"
+          text: "Provider's indemnification obligations shall not exceed twice the annual contract value."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["indemnification", "notice", "capped", "third-party"]
+    tags: ["indemnification"]
+    difficulty: "medium"
+
+  - id: "legal_007"
+    description: "One-sided indemnification without reciprocity"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "indemnification"
+          text: "Provider shall indemnify Client against all claims, damages, losses, and expenses of any kind whatsoever, regardless of cause. Client shall have no indemnification obligations to Provider."
+      contract_value: 80000000
+      party_role: "provider"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["one-sided", "reciprocity", "unfair", "regardless of cause"]
+    tags: ["indemnification"]
+    difficulty: "medium"
+
+  - id: "legal_008"
+    description: "Governing law clause specifying Japanese law with Tokyo arbitration"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "governing_law"
+          text: "This Agreement shall be governed by and construed in accordance with the laws of Japan."
+        - type: "dispute_resolution"
+          text: "Any dispute arising out of this Agreement shall be finally settled by arbitration administered by the Japan Commercial Arbitration Association (JCAA) in Tokyo."
+      parties_jurisdiction: ["JP", "JP"]
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["governing law", "Japan", "JCAA", "arbitration"]
+    tags: ["governing-law", "dispute-resolution"]
+    difficulty: "easy"
+
+  - id: "legal_009"
+    description: "Cross-border contract with governing law mismatch — neither party's jurisdiction"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "governing_law"
+          text: "This Agreement shall be governed by the laws of the Cayman Islands."
+        - type: "dispute_resolution"
+          text: "Disputes shall be resolved in the courts of the Cayman Islands."
+      parties_jurisdiction: ["JP", "US"]
+      jurisdiction: "JP"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["governing law", "mismatch", "neutral", "jurisdiction"]
+    tags: ["governing-law", "cross-border"]
+    difficulty: "hard"
+
+  - id: "legal_010"
+    description: "Data protection clause compliant with APPI"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "data_processing_agreement"
+      clauses:
+        - type: "data_protection"
+          text: "Processor shall process Personal Information only for the purposes specified in this Agreement and in accordance with the Act on the Protection of Personal Information (APPI)."
+        - type: "data_transfer"
+          text: "Cross-border transfer of Personal Information shall comply with APPI requirements, including obtaining consent or ensuring adequate protection."
+        - type: "incident_notification"
+          text: "Processor shall notify Controller within 72 hours of becoming aware of any Personal Data Breach."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["APPI", "personal information", "notification", "72 hours"]
+    tags: ["data-protection", "privacy"]
+    difficulty: "medium"
+
+  - id: "legal_011"
+    description: "Contract missing data protection clauses despite handling PII"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "services"
+          text: "Provider shall process customer records including names, addresses, and purchase history on behalf of Client."
+      missing_clauses: ["data_protection", "data_breach_notification", "data_retention"]
+      involves_pii: true
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["data protection", "PII", "missing", "APPI"]
+    tags: ["data-protection", "privacy"]
+    difficulty: "easy"
+
+  - id: "legal_012"
+    description: "Non-compete clause with reasonable scope in commercial contract"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "partnership_agreement"
+      clauses:
+        - type: "non_compete"
+          text: "During the term of this Agreement and for twelve (12) months following termination, neither party shall directly engage in providing the same services to the other party's named top-10 clients."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["non-compete", "12 months", "limited scope", "reasonable"]
+    tags: ["non-compete", "restrictive-covenant"]
+    difficulty: "medium"
+
+  - id: "legal_013"
+    description: "Non-compete clause with unreasonably broad scope"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "non_compete"
+          text: "For five (5) years following termination, Provider shall not engage in any business that directly or indirectly competes with Client's business anywhere in the world."
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["non-compete", "5 years", "worldwide", "unreasonable"]
+    tags: ["non-compete", "restrictive-covenant"]
+    difficulty: "easy"
+
+  - id: "legal_014"
+    description: "Force majeure clause with comprehensive coverage and notice requirement"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "force_majeure"
+          text: "Neither party shall be liable for delays or failures in performance caused by events beyond its reasonable control, including natural disasters, epidemics, war, government orders, or widespread infrastructure failures. The affected party shall notify the other within five (5) business days and use commercially reasonable efforts to mitigate."
+        - type: "force_majeure_termination"
+          text: "If a force majeure event continues for more than ninety (90) days, either party may terminate this Agreement upon written notice."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["force majeure", "notice", "mitigation", "termination"]
+    tags: ["force-majeure"]
+    difficulty: "medium"
+
+  - id: "legal_015"
+    description: "Force majeure clause missing notice period and mitigation"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "force_majeure"
+          text: "Neither party shall be liable for any failure to perform due to circumstances beyond its control."
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["force majeure", "vague", "notice", "mitigation", "missing"]
+    tags: ["force-majeure"]
+    difficulty: "medium"
+
+  - id: "legal_016"
+    description: "Termination for convenience with 90-day notice"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "termination_for_convenience"
+          text: "Either party may terminate this Agreement without cause by providing ninety (90) days prior written notice."
+        - type: "termination_effects"
+          text: "Upon termination, Client shall pay for all services rendered through the effective date of termination. Provider shall return or destroy all Client Confidential Information within thirty (30) days."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["termination", "convenience", "90 days", "notice"]
+    tags: ["termination"]
+    difficulty: "easy"
+
+  - id: "legal_017"
+    description: "Contract with no termination clause"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "term"
+          text: "This Agreement shall commence on the Effective Date and continue for five (5) years."
+      missing_clauses: ["termination_for_cause", "termination_for_convenience"]
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["termination", "missing", "exit", "no way out"]
+    tags: ["termination"]
+    difficulty: "medium"
+
+  - id: "legal_018"
+    description: "IP assignment clause covering work product during engagement"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "development_agreement"
+      clauses:
+        - type: "ip_assignment"
+          text: "All Deliverables and Work Product created by Provider in the course of performing Services under this Agreement shall be the exclusive property of Client. Provider hereby assigns all right, title, and interest in the Work Product to Client."
+        - type: "ip_preexisting"
+          text: "Provider retains all rights to its pre-existing intellectual property. Provider grants Client a non-exclusive, perpetual license to use any pre-existing IP incorporated into the Deliverables."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["IP assignment", "work product", "pre-existing", "license"]
+    tags: ["ip", "assignment"]
+    difficulty: "medium"
+
+  - id: "legal_019"
+    description: "Contract claims IP rights over provider's pre-existing technology"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "development_agreement"
+      clauses:
+        - type: "ip_assignment"
+          text: "All intellectual property, including Provider's pre-existing tools, frameworks, and methodologies used in or related to the Deliverables, shall become the exclusive property of Client upon delivery."
+      party_role: "provider"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["pre-existing", "IP", "overreach", "tools", "frameworks"]
+    tags: ["ip", "assignment"]
+    difficulty: "medium"
+
+  - id: "legal_020"
+    description: "Confidentiality obligation with indefinite term"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "nda"
+      clauses:
+        - type: "confidentiality"
+          text: "The Receiving Party's obligations of confidentiality shall survive termination and continue in perpetuity."
+        - type: "scope"
+          text: "Confidential Information includes all information, whether written, oral, or electronic, disclosed by the Disclosing Party."
+      jurisdiction: "JP"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["perpetuity", "indefinite", "survival", "reasonable term"]
+    tags: ["confidentiality", "term"]
+    difficulty: "hard"
+
+  - id: "legal_021"
+    description: "Software license with proper audit rights and usage limits"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "software_license"
+      clauses:
+        - type: "license_grant"
+          text: "Licensor grants Licensee a non-exclusive, non-transferable license to use the Software for up to 500 named users."
+        - type: "audit_right"
+          text: "Licensor may audit Licensee's use of the Software once per calendar year upon thirty (30) days prior written notice during normal business hours."
+        - type: "restrictions"
+          text: "Licensee shall not reverse engineer, decompile, or modify the Software."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["license", "audit", "restrictions", "non-exclusive"]
+    tags: ["software-license"]
+    difficulty: "easy"
+
+  - id: "legal_022"
+    description: "SaaS agreement with inadequate SLA"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "saas_agreement"
+      clauses:
+        - type: "sla"
+          text: "Provider shall use reasonable efforts to make the Service available."
+      missing_clauses: ["uptime_commitment", "service_credits", "support_response_times"]
+      contract_value: 30000000
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["SLA", "uptime", "service credits", "reasonable efforts"]
+    tags: ["saas", "sla"]
+    difficulty: "medium"
+
+  - id: "legal_023"
+    description: "SaaS agreement with proper SLA, uptime commitment, and credits"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "saas_agreement"
+      clauses:
+        - type: "sla"
+          text: "Provider guarantees 99.9% monthly uptime for the Service, excluding scheduled maintenance windows."
+        - type: "service_credits"
+          text: "If uptime falls below 99.9%, Client shall receive service credits: 10% for 99.0-99.9%, 25% for 95.0-99.0%, 50% for below 95.0%."
+        - type: "support"
+          text: "Provider shall respond to Critical issues within 1 hour, High within 4 hours, Medium within 1 business day."
+      contract_value: 30000000
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["99.9%", "service credits", "support response", "SLA"]
+    tags: ["saas", "sla"]
+    difficulty: "medium"
+
+  - id: "legal_024"
+    description: "Payment terms extending beyond 60 days from invoice — Subcontract Act concern"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "subcontract_agreement"
+      clauses:
+        - type: "payment"
+          text: "Client shall pay Provider within one hundred and twenty (120) days from the date of invoice."
+      relationship: "subcontract"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["60 days", "Subcontract Act", "shitauke", "payment terms"]
+    tags: ["payment", "subcontract-act"]
+    difficulty: "medium"
+
+  - id: "legal_025"
+    description: "Payment within 30 days — compliant with Subcontract Act"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "subcontract_agreement"
+      clauses:
+        - type: "payment"
+          text: "Client shall pay Provider within thirty (30) days from the date of acceptance of the Deliverables."
+      relationship: "subcontract"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["30 days", "payment", "Subcontract Act", "compliant"]
+    tags: ["payment", "subcontract-act"]
+    difficulty: "easy"
+
+  - id: "legal_026"
+    description: "Anti-bribery clause with reporting and training requirements"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "compliance_policy"
+      clauses:
+        - type: "anti_bribery"
+          text: "No employee shall offer, promise, or give any financial or other advantage to a public official or private party to obtain or retain business. All employees must complete annual anti-bribery training."
+        - type: "reporting"
+          text: "Employees shall report suspected bribery through the designated hotline. Reports may be made anonymously."
+        - type: "record_keeping"
+          text: "All gifts, hospitality, and entertainment exceeding JPY 10,000 must be pre-approved and recorded."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["anti-bribery", "training", "reporting", "record keeping"]
+    tags: ["anti-bribery", "compliance"]
+    difficulty: "easy"
+
+  - id: "legal_027"
+    description: "Contract with auto-renewal without notice mechanism"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "term"
+          text: "This Agreement shall automatically renew for successive one-year periods."
+      missing_clauses: ["renewal_notice", "opt_out_mechanism"]
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["auto-renewal", "notice", "opt-out", "evergreen"]
+    tags: ["term", "renewal"]
+    difficulty: "medium"
+
+  - id: "legal_028"
+    description: "Warranty disclaimer without minimum implied warranties"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "software_license"
+      clauses:
+        - type: "warranty"
+          text: "THE SOFTWARE IS PROVIDED 'AS IS' WITHOUT WARRANTY OF ANY KIND. LICENSOR DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE."
+      contract_value: 50000000
+      jurisdiction: "JP"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["warranty", "as-is", "disclaimer", "implied"]
+    tags: ["warranty"]
+    difficulty: "hard"
+
+  - id: "legal_029"
+    description: "Assignment clause requiring prior written consent"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "assignment"
+          text: "Neither party may assign this Agreement without the prior written consent of the other party, which shall not be unreasonably withheld. Notwithstanding the foregoing, either party may assign this Agreement to an affiliate or in connection with a merger or sale of substantially all assets."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["assignment", "consent", "affiliate", "merger"]
+    tags: ["assignment"]
+    difficulty: "easy"
+
+  - id: "legal_030"
+    description: "Contract allowing unilateral price increase without cap or notice"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "pricing"
+          text: "Provider may increase fees at any time by providing written notice. Client's continued use of the Service constitutes acceptance of the new fees."
+      contract_term_years: 3
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["unilateral", "price increase", "cap", "notice period"]
+    tags: ["pricing", "fairness"]
+    difficulty: "medium"
+
+  - id: "legal_031"
+    description: "Data retention clause specifying destruction within 30 days of termination"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "data_processing_agreement"
+      clauses:
+        - type: "data_retention"
+          text: "Upon termination, Processor shall return or securely destroy all Personal Information within thirty (30) days and provide written certification of destruction."
+        - type: "data_portability"
+          text: "Controller may request export of all processed data in a machine-readable format at any time during the term and within thirty (30) days of termination."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["data retention", "destruction", "30 days", "certification"]
+    tags: ["data-protection", "retention"]
+    difficulty: "medium"
+
+  - id: "legal_032"
+    description: "Contract with no data deletion provision despite handling personal data"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "services"
+          text: "Provider processes employee health records for Client's wellness program."
+      missing_clauses: ["data_retention", "data_deletion", "data_portability"]
+      involves_pii: true
+      pii_categories: ["health_data"]
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["data deletion", "health data", "sensitive", "retention"]
+    tags: ["data-protection", "retention"]
+    difficulty: "easy"
+
+  - id: "legal_033"
+    description: "Escrow clause for source code in critical software agreement"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "software_license"
+      clauses:
+        - type: "escrow"
+          text: "Provider shall deposit the Source Code with a designated escrow agent within thirty (30) days of execution. Release conditions include Provider's insolvency, material breach, or discontinuation of the Software."
+        - type: "escrow_updates"
+          text: "Provider shall update the escrowed materials within fifteen (15) days of each major release."
+      contract_value: 100000000
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["escrow", "source code", "release conditions", "insolvency"]
+    tags: ["escrow", "software-license"]
+    difficulty: "medium"
+
+  - id: "legal_034"
+    description: "Exclusivity clause preventing client from using competing services"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "exclusivity"
+          text: "Client agrees to use Provider's services exclusively and shall not engage any third party for services similar to those provided hereunder during the term and for two (2) years following termination."
+      contract_term_years: 3
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["exclusivity", "lock-in", "anti-competitive", "2 years post-termination"]
+    tags: ["exclusivity", "anti-competitive"]
+    difficulty: "hard"
+
+  - id: "legal_035"
+    description: "Proper change control procedure in managed services agreement"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "managed_services_agreement"
+      clauses:
+        - type: "change_control"
+          text: "Either party may propose changes through a written Change Request. No change shall be implemented until both parties have agreed in writing on the scope, timeline, and cost impact. Changes exceeding 10% of annual contract value require executive approval."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["change control", "written", "both parties", "approval"]
+    tags: ["change-control"]
+    difficulty: "easy"
+
+  - id: "legal_036"
+    description: "Subcontract agreement missing mandatory items under Shitauke-ho"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "subcontract_agreement"
+      clauses:
+        - type: "services"
+          text: "Subcontractor shall perform programming services as directed."
+      missing_clauses: ["deliverable_specification", "acceptance_criteria", "payment_terms", "delivery_date"]
+      relationship: "subcontract"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["Subcontract Act", "mandatory items", "specification", "shitauke"]
+    tags: ["subcontract-act", "compliance"]
+    difficulty: "medium"
+
+  - id: "legal_037"
+    description: "Insurance requirement clause in consulting agreement"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "consulting_agreement"
+      clauses:
+        - type: "insurance"
+          text: "Consultant shall maintain professional liability insurance with a minimum coverage of JPY 100,000,000 per occurrence and JPY 300,000,000 aggregate during the term and for two (2) years following completion."
+        - type: "insurance_certificate"
+          text: "Consultant shall provide certificates of insurance upon request."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["insurance", "professional liability", "certificate"]
+    tags: ["insurance"]
+    difficulty: "easy"
+
+  - id: "legal_038"
+    description: "Dispute resolution clause requiring litigation in foreign country"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "dispute_resolution"
+          text: "All disputes shall be resolved exclusively in the courts of Delaware, United States. The Parties submit to the exclusive jurisdiction of such courts."
+      parties_jurisdiction: ["JP", "JP"]
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["foreign jurisdiction", "Delaware", "inconvenient", "Japan"]
+    tags: ["dispute-resolution", "jurisdiction"]
+    difficulty: "medium"
+
+  - id: "legal_039"
+    description: "Whistleblower protection clause aligned with Japan's Whistleblower Protection Act"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "compliance_policy"
+      clauses:
+        - type: "whistleblower"
+          text: "Employees reporting suspected violations through designated internal channels shall be protected from retaliation, demotion, dismissal, or other adverse action. The company shall investigate all reports promptly and maintain confidentiality of the reporter's identity."
+        - type: "channels"
+          text: "Reports may be submitted through the internal hotline, designated compliance officer, or external legal counsel."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["whistleblower", "retaliation", "protection", "confidentiality"]
+    tags: ["whistleblower", "compliance"]
+    difficulty: "medium"
+
+  - id: "legal_040"
+    description: "Contract missing entire representations and warranties section"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "asset_purchase_agreement"
+      clauses:
+        - type: "purchase_price"
+          text: "Buyer shall pay Seller JPY 500,000,000 for the Assets."
+        - type: "closing"
+          text: "Closing shall occur within sixty (60) days of execution."
+      missing_clauses: ["representations_and_warranties"]
+      contract_value: 500000000
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["representations", "warranties", "missing", "due diligence"]
+    tags: ["reps-warranties"]
+    difficulty: "medium"
+
+  - id: "legal_041"
+    description: "Most-favored-nation clause ensuring competitive pricing"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "supply_agreement"
+      clauses:
+        - type: "mfn"
+          text: "If Provider offers more favorable pricing or terms to any other customer for substantially similar services, Provider shall promptly offer the same terms to Client."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["most-favored-nation", "pricing", "competitive"]
+    tags: ["pricing", "mfn"]
+    difficulty: "easy"
+
+  - id: "legal_042"
+    description: "Liquidated damages clause with penalty exceeding actual estimated loss"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "construction_agreement"
+      clauses:
+        - type: "liquidated_damages"
+          text: "In the event of delay, Contractor shall pay liquidated damages of 5% of the total contract value per day of delay, with no cap."
+      contract_value: 1000000000
+      estimated_daily_loss: 1000000
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["liquidated damages", "penalty", "disproportionate", "no cap"]
+    tags: ["damages", "penalty"]
+    difficulty: "hard"
+
+  - id: "legal_043"
+    description: "Reasonable liquidated damages with cap and proportionality"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "construction_agreement"
+      clauses:
+        - type: "liquidated_damages"
+          text: "In the event of delay beyond the agreed completion date, Contractor shall pay liquidated damages of 0.1% of the total contract value per day of delay, up to a maximum of 10% of the total contract value."
+      contract_value: 500000000
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["liquidated damages", "proportional", "cap", "10%"]
+    tags: ["damages", "penalty"]
+    difficulty: "medium"
+
+  - id: "legal_044"
+    description: "Non-solicitation clause with reasonable scope and duration"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "non_solicitation"
+          text: "During the term and for twelve (12) months following termination, neither party shall solicit for employment any employee of the other party who was directly involved in the performance of this Agreement."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["non-solicitation", "12 months", "directly involved", "reasonable"]
+    tags: ["non-solicitation"]
+    difficulty: "easy"
+
+  - id: "legal_045"
+    description: "Contract with unilateral amendment clause"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "terms_of_service"
+      clauses:
+        - type: "amendment"
+          text: "Company reserves the right to modify these Terms at any time without prior notice. Continued use of the Service constitutes acceptance of modified Terms."
+      contract_type: "B2B"
+      contract_value: 20000000
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["unilateral", "amendment", "notice", "consent"]
+    tags: ["amendment", "fairness"]
+    difficulty: "medium"
+
+  - id: "legal_046"
+    description: "Proper amendment clause requiring mutual written agreement"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "amendment"
+          text: "This Agreement may only be amended by a written instrument signed by both parties."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["amendment", "written", "both parties", "signed"]
+    tags: ["amendment"]
+    difficulty: "easy"
+
+  - id: "legal_047"
+    description: "Cross-border data transfer clause without adequate safeguards"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "data_processing_agreement"
+      clauses:
+        - type: "data_transfer"
+          text: "Processor may transfer Personal Information to any country where Processor maintains facilities."
+      missing_clauses: ["transfer_safeguards", "adequacy_assessment"]
+      data_categories: ["employee_data", "customer_data"]
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["cross-border", "transfer", "safeguards", "APPI"]
+    tags: ["data-protection", "cross-border"]
+    difficulty: "hard"
+
+  - id: "legal_048"
+    description: "Business continuity and disaster recovery requirements"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "managed_services_agreement"
+      clauses:
+        - type: "bcdr"
+          text: "Provider shall maintain a business continuity plan and test it annually. Recovery Time Objective (RTO) shall not exceed 4 hours and Recovery Point Objective (RPO) shall not exceed 1 hour for critical systems."
+        - type: "bcdr_reporting"
+          text: "Provider shall share BCP test results with Client within thirty (30) days of each test."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["business continuity", "RTO", "RPO", "disaster recovery"]
+    tags: ["bcdr"]
+    difficulty: "medium"
+
+  - id: "legal_049"
+    description: "Severability clause preserving remainder of agreement"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "severability"
+          text: "If any provision of this Agreement is held invalid or unenforceable, the remaining provisions shall continue in full force and effect. The parties shall negotiate in good faith a valid substitute provision."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["severability", "invalid", "remaining", "good faith"]
+    tags: ["boilerplate"]
+    difficulty: "easy"
+
+  - id: "legal_050"
+    description: "Entire agreement clause with carve-out for fraud"
+    subject_kind: "clause_set"
+    input_payload:
+      document_type: "service_agreement"
+      clauses:
+        - type: "entire_agreement"
+          text: "This Agreement constitutes the entire agreement between the parties and supersedes all prior negotiations, representations, and agreements. Nothing in this clause shall limit liability for fraud or fraudulent misrepresentation."
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["entire agreement", "supersedes", "fraud", "carve-out"]
+    tags: ["boilerplate"]
+    difficulty: "easy"

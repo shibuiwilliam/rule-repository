@@ -1,0 +1,292 @@
+version: 1
+template:
+  name: hr-overtime
+  description: HR rules for overtime limits, 36-agreement requirements, health guidance thresholds, and premium pay rates under Japanese labor law
+  tags:
+  - hr
+  - overtime
+  - japan
+  - labor-law
+  - compliance
+rules:
+- statement: Overtime work MUST NOT be assigned without a valid written 36 Agreement (三六協定) filed with the local Labor Standards Inspection Office.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/attendance/jp
+  tags:
+  - overtime
+  - 36-agreement
+  - labor-standards-act
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  review_cadence: annual
+  rationale: Labor Standards Act Article 36 requires a written labor-management agreement for any overtime or holiday work. Working employees beyond statutory hours without this agreement is a criminal offense.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '36'
+    paragraph: '1'
+  preconditions:
+  - Employee is not exempt from overtime provisions (e.g., managerial/supervisory position under Art. 41).
+  exceptions:
+  - Emergency situations under Art. 33 (disaster, urgent necessity) allow temporary overtime without a 36 Agreement, subject to post-facto notification.
+  following_examples:
+  - Company has a current 36 Agreement filed with the LSIO and assigns 2 hours overtime.
+  violation_examples:
+  - Manager asks employee to stay late but no 36 Agreement has been filed for this fiscal year.
+
+- statement: Monthly overtime hours MUST NOT exceed 45 hours under the general 36 Agreement limit.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - hr/attendance/jp
+  tags:
+  - overtime
+  - monthly-limit
+  - 36-agreement
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: The 2019 Work Style Reform Act codified the overtime cap. The general limit is 45 hours/month and 360 hours/year.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '36'
+    paragraph: '4'
+  preconditions:
+  - A valid 36 Agreement is on file.
+  - No special-clause (特別条項) provision applies for the current period.
+  exceptions:
+  - A special-clause 36 Agreement may allow exceeding 45 hours/month for up to 6 months per year, subject to the absolute cap.
+  following_examples:
+  - Employee worked 40 hours of overtime this month — within the 45-hour limit.
+  violation_examples:
+  - Employee's monthly overtime reaches 50 hours with no special-clause agreement.
+
+- statement: Annual overtime hours MUST NOT exceed 360 hours under the general 36 Agreement limit.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - hr/attendance/jp
+  tags:
+  - overtime
+  - annual-limit
+  - 36-agreement
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Standards Act Article 36(4) sets the annual cap at 360 hours for the general provision.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '36'
+    paragraph: '4'
+  preconditions:
+  - A valid 36 Agreement is on file without special-clause invocation for the year.
+  exceptions:
+  - A special-clause 36 Agreement may allow up to 720 hours/year, subject to monthly and multi-month average caps.
+  following_examples:
+  - Employee's annual overtime total is 340 hours at year-end — within the 360-hour limit.
+  violation_examples:
+  - Employee's annual overtime reaches 380 hours with no special-clause agreement in effect.
+
+- statement: Even with a special-clause 36 Agreement, monthly overtime MUST NOT exceed 100 hours (including holiday work), and the average over any 2-6 month period MUST NOT exceed 80 hours.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/attendance/jp
+  tags:
+  - overtime
+  - absolute-cap
+  - special-clause
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: The absolute cap introduced by the Work Style Reform Act applies even when special clauses are invoked. Violation carries criminal penalties.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '36'
+    paragraph: '6'
+  preconditions:
+  - A special-clause 36 Agreement is in effect.
+  exceptions:
+  - Certain industries (construction, automobile transport, medical professionals) had transitional grace periods until April 2024.
+  following_examples:
+  - Employee works 95 hours of overtime (including holiday work) in a month under a special clause — within the 100-hour cap.
+  violation_examples:
+  - Employee works 105 hours of overtime (including holiday work) in a single month.
+
+- statement: Annual overtime MUST NOT exceed 720 hours even under a special-clause 36 Agreement.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/attendance/jp
+  tags:
+  - overtime
+  - annual-cap
+  - special-clause
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Absolute annual cap per Labor Standards Act Article 36(5).
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '36'
+    paragraph: '5'
+  preconditions:
+  - A special-clause 36 Agreement is in effect.
+  exceptions:
+  - New technology R&D workers (新技術・新商品の研究開発) are exempt from the annual cap under Art. 36(11), though health measures are required.
+  following_examples:
+  - Employee's annual overtime total under a special clause is 700 hours — within the 720-hour cap.
+  violation_examples:
+  - Employee's annual overtime reaches 750 hours despite a special-clause agreement.
+
+- statement: The special clause of a 36 Agreement MUST NOT be invoked for more than 6 months in any 12-month period.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - hr/attendance/jp
+  tags:
+  - overtime
+  - special-clause
+  - frequency-limit
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Standards Act Article 36(5) limits the frequency of special clause invocations to prevent normalization of excessive overtime.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '36'
+    paragraph: '5'
+  preconditions:
+  - A special-clause 36 Agreement is in effect.
+  exceptions:
+  - None. The 6-month limit is absolute.
+  following_examples:
+  - Special clause was invoked in January, February, March, July, August, and September (6 months in 12) — at the limit.
+  violation_examples:
+  - Special clause has been invoked 7 times in the past 12 months.
+
+- statement: Overtime premium pay MUST be at least 25% above the base hourly wage for hours exceeding the statutory limit.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/attendance/jp
+  tags:
+  - overtime
+  - premium-pay
+  - wages
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Standards Act Article 37(1) requires premium pay for overtime work.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '37'
+    paragraph: '1'
+  preconditions:
+  - Employee has worked beyond the statutory daily or weekly working hours.
+  exceptions:
+  - Employees in managerial/supervisory positions (管理監督者) under Art. 41(2) are not entitled to overtime premium (but late-night premium still applies).
+  following_examples:
+  - Employee's base rate is 2000 yen/hour; overtime rate is 2500 yen/hour (25% premium).
+  violation_examples:
+  - Employee works 3 hours overtime but is paid the same base rate.
+
+- statement: When monthly overtime exceeds 60 hours, the premium rate MUST be at least 50% above base hourly wage for the excess hours.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/attendance/jp
+  tags:
+  - overtime
+  - premium-pay
+  - 60-hour-rule
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Standards Act Article 37(1) proviso, effective for all employers since April 2023.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '37'
+    paragraph: 1 proviso
+  preconditions:
+  - Employee's monthly overtime exceeds 60 hours.
+  exceptions:
+  - Employer and employee may agree to substitute compensatory leave (代替休暇) for the additional 25% premium portion.
+  following_examples:
+  - Employee works 70 hours of overtime; hours 1-60 are at 25% premium, hours 61-70 are at 50% premium.
+  violation_examples:
+  - Employee works 65 hours of overtime but the entire period is paid at only 25% premium.
+
+- statement: When an employee's monthly overtime exceeds 80 hours, the employer MUST offer a consultation with an occupational health physician if the employee requests it.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/attendance/jp
+  tags:
+  - overtime
+  - health-guidance
+  - occupational-health
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Industrial Safety and Health Act Article 66-8 requires employers to arrange physician consultations for employees working excessive overtime to prevent karoshi (death from overwork).
+  source_refs:
+  - statute: Industrial Safety and Health Act (労働安全衛生法)
+    article: '66-8'
+  preconditions:
+  - Employee's monthly overtime (including holiday work) exceeds 80 hours.
+  - Employee has requested a consultation.
+  exceptions:
+  - For employees in R&D roles exempt under Art. 36(11), the threshold is reduced to 100 hours but health measures remain mandatory.
+  following_examples:
+  - Employee worked 85 hours of overtime, requested a doctor consultation, and the employer arranged it within 1 month.
+  violation_examples:
+  - Employee worked 90 hours of overtime and requested a doctor consultation, but the employer took no action.
+
+- statement: Employers MUST NOT allow employees to under-report working hours (so-called service overtime or サービス残業).
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/attendance/jp
+  tags:
+  - overtime
+  - service-overtime
+  - record-keeping
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Unreported overtime is a violation of the Labor Standards Act and is aggressively enforced by the Labor Standards Inspection Office. It also creates liability for unpaid wages.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '32'
+    note: 'Enforcement guideline: Guidelines on Appropriate Recording of Working Hours (労働時間の適正な把握のために使用者が講ずべき措置に関するガイドライン)'
+  preconditions:
+  - Employees are performing work beyond scheduled hours.
+  exceptions:
+  - None. Service overtime is never permissible regardless of employee consent or managerial instruction.
+  following_examples:
+  - Company installs an objective time-tracking system and reconciles discrepancies monthly.
+  violation_examples:
+  - Manager instructs employees to clock out at the scheduled time even when continuing to work.

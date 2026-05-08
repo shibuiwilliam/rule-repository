@@ -1,0 +1,1855 @@
+version: "1.0"
+domain: "hr"
+description: "HR/Labor golden dataset v1 — 100 expert-labeled cases covering overtime, leave, maternity/paternity, work hours, employment contracts, workplace safety, wage/compensation, harassment, termination, and remote work under Japanese labor law"
+cases:
+  # =========================================================================
+  # 1. Overtime compliance (cases hr_001 – hr_010)
+  # =========================================================================
+  - id: "hr_001"
+    description: "Employee works 40 hours overtime in a month with a valid 36 Agreement — within general limit"
+    subject_kind: "event"
+    input_payload:
+      event_type: "overtime_record"
+      employee_id: "E001"
+      month: "2026-04"
+      overtime_hours: 40
+      jurisdiction: "JP"
+      agreement_36_status: "active"
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["overtime_monthly_45h"]
+    expected_reasoning_keywords: ["within", "45-hour", "general limit"]
+    tags: ["overtime", "general-limit"]
+    difficulty: "easy"
+
+  - id: "hr_002"
+    description: "Employee works 50 hours overtime in a month without a special clause — exceeds general limit"
+    subject_kind: "event"
+    input_payload:
+      event_type: "overtime_record"
+      employee_id: "E004"
+      month: "2026-04"
+      overtime_hours: 50
+      jurisdiction: "JP"
+      agreement_36_status: "active"
+      special_clause: false
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["overtime_monthly_45h"]
+    expected_reasoning_keywords: ["exceeds", "45-hour", "special clause", "not active"]
+    tags: ["overtime", "monthly-limit", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_003"
+    description: "Employee works 50 hours overtime with a valid special clause — within special clause limits"
+    subject_kind: "event"
+    input_payload:
+      event_type: "overtime_record"
+      employee_id: "E004"
+      month: "2026-04"
+      overtime_hours: 50
+      holiday_work_hours: 8
+      jurisdiction: "JP"
+      agreement_36_status: "special_clause_active"
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["overtime_special_clause_100h"]
+    expected_reasoning_keywords: ["special clause", "within", "100-hour", "cap"]
+    tags: ["overtime", "special-clause"]
+    difficulty: "medium"
+
+  - id: "hr_004"
+    description: "Employee works 105 hours overtime (including holiday work) under special clause — exceeds absolute cap"
+    subject_kind: "event"
+    input_payload:
+      event_type: "overtime_record"
+      employee_id: "E004"
+      month: "2026-04"
+      overtime_hours: 95
+      holiday_work_hours: 10
+      jurisdiction: "JP"
+      agreement_36_status: "special_clause_active"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["overtime_special_clause_100h"]
+    expected_reasoning_keywords: ["exceeds", "100-hour", "absolute cap", "criminal"]
+    tags: ["overtime", "absolute-cap", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_005"
+    description: "Employee's rolling 3-month average overtime is 82 hours under special clause — exceeds multi-month average"
+    subject_kind: "event"
+    input_payload:
+      event_type: "overtime_record"
+      employee_id: "E004"
+      month: "2026-04"
+      overtime_hours: 90
+      jurisdiction: "JP"
+      agreement_36_status: "special_clause_active"
+      evaluation_mode: "calendar"
+      calendar_context:
+        fiscal_year: "2026"
+        monthly_overtime:
+          "2026-02": 78
+          "2026-03": 78
+          "2026-04": 90
+        ytd_overtime_hours: 350
+    expected_verdict: "DENY"
+    expected_rule_ids: ["overtime_special_clause_100h", "overtime_multi_month_avg_80h"]
+    expected_reasoning_keywords: ["average", "exceeds", "80-hour", "2-6 month"]
+    tags: ["overtime", "multi-month-average", "calendar-mode"]
+    difficulty: "hard"
+
+  - id: "hr_006"
+    description: "Annual overtime reaches 365 hours without special clause — exceeds annual general limit"
+    subject_kind: "event"
+    input_payload:
+      event_type: "overtime_record"
+      employee_id: "E007"
+      month: "2026-03"
+      overtime_hours: 30
+      jurisdiction: "JP"
+      agreement_36_status: "active"
+      evaluation_mode: "calendar"
+      calendar_context:
+        fiscal_year: "2025"
+        ytd_overtime_hours: 365
+    expected_verdict: "DENY"
+    expected_rule_ids: ["overtime_annual_360h"]
+    expected_reasoning_keywords: ["exceeds", "360-hour", "annual"]
+    tags: ["overtime", "annual-limit", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_007"
+    description: "Special clause invoked for the 7th month in 12 months — exceeds 6-month frequency limit"
+    subject_kind: "event"
+    input_payload:
+      event_type: "overtime_record"
+      employee_id: "E004"
+      month: "2026-04"
+      overtime_hours: 55
+      jurisdiction: "JP"
+      agreement_36_status: "special_clause_active"
+      evaluation_mode: "calendar"
+      calendar_context:
+        fiscal_year: "2025"
+        special_clause_months_used: 7
+    expected_verdict: "DENY"
+    expected_rule_ids: ["overtime_special_clause_6month_limit"]
+    expected_reasoning_keywords: ["special clause", "6 months", "exceeded", "frequency"]
+    tags: ["overtime", "special-clause-frequency"]
+    difficulty: "medium"
+
+  - id: "hr_008"
+    description: "Overtime assigned but no 36 Agreement is on file — illegal overtime"
+    subject_kind: "event"
+    input_payload:
+      event_type: "overtime_record"
+      employee_id: "E001"
+      month: "2026-04"
+      overtime_hours: 5
+      jurisdiction: "JP"
+      agreement_36_status: "missing"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["overtime_36_agreement_required"]
+    expected_reasoning_keywords: ["36 Agreement", "missing", "illegal", "Art. 36"]
+    tags: ["overtime", "36-agreement", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_009"
+    description: "Managerial employee works 60 hours overtime — Art. 41 exemption applies"
+    subject_kind: "event"
+    input_payload:
+      event_type: "overtime_record"
+      employee_id: "E010"
+      month: "2026-04"
+      overtime_hours: 60
+      jurisdiction: "JP"
+      agreement_36_status: "active"
+      is_manager: true
+      management_exemption: true
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["overtime_monthly_45h"]
+    expected_reasoning_keywords: ["managerial", "exempt", "Art. 41", "supervisory"]
+    tags: ["overtime", "manager-exemption"]
+    difficulty: "hard"
+
+  - id: "hr_010"
+    description: "R&D worker exceeds 720h annual cap — exempt under Art. 36(11) but health measures required"
+    subject_kind: "event"
+    input_payload:
+      event_type: "overtime_record"
+      employee_id: "E004"
+      month: "2026-03"
+      overtime_hours: 40
+      jurisdiction: "JP"
+      agreement_36_status: "special_clause_active"
+      is_rnd_worker: true
+      evaluation_mode: "calendar"
+      calendar_context:
+        fiscal_year: "2025"
+        ytd_overtime_hours: 730
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["overtime_annual_720h", "overtime_health_guidance"]
+    expected_reasoning_keywords: ["R&D", "exempt", "annual cap", "health measures", "mandatory"]
+    tags: ["overtime", "rnd-exemption", "health"]
+    difficulty: "hard"
+
+  # =========================================================================
+  # 2. Paid leave (cases hr_011 – hr_020)
+  # =========================================================================
+  - id: "hr_011"
+    description: "Employee with 7 months tenure and 85% attendance requests annual leave — entitled to 10 days"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_request"
+      employee_id: "E001"
+      leave_type: "annual"
+      leave_days: 2
+      jurisdiction: "JP"
+      tenure_months: 7
+      attendance_rate: 0.85
+      annual_leave_entitled: 10
+      annual_leave_remaining: 10
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["leave_annual_entitlement"]
+    expected_reasoning_keywords: ["entitled", "10 days", "6 months", "80%"]
+    tags: ["leave", "annual-leave", "entitlement"]
+    difficulty: "easy"
+
+  - id: "hr_012"
+    description: "Employee with 4 months tenure requests annual leave — not yet entitled"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_request"
+      employee_id: "E002"
+      leave_type: "annual"
+      leave_days: 1
+      jurisdiction: "JP"
+      tenure_months: 4
+      attendance_rate: 0.95
+      annual_leave_entitled: 0
+      annual_leave_remaining: 0
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["leave_annual_entitlement"]
+    expected_reasoning_keywords: ["not yet", "6 months", "continuous employment"]
+    tags: ["leave", "annual-leave", "not-entitled"]
+    difficulty: "easy"
+
+  - id: "hr_013"
+    description: "Employee with 15 days entitlement has taken 0 days by November — mandatory 5-day minimum at risk"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_compliance_check"
+      employee_id: "E008"
+      jurisdiction: "JP"
+      annual_leave_entitled: 15
+      annual_leave_taken: 0
+      month: "2026-11"
+      evaluation_mode: "calendar"
+      calendar_context:
+        fiscal_year: "2026"
+        ytd_leave_days: 0
+    expected_verdict: "DENY"
+    expected_rule_ids: ["leave_mandatory_5days"]
+    expected_reasoning_keywords: ["5 days", "mandatory", "taken 0", "employer obligation"]
+    tags: ["leave", "mandatory-minimum", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_014"
+    description: "Employee has taken 5 days of annual leave by September — compliant with 5-day minimum"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_compliance_check"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      annual_leave_entitled: 20
+      annual_leave_taken: 5
+      month: "2026-09"
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["leave_mandatory_5days"]
+    expected_reasoning_keywords: ["5 days", "met", "compliant"]
+    tags: ["leave", "mandatory-minimum", "compliant"]
+    difficulty: "easy"
+
+  - id: "hr_015"
+    description: "Company policy expires unused leave after 1 year — violates 2-year carryover statutory minimum"
+    subject_kind: "event"
+    input_payload:
+      event_type: "policy_review"
+      employee_id: "E003"
+      jurisdiction: "JP"
+      leave_carryover_policy_years: 1
+      statutory_minimum_years: 2
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["leave_carryover_2years"]
+    expected_reasoning_keywords: ["carryover", "2 years", "statute of limitations", "below"]
+    tags: ["leave", "carryover", "policy-violation"]
+    difficulty: "medium"
+
+  - id: "hr_016"
+    description: "Part-time employee working 3 days/week requests proportional annual leave"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_request"
+      employee_id: "E003"
+      leave_type: "annual"
+      leave_days: 1
+      jurisdiction: "JP"
+      tenure_months: 48
+      attendance_rate: 0.92
+      employment_type: "part_time"
+      scheduled_days_per_week: 3
+      annual_leave_entitled: 8
+      annual_leave_remaining: 5
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["leave_annual_entitlement", "leave_proportional"]
+    expected_reasoning_keywords: ["part-time", "proportional", "比例付与"]
+    tags: ["leave", "proportional", "part-time"]
+    difficulty: "medium"
+
+  - id: "hr_017"
+    description: "Employee requests half-day annual leave — company should accommodate"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_request"
+      employee_id: "E001"
+      leave_type: "annual_half_day"
+      leave_days: 0.5
+      jurisdiction: "JP"
+      annual_leave_remaining: 12
+      reason: "medical_appointment"
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["leave_half_day"]
+    expected_reasoning_keywords: ["half-day", "accommodate", "flexibility"]
+    tags: ["leave", "half-day"]
+    difficulty: "easy"
+
+  - id: "hr_018"
+    description: "Employer designates all 20 days as planned leave — must reserve at least 5 days for free use"
+    subject_kind: "event"
+    input_payload:
+      event_type: "planned_leave_schedule"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      annual_leave_entitled: 20
+      planned_leave_days_designated: 20
+      free_use_days_remaining: 0
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["leave_planned_free_use"]
+    expected_reasoning_keywords: ["5 days", "free use", "employee choice", "Art. 39(6)"]
+    tags: ["leave", "planned-leave", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_019"
+    description: "Employee with 75% attendance rate requests annual leave — below 80% threshold"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_request"
+      employee_id: "E008"
+      leave_type: "annual"
+      leave_days: 1
+      jurisdiction: "JP"
+      tenure_months: 12
+      attendance_rate: 0.75
+      annual_leave_entitled: 0
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["leave_annual_entitlement"]
+    expected_reasoning_keywords: ["attendance", "80%", "below", "not entitled"]
+    tags: ["leave", "attendance-threshold"]
+    difficulty: "medium"
+
+  - id: "hr_020"
+    description: "Employee's annual leave request coincides with critical business period — employer exercises time-change right (時季変更権)"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_request"
+      employee_id: "E001"
+      leave_type: "annual"
+      leave_days: 5
+      jurisdiction: "JP"
+      annual_leave_remaining: 12
+      employer_time_change_right: true
+      business_necessity: "year_end_closing"
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["leave_time_change_right"]
+    expected_reasoning_keywords: ["time-change right", "時季変更権", "business necessity", "alternative dates"]
+    tags: ["leave", "time-change-right"]
+    difficulty: "hard"
+
+  # =========================================================================
+  # 3. Maternity/paternity leave (cases hr_021 – hr_030)
+  # =========================================================================
+  - id: "hr_021"
+    description: "Pregnant employee requests 6 weeks prenatal leave — must be granted"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_request"
+      employee_id: "E005"
+      leave_type: "maternity_prenatal"
+      leave_days: 42
+      jurisdiction: "JP"
+      expected_delivery_date: "2026-06-15"
+      pregnancy_type: "single"
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["leave_maternity_prenatal"]
+    expected_reasoning_keywords: ["6 weeks", "prenatal", "Art. 65", "must be granted"]
+    tags: ["maternity", "prenatal"]
+    difficulty: "easy"
+
+  - id: "hr_022"
+    description: "Employer denies prenatal leave, suggesting paid leave instead — violation"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_denial"
+      employee_id: "E005"
+      leave_type: "maternity_prenatal"
+      jurisdiction: "JP"
+      denial_reason: "use_paid_leave_instead"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["leave_maternity_prenatal"]
+    expected_reasoning_keywords: ["denied", "prenatal", "violation", "separate entitlement"]
+    tags: ["maternity", "denial", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_023"
+    description: "Employee returns from postnatal leave after 6 weeks with doctor's certificate — permitted"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_early_return"
+      employee_id: "E005"
+      leave_type: "maternity_postnatal"
+      jurisdiction: "JP"
+      weeks_completed: 6
+      doctor_certificate: true
+      employee_request: true
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["leave_maternity_postnatal"]
+    expected_reasoning_keywords: ["6 weeks", "doctor", "certificate", "employee request"]
+    tags: ["maternity", "early-return"]
+    difficulty: "medium"
+
+  - id: "hr_024"
+    description: "Employee returns from postnatal leave after 4 weeks even with doctor's certificate — first 6 weeks are mandatory"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_early_return"
+      employee_id: "E005"
+      leave_type: "maternity_postnatal"
+      jurisdiction: "JP"
+      weeks_completed: 4
+      doctor_certificate: true
+      employee_request: true
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["leave_maternity_postnatal"]
+    expected_reasoning_keywords: ["first 6 weeks", "mandatory", "cannot return", "regardless"]
+    tags: ["maternity", "mandatory-postnatal"]
+    difficulty: "medium"
+
+  - id: "hr_025"
+    description: "Employer terminates employee 15 days after returning from maternity leave — protected period"
+    subject_kind: "event"
+    input_payload:
+      event_type: "termination_request"
+      employee_id: "E005"
+      jurisdiction: "JP"
+      days_since_maternity_return: 15
+      termination_reason: "position_eliminated"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["leave_maternity_dismissal_protection"]
+    expected_reasoning_keywords: ["30 days", "Art. 19", "protected", "dismissal prohibited"]
+    tags: ["maternity", "dismissal-protection", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_026"
+    description: "Father requests 4 weeks postnatal paternity leave split into two 2-week periods — permitted"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_request"
+      employee_id: "E001"
+      leave_type: "postnatal_paternity"
+      jurisdiction: "JP"
+      child_birth_date: "2026-04-01"
+      leave_periods:
+        - start: "2026-04-01"
+          end: "2026-04-14"
+          days: 14
+        - start: "2026-05-01"
+          end: "2026-05-14"
+          days: 14
+      total_days: 28
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["leave_postnatal_paternity"]
+    expected_reasoning_keywords: ["4 weeks", "two periods", "8 weeks", "産後パパ育休"]
+    tags: ["paternity", "postnatal-paternity"]
+    difficulty: "medium"
+
+  - id: "hr_027"
+    description: "Male employee's childcare leave request denied because company policy limits it to mothers — discrimination"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_denial"
+      employee_id: "E001"
+      leave_type: "childcare"
+      jurisdiction: "JP"
+      denial_reason: "mothers_only_policy"
+      child_age_months: 6
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["leave_childcare_gender_neutral"]
+    expected_reasoning_keywords: ["regardless of gender", "Art. 5", "discrimination", "both parents"]
+    tags: ["childcare", "gender-discrimination", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_028"
+    description: "Employee with multiple pregnancy requests 14 weeks prenatal leave — extended period applies"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_request"
+      employee_id: "E005"
+      leave_type: "maternity_prenatal"
+      leave_days: 98
+      jurisdiction: "JP"
+      expected_delivery_date: "2026-09-01"
+      pregnancy_type: "multiple"
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["leave_maternity_prenatal"]
+    expected_reasoning_keywords: ["14 weeks", "multiple pregnancy", "extended"]
+    tags: ["maternity", "multiple-pregnancy"]
+    difficulty: "medium"
+
+  - id: "hr_029"
+    description: "Employee requests childcare leave but has been employed for only 8 months — may be excluded by labor-management agreement"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_request"
+      employee_id: "E002"
+      leave_type: "childcare"
+      jurisdiction: "JP"
+      tenure_months: 8
+      child_age_months: 3
+      labor_management_agreement_excludes_under_1yr: true
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["leave_childcare_entitlement"]
+    expected_reasoning_keywords: ["less than 1 year", "labor-management agreement", "exclusion", "permitted"]
+    tags: ["childcare", "tenure-exclusion"]
+    difficulty: "hard"
+
+  - id: "hr_030"
+    description: "Employee requests 30 days of family care leave for elderly parent — within 93-day entitlement"
+    subject_kind: "event"
+    input_payload:
+      event_type: "leave_request"
+      employee_id: "E007"
+      leave_type: "family_care"
+      leave_days: 30
+      jurisdiction: "JP"
+      family_member: "parent"
+      care_level: "requires_long_term_care"
+      previous_family_care_days_used: 0
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["leave_family_care"]
+    expected_reasoning_keywords: ["93 days", "family care", "Art. 11", "within"]
+    tags: ["family-care", "entitlement"]
+    difficulty: "easy"
+
+  # =========================================================================
+  # 4. Work hours (cases hr_031 – hr_040)
+  # =========================================================================
+  - id: "hr_031"
+    description: "Employee works 8 hours per day, 40 hours per week — at statutory maximum, compliant"
+    subject_kind: "event"
+    input_payload:
+      event_type: "attendance_record"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      daily_hours: 8.0
+      weekly_hours: 40.0
+      break_minutes: 60
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["work_hours_daily_8h", "work_hours_weekly_40h"]
+    expected_reasoning_keywords: ["8 hours", "40 hours", "statutory", "compliant"]
+    tags: ["work-hours", "statutory-limit"]
+    difficulty: "easy"
+
+  - id: "hr_032"
+    description: "Employee works 9 hours without a 36 Agreement — exceeds daily statutory limit"
+    subject_kind: "event"
+    input_payload:
+      event_type: "attendance_record"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      daily_hours: 9.0
+      break_minutes: 60
+      agreement_36_status: "missing"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["work_hours_daily_8h", "overtime_36_agreement_required"]
+    expected_reasoning_keywords: ["exceeds", "8 hours", "no 36 Agreement", "illegal"]
+    tags: ["work-hours", "no-agreement", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_033"
+    description: "Employee works 7 hours with only 30-minute break — insufficient for 6+ hour workday"
+    subject_kind: "event"
+    input_payload:
+      event_type: "attendance_record"
+      employee_id: "E008"
+      jurisdiction: "JP"
+      daily_hours: 7.0
+      break_minutes: 30
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["break_45min_over_6h"]
+    expected_reasoning_keywords: ["45 minutes", "break", "6 hours", "Art. 34"]
+    tags: ["work-hours", "break-time", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_034"
+    description: "Employee works 9 hours with 45-minute break — needs 60 minutes for 8+ hour workday"
+    subject_kind: "event"
+    input_payload:
+      event_type: "attendance_record"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      daily_hours: 9.0
+      break_minutes: 45
+      agreement_36_status: "active"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["break_60min_over_8h"]
+    expected_reasoning_keywords: ["60 minutes", "break", "8 hours", "insufficient"]
+    tags: ["work-hours", "break-time", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_035"
+    description: "Break scheduled at start of shift (9:00-9:45) before continuous work — break must be mid-shift"
+    subject_kind: "event"
+    input_payload:
+      event_type: "attendance_record"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      daily_hours: 8.0
+      break_minutes: 45
+      break_start: "09:00"
+      break_end: "09:45"
+      shift_start: "09:00"
+      shift_end: "17:45"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["break_mid_shift"]
+    expected_reasoning_keywords: ["mid-shift", "Art. 34(2)", "not at beginning", "during working hours"]
+    tags: ["work-hours", "break-placement", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_036"
+    description: "Employee works 13 consecutive days without a day off — exceeds weekly rest requirement"
+    subject_kind: "event"
+    input_payload:
+      event_type: "attendance_anomaly"
+      employee_id: "E004"
+      jurisdiction: "JP"
+      consecutive_work_days: 13
+      evaluation_mode: "sequence"
+      event_window:
+        start_date: "2026-04-01"
+        end_date: "2026-04-13"
+        aggregates:
+          days_worked: 13
+          rest_days: 0
+    expected_verdict: "DENY"
+    expected_rule_ids: ["rest_weekly_1day"]
+    expected_reasoning_keywords: ["weekly rest", "Art. 35", "1 day per week", "13 consecutive"]
+    tags: ["work-hours", "weekly-rest", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_037"
+    description: "17-year-old part-time worker scheduled until 23:00 — minors prohibited from late-night work"
+    subject_kind: "event"
+    input_payload:
+      event_type: "schedule_check"
+      employee_id: "E_MINOR_01"
+      jurisdiction: "JP"
+      employee_age: 17
+      shift_end: "23:00"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["minor_late_night_prohibition"]
+    expected_reasoning_keywords: ["under 18", "22:00-05:00", "Art. 61", "prohibited"]
+    tags: ["work-hours", "minor", "late-night", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_038"
+    description: "Employee works 22:00-01:00 without late-night premium pay — missing premium"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compensation_check"
+      employee_id: "E004"
+      jurisdiction: "JP"
+      work_period_start: "22:00"
+      work_period_end: "01:00"
+      late_night_premium_paid: false
+      base_rate: 2000
+      actual_rate: 2000
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["late_night_premium"]
+    expected_reasoning_keywords: ["25%", "late-night", "22:00-05:00", "premium"]
+    tags: ["work-hours", "late-night", "premium-pay", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_039"
+    description: "Small retail shop with 8 employees applies 44-hour weekly limit — valid under Art. 40"
+    subject_kind: "event"
+    input_payload:
+      event_type: "attendance_record"
+      employee_id: "E_RETAIL_01"
+      jurisdiction: "JP"
+      weekly_hours: 43.0
+      industry: "commerce"
+      workplace_size: 8
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["work_hours_weekly_44h_special"]
+    expected_reasoning_keywords: ["10 or fewer", "specified industry", "44 hours", "Art. 40"]
+    tags: ["work-hours", "small-business", "special-provision"]
+    difficulty: "hard"
+
+  - id: "hr_040"
+    description: "Flex-time employee's monthly average exceeds 40h/week but 4-week average is within limit"
+    subject_kind: "event"
+    input_payload:
+      event_type: "attendance_record"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      flex_time_system: true
+      settlement_period_weeks: 4
+      weekly_hours_average: 39.5
+      some_weeks_exceeded_40: true
+      evaluation_mode: "sequence"
+      event_window:
+        start_date: "2026-04-01"
+        end_date: "2026-04-28"
+        aggregates:
+          total_hours: 158
+          average_weekly: 39.5
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["work_hours_flex_time"]
+    expected_reasoning_keywords: ["flex-time", "average", "settlement period", "within"]
+    tags: ["work-hours", "flex-time"]
+    difficulty: "hard"
+
+  # =========================================================================
+  # 5. Employment contracts (cases hr_041 – hr_050)
+  # =========================================================================
+  - id: "hr_041"
+    description: "New hire starts without written working condition notification — violation of Art. 15"
+    subject_kind: "event"
+    input_payload:
+      event_type: "onboarding_check"
+      employee_id: "E_NEW_01"
+      jurisdiction: "JP"
+      written_conditions_provided: false
+      start_date: "2026-04-01"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["employment_working_conditions_notification"]
+    expected_reasoning_keywords: ["Art. 15", "written notification", "working conditions", "mandatory"]
+    tags: ["employment", "working-conditions", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_042"
+    description: "Non-specialist employee under 60 given a 4-year fixed-term contract — exceeds 3-year limit"
+    subject_kind: "event"
+    input_payload:
+      event_type: "contract_review"
+      employee_id: "E006"
+      jurisdiction: "JP"
+      contract_type: "fixed_term"
+      contract_duration_years: 4
+      has_specialized_knowledge: false
+      employee_age: 35
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["employment_fixed_term_3year_limit"]
+    expected_reasoning_keywords: ["3 years", "Art. 14", "non-specialist", "exceeds"]
+    tags: ["employment", "fixed-term", "duration-limit", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_043"
+    description: "Specialist employee (certified) given a 5-year fixed-term contract — permitted under Art. 14 exception"
+    subject_kind: "event"
+    input_payload:
+      event_type: "contract_review"
+      employee_id: "E_SPEC_01"
+      jurisdiction: "JP"
+      contract_type: "fixed_term"
+      contract_duration_years: 5
+      has_specialized_knowledge: true
+      mhlw_certification: true
+      employee_age: 40
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["employment_fixed_term_3year_limit"]
+    expected_reasoning_keywords: ["specialist", "5 years", "exception", "Art. 14"]
+    tags: ["employment", "fixed-term", "specialist-exception"]
+    difficulty: "medium"
+
+  - id: "hr_044"
+    description: "Fixed-term employee in 6th year of consecutive renewals requests indefinite conversion — must be granted"
+    subject_kind: "event"
+    input_payload:
+      event_type: "contract_conversion_request"
+      employee_id: "E006"
+      jurisdiction: "JP"
+      contract_type: "fixed_term"
+      total_continuous_years: 6
+      conversion_requested: true
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["employment_indefinite_conversion_5year"]
+    expected_reasoning_keywords: ["5 years", "indefinite conversion", "Art. 18", "must be granted"]
+    tags: ["employment", "indefinite-conversion"]
+    difficulty: "easy"
+
+  - id: "hr_045"
+    description: "Employer non-renews fixed-term contract at year 4.5 to avoid the 5-year rule — potential abuse"
+    subject_kind: "event"
+    input_payload:
+      event_type: "contract_non_renewal"
+      employee_id: "E006"
+      jurisdiction: "JP"
+      contract_type: "fixed_term"
+      total_continuous_years: 4.5
+      non_renewal_reason: "budget"
+      pattern_of_renewals: 4
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["employment_indefinite_conversion_5year", "employment_reasonable_expectation"]
+    expected_reasoning_keywords: ["circumvent", "5-year rule", "reasonable expectation", "abuse"]
+    tags: ["employment", "non-renewal", "abuse"]
+    difficulty: "hard"
+
+  - id: "hr_046"
+    description: "Probation extended to 12 months without documented performance concerns — unreasonable"
+    subject_kind: "event"
+    input_payload:
+      event_type: "probation_extension"
+      employee_id: "E002"
+      jurisdiction: "JP"
+      original_probation_months: 3
+      extended_to_months: 12
+      documented_performance_concerns: false
+      advance_notice_given: false
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["employment_probation_limit"]
+    expected_reasoning_keywords: ["6 months", "unreasonable", "documented", "performance"]
+    tags: ["employment", "probation", "extension", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_047"
+    description: "Probation extended from 3 to 6 months with documented concerns and advance notice — acceptable"
+    subject_kind: "event"
+    input_payload:
+      event_type: "probation_extension"
+      employee_id: "E002"
+      jurisdiction: "JP"
+      original_probation_months: 3
+      extended_to_months: 6
+      documented_performance_concerns: true
+      advance_notice_given: true
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["employment_probation_limit"]
+    expected_reasoning_keywords: ["6 months", "documented", "advance notice", "justified"]
+    tags: ["employment", "probation", "extension", "valid"]
+    difficulty: "medium"
+
+  - id: "hr_048"
+    description: "University researcher on fixed-term contract requests conversion after 8 years — 10-year rule applies"
+    subject_kind: "event"
+    input_payload:
+      event_type: "contract_conversion_request"
+      employee_id: "E_RESEARCHER_01"
+      jurisdiction: "JP"
+      contract_type: "fixed_term"
+      total_continuous_years: 8
+      is_university_researcher: true
+      conversion_requested: true
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["employment_researcher_10year_rule"]
+    expected_reasoning_keywords: ["university researcher", "10 years", "extended", "not yet eligible"]
+    tags: ["employment", "researcher-exception", "conversion"]
+    difficulty: "hard"
+
+  - id: "hr_049"
+    description: "Employment contract specifies workplace and duties but omits wage details — incomplete notification"
+    subject_kind: "event"
+    input_payload:
+      event_type: "onboarding_check"
+      employee_id: "E_NEW_02"
+      jurisdiction: "JP"
+      written_conditions_provided: true
+      conditions_include_wages: false
+      conditions_include_hours: true
+      conditions_include_location: true
+      conditions_include_duties: true
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["employment_working_conditions_notification"]
+    expected_reasoning_keywords: ["wages", "incomplete", "Art. 15", "mandatory items"]
+    tags: ["employment", "working-conditions", "incomplete"]
+    difficulty: "medium"
+
+  - id: "hr_050"
+    description: "Employee aged 62 given a 5-year fixed-term contract — permitted under age exception"
+    subject_kind: "event"
+    input_payload:
+      event_type: "contract_review"
+      employee_id: "E_SENIOR_01"
+      jurisdiction: "JP"
+      contract_type: "fixed_term"
+      contract_duration_years: 5
+      has_specialized_knowledge: false
+      employee_age: 62
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["employment_fixed_term_3year_limit"]
+    expected_reasoning_keywords: ["60 or older", "5 years", "exception", "Art. 14"]
+    tags: ["employment", "fixed-term", "age-exception"]
+    difficulty: "medium"
+
+  # =========================================================================
+  # 6. Workplace safety (cases hr_051 – hr_060)
+  # =========================================================================
+  - id: "hr_051"
+    description: "Company with 200 employees has not conducted annual health checks — violation"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compliance_audit"
+      employee_id: "COMPANY_WIDE"
+      jurisdiction: "JP"
+      company_size: 200
+      annual_health_check_conducted: false
+      last_health_check_date: "2024-06-01"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["safety_annual_health_check"]
+    expected_reasoning_keywords: ["Art. 66", "annual", "health examination", "50 or more"]
+    tags: ["safety", "health-check", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_052"
+    description: "Employee with 85 hours overtime requests doctor consultation — employer must arrange it"
+    subject_kind: "event"
+    input_payload:
+      event_type: "health_guidance_request"
+      employee_id: "E004"
+      jurisdiction: "JP"
+      monthly_overtime_hours: 85
+      employee_requested_consultation: true
+      consultation_arranged: false
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["safety_overtime_health_guidance"]
+    expected_reasoning_keywords: ["80 hours", "Art. 66-8", "physician", "consultation", "must arrange"]
+    tags: ["safety", "overtime-health", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_053"
+    description: "Company with 100 employees has never conducted a stress check — violation"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compliance_audit"
+      employee_id: "COMPANY_WIDE"
+      jurisdiction: "JP"
+      company_size: 100
+      stress_check_conducted: false
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["safety_stress_check"]
+    expected_reasoning_keywords: ["stress check", "Art. 66-10", "50 or more", "mandatory"]
+    tags: ["safety", "stress-check", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_054"
+    description: "Company with 30 employees has not conducted stress check — encouraged but not mandatory"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compliance_audit"
+      employee_id: "COMPANY_WIDE"
+      jurisdiction: "JP"
+      company_size: 30
+      stress_check_conducted: false
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["safety_stress_check"]
+    expected_reasoning_keywords: ["fewer than 50", "encouraged", "努力義務", "not mandatory"]
+    tags: ["safety", "stress-check", "small-company"]
+    difficulty: "medium"
+
+  - id: "hr_055"
+    description: "Factory worker exposed to noise has not received specialized health check — violation"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compliance_audit"
+      employee_id: "E_FACTORY_01"
+      jurisdiction: "JP"
+      hazardous_work: true
+      hazard_type: "noise_exposure"
+      special_health_check_conducted: false
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["safety_hazardous_health_check"]
+    expected_reasoning_keywords: ["hazardous", "special health check", "noise", "mandatory"]
+    tags: ["safety", "hazardous-work", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_056"
+    description: "Employee's monthly overtime hits 100 hours — employer must proactively offer doctor consultation even without request"
+    subject_kind: "event"
+    input_payload:
+      event_type: "overtime_threshold_alert"
+      employee_id: "E004"
+      jurisdiction: "JP"
+      monthly_overtime_hours: 100
+      holiday_work_hours: 0
+      employee_requested_consultation: false
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["safety_overtime_health_guidance", "overtime_special_clause_100h"]
+    expected_reasoning_keywords: ["100 hours", "proactive", "health guidance", "even without request"]
+    tags: ["safety", "extreme-overtime", "health"]
+    difficulty: "hard"
+
+  - id: "hr_057"
+    description: "High-stress employee identified in stress check declines follow-up — employer cannot force but must document"
+    subject_kind: "event"
+    input_payload:
+      event_type: "stress_check_followup"
+      employee_id: "E008"
+      jurisdiction: "JP"
+      stress_level: "high"
+      employee_declines_followup: true
+      employer_documented_offer: true
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["safety_stress_check_followup"]
+    expected_reasoning_keywords: ["voluntary", "cannot force", "documented", "offer"]
+    tags: ["safety", "stress-check", "followup-declined"]
+    difficulty: "hard"
+
+  - id: "hr_058"
+    description: "Workplace accident occurs and employer fails to file a report — violation of reporting obligation"
+    subject_kind: "event"
+    input_payload:
+      event_type: "safety_incident"
+      employee_id: "E_FACTORY_02"
+      jurisdiction: "JP"
+      incident_type: "workplace_accident"
+      injury_days_off: 4
+      incident_report_filed: false
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["safety_incident_report"]
+    expected_reasoning_keywords: ["report", "Labor Standards Inspection Office", "mandatory", "4+ days"]
+    tags: ["safety", "incident-report", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_059"
+    description: "Company appoints safety manager for workplace with 50+ employees — compliant"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compliance_audit"
+      employee_id: "COMPANY_WIDE"
+      jurisdiction: "JP"
+      company_size: 55
+      safety_manager_appointed: true
+      safety_committee_established: true
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["safety_management_system"]
+    expected_reasoning_keywords: ["safety manager", "50 or more", "committee", "compliant"]
+    tags: ["safety", "management-system", "compliant"]
+    difficulty: "easy"
+
+  - id: "hr_060"
+    description: "Pregnant employee requests exemption from hazardous work duties — must be accommodated"
+    subject_kind: "event"
+    input_payload:
+      event_type: "accommodation_request"
+      employee_id: "E005"
+      jurisdiction: "JP"
+      is_pregnant: true
+      current_duties_hazardous: true
+      hazard_type: "heavy_lifting"
+      accommodation_requested: true
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["safety_pregnant_worker_protection"]
+    expected_reasoning_keywords: ["pregnant", "hazardous", "Art. 64-3", "must accommodate"]
+    tags: ["safety", "pregnancy", "accommodation"]
+    difficulty: "medium"
+
+  # =========================================================================
+  # 7. Wage/compensation (cases hr_061 – hr_070)
+  # =========================================================================
+  - id: "hr_061"
+    description: "Employee paid 900 yen/hour in Tokyo where minimum wage is 1,163 yen — below minimum wage"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compensation_check"
+      employee_id: "E_PART_01"
+      jurisdiction: "JP"
+      location: "tokyo"
+      hourly_rate: 900
+      minimum_wage: 1163
+      employment_type: "part_time"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["wage_minimum_wage"]
+    expected_reasoning_keywords: ["minimum wage", "below", "1,163", "Minimum Wage Act"]
+    tags: ["compensation", "minimum-wage", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_062"
+    description: "Employee works 3 hours overtime at base rate without 25% premium — underpayment"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compensation_check"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      overtime_hours: 3
+      base_rate: 2000
+      actual_overtime_rate: 2000
+      required_premium_rate: 0.25
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["wage_overtime_premium_25"]
+    expected_reasoning_keywords: ["25%", "premium", "Art. 37", "2,500 yen"]
+    tags: ["compensation", "overtime-premium", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_063"
+    description: "Employee works on statutory holiday and receives 135% of base wage — compliant"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compensation_check"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      work_on_statutory_holiday: true
+      base_rate: 2000
+      actual_rate: 2700
+      required_premium_rate: 0.35
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["wage_holiday_premium_35"]
+    expected_reasoning_keywords: ["35%", "statutory holiday", "compliant", "2,700"]
+    tags: ["compensation", "holiday-premium", "compliant"]
+    difficulty: "easy"
+
+  - id: "hr_064"
+    description: "Employee works 65 hours overtime but entire period paid at only 25% premium — 60h rule violation"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compensation_check"
+      employee_id: "E004"
+      jurisdiction: "JP"
+      overtime_hours: 65
+      base_rate: 2000
+      premium_rate_applied: 0.25
+      hours_over_60: 5
+      premium_rate_over_60_applied: 0.25
+      required_premium_rate_over_60: 0.50
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["wage_60h_premium_50"]
+    expected_reasoning_keywords: ["60 hours", "50%", "proviso", "excess hours"]
+    tags: ["compensation", "60-hour-rule", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_065"
+    description: "Manager exempt from overtime premium still works late-night hours without premium — late-night premium required"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compensation_check"
+      employee_id: "E010"
+      jurisdiction: "JP"
+      is_manager: true
+      management_exemption: true
+      late_night_hours: 3
+      late_night_premium_paid: false
+      base_rate: 3500
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["wage_late_night_premium"]
+    expected_reasoning_keywords: ["late-night", "manager", "exempt from overtime", "still entitled", "25%"]
+    tags: ["compensation", "manager", "late-night-premium"]
+    difficulty: "hard"
+
+  - id: "hr_066"
+    description: "Wage payment delayed by 5 days past the designated payday — violation of wage payment rules"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compensation_check"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      designated_payday: "2026-04-25"
+      actual_payment_date: "2026-04-30"
+      delay_days: 5
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["wage_payment_timing"]
+    expected_reasoning_keywords: ["designated payday", "delayed", "Art. 24", "fixed date"]
+    tags: ["compensation", "payment-timing", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_067"
+    description: "Employer deducts meal costs from wages without written agreement — unauthorized deduction"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compensation_check"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      deduction_type: "meal_cost"
+      deduction_amount: 5000
+      written_deduction_agreement: false
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["wage_full_payment"]
+    expected_reasoning_keywords: ["full payment", "deduction", "Art. 24", "written agreement"]
+    tags: ["compensation", "unauthorized-deduction", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_068"
+    description: "Overtime premium correctly calculated with compound premiums — overtime on holiday at late night"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compensation_check"
+      employee_id: "E004"
+      jurisdiction: "JP"
+      work_on_statutory_holiday: true
+      late_night_hours: 2
+      base_rate: 2000
+      actual_rate: 3200
+      expected_compound_rate: 1.60
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["wage_holiday_premium_35", "wage_late_night_premium"]
+    expected_reasoning_keywords: ["compound", "35%", "25%", "60%", "holiday", "late-night"]
+    tags: ["compensation", "compound-premium", "compliant"]
+    difficulty: "hard"
+
+  - id: "hr_069"
+    description: "Part-time worker's effective hourly rate falls below minimum wage after mandatory deductions"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compensation_check"
+      employee_id: "E003"
+      jurisdiction: "JP"
+      location: "osaka"
+      nominal_hourly_rate: 1100
+      mandatory_uniform_deduction_per_hour: 100
+      effective_hourly_rate: 1000
+      minimum_wage: 1064
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["wage_minimum_wage"]
+    expected_reasoning_keywords: ["effective rate", "deduction", "minimum wage", "borderline"]
+    tags: ["compensation", "minimum-wage", "deduction-impact"]
+    difficulty: "hard"
+
+  - id: "hr_070"
+    description: "Employer substitutes compensatory leave for 50% premium excess (hours 61-70) — permitted with agreement"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compensation_check"
+      employee_id: "E004"
+      jurisdiction: "JP"
+      overtime_hours: 70
+      hours_over_60: 10
+      compensatory_leave_granted: true
+      compensatory_leave_agreement: true
+      base_rate: 2000
+      premium_rate_1_to_60: 0.25
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["wage_60h_premium_50", "wage_compensatory_leave"]
+    expected_reasoning_keywords: ["compensatory leave", "代替休暇", "agreement", "25% differential"]
+    tags: ["compensation", "compensatory-leave", "60-hour-rule"]
+    difficulty: "hard"
+
+  # =========================================================================
+  # 8. Harassment/discrimination (cases hr_071 – hr_080)
+  # =========================================================================
+  - id: "hr_071"
+    description: "Sexual harassment report filed but employer conducts no investigation — violation"
+    subject_kind: "event"
+    input_payload:
+      event_type: "harassment_report"
+      employee_id: "E009"
+      jurisdiction: "JP"
+      harassment_type: "sexual"
+      report_filed: true
+      investigation_conducted: false
+      days_since_report: 30
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["harassment_investigation_obligation"]
+    expected_reasoning_keywords: ["investigation", "mandatory", "Equal Employment Opportunity Act", "employer obligation"]
+    tags: ["harassment", "sexual", "no-investigation", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_072"
+    description: "Power harassment complaint investigated and documented within 2 weeks — compliant"
+    subject_kind: "event"
+    input_payload:
+      event_type: "harassment_report"
+      employee_id: "E008"
+      jurisdiction: "JP"
+      harassment_type: "power"
+      report_filed: true
+      investigation_conducted: true
+      investigation_started_within_days: 7
+      findings_documented: true
+      corrective_action_taken: true
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["harassment_investigation_obligation", "harassment_corrective_action"]
+    expected_reasoning_keywords: ["investigated", "documented", "corrective action", "compliant"]
+    tags: ["harassment", "power", "proper-handling"]
+    difficulty: "easy"
+
+  - id: "hr_073"
+    description: "Employee who filed harassment complaint subsequently receives negative performance review — potential retaliation"
+    subject_kind: "event"
+    input_payload:
+      event_type: "retaliation_check"
+      employee_id: "E009"
+      jurisdiction: "JP"
+      harassment_report_date: "2026-01-15"
+      negative_review_date: "2026-03-01"
+      previous_review_rating: "good"
+      current_review_rating: "poor"
+      review_justification_documented: false
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["harassment_retaliation_protection"]
+    expected_reasoning_keywords: ["retaliation", "adverse action", "proximity", "investigation needed"]
+    tags: ["harassment", "retaliation", "suspicious"]
+    difficulty: "hard"
+
+  - id: "hr_074"
+    description: "Company with 300+ employees has not established harassment consultation desk — violation"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compliance_audit"
+      employee_id: "COMPANY_WIDE"
+      jurisdiction: "JP"
+      company_size: 350
+      harassment_consultation_desk: false
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["harassment_consultation_desk"]
+    expected_reasoning_keywords: ["consultation desk", "mandatory", "prevention measures"]
+    tags: ["harassment", "consultation-desk", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_075"
+    description: "Employee requests reasonable accommodation for disability and employer refuses without justification"
+    subject_kind: "event"
+    input_payload:
+      event_type: "accommodation_request"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      disability_type: "physical"
+      accommodation_type: "desk_modification"
+      accommodation_cost: "low"
+      employer_refused: true
+      refusal_justification: ""
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["discrimination_reasonable_accommodation"]
+    expected_reasoning_keywords: ["reasonable accommodation", "disability", "unjustified refusal", "Act on Employment Promotion"]
+    tags: ["discrimination", "disability", "accommodation", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_076"
+    description: "Job posting specifies gender requirement for a role where it is not a BFOQ — discriminatory"
+    subject_kind: "event"
+    input_payload:
+      event_type: "recruitment_review"
+      employee_id: "HR_DEPT"
+      jurisdiction: "JP"
+      job_posting_specifies_gender: true
+      gender_is_bfoq: false
+      role: "software_engineer"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["discrimination_gender_recruitment"]
+    expected_reasoning_keywords: ["gender", "discrimination", "Equal Employment Opportunity Act", "BFOQ"]
+    tags: ["discrimination", "gender", "recruitment", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_077"
+    description: "Employee treated adversely because of pregnancy — maternity harassment (マタハラ)"
+    subject_kind: "event"
+    input_payload:
+      event_type: "harassment_report"
+      employee_id: "E005"
+      jurisdiction: "JP"
+      harassment_type: "maternity"
+      adverse_treatment: "demotion"
+      reason_linked_to_pregnancy: true
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["harassment_maternity_prohibition"]
+    expected_reasoning_keywords: ["maternity harassment", "マタハラ", "adverse treatment", "pregnancy", "prohibited"]
+    tags: ["harassment", "maternity", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_078"
+    description: "Employer provides annual harassment prevention training to all employees — compliant"
+    subject_kind: "event"
+    input_payload:
+      event_type: "compliance_audit"
+      employee_id: "COMPANY_WIDE"
+      jurisdiction: "JP"
+      harassment_training_conducted: true
+      training_covers_sexual: true
+      training_covers_power: true
+      training_covers_maternity: true
+      training_date: "2026-06-15"
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["harassment_prevention_training"]
+    expected_reasoning_keywords: ["training", "prevention", "compliant", "all types"]
+    tags: ["harassment", "training", "compliant"]
+    difficulty: "easy"
+
+  - id: "hr_079"
+    description: "Temporary worker reports harassment at host company — both staffing agency and host company have obligations"
+    subject_kind: "event"
+    input_payload:
+      event_type: "harassment_report"
+      employee_id: "E_TEMP_01"
+      jurisdiction: "JP"
+      harassment_type: "power"
+      employment_type: "temporary_dispatch"
+      report_filed_with: "host_company"
+      staffing_agency_notified: false
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["harassment_dual_obligation"]
+    expected_reasoning_keywords: ["temporary worker", "dual obligation", "host company", "staffing agency", "both"]
+    tags: ["harassment", "temporary-worker", "dual-obligation"]
+    difficulty: "hard"
+
+  - id: "hr_080"
+    description: "Customer harassment (カスハラ) reported — employer should take measures to protect employee"
+    subject_kind: "event"
+    input_payload:
+      event_type: "harassment_report"
+      employee_id: "E009"
+      jurisdiction: "JP"
+      harassment_type: "customer"
+      harasser: "external_customer"
+      employer_protective_measures: false
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["harassment_customer_protection"]
+    expected_reasoning_keywords: ["customer harassment", "カスハラ", "employer measures", "protection"]
+    tags: ["harassment", "customer", "employer-duty"]
+    difficulty: "hard"
+
+  # =========================================================================
+  # 9. Termination (cases hr_081 – hr_090)
+  # =========================================================================
+  - id: "hr_081"
+    description: "Employer dismisses employee with 30 days advance written notice — compliant"
+    subject_kind: "event"
+    input_payload:
+      event_type: "termination_request"
+      employee_id: "E008"
+      jurisdiction: "JP"
+      notice_days: 30
+      written_notice: true
+      tenure_days: 365
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["termination_30day_notice"]
+    expected_reasoning_keywords: ["30 days", "Art. 20", "advance notice", "compliant"]
+    tags: ["termination", "notice-period", "compliant"]
+    difficulty: "easy"
+
+  - id: "hr_082"
+    description: "Employee dismissed immediately without notice or payment in lieu — violation"
+    subject_kind: "event"
+    input_payload:
+      event_type: "termination_request"
+      employee_id: "E008"
+      jurisdiction: "JP"
+      notice_days: 0
+      payment_in_lieu: false
+      tenure_days: 365
+      termination_reason: "cost_reduction"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["termination_30day_notice"]
+    expected_reasoning_keywords: ["no notice", "no payment in lieu", "Art. 20", "violation"]
+    tags: ["termination", "no-notice", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_083"
+    description: "Employee in first 10 days of employment dismissed without notice — permitted (14-day exception)"
+    subject_kind: "event"
+    input_payload:
+      event_type: "termination_request"
+      employee_id: "E_NEW_03"
+      jurisdiction: "JP"
+      notice_days: 0
+      tenure_days: 10
+      payment_in_lieu: false
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["termination_14day_exception"]
+    expected_reasoning_keywords: ["14 days", "exception", "no notice required", "first 14 days"]
+    tags: ["termination", "14-day-exception"]
+    difficulty: "medium"
+
+  - id: "hr_084"
+    description: "Employee dismissed for a single minor infraction with no prior warnings — abuse of dismissal right"
+    subject_kind: "event"
+    input_payload:
+      event_type: "termination_request"
+      employee_id: "E008"
+      jurisdiction: "JP"
+      notice_days: 30
+      termination_reason: "single_minor_infraction"
+      prior_warnings: 0
+      performance_improvement_plan: false
+      tenure_years: 3
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["termination_abuse_of_right"]
+    expected_reasoning_keywords: ["abuse", "Art. 16", "objectively reasonable", "social acceptability", "no prior warnings"]
+    tags: ["termination", "unfair-dismissal", "abuse"]
+    difficulty: "medium"
+
+  - id: "hr_085"
+    description: "Employer conducts redundancy without demonstrating business necessity or consulting employees — fails four-factor test"
+    subject_kind: "event"
+    input_payload:
+      event_type: "redundancy_assessment"
+      employee_id: "DEPT_WIDE"
+      jurisdiction: "JP"
+      business_necessity_demonstrated: false
+      effort_to_avoid_dismissal: false
+      objective_selection_criteria: false
+      procedural_consultation: false
+      affected_employees: 15
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["termination_redundancy_four_factors"]
+    expected_reasoning_keywords: ["four-factor test", "整理解雇", "business necessity", "consultation"]
+    tags: ["termination", "redundancy", "four-factor-test", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_086"
+    description: "Proper redundancy — business necessity proven, voluntary retirement offered first, objective criteria, union consulted"
+    subject_kind: "event"
+    input_payload:
+      event_type: "redundancy_assessment"
+      employee_id: "DEPT_WIDE"
+      jurisdiction: "JP"
+      business_necessity_demonstrated: true
+      effort_to_avoid_dismissal: true
+      voluntary_retirement_offered: true
+      objective_selection_criteria: true
+      procedural_consultation: true
+      union_consulted: true
+      affected_employees: 10
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["termination_redundancy_four_factors"]
+    expected_reasoning_keywords: ["four factors", "satisfied", "compliant", "voluntary retirement"]
+    tags: ["termination", "redundancy", "proper-process"]
+    difficulty: "medium"
+
+  - id: "hr_087"
+    description: "Employee on workers' compensation leave is dismissed — protected period"
+    subject_kind: "event"
+    input_payload:
+      event_type: "termination_request"
+      employee_id: "E_INJURED_01"
+      jurisdiction: "JP"
+      on_workers_comp_leave: true
+      days_since_return: -1
+      termination_reason: "restructuring"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["termination_workers_comp_protection"]
+    expected_reasoning_keywords: ["workers' compensation", "Art. 19", "protected", "during leave"]
+    tags: ["termination", "workers-comp", "protection"]
+    difficulty: "medium"
+
+  - id: "hr_088"
+    description: "Summary dismissal for embezzlement with LSIO approval — permitted"
+    subject_kind: "event"
+    input_payload:
+      event_type: "termination_request"
+      employee_id: "E_DISMISSED_01"
+      jurisdiction: "JP"
+      notice_days: 0
+      payment_in_lieu: false
+      termination_reason: "embezzlement"
+      serious_misconduct: true
+      lsio_approval_obtained: true
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["termination_summary_dismissal"]
+    expected_reasoning_keywords: ["summary dismissal", "serious misconduct", "LSIO approval", "Art. 20 proviso"]
+    tags: ["termination", "summary-dismissal", "misconduct"]
+    difficulty: "hard"
+
+  - id: "hr_089"
+    description: "Fixed-term contract non-renewed mid-term without legitimate reason — treated as dismissal"
+    subject_kind: "event"
+    input_payload:
+      event_type: "termination_request"
+      employee_id: "E006"
+      jurisdiction: "JP"
+      contract_type: "fixed_term"
+      mid_term_termination: true
+      legitimate_reason: false
+      remaining_contract_months: 6
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["termination_fixed_term_mid_term"]
+    expected_reasoning_keywords: ["mid-term", "unavoidable reason", "Art. 17", "Labor Contract Act"]
+    tags: ["termination", "fixed-term", "mid-term", "violation"]
+    difficulty: "hard"
+
+  - id: "hr_090"
+    description: "Employee dismissed 35 days after returning from maternity leave — outside 30-day protection window"
+    subject_kind: "event"
+    input_payload:
+      event_type: "termination_request"
+      employee_id: "E005"
+      jurisdiction: "JP"
+      days_since_maternity_return: 35
+      notice_days: 30
+      termination_reason: "position_eliminated"
+      documented_business_reason: true
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["leave_maternity_dismissal_protection", "termination_abuse_of_right"]
+    expected_reasoning_keywords: ["30-day window", "expired", "still scrutinized", "maternity harassment risk"]
+    tags: ["termination", "post-maternity", "borderline"]
+    difficulty: "hard"
+
+  # =========================================================================
+  # 10. Remote work (cases hr_091 – hr_100)
+  # =========================================================================
+  - id: "hr_091"
+    description: "Remote worker has no company-provided equipment — employer should provide or reimburse"
+    subject_kind: "event"
+    input_payload:
+      event_type: "remote_work_assessment"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      remote_work_type: "full_remote"
+      equipment_provided: false
+      equipment_reimbursement: false
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["remote_work_equipment"]
+    expected_reasoning_keywords: ["equipment", "provision", "reimbursement", "employer responsibility"]
+    tags: ["remote-work", "equipment"]
+    difficulty: "easy"
+
+  - id: "hr_092"
+    description: "Remote worker's working hours are not tracked — overtime tracking obligation still applies"
+    subject_kind: "event"
+    input_payload:
+      event_type: "remote_work_assessment"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      remote_work_type: "hybrid"
+      working_hours_tracked: false
+      time_tracking_system: "none"
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["remote_work_hour_tracking", "record_keeping_obligation"]
+    expected_reasoning_keywords: ["working hours", "tracking", "obligation", "remote", "same requirements"]
+    tags: ["remote-work", "hour-tracking", "violation"]
+    difficulty: "easy"
+
+  - id: "hr_093"
+    description: "Remote worker classified under deemed working hours system (事業場外みなし労働時間制) — hours deemed at 8h"
+    subject_kind: "event"
+    input_payload:
+      event_type: "remote_work_assessment"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      remote_work_type: "full_remote"
+      deemed_working_hours_system: true
+      deemed_hours: 8
+      actual_hours_unknown: true
+      manager_cannot_monitor: true
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["remote_work_deemed_hours"]
+    expected_reasoning_keywords: ["deemed working hours", "事業場外みなし", "Art. 38-2", "conditions"]
+    tags: ["remote-work", "deemed-hours"]
+    difficulty: "hard"
+
+  - id: "hr_094"
+    description: "Remote work policy does not specify communication expectations — should define availability hours"
+    subject_kind: "event"
+    input_payload:
+      event_type: "policy_review"
+      employee_id: "HR_DEPT"
+      jurisdiction: "JP"
+      remote_work_policy_exists: true
+      communication_expectations_defined: false
+      core_hours_defined: false
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["remote_work_communication_policy"]
+    expected_reasoning_keywords: ["communication", "availability", "core hours", "should define"]
+    tags: ["remote-work", "communication-policy"]
+    difficulty: "medium"
+
+  - id: "hr_095"
+    description: "Remote worker files workers' compensation claim for injury during work hours at home — eligible"
+    subject_kind: "event"
+    input_payload:
+      event_type: "workers_comp_claim"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      location: "home"
+      during_work_hours: true
+      injury_type: "ergonomic"
+      remote_work_authorized: true
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["remote_work_workers_comp"]
+    expected_reasoning_keywords: ["workers' compensation", "home", "during work", "eligible", "authorized"]
+    tags: ["remote-work", "workers-comp"]
+    difficulty: "medium"
+
+  - id: "hr_096"
+    description: "Employer mandates return to office without updating employment contract that specifies remote work — breach"
+    subject_kind: "event"
+    input_payload:
+      event_type: "working_condition_change"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      current_contract_workplace: "remote"
+      new_requirement: "full_office"
+      contract_amendment_proposed: false
+      employee_consent_obtained: false
+      evaluation_mode: "single"
+    expected_verdict: "DENY"
+    expected_rule_ids: ["remote_work_contract_change"]
+    expected_reasoning_keywords: ["working conditions", "unilateral change", "contract", "consent"]
+    tags: ["remote-work", "contract-change", "violation"]
+    difficulty: "medium"
+
+  - id: "hr_097"
+    description: "Remote worker in a different prefecture — employer must consider local minimum wage if lower duties assigned"
+    subject_kind: "event"
+    input_payload:
+      event_type: "remote_work_assessment"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      office_location: "tokyo"
+      remote_work_location: "okinawa"
+      hourly_rate_based_on: "tokyo"
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["remote_work_minimum_wage"]
+    expected_reasoning_keywords: ["minimum wage", "office location", "applicable", "higher rate"]
+    tags: ["remote-work", "minimum-wage", "location"]
+    difficulty: "hard"
+
+  - id: "hr_098"
+    description: "Remote work arrangement with proper telework rules, equipment provision, and hour tracking — fully compliant"
+    subject_kind: "event"
+    input_payload:
+      event_type: "remote_work_assessment"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      remote_work_type: "hybrid"
+      telework_rules_established: true
+      equipment_provided: true
+      working_hours_tracked: true
+      communication_expectations_defined: true
+      safety_guidelines_provided: true
+      evaluation_mode: "single"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: ["remote_work_compliance"]
+    expected_reasoning_keywords: ["compliant", "telework rules", "equipment", "tracking"]
+    tags: ["remote-work", "fully-compliant"]
+    difficulty: "easy"
+
+  - id: "hr_099"
+    description: "Remote worker reports being contacted by manager at 23:00 regularly — right to disconnect concern"
+    subject_kind: "event"
+    input_payload:
+      event_type: "remote_work_assessment"
+      employee_id: "E008"
+      jurisdiction: "JP"
+      late_contact_frequency: "daily"
+      late_contact_time: "23:00"
+      core_hours_end: "18:00"
+      employee_complaint: true
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["remote_work_right_to_disconnect"]
+    expected_reasoning_keywords: ["right to disconnect", "after hours", "late-night", "contact boundaries"]
+    tags: ["remote-work", "right-to-disconnect"]
+    difficulty: "hard"
+
+  - id: "hr_100"
+    description: "Cross-border remote worker working from overseas — tax, social insurance, and labor law jurisdiction questions"
+    subject_kind: "event"
+    input_payload:
+      event_type: "remote_work_assessment"
+      employee_id: "E001"
+      jurisdiction: "JP"
+      remote_work_location_country: "TH"
+      duration_overseas_months: 3
+      employment_contract_jurisdiction: "JP"
+      tax_implications_assessed: false
+      social_insurance_status: "unknown"
+      evaluation_mode: "single"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: ["remote_work_cross_border"]
+    expected_reasoning_keywords: ["cross-border", "jurisdiction", "tax", "social insurance", "assessment required"]
+    tags: ["remote-work", "cross-border", "jurisdiction"]
+    difficulty: "hard"

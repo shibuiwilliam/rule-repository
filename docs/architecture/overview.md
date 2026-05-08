@@ -198,6 +198,27 @@ See [Batched Evaluation](batch-evaluation.md) for the detailed architecture.
 5. Legal holds prevent deletion or modification of matching entries.
 6. Regulator export adapters produce J-SOX, SOX, FSA, and GDPR-compliant artifacts.
 
+## Plugin Architecture
+
+The backend uses a plugin system for domain-specific logic. Each plugin registers evaluators, extractors, and feedback handlers under `plugins/`:
+
+| Plugin | Directory | Evaluators | Extractors | Feedback |
+|---|---|---|---|---|
+| **Engineering** | `plugins/engineering/` | `code_change.py` | `claude_md.py`, `linter_config.py` | `pr_capture.py` |
+| **Legal** | `plugins/legal/` | `document_evaluator.py` | `clause_extractor.py` | -- |
+| **HR** | `plugins/hr/` | `form_evaluator.py` | `handbook.py` | -- |
+| **Finance** | `plugins/finance/` | `transaction_evaluator.py` | -- | -- |
+| **Marketing** | `plugins/marketing/` | `content_evaluator.py` | -- | -- |
+
+Plugins are registered via `plugins/_registry.py` and extend the base protocol in `plugins/base.py`. The domain-neutral core never imports from any plugin; plugins consume core services.
+
+### Phase 8 Domain Engines
+
+Two specialized evaluation engines were added in Phase 8:
+
+- **Contract Clause Engine** (`POST /api/v1/evaluate/contract`): parses contracts (DOCX/PDF/text) via `adapters/contract_parser.py`, compares clauses via `adapters/contract_compare.py`, aggregates clause-level verdicts via `services/evaluation/clause_aggregator.py`. Supports self-conformance, cross-contract, regulatory compliance, and risk scoring modes. See [ADR 0004](../../development/adr/0004-contract-clause-engine.md).
+- **Event Engine** (`POST /api/v1/evaluate/event`): evaluates business events (overtime, leave, attendance) with three temporal modes -- single, sequence (monthly), and calendar (annual). Domain types in `domain/event_sequence.py`. See [ADR 0005](../../development/adr/0005-event-engine-temporal-modes.md).
+
 ## Further Reading
 
 See [Data Stores](data-stores.md) for schema details, [Evaluation Engine](evaluation-engine.md) for the evaluation pipeline, [Batched Evaluation](batch-evaluation.md) for multi-rule optimization, [Rule Discovery](discovery.md) for automated rule extraction, [Rule Playground](playground.md) for sandbox testing, [Snapshots](snapshots.md) for versioned deployments, [Federation](federation.md) for hierarchical rule composition, [Maturity Model](maturity-model.md) for progressive enforcement, and [Remediation](remediation.md) for structured fix suggestions.

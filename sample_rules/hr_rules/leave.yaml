@@ -1,0 +1,289 @@
+version: 1
+template:
+  name: hr-leave
+  description: HR rules for annual leave, maternity/paternity leave, sick leave, and special leave entitlements under Japanese labor law
+  tags:
+  - hr
+  - leave
+  - japan
+  - labor-law
+  - compliance
+rules:
+- statement: Employees who have worked continuously for 6 months with an attendance rate of 80% or higher MUST be granted at least 10 days of annual paid leave.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/leave/jp
+  tags:
+  - annual-leave
+  - entitlement
+  - labor-standards-act
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  review_cadence: annual
+  rationale: Labor Standards Act Article 39(1-2) establishes the minimum paid leave entitlement.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '39'
+    paragraph: 1-2
+  preconditions:
+  - Employee has been employed continuously for at least 6 months.
+  - Employee's attendance rate is 80% or higher during the qualifying period.
+  exceptions:
+  - Part-time employees with fewer scheduled working days receive proportionally reduced leave (比例付与) under Art. 39(3).
+  following_examples:
+  - Employee has been with the company for 7 months, attended 85% of days, and is granted 10 days of paid leave.
+  violation_examples:
+  - Employee who has worked 8 months with 90% attendance is told they have no paid leave entitlement.
+
+- statement: Employers MUST ensure that employees with 10 or more days of annual paid leave take at least 5 days per year.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/leave/jp
+  tags:
+  - annual-leave
+  - mandatory-usage
+  - work-style-reform
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Standards Act Article 39(7), added by Work Style Reform Act, requires employers to ensure minimum leave usage.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '39'
+    paragraph: '7'
+  preconditions:
+  - Employee has been granted 10 or more days of annual paid leave for the year.
+  exceptions:
+  - Days taken at the employee's own initiative or through a planned leave schedule count toward the 5-day requirement.
+  following_examples:
+  - Employer designates 5 dates as planned leave days at the start of the year.
+  violation_examples:
+  - Employee with 15 days entitlement has taken 0 days by December and no management intervention occurs.
+
+- statement: Unused annual paid leave SHOULD be carried over for up to 2 years from the date of entitlement in accordance with the statute of limitations.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - hr/leave/jp
+  tags:
+  - annual-leave
+  - carryover
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Standards Act Article 115 allows leave claims for up to 2 years. Company policy should reflect this.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '115'
+  preconditions:
+  - Employee has unused paid leave days from a prior entitlement period.
+  exceptions:
+  - Company policies that provide more generous carryover (e.g., 3 years) are permissible.
+  following_examples:
+  - Employee has 5 unused days from last year; they are carried forward and available this year.
+  violation_examples:
+  - Company policy states unused leave expires after 1 year, below the statutory 2-year minimum.
+
+- statement: A pregnant employee who requests leave MUST be granted 6 weeks of prenatal leave (14 weeks for multiple pregnancy). Post-natal leave of 8 weeks MUST be granted regardless of request.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - hr/leave/jp
+  tags:
+  - maternity
+  - prenatal
+  - postnatal
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Standards Act Article 65 mandates maternity leave periods.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '65'
+  preconditions:
+  - Employee is pregnant or has recently given birth.
+  exceptions:
+  - Post-natal leave after the first 6 weeks may be shortened if the employee requests to return and a doctor certifies fitness.
+  following_examples:
+  - Employee is granted 6 weeks before and 8 weeks after the expected delivery date.
+  violation_examples:
+  - Employer denies prenatal leave request, telling the employee to use paid leave instead.
+
+- statement: An employer MUST NOT dismiss an employee during maternity leave or within 30 days after the leave period ends.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/leave/jp
+  tags:
+  - maternity
+  - dismissal-protection
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Standards Act Article 19 prohibits dismissal during and shortly after maternity leave.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '19'
+  preconditions:
+  - Employee is currently on maternity leave or within 30 days of returning.
+  exceptions:
+  - Dismissal is permitted if the employer pays the statutory allowance and obtains LSIO approval.
+  following_examples:
+  - Employee returns from maternity leave and continues employment for 30+ days without adverse action.
+  violation_examples:
+  - Employer terminates employee 2 weeks after she returns from maternity leave.
+
+- statement: Employees raising children under 1 year of age MUST be granted childcare leave upon request, regardless of gender.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/leave/jp
+  tags:
+  - childcare
+  - paternity
+  - parental-leave
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Childcare and Family Care Leave Act Article 5 establishes the right to childcare leave for both parents.
+  source_refs:
+  - statute: Childcare and Family Care Leave Act (育児・介護休業法)
+    article: '5'
+  preconditions:
+  - Employee has a child under 1 year of age or is expecting a child.
+  - Employee has submitted a leave request at least 1 month in advance.
+  exceptions:
+  - Employees employed on a daily basis are excluded.
+  - Employees with less than 1 year of continuous employment may be excluded by labor-management agreement.
+  following_examples:
+  - Father requests 3 months of childcare leave starting from the child's birth and it is granted.
+  violation_examples:
+  - Male employee's childcare leave request is denied because only mothers are eligible under the company's policy.
+
+- statement: Fathers MUST be eligible for Postnatal Paternity Leave (産後パパ育休) of up to 4 weeks within 8 weeks after the child's birth, which may be taken in two separate periods.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/leave/jp
+  tags:
+  - paternity
+  - postnatal-paternity
+  - childcare
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: The 2022 amendment to the Childcare and Family Care Leave Act introduced flexible postnatal paternity leave.
+  source_refs:
+  - statute: Childcare and Family Care Leave Act (育児・介護休業法)
+    article: '9-2'
+  preconditions:
+  - Employee is a father (or partner) of a child born within the past 8 weeks.
+  - Employee has submitted a leave request at least 2 weeks in advance.
+  exceptions:
+  - Employees employed on a daily basis are excluded.
+  - The employee may work partially during this leave with employer consent under a labor-management agreement.
+  following_examples:
+  - Father takes 2 weeks immediately after birth and 2 weeks at week 6.
+  violation_examples:
+  - Employer refuses the request, stating paternity leave must be taken in one continuous period.
+
+- statement: Employees caring for a family member requiring long-term care MUST be granted up to 93 days of family care leave per eligible family member.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/leave/jp
+  tags:
+  - family-care
+  - nursing-care
+  - leave-entitlement
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Childcare and Family Care Leave Act Article 11 establishes the minimum family care leave entitlement.
+  source_refs:
+  - statute: Childcare and Family Care Leave Act (育児・介護休業法)
+    article: '11'
+  preconditions:
+  - Employee has a family member requiring long-term care.
+  - Employee has submitted a care leave request.
+  exceptions:
+  - Employees employed on a daily basis are excluded.
+  - Employees with less than 1 year of employment may be excluded by labor-management agreement.
+  following_examples:
+  - Employee applies for 30 days of family care leave for an elderly parent and it is granted.
+  violation_examples:
+  - Employer refuses family care leave despite the employee having over 1 year of tenure.
+
+- statement: Employers SHOULD create a planned annual leave schedule (計画年休) at the beginning of each fiscal year to help employees meet the mandatory 5-day minimum.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - hr/leave/jp
+  tags:
+  - annual-leave
+  - planned-leave
+  - best-practice
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: guideline
+  classification: internal
+  rationale: Planned leave scheduling (Art. 39(6)) helps employers meet the mandatory 5-day minimum and distributes leave more evenly across the year.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '39'
+    paragraph: '6'
+  preconditions:
+  - A labor-management agreement authorizing planned leave scheduling is in place.
+  exceptions:
+  - At least 5 days of the employee's entitlement must be reserved for free use (not designated by the employer).
+  following_examples:
+  - Company designates bridge days between holidays as planned leave for all employees.
+  violation_examples:
+  - Employer designates all 20 days of an employee's leave entitlement without leaving any for free use.
+
+- statement: Half-day annual leave requests SHOULD be accommodated when the employee requests it, though the employer is not legally obligated to grant half-day increments.
+  modality: SHOULD
+  severity: LOW
+  scope:
+  - hr/leave/jp
+  tags:
+  - annual-leave
+  - half-day
+  - flexibility
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: guideline
+  classification: internal
+  rationale: While the Labor Standards Act does not mandate half-day leave, the Ministry of Health, Labour and Welfare guidelines recommend accommodating reasonable requests to promote work-life balance.
+  source_refs:
+  - authority: Ministry of Health, Labour and Welfare (厚生労働省)
+    note: Administrative guidance on annual leave flexibility
+  preconditions:
+  - Employee has remaining annual leave balance.
+  exceptions:
+  - Hourly leave (時間単位年休) requires a labor-management agreement under Art. 39(4) and is limited to 5 days/year.
+  following_examples:
+  - Employee requests a morning off for a medical appointment and the employer grants half-day leave.
+  violation_examples:
+  - Company categorically refuses all half-day leave requests with no business justification.

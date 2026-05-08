@@ -40,11 +40,15 @@ PostgreSQL 17 holds the canonical data. All writes go through PostgreSQL first. 
 | `agent_negotiations` | Agent-initiated verdict challenges and negotiations. |
 | `governance_sessions` | Multi-agent governance session tracking. |
 
-35+ tables across 22 Alembic migrations. Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
+35+ tables across 26 Alembic migrations. Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
 
-Note: The `rules` table includes `maturity_level` (experimental/stable/proven), `false_positive_count`, and `true_positive_count` columns for the progressive enforcement model.
+Note: The `rules` table includes `maturity_level` (experimental/stable/proven), `false_positive_count`, `true_positive_count`, `classification`, `subject_kinds`, and `jurisdiction` columns.
 
 Migrations are managed by **Alembic**.
+
+### Row-Level Security
+
+Classification-based RLS is enabled on `rules`, `evaluations`, and `audit_log` tables. Session variables (`app.user_id`, `app.user_clearance`, `app.user_departments`) must be set before every query via `with_user_context()`. Classification RLS coexists with tenant-based RLS; both layers must pass for a row to be visible. See [ADR 0003](../../development/adr/0003-classification-and-rls.md).
 
 ## Elasticsearch (Search Index)
 
@@ -104,6 +108,7 @@ Created on first start from `infra/neo4j/init.cypher`:
 | `DEPENDS_ON` | dependent --> dependency | Evaluation requires another rule's verdict. |
 | `DERIVES_FROM` | derived --> source | Originates from a higher-level rule (e.g., a law). |
 | `SUCCEEDS` | new --> old | A revision that replaces a prior version. |
+| `LOCALIZES` | localized --> canonical | A locale-specific version of a canonical rule. |
 
 ### Consistency Model
 

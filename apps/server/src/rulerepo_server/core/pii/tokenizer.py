@@ -1,6 +1,6 @@
 """PII tokenizer — replace PII with stable, reversible placeholders.
 
-CLAUDE.md §9.8 / Tier 1.6: inputs to Gemini pass through this tokenizer which
+CLAUDE.md S9.8 / Tier 1.6: inputs to Gemini pass through this tokenizer which
 replaces detected PII with stable placeholders ([PERSON_1], [EMAIL_1], etc.).
 The reverse-mapping dict is encrypted and persisted with the evaluation record.
 De-tokenization happens locally on the LLM response before persistence.
@@ -11,6 +11,7 @@ Supports locales: ``ja`` (Japanese) and ``en`` (English) as configured by
 
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass, field
 
@@ -21,7 +22,7 @@ from dataclasses import dataclass, field
 # The category prefix is used to build placeholders like [EMAIL_1], [PHONE_2].
 
 _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    # Email — must come before generic word patterns
+    # Email -- must come before generic word patterns
     (
         "EMAIL",
         re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
@@ -36,7 +37,7 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
         "IP",
         re.compile(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"),
     ),
-    # Phone — international / US format
+    # Phone -- international / US format
     (
         "PHONE",
         re.compile(
@@ -47,7 +48,7 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
             r"(?!\d)"  # not followed by digit
         ),
     ),
-    # Phone — Japanese domestic (0X-XXXX-XXXX, 0XX-XXX-XXXX, etc.)
+    # Phone -- Japanese domestic (0X-XXXX-XXXX, 0XX-XXX-XXXX, etc.)
     (
         "PHONE",
         re.compile(r"\b0\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{3,4}\b"),
@@ -63,7 +64,7 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
             r"[\u30A0-\u30FF\u31F0-\u31FF]+"  # second katakana word
         ),
     ),
-    # Japanese kanji names — two-to-four kanji surname + space/dot + two-to-four
+    # Japanese kanji names -- two-to-four kanji surname + space/dot + two-to-four
     # kanji given name.  Very rough; avoids matching general kanji text by
     # requiring exactly the right length on each side of the separator.
     (
@@ -105,7 +106,7 @@ class PiiTokenizer:
         # original == "Email john@acme.com or jane@acme.com"
     """
 
-    # No instance state needed — the class exists for namespacing and future
+    # No instance state needed -- the class exists for namespacing and future
     # configuration (e.g. locale selection).
     _placeholder: str = field(default="", init=False, repr=False)
 
@@ -178,3 +179,87 @@ class PiiTokenizer:
         for placeholder, original in mapping.items():
             result = result.replace(placeholder, original)
         return result
+
+
+# ---------------------------------------------------------------------------
+# Deterministic tokenization for consistency across evaluations
+# ---------------------------------------------------------------------------
+
+
+def tokenize(value: str, salt: str) -> str:
+    """Produce a deterministic, non-reversible token for a PII value.
+
+    The token is a truncated HMAC-SHA256 hex digest, prefixed with
+    ``tok_`` for easy identification.  Using the same *value* and *salt*
+    always produces the same token, enabling consistent references
+    across evaluations without storing the original.
+
+    Args:
+        value: The PII value to tokenize.
+        salt: A per-tenant or per-use-case salt for domain separation.
+
+    Returns:
+        A deterministic token string like ``tok_a1b2c3d4e5f6``.
+    """
+    digest = hashlib.sha256(f"{salt}:{value}".encode()).hexdigest()[:12]
+    return f"tok_{digest}"
+
+
+class TokenRegistry:
+    """Maps deterministic tokens back to redaction IDs for reverse lookup.
+
+    This registry enables callers to find the shadow-store entry that
+    holds the original value for a given token.  The registry itself
+    does not store PII -- only the mapping from token to redaction ID.
+    """
+
+    def __init__(self) -> None:
+        self._registry: dict[str, str] = {}
+
+    def register(self, token: str, redaction_id: str) -> None:
+        """Associate a token with its redaction ID.
+
+        Args:
+            token: The deterministic token (output of :func:`tokenize`).
+            redaction_id: The redaction batch ID from the shadow store.
+        """
+        self._registry[token] = redaction_id
+
+    def lookup(self, token: str) -> str | None:
+        """Look up the redaction ID for a token.
+
+        Args:
+            token: The token to look up.
+
+        Returns:
+            The associated redaction ID, or ``None`` if not registered.
+        """
+        return self._registry.get(token)
+
+    def remove(self, token: str) -> bool:
+        """Remove a token from the registry.
+
+        Args:
+            token: The token to remove.
+
+        Returns:
+            True if the token was present and removed.
+        """
+        if token in self._registry:
+            del self._registry[token]
+            return True
+        return False
+
+    def remove_by_redaction_id(self, redaction_id: str) -> int:
+        """Remove all tokens associated with a redaction ID.
+
+        Args:
+            redaction_id: The redaction batch ID.
+
+        Returns:
+            The number of tokens removed.
+        """
+        to_remove = [t for t, rid in self._registry.items() if rid == redaction_id]
+        for token in to_remove:
+            del self._registry[token]
+        return len(to_remove)

@@ -1,0 +1,1046 @@
+version: "1.0"
+domain: "engineering"
+description: "Golden dataset for code evaluation — naming, error handling, security, testing, documentation, imports, types, API design, logging, and patterns."
+cases:
+  - id: "engineering_001"
+    description: "Function uses snake_case naming correctly"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def calculate_total_price(items: list[Item]) -> Decimal:
+        +    return sum(item.price * item.quantity for item in items)
+      file_path: "src/pricing/calculator.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["snake_case", "naming convention"]
+    tags: ["naming"]
+    difficulty: "easy"
+
+  - id: "engineering_002"
+    description: "Function uses camelCase in Python — violates naming convention"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def calculateTotalPrice(items):
+        +    return sum(i.price * i.qty for i in items)
+      file_path: "src/pricing/calculator.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["camelCase", "snake_case", "naming"]
+    tags: ["naming"]
+    difficulty: "easy"
+
+  - id: "engineering_003"
+    description: "Raw SQL string concatenation — SQL injection risk"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def get_user(name: str) -> dict:
+        +    query = f"SELECT * FROM users WHERE name = '{name}'"
+        +    return db.execute(query).fetchone()
+      file_path: "src/db/users.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["SQL injection", "parameterized", "f-string"]
+    tags: ["security", "sql-injection"]
+    difficulty: "easy"
+
+  - id: "engineering_004"
+    description: "Parameterized SQL query — safe pattern"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def get_user(name: str) -> dict:
+        +    query = "SELECT * FROM users WHERE name = :name"
+        +    return db.execute(text(query), {"name": name}).fetchone()
+      file_path: "src/db/users.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["parameterized", "safe"]
+    tags: ["security", "sql-injection"]
+    difficulty: "easy"
+
+  - id: "engineering_005"
+    description: "Bare except clause catches all exceptions including SystemExit"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +try:
+        +    result = process_order(order)
+        +except:
+        +    logger.error("Something went wrong")
+        +    return None
+      file_path: "src/orders/processor.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["bare except", "specific exception", "Exception"]
+    tags: ["error-handling"]
+    difficulty: "easy"
+
+  - id: "engineering_006"
+    description: "Catches specific exception types with proper logging"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +try:
+        +    result = process_order(order)
+        +except OrderValidationError as e:
+        +    logger.warning("Order validation failed", error=str(e), order_id=order.id)
+        +    raise
+        +except DatabaseError as e:
+        +    logger.error("Database error during order processing", error=str(e))
+        +    raise OrderProcessingError("Failed to process order") from e
+      file_path: "src/orders/processor.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["specific exception", "error chain", "logging"]
+    tags: ["error-handling"]
+    difficulty: "medium"
+
+  - id: "engineering_007"
+    description: "XSS vulnerability — rendering user input without escaping in React"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +function UserComment({ comment }: { comment: string }) {
+        +  return <div dangerouslySetInnerHTML={{ __html: comment }} />;
+        +}
+      file_path: "src/components/UserComment.tsx"
+      language: "typescript"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["XSS", "dangerouslySetInnerHTML", "sanitize", "user input"]
+    tags: ["security", "xss"]
+    difficulty: "medium"
+
+  - id: "engineering_008"
+    description: "Missing type hints on public function"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def create_invoice(customer, items, discount=0):
+        +    total = sum(i.price for i in items) * (1 - discount)
+        +    return {"customer": customer, "total": total}
+      file_path: "src/billing/invoices.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["type hint", "annotation", "public function"]
+    tags: ["type-hints"]
+    difficulty: "easy"
+
+  - id: "engineering_009"
+    description: "Public function with complete type hints"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def create_invoice(
+        +    customer: Customer,
+        +    items: list[LineItem],
+        +    discount: Decimal = Decimal("0"),
+        +) -> Invoice:
+        +    """Create an invoice for the given customer and line items."""
+        +    total = sum(item.price for item in items) * (1 - discount)
+        +    return Invoice(customer=customer, total=total, items=items)
+      file_path: "src/billing/invoices.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["type hint", "docstring", "return type"]
+    tags: ["type-hints", "documentation"]
+    difficulty: "easy"
+
+  - id: "engineering_010"
+    description: "Missing docstring on public API endpoint handler"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +@router.post("/orders")
+        +async def create_order(request: CreateOrderRequest) -> OrderResponse:
+        +    order = await order_service.create(request)
+        +    return OrderResponse.from_domain(order)
+      file_path: "src/api/v1/orders.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["docstring", "API endpoint", "documentation"]
+    tags: ["documentation"]
+    difficulty: "easy"
+
+  - id: "engineering_011"
+    description: "print() used instead of structured logging"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def sync_inventory(warehouse_id: str) -> None:
+        +    print(f"Starting sync for warehouse {warehouse_id}")
+        +    items = fetch_items(warehouse_id)
+        +    print(f"Found {len(items)} items")
+        +    for item in items:
+        +        update_stock(item)
+        +    print("Sync complete")
+      file_path: "src/inventory/sync.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["print", "structlog", "structured logging"]
+    tags: ["logging"]
+    difficulty: "easy"
+
+  - id: "engineering_012"
+    description: "Proper structured logging with context"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +import structlog
+        +logger = structlog.get_logger()
+        +
+        +def sync_inventory(warehouse_id: str) -> None:
+        +    log = logger.bind(warehouse_id=warehouse_id)
+        +    log.info("inventory_sync_started")
+        +    items = fetch_items(warehouse_id)
+        +    log.info("inventory_items_fetched", count=len(items))
+        +    for item in items:
+        +        update_stock(item)
+        +    log.info("inventory_sync_completed", items_processed=len(items))
+      file_path: "src/inventory/sync.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["structlog", "structured", "context"]
+    tags: ["logging"]
+    difficulty: "easy"
+
+  - id: "engineering_013"
+    description: "Hardcoded API key in source code"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +PAYMENT_API_KEY = "HARDCODED_SECRET_DO_NOT_COMMIT"
+        +
+        +def charge_customer(amount: int) -> dict:
+        +    payment_client.api_key = PAYMENT_API_KEY
+        +    return payment_client.charge(amount=amount)
+      file_path: "src/payments/stripe_client.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["hardcoded", "secret", "API key", "environment variable"]
+    tags: ["security", "secrets"]
+    difficulty: "easy"
+
+  - id: "engineering_014"
+    description: "Wildcard import pollutes namespace"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +from os.path import *
+        +from datetime import *
+        +from collections import *
+      file_path: "src/utils/helpers.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["wildcard import", "namespace", "explicit"]
+    tags: ["imports"]
+    difficulty: "easy"
+
+  - id: "engineering_015"
+    description: "Test function without assertions — meaningless test"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def test_create_user():
+        +    user = User(name="Alice", email="alice@example.com")
+        +    user_service.create(user)
+      file_path: "tests/test_users.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["assertion", "assert", "verify", "test"]
+    tags: ["testing"]
+    difficulty: "medium"
+
+  - id: "engineering_016"
+    description: "Test with meaningful assertions and edge cases"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def test_create_user_validates_email():
+        +    with pytest.raises(ValidationError, match="invalid email"):
+        +        User(name="Alice", email="not-an-email")
+        +
+        +def test_create_user_normalizes_name():
+        +    user = User(name="  Alice  ", email="alice@example.com")
+        +    assert user.name == "Alice"
+        +    assert user.email == "alice@example.com"
+      file_path: "tests/test_users.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["assertion", "edge case", "validation"]
+    tags: ["testing"]
+    difficulty: "medium"
+
+  - id: "engineering_017"
+    description: "REST endpoint returns 200 for resource creation instead of 201"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +@router.post("/projects")
+        +async def create_project(req: CreateProjectRequest) -> ProjectResponse:
+        +    """Create a new project."""
+        +    project = await project_service.create(req)
+        +    return ProjectResponse.from_domain(project)
+      file_path: "src/api/v1/projects.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["201", "status code", "created", "HTTP"]
+    tags: ["api-design"]
+    difficulty: "medium"
+
+  - id: "engineering_018"
+    description: "REST endpoint correctly returns 201 for resource creation"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +@router.post("/projects", status_code=201)
+        +async def create_project(req: CreateProjectRequest) -> ProjectResponse:
+        +    """Create a new project.
+        +
+        +    Returns:
+        +        The created project with a 201 Created status.
+        +    """
+        +    project = await project_service.create(req)
+        +    return ProjectResponse.from_domain(project)
+      file_path: "src/api/v1/projects.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["201", "Created", "correct status"]
+    tags: ["api-design"]
+    difficulty: "medium"
+
+  - id: "engineering_019"
+    description: "Mutable default argument in function definition"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def send_notifications(
+        +    user_ids: list[str],
+        +    channels: list[str] = ["email", "slack"],
+        +    metadata: dict = {},
+        +) -> None:
+        +    for uid in user_ids:
+        +        for channel in channels:
+        +            dispatch(uid, channel, metadata)
+      file_path: "src/notifications/sender.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["mutable default", "list", "dict", "None"]
+    tags: ["error-handling", "python-antipattern"]
+    difficulty: "medium"
+
+  - id: "engineering_020"
+    description: "Synchronous blocking call inside async function"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +async def fetch_report(report_id: str) -> Report:
+        +    data = requests.get(f"https://api.reports.com/{report_id}")
+        +    return Report.parse(data.json())
+      file_path: "src/reports/client.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["blocking", "async", "requests", "httpx", "aiohttp"]
+    tags: ["async", "performance"]
+    difficulty: "medium"
+
+  - id: "engineering_021"
+    description: "Proper async HTTP call using httpx"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +async def fetch_report(report_id: str) -> Report:
+        +    async with httpx.AsyncClient() as client:
+        +        response = await client.get(f"https://api.reports.com/{report_id}")
+        +        response.raise_for_status()
+        +        return Report.parse(response.json())
+      file_path: "src/reports/client.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["async", "httpx", "non-blocking"]
+    tags: ["async", "performance"]
+    difficulty: "medium"
+
+  - id: "engineering_022"
+    description: "Password stored in plain text without hashing"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +class UserModel(Base):
+        +    __tablename__ = "users"
+        +    id = Column(Integer, primary_key=True)
+        +    email = Column(String, unique=True)
+        +    password = Column(String)  # stores plain text password
+      file_path: "src/models/user.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["plain text", "password", "hash", "bcrypt"]
+    tags: ["security", "authentication"]
+    difficulty: "easy"
+
+  - id: "engineering_023"
+    description: "Magic numbers without named constants"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def calculate_shipping(weight: float, distance: float) -> float:
+        +    if weight > 30:
+        +        return distance * 0.15 + 12.50
+        +    elif weight > 10:
+        +        return distance * 0.08 + 5.00
+        +    else:
+        +        return distance * 0.03 + 2.50
+      file_path: "src/shipping/calculator.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["magic number", "constant", "named", "readability"]
+    tags: ["code-quality"]
+    difficulty: "medium"
+
+  - id: "engineering_024"
+    description: "Deeply nested conditional logic — cyclomatic complexity"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def process_claim(claim: Claim) -> str:
+        +    if claim.type == "medical":
+        +        if claim.amount > 10000:
+        +            if claim.has_prior_auth:
+        +                if claim.provider_in_network:
+        +                    if claim.deductible_met:
+        +                        return "approved"
+        +                    else:
+        +                        if claim.amount > claim.remaining_deductible:
+        +                            return "partial"
+        +                        else:
+        +                            return "denied"
+        +                else:
+        +                    return "out_of_network_review"
+        +            else:
+        +                return "auth_required"
+        +        else:
+        +            return "auto_approved"
+        +    else:
+        +        return "unsupported"
+      file_path: "src/claims/processor.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["nested", "complexity", "refactor", "early return"]
+    tags: ["code-quality", "complexity"]
+    difficulty: "medium"
+
+  - id: "engineering_025"
+    description: "Unused import left in file"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +import os
+        +import sys
+        +import json
+        +from pathlib import Path
+        +from datetime import datetime, timedelta
+        +
+        +def get_config_path() -> Path:
+        +    return Path.home() / ".config" / "app"
+      file_path: "src/config/paths.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["unused import", "os", "sys", "json", "timedelta"]
+    tags: ["imports", "code-quality"]
+    difficulty: "easy"
+
+  - id: "engineering_026"
+    description: "Global mutable state shared across requests"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +_cache = {}
+        +
+        +@router.get("/products/{product_id}")
+        +async def get_product(product_id: str) -> ProductResponse:
+        +    if product_id not in _cache:
+        +        _cache[product_id] = await product_service.get(product_id)
+        +    return ProductResponse.from_domain(_cache[product_id])
+      file_path: "src/api/v1/products.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["global state", "mutable", "thread safety", "cache"]
+    tags: ["concurrency", "api-design"]
+    difficulty: "medium"
+
+  - id: "engineering_027"
+    description: "CORS configured to allow all origins in production"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +app.add_middleware(
+        +    CORSMiddleware,
+        +    allow_origins=["*"],
+        +    allow_credentials=True,
+        +    allow_methods=["*"],
+        +    allow_headers=["*"],
+        +)
+      file_path: "src/main.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["CORS", "wildcard", "origin", "credentials"]
+    tags: ["security", "cors"]
+    difficulty: "medium"
+
+  - id: "engineering_028"
+    description: "Dockerfile runs as root user"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +FROM python:3.13-slim
+        +WORKDIR /app
+        +COPY . .
+        +RUN pip install -r requirements.txt
+        +CMD ["python", "main.py"]
+      file_path: "Dockerfile"
+      language: "dockerfile"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["root", "USER", "non-root", "security"]
+    tags: ["security", "docker"]
+    difficulty: "medium"
+
+  - id: "engineering_029"
+    description: "Dockerfile with non-root user and multi-stage build"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +FROM python:3.13-slim AS builder
+        +WORKDIR /build
+        +COPY pyproject.toml uv.lock ./
+        +RUN pip install uv && uv sync --frozen --no-dev
+        +
+        +FROM python:3.13-slim
+        +RUN useradd -m appuser
+        +USER appuser
+        +WORKDIR /app
+        +COPY --from=builder /build/.venv /app/.venv
+        +COPY src/ ./src/
+        +CMD ["/app/.venv/bin/python", "-m", "uvicorn", "main:app"]
+      file_path: "Dockerfile"
+      language: "dockerfile"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["non-root", "multi-stage", "USER"]
+    tags: ["security", "docker"]
+    difficulty: "medium"
+
+  - id: "engineering_030"
+    description: "Database migration missing down/rollback"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def upgrade():
+        +    op.create_table(
+        +        "invoices",
+        +        sa.Column("id", sa.String, primary_key=True),
+        +        sa.Column("amount", sa.Numeric(10, 2)),
+        +        sa.Column("created_at", sa.DateTime),
+        +    )
+        +
+        +def downgrade():
+        +    pass
+      file_path: "alembic/versions/abc123_add_invoices.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["downgrade", "rollback", "migration", "reversible"]
+    tags: ["database", "migration"]
+    difficulty: "medium"
+
+  - id: "engineering_031"
+    description: "N+1 query pattern in ORM loop"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +async def get_orders_with_items(user_id: str) -> list[dict]:
+        +    orders = await db.execute(select(Order).where(Order.user_id == user_id))
+        +    result = []
+        +    for order in orders.scalars():
+        +        items = await db.execute(select(OrderItem).where(OrderItem.order_id == order.id))
+        +        result.append({"order": order, "items": items.scalars().all()})
+        +    return result
+      file_path: "src/orders/repository.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["N+1", "query", "join", "eager loading", "loop"]
+    tags: ["performance", "database"]
+    difficulty: "medium"
+
+  - id: "engineering_032"
+    description: "Sensitive data logged at INFO level"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +async def authenticate_user(email: str, password: str) -> AuthToken:
+        +    logger.info("Login attempt", email=email, password=password)
+        +    user = await user_repo.find_by_email(email)
+        +    if not verify_password(password, user.password_hash):
+        +        logger.info("Login failed", email=email, password=password)
+        +        raise AuthError("Invalid credentials")
+        +    return create_token(user)
+      file_path: "src/auth/service.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["password", "sensitive", "log", "PII", "redact"]
+    tags: ["security", "logging"]
+    difficulty: "easy"
+
+  - id: "engineering_033"
+    description: "Missing input validation on API endpoint"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +@router.post("/transfer")
+        +async def transfer_funds(body: dict) -> dict:
+        +    from_account = body["from"]
+        +    to_account = body["to"]
+        +    amount = body["amount"]
+        +    await account_service.transfer(from_account, to_account, amount)
+        +    return {"status": "ok"}
+      file_path: "src/api/v1/transfers.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["validation", "Pydantic", "schema", "dict"]
+    tags: ["api-design", "validation"]
+    difficulty: "medium"
+
+  - id: "engineering_034"
+    description: "API endpoint with proper Pydantic request model"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +class TransferRequest(BaseModel):
+        +    from_account: str = Field(min_length=10, max_length=20)
+        +    to_account: str = Field(min_length=10, max_length=20)
+        +    amount: Decimal = Field(gt=0, le=1000000)
+        +    currency: str = Field(pattern="^[A-Z]{3}$")
+        +
+        +@router.post("/transfer", status_code=201)
+        +async def transfer_funds(body: TransferRequest) -> TransferResponse:
+        +    """Transfer funds between accounts."""
+        +    result = await account_service.transfer(body)
+        +    return TransferResponse.from_domain(result)
+      file_path: "src/api/v1/transfers.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["Pydantic", "validation", "Field"]
+    tags: ["api-design", "validation"]
+    difficulty: "medium"
+
+  - id: "engineering_035"
+    description: "Raising bare Exception instead of domain-specific error"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def validate_order(order: Order) -> None:
+        +    if order.total <= 0:
+        +        raise Exception("Order total must be positive")
+        +    if not order.items:
+        +        raise Exception("Order must have at least one item")
+      file_path: "src/orders/validation.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["bare Exception", "domain", "specific", "hierarchy"]
+    tags: ["error-handling"]
+    difficulty: "easy"
+
+  - id: "engineering_036"
+    description: "Using deprecated google-generativeai SDK"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +import google.generativeai as genai
+        +
+        +genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+        +model = genai.GenerativeModel("gemini-pro")
+      file_path: "src/llm/client.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["deprecated", "google-generativeai", "google-genai"]
+    tags: ["dependencies", "llm"]
+    difficulty: "medium"
+
+  - id: "engineering_037"
+    description: "React component with useEffect missing dependency array"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +function UserProfile({ userId }: { userId: string }) {
+        +  const [user, setUser] = useState<User | null>(null);
+        +
+        +  useEffect(() => {
+        +    fetchUser(userId).then(setUser);
+        +  });
+        +
+        +  return <div>{user?.name}</div>;
+        +}
+      file_path: "src/components/UserProfile.tsx"
+      language: "typescript"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["useEffect", "dependency array", "infinite loop"]
+    tags: ["react", "hooks"]
+    difficulty: "medium"
+
+  - id: "engineering_038"
+    description: "Using any type in TypeScript without justification"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +function processData(data: any): any {
+        +  const result: any = {};
+        +  for (const key of Object.keys(data)) {
+        +    result[key] = transform(data[key]);
+        +  }
+        +  return result;
+        +}
+      file_path: "src/utils/transform.ts"
+      language: "typescript"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["any", "type safety", "generic", "unknown"]
+    tags: ["type-hints", "typescript"]
+    difficulty: "easy"
+
+  - id: "engineering_039"
+    description: "Retry logic without exponential backoff or max retries"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +async def call_external_api(url: str) -> dict:
+        +    while True:
+        +        try:
+        +            response = await client.get(url)
+        +            return response.json()
+        +        except httpx.HTTPError:
+        +            await asyncio.sleep(1)
+      file_path: "src/integrations/api_client.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["retry", "backoff", "max retries", "infinite loop"]
+    tags: ["error-handling", "reliability"]
+    difficulty: "medium"
+
+  - id: "engineering_040"
+    description: "Environment-specific config hardcoded instead of env vars"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +DATABASE_URL = "postgresql://admin:secret@prod-db.internal:5432/myapp"
+        +REDIS_URL = "redis://prod-redis.internal:6379/0"
+        +
+        +def get_db():
+        +    return create_engine(DATABASE_URL)
+      file_path: "src/config/settings.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["hardcoded", "environment variable", "config", "secret"]
+    tags: ["security", "configuration"]
+    difficulty: "easy"
+
+  - id: "engineering_041"
+    description: "GraphQL query without depth limiting — DoS risk"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +@strawberry.type
+        +class User:
+        +    name: str
+        +    friends: list["User"]
+        +
+        +    @strawberry.field
+        +    async def friends(self) -> list["User"]:
+        +        return await user_repo.get_friends(self.id)
+      file_path: "src/graphql/types.py"
+      language: "python"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["depth", "recursive", "DoS", "query complexity"]
+    tags: ["security", "api-design"]
+    difficulty: "hard"
+
+  - id: "engineering_042"
+    description: "File upload without size limit or type validation"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +@router.post("/upload")
+        +async def upload_file(file: UploadFile) -> dict:
+        +    content = await file.read()
+        +    path = Path(f"/uploads/{file.filename}")
+        +    path.write_bytes(content)
+        +    return {"path": str(path)}
+      file_path: "src/api/v1/uploads.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["file size", "validation", "path traversal", "MIME type"]
+    tags: ["security", "api-design"]
+    difficulty: "medium"
+
+  - id: "engineering_043"
+    description: "Circular import between modules"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        --- a/src/models/order.py
+        +++ b/src/models/order.py
+        +from src.services.pricing import calculate_price
+        +
+        +class Order:
+        +    def total(self):
+        +        return calculate_price(self.items)
+        --- a/src/services/pricing.py
+        +++ b/src/services/pricing.py
+        +from src.models.order import Order
+        +
+        +def calculate_price(items: list) -> float:
+        +    ...
+      file_path: "src/models/order.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["circular import", "dependency", "architecture"]
+    tags: ["imports", "architecture"]
+    difficulty: "hard"
+
+  - id: "engineering_044"
+    description: "API endpoint missing authentication decorator"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +@router.delete("/users/{user_id}")
+        +async def delete_user(user_id: str) -> dict:
+        +    """Delete a user account and all associated data."""
+        +    await user_service.delete(user_id)
+        +    return {"status": "deleted"}
+      file_path: "src/api/v1/admin.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["authentication", "authorization", "Depends", "admin"]
+    tags: ["security", "api-design"]
+    difficulty: "medium"
+
+  - id: "engineering_045"
+    description: "Race condition in check-then-act pattern"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +async def reserve_seat(event_id: str, seat_id: str) -> bool:
+        +    seat = await seat_repo.get(event_id, seat_id)
+        +    if seat.status == "available":
+        +        seat.status = "reserved"
+        +        await seat_repo.save(seat)
+        +        return True
+        +    return False
+      file_path: "src/events/reservation.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["race condition", "atomic", "lock", "concurrent"]
+    tags: ["concurrency", "correctness"]
+    difficulty: "hard"
+
+  - id: "engineering_046"
+    description: "Well-structured error handling with custom error types and recovery"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +class PaymentDeclinedError(DomainError):
+        +    def __init__(self, reason: str, decline_code: str) -> None:
+        +        super().__init__(f"Payment declined: {reason}")
+        +        self.decline_code = decline_code
+        +
+        +async def process_payment(payment: Payment) -> PaymentResult:
+        +    try:
+        +        charge = await stripe_client.charge(payment)
+        +        return PaymentResult.success(charge.id)
+        +    except StripeCardError as e:
+        +        logger.warning("payment_declined", decline_code=e.code, payment_id=payment.id)
+        +        raise PaymentDeclinedError(reason=str(e), decline_code=e.code) from e
+        +    except StripeNetworkError as e:
+        +        logger.error("stripe_network_error", error=str(e))
+        +        raise ServiceUnavailableError("Payment processor unreachable") from e
+      file_path: "src/payments/service.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["custom error", "exception hierarchy", "logging"]
+    tags: ["error-handling"]
+    difficulty: "medium"
+
+  - id: "engineering_047"
+    description: "Pydantic model with proper field validation and examples"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +class CreateProductRequest(BaseModel):
+        +    model_config = ConfigDict(strict=True)
+        +
+        +    name: str = Field(min_length=1, max_length=200, examples=["Wireless Mouse"])
+        +    sku: str = Field(pattern=r"^[A-Z]{2}-\d{6}$", examples=["EL-001234"])
+        +    price: Decimal = Field(gt=0, decimal_places=2)
+        +    category: ProductCategory
+        +    tags: list[str] = Field(default_factory=list, max_length=20)
+      file_path: "src/schemas/products.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["validation", "Field", "pattern", "Pydantic"]
+    tags: ["validation", "api-design"]
+    difficulty: "easy"
+
+  - id: "engineering_048"
+    description: "Database connection string logged in error message"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +async def connect_db() -> AsyncEngine:
+        +    try:
+        +        engine = create_async_engine(settings.DATABASE_URL)
+        +        async with engine.begin() as conn:
+        +            await conn.execute(text("SELECT 1"))
+        +        return engine
+        +    except Exception as e:
+        +        logger.error(f"Failed to connect to {settings.DATABASE_URL}: {e}")
+        +        raise
+      file_path: "src/core/database.py"
+      language: "python"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["connection string", "credentials", "log", "sensitive"]
+    tags: ["security", "logging"]
+    difficulty: "medium"
+
+  - id: "engineering_049"
+    description: "Complex business logic with comprehensive docstring and tests"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +def calculate_progressive_discount(
+        +    order_total: Decimal,
+        +    customer_tier: CustomerTier,
+        +    loyalty_points: int,
+        +) -> DiscountResult:
+        +    """Calculate tiered discount based on order total, tier, and loyalty.
+        +
+        +    Discount tiers:
+        +        - Bronze: 0-5% based on order total
+        +        - Silver: 5-10% + loyalty point bonus
+        +        - Gold: 10-15% + loyalty point bonus + free shipping
+        +
+        +    Args:
+        +        order_total: Pre-discount order total (must be > 0).
+        +        customer_tier: Customer loyalty tier.
+        +        loyalty_points: Available loyalty points.
+        +
+        +    Returns:
+        +        DiscountResult with computed discount amount and breakdown.
+        +
+        +    Raises:
+        +        InvalidOrderError: If order_total <= 0.
+        +    """
+        +    if order_total <= 0:
+        +        raise InvalidOrderError("Order total must be positive")
+        +
+        +    base_rate = TIER_BASE_RATES[customer_tier]
+        +    volume_bonus = min(order_total / VOLUME_THRESHOLD, MAX_VOLUME_BONUS)
+        +    loyalty_bonus = min(loyalty_points * POINT_VALUE, MAX_LOYALTY_BONUS)
+        +
+        +    total_rate = min(base_rate + volume_bonus + loyalty_bonus, MAX_DISCOUNT_RATE)
+        +    discount_amount = order_total * total_rate
+        +
+        +    return DiscountResult(
+        +        amount=discount_amount.quantize(Decimal("0.01")),
+        +        rate=total_rate,
+        +        breakdown=DiscountBreakdown(base=base_rate, volume=volume_bonus, loyalty=loyalty_bonus),
+        +        free_shipping=customer_tier == CustomerTier.GOLD,
+        +    )
+      file_path: "src/pricing/discount.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["docstring", "type hints", "constants", "validation"]
+    tags: ["code-quality", "documentation"]
+    difficulty: "easy"
+
+  - id: "engineering_050"
+    description: "Alembic migration with both upgrade and proper downgrade"
+    subject_kind: "code_diff"
+    input_payload:
+      diff: |
+        +"""Add audit_log table with hash chain.
+        +
+        +Revision ID: 9f3a2b1c
+        +"""
+        +
+        +from alembic import op
+        +import sqlalchemy as sa
+        +
+        +def upgrade() -> None:
+        +    op.create_table(
+        +        "audit_log",
+        +        sa.Column("id", sa.String(36), primary_key=True),
+        +        sa.Column("action", sa.String(50), nullable=False),
+        +        sa.Column("entity_id", sa.String(36), nullable=False),
+        +        sa.Column("entry_hash", sa.String(64), nullable=False),
+        +        sa.Column("previous_entry_hash", sa.String(64)),
+        +        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        +    )
+        +    op.create_index("ix_audit_log_entity_id", "audit_log", ["entity_id"])
+        +    op.create_index("ix_audit_log_created_at", "audit_log", ["created_at"])
+        +
+        +def downgrade() -> None:
+        +    op.drop_index("ix_audit_log_created_at")
+        +    op.drop_index("ix_audit_log_entity_id")
+        +    op.drop_table("audit_log")
+      file_path: "alembic/versions/9f3a2b1c_add_audit_log.py"
+      language: "python"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["migration", "downgrade", "index", "reversible"]
+    tags: ["database", "migration"]
+    difficulty: "medium"

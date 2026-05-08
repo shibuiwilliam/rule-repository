@@ -21,6 +21,7 @@ dependencies = [
     "mcp>=1.9",
     "sse-starlette>=2.0",
     "arq>=0.26",
+    "cryptography>=43.0",
 ]
 
 [project.scripts]

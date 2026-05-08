@@ -1,0 +1,285 @@
+version: 1
+template:
+  name: hr-employment
+  description: HR rules for employment contracts, probation periods, termination procedures, and workplace safety under Japanese labor law
+  tags:
+  - hr
+  - employment
+  - japan
+  - labor-law
+  - compliance
+rules:
+- statement: Employers MUST provide written notification of working conditions to employees at the time of hiring, including wages, working hours, workplace location, job duties, and contract period.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/employment/jp
+  tags:
+  - employment-contract
+  - working-conditions
+  - notification
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  review_cadence: annual
+  rationale: Labor Standards Act Article 15 requires employers to clearly notify workers of working conditions at the time of hiring.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '15'
+    paragraph: '1'
+  preconditions:
+  - A new employment relationship is being established.
+  exceptions:
+  - None. This requirement applies to all employment relationships including part-time and fixed-term.
+  following_examples:
+  - New hire receives a written employment contract detailing salary, hours, location, and duties before the start date.
+  violation_examples:
+  - Employee starts work without receiving any written documentation of employment terms.
+
+- statement: Fixed-term employment contracts MUST NOT have a term exceeding 3 years, except for employees with specialized knowledge or those aged 60 or older, where the limit is 5 years.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - hr/employment/jp
+  tags:
+  - fixed-term
+  - contract-duration
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Standards Act Article 14 sets maximum contract periods to protect workers from long-term binding without indefinite employment protections.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '14'
+  preconditions:
+  - Employment contract is fixed-term (有期雇用).
+  exceptions:
+  - Employees with advanced specialized knowledge (certified by MHLW ordinance) or employees aged 60+ may have contracts up to 5 years.
+  following_examples:
+  - Contract worker is offered a 1-year renewable contract.
+  violation_examples:
+  - Non-specialist employee under 60 is given a 4-year fixed-term contract.
+
+- statement: When a fixed-term contract has been renewed repeatedly and the total employment period exceeds 5 years, the employee MUST be offered conversion to an indefinite-term contract upon request (無期転換ルール).
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/employment/jp
+  tags:
+  - fixed-term
+  - indefinite-conversion
+  - 5-year-rule
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Contract Act Article 18 provides the indefinite conversion right to protect long-serving fixed-term employees.
+  source_refs:
+  - statute: Labor Contract Act (労働契約法)
+    article: '18'
+  preconditions:
+  - Employee is on a fixed-term contract.
+  - Total continuous employment under fixed-term contracts exceeds 5 years.
+  - Employee has made a conversion request.
+  exceptions:
+  - University researchers and certain professionals with special expertise have extended conversion periods (10 years) under separate legislation.
+  following_examples:
+  - Employee on their 6th year of consecutive 1-year contracts requests indefinite conversion and it is granted.
+  violation_examples:
+  - Employer refuses indefinite conversion request, or non-renews the contract to avoid the 5-year rule.
+
+- statement: Probation periods SHOULD NOT exceed 6 months. Extensions beyond 6 months MUST be justified by documented performance concerns and communicated in advance.
+  modality: SHOULD_NOT
+  severity: MEDIUM
+  scope:
+  - hr/employment/jp
+  tags:
+  - probation
+  - trial-period
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: guideline
+  classification: confidential
+  rationale: While Japanese law does not strictly prohibit longer probation periods, case law (e.g., Mitsubishi Jushi case) establishes that excessively long probation is unreasonable and dismissal during extended probation must meet a higher standard.
+  source_refs:
+  - authority: Supreme Court precedent
+    note: Mitsubishi Jushi case (三菱樹脂事件) — probation period standards
+  preconditions:
+  - Employee is in their probation period.
+  exceptions:
+  - Highly specialized roles may justify longer probation with advance agreement.
+  following_examples:
+  - New hire has a 3-month probation period, clearly stated in the employment contract.
+  violation_examples:
+  - Employee's probation is extended to 12 months without documented reasons or advance notice.
+
+- statement: Employers MUST provide at least 30 days' advance notice before dismissing an employee, or pay 30 days' average wages in lieu of notice (解雇予告手当).
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - hr/employment/jp
+  tags:
+  - termination
+  - notice-period
+  - dismissal
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Standards Act Article 20 requires advance notice or payment in lieu for all dismissals.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '20'
+  preconditions:
+  - Employer intends to dismiss an employee.
+  - Employee has been employed for more than 14 days (continuous).
+  exceptions:
+  - Employees in their first 14 days of employment are excluded.
+  - Summary dismissal is permitted with LSIO approval in cases of serious employee misconduct (Art. 20 proviso).
+  - Natural disasters or force majeure making business continuation impossible (with LSIO approval).
+  following_examples:
+  - Employer provides written 30-day notice of termination with effective date.
+  violation_examples:
+  - Employee is told to leave immediately with no notice or payment in lieu.
+
+- statement: Dismissal MUST NOT be carried out when it constitutes an abuse of the right to dismiss, lacking objectively reasonable grounds and social acceptability (解雇権濫用法理).
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - hr/employment/jp
+  tags:
+  - termination
+  - unfair-dismissal
+  - abuse-of-rights
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Contract Act Article 16 codifies the abuse-of-dismissal-rights doctrine established by decades of case law.
+  source_refs:
+  - statute: Labor Contract Act (労働契約法)
+    article: '16'
+  preconditions:
+  - Employer is contemplating or executing a dismissal.
+  exceptions:
+  - None. This is a fundamental principle applying to all dismissals.
+  following_examples:
+  - Employer documents repeated performance warnings, offers improvement plans, and dismisses only after exhausting alternatives.
+  violation_examples:
+  - Employer dismisses an employee for a single minor infraction with no prior warnings or improvement opportunity.
+
+- statement: Before conducting redundancy dismissals (整理解雇), employers MUST satisfy the four-factor test — business necessity, effort to avoid dismissal, objective selection criteria, and adequate procedural consultation.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - hr/employment/jp
+  tags:
+  - termination
+  - redundancy
+  - restructuring
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: The four-factor test for redundancy dismissals is established by Supreme Court precedent and widely enforced by courts.
+  source_refs:
+  - authority: Supreme Court precedent
+    note: Toyo Oxygen case (東洋酸素事件) and subsequent case law
+  preconditions:
+  - Employer is conducting workforce reductions due to economic or organizational reasons.
+  exceptions:
+  - Voluntary retirement programs (希望退職) do not constitute dismissal and are not subject to this test.
+  following_examples:
+  - Company demonstrates financial necessity, offers voluntary early retirement, uses objective criteria, and conducts union/employee consultations before any involuntary termination.
+  violation_examples:
+  - Company selectively dismisses employees without demonstrating business necessity or consulting affected workers.
+
+- statement: Employers with 50 or more employees MUST conduct annual health examinations for all workers and MUST provide additional health checks for workers engaged in hazardous work.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/employment/jp
+  tags:
+  - workplace-safety
+  - health-check
+  - occupational-health
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Industrial Safety and Health Act Articles 66 requires regular and special health examinations.
+  source_refs:
+  - statute: Industrial Safety and Health Act (労働安全衛生法)
+    article: '66'
+  preconditions:
+  - Employer has 50 or more employees.
+  exceptions:
+  - Part-time employees working less than 3/4 of normal weekly hours may be excluded from certain examinations, though best practice is to include them.
+  following_examples:
+  - Company schedules annual health check for all employees in Q1, with additional hearing tests for factory workers.
+  violation_examples:
+  - Company with 200 employees has not conducted health checks for over 2 years.
+
+- statement: Employers with 50 or more employees MUST conduct annual stress checks for all workers and provide follow-up consultations for high-stress individuals.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/employment/jp
+  tags:
+  - workplace-safety
+  - stress-check
+  - mental-health
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Industrial Safety and Health Act Article 66-10, effective since December 2015, mandates the stress check system.
+  source_refs:
+  - statute: Industrial Safety and Health Act (労働安全衛生法)
+    article: '66-10'
+  preconditions:
+  - Employer has 50 or more employees.
+  exceptions:
+  - Employers with fewer than 50 employees are encouraged but not required to conduct stress checks (努力義務).
+  following_examples:
+  - Company administers a standardized stress check questionnaire annually and offers physician consultations to high-stress employees.
+  violation_examples:
+  - Company with 100 employees has never conducted a stress check.
+
+- statement: Employers MUST maintain accurate records of each employee's working hours, including start time, end time, and break periods, for at least 5 years.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/employment/jp
+  tags:
+  - record-keeping
+  - compliance
+  - audit
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: Labor Standards Act Article 109 requires retention of wage and labor records. The retention period was extended from 3 to 5 years by the 2020 amendment.
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '109'
+  preconditions:
+  - Employer has employees subject to working-hour record requirements.
+  exceptions:
+  - The transitional measure allows a 3-year retention period until the permanent 5-year rule takes full effect.
+  following_examples:
+  - Company uses a digital attendance system that retains clock-in, clock-out, and break times for 5 years.
+  violation_examples:
+  - Company only tracks hours informally in a spreadsheet and deletes records after 1 year.

@@ -1,0 +1,847 @@
+version: "1.0"
+domain: "content"
+description: "Golden dataset for marketing/content evaluation — misleading claims, price display, testimonials, comparative advertising, health claims, environmental claims, social media, email marketing, and advertising compliance."
+cases:
+  - id: "content_001"
+    description: "Product advertisement with accurate factual claims and proper sourcing"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "web_advertisement"
+      text: "Our SSD delivers read speeds of up to 7,000 MB/s, verified by independent testing from TechBench Labs (Report #TB-2026-0412)."
+      medium: "web"
+      target_audience: "general"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["factual", "verified", "source", "accurate"]
+    tags: ["claims", "accuracy"]
+    difficulty: "easy"
+
+  - id: "content_002"
+    description: "Advertisement claiming product is 'the best in the world' without substantiation"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "web_advertisement"
+      text: "The world's best project management tool. No other software comes close to our performance."
+      medium: "web"
+      substantiation: null
+      target_audience: "business"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["superlative", "best", "substantiation", "keihyohou", "misleading"]
+    tags: ["claims", "superlative"]
+    difficulty: "easy"
+
+  - id: "content_003"
+    description: "Price display missing tax-inclusive price (Japan requirement)"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_listing"
+      text: "Premium Plan: 9,800 JPY/month"
+      price_display:
+        amount: 9800
+        tax_inclusive: false
+        tax_rate: 0.10
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["tax-inclusive", "sougaku hyouji", "total price", "consumer"]
+    tags: ["pricing", "tax-display"]
+    difficulty: "easy"
+
+  - id: "content_004"
+    description: "Price display with proper tax-inclusive amount"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_listing"
+      text: "Premium Plan: 10,780 JPY/month (tax included, 9,800 JPY before tax)"
+      price_display:
+        amount: 10780
+        tax_inclusive: true
+        pre_tax_shown: true
+        tax_rate: 0.10
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["tax-inclusive", "compliant", "consumer"]
+    tags: ["pricing", "tax-display"]
+    difficulty: "easy"
+
+  - id: "content_005"
+    description: "Testimonial without disclosure of material connection"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "social_media_post"
+      text: "I've been using CloudSync for my team and productivity went up 40%! Highly recommend."
+      author: "influencer_account"
+      material_connection: "paid_partnership"
+      disclosure_present: false
+      medium: "instagram"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["disclosure", "paid", "material connection", "stealth marketing"]
+    tags: ["testimonial", "disclosure"]
+    difficulty: "easy"
+
+  - id: "content_006"
+    description: "Influencer post with proper PR disclosure"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "social_media_post"
+      text: "#PR CloudSync has streamlined our team's workflow. The real-time collaboration features are excellent for remote teams."
+      author: "influencer_account"
+      material_connection: "paid_partnership"
+      disclosure_present: true
+      disclosure_text: "#PR"
+      medium: "instagram"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["disclosure", "PR", "transparent"]
+    tags: ["testimonial", "disclosure"]
+    difficulty: "easy"
+
+  - id: "content_007"
+    description: "Comparative advertising making false claims about competitor"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "comparison_page"
+      text: "Unlike CompetitorX which has no encryption, our platform uses AES-256 encryption for all data. CompetitorX also suffered 15 data breaches last year."
+      competitor_mentioned: "CompetitorX"
+      claims_verified: false
+      competitor_encryption: "AES-128"
+      competitor_breaches: 2
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["false", "competitor", "defamation", "comparative", "inaccurate"]
+    tags: ["comparative-advertising", "accuracy"]
+    difficulty: "medium"
+
+  - id: "content_008"
+    description: "Fair comparative advertising with verified factual data"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "comparison_page"
+      text: "Feature comparison based on publicly available documentation as of April 2026. Our platform offers 99.99% uptime SLA vs. CompetitorY's 99.9% SLA. Source: CompetitorY's published service agreement."
+      competitor_mentioned: "CompetitorY"
+      claims_verified: true
+      source_cited: true
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["comparative", "verified", "source", "factual"]
+    tags: ["comparative-advertising"]
+    difficulty: "medium"
+
+  - id: "content_009"
+    description: "Health supplement claiming to cure disease"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_advertisement"
+      text: "Our premium turmeric supplement cures arthritis and prevents cancer. Clinical results guaranteed."
+      product_type: "health_supplement"
+      claims: ["cure_disease", "prevent_disease", "guaranteed_results"]
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["health claim", "cure", "yakkihou", "pharmaceutical", "disease"]
+    tags: ["health-claims", "pharmaceutical"]
+    difficulty: "easy"
+
+  - id: "content_010"
+    description: "Health supplement with compliant wellness claims"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_advertisement"
+      text: "Our turmeric supplement contains curcumin which may support joint comfort. This product is not intended to diagnose, treat, cure, or prevent any disease. Individual results may vary."
+      product_type: "health_supplement"
+      disclaimer_present: true
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["disclaimer", "not intended", "may support", "compliant"]
+    tags: ["health-claims"]
+    difficulty: "medium"
+
+  - id: "content_011"
+    description: "Environmental claim without third-party certification — greenwashing"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_packaging"
+      text: "100% Eco-Friendly. Zero environmental impact."
+      environmental_claims: ["eco-friendly", "zero impact"]
+      certifications: []
+      evidence: null
+      medium: "packaging"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["greenwashing", "eco-friendly", "substantiation", "certification"]
+    tags: ["environmental-claims", "greenwashing"]
+    difficulty: "easy"
+
+  - id: "content_012"
+    description: "Environmental claim with proper certification and specifics"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_packaging"
+      text: "Made with 80% post-consumer recycled materials. Carbon footprint reduced by 35% compared to our 2020 baseline. Certified by EcoMark Japan (License #EM-2026-1234)."
+      environmental_claims: ["recycled_content", "carbon_reduction"]
+      certifications: ["EcoMark Japan"]
+      evidence: "third_party_audit"
+      medium: "packaging"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["certification", "specific", "measurable", "verified"]
+    tags: ["environmental-claims"]
+    difficulty: "medium"
+
+  - id: "content_013"
+    description: "Advertisement targeting children with manipulative urgency"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "mobile_app_advertisement"
+      text: "Hey kids! Buy NOW before your friends get all the rare characters! Only 3 left! Don't be the last one without the Golden Dragon!"
+      target_audience: "children_under_13"
+      manipulation_techniques: ["scarcity", "peer_pressure", "urgency"]
+      medium: "mobile_app"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["children", "manipulative", "urgency", "scarcity", "vulnerable"]
+    tags: ["children-advertising", "ethics"]
+    difficulty: "easy"
+
+  - id: "content_014"
+    description: "Age-appropriate children's advertisement without manipulation"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "tv_commercial"
+      text: "New Adventure Blocks building set! Build castles, bridges, and rockets. Ask a grown-up before visiting our website. Ages 6 and up."
+      target_audience: "children_6_12"
+      manipulation_techniques: []
+      parental_guidance_included: true
+      medium: "tv"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["age-appropriate", "parental", "no manipulation"]
+    tags: ["children-advertising"]
+    difficulty: "medium"
+
+  - id: "content_015"
+    description: "Email marketing sent without unsubscribe mechanism"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "marketing_email"
+      subject: "Special Offer Just for You!"
+      text: "Dear Customer, we have an exclusive 30% discount on all products this weekend. Visit our store today!"
+      unsubscribe_link: false
+      sender_identified: true
+      opt_in_verified: true
+      medium: "email"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["unsubscribe", "opt-out", "tokutei denshi mail", "mandatory"]
+    tags: ["email-marketing", "compliance"]
+    difficulty: "easy"
+
+  - id: "content_016"
+    description: "Compliant marketing email with proper identification and opt-out"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "marketing_email"
+      subject: "March Newsletter — New Features Update"
+      text: "This month we launched three new features..."
+      unsubscribe_link: true
+      sender_identified: true
+      sender_address_shown: true
+      opt_in_verified: true
+      medium: "email"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["unsubscribe", "sender identified", "compliant"]
+    tags: ["email-marketing"]
+    difficulty: "easy"
+
+  - id: "content_017"
+    description: "Before-and-after images with no disclosure of typical results"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "social_media_post"
+      text: "Look at this transformation after just 2 weeks of using our skin cream! [Before/After photos]"
+      before_after_images: true
+      typical_results_disclaimer: false
+      result_timeframe: "2 weeks"
+      product_type: "cosmetic"
+      medium: "instagram"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["before-after", "typical results", "disclaimer", "misleading"]
+    tags: ["testimonial", "cosmetics"]
+    difficulty: "medium"
+
+  - id: "content_018"
+    description: "Limited-time offer that has been running for 6 months"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "web_banner"
+      text: "LIMITED TIME OFFER! 50% OFF — Hurry, sale ends soon!"
+      offer_start_date: "2025-10-01"
+      current_date: "2026-04-01"
+      offer_genuinely_limited: false
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["limited time", "perpetual", "misleading", "urgency", "keihyohou"]
+    tags: ["pricing", "deceptive"]
+    difficulty: "medium"
+
+  - id: "content_019"
+    description: "Free trial advertisement with hidden auto-renewal charges"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "landing_page"
+      text: "Start your FREE 14-day trial today! No credit card required to browse."
+      fine_print: "Credit card required for full access. Auto-renews at 12,800 JPY/month after trial."
+      prominent_disclosure: false
+      auto_renewal: true
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["free trial", "auto-renewal", "hidden", "disclosure", "prominent"]
+    tags: ["pricing", "deceptive"]
+    difficulty: "medium"
+
+  - id: "content_020"
+    description: "Free trial with transparent terms and easy cancellation"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "landing_page"
+      text: "Start your FREE 14-day trial. No credit card required. After the trial, plans start at 3,280 JPY/month (tax included). Cancel anytime from your account settings."
+      auto_renewal: false
+      cancellation_easy: true
+      prominent_disclosure: true
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["transparent", "no credit card", "cancel anytime"]
+    tags: ["pricing"]
+    difficulty: "easy"
+
+  - id: "content_021"
+    description: "Cosmetic advertisement implying medical efficacy"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "video_advertisement"
+      text: "Our revolutionary anti-aging serum eliminates wrinkles and reverses skin aging at the cellular level. Clinically proven to regenerate skin cells."
+      product_type: "cosmetic"
+      claims: ["eliminates_wrinkles", "reverses_aging", "regenerates_cells"]
+      medium: "tv"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["cosmetic", "medical efficacy", "yakkihou", "eliminates", "regenerate"]
+    tags: ["cosmetics", "health-claims"]
+    difficulty: "easy"
+
+  - id: "content_022"
+    description: "Cosmetic advertisement with permissible beauty claims"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "magazine_advertisement"
+      text: "Our moisturizing serum helps keep skin looking smooth and hydrated. Contains hyaluronic acid to help maintain skin's moisture balance."
+      product_type: "cosmetic"
+      claims: ["moisturizing", "smooth_appearance"]
+      medium: "print"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["cosmetic", "appearance", "permissible", "helps"]
+    tags: ["cosmetics"]
+    difficulty: "medium"
+
+  - id: "content_023"
+    description: "Affiliate marketing content without affiliate disclosure"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "blog_post"
+      text: "Top 5 Laptops for Remote Work in 2026 — After extensive testing, here are my picks. Links below."
+      affiliate_links: true
+      affiliate_disclosure: false
+      monetization: "commission_per_sale"
+      medium: "blog"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["affiliate", "disclosure", "commission", "transparency"]
+    tags: ["affiliate", "disclosure"]
+    difficulty: "easy"
+
+  - id: "content_024"
+    description: "Blog post with clear affiliate disclosure"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "blog_post"
+      text: "Disclosure: This article contains affiliate links. I may earn a commission if you make a purchase through these links, at no additional cost to you. Top 5 Laptops for Remote Work in 2026..."
+      affiliate_links: true
+      affiliate_disclosure: true
+      disclosure_position: "top"
+      medium: "blog"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["affiliate", "disclosure", "transparent", "top"]
+    tags: ["affiliate", "disclosure"]
+    difficulty: "easy"
+
+  - id: "content_025"
+    description: "Sweepstakes advertisement missing required legal terms"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "social_media_post"
+      text: "WIN a trip to Hawaii! Just follow us and retweet to enter! Drawing on May 31!"
+      campaign_type: "sweepstakes"
+      missing_terms: ["eligibility", "odds", "no_purchase_necessary", "official_rules_link"]
+      medium: "twitter"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["sweepstakes", "rules", "eligibility", "keihin hyouji hou"]
+    tags: ["promotions", "sweepstakes"]
+    difficulty: "medium"
+
+  - id: "content_026"
+    description: "Prize value exceeding legal maximum for purchase-linked campaign"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "campaign_page"
+      text: "Buy any product over 1,000 JPY and win a luxury car worth 5,000,000 JPY!"
+      campaign_type: "purchase_linked_prize"
+      transaction_amount: 1000
+      prize_value: 5000000
+      prize_limit_ratio: 20
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["prize", "excessive", "keihin hyouji", "20 times", "limit"]
+    tags: ["promotions", "prizes"]
+    difficulty: "hard"
+
+  - id: "content_027"
+    description: "Country-of-origin labeling omitted for imported food product"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_label"
+      text: "Premium Olive Oil — Cold Pressed, Extra Virgin. 500ml."
+      product_type: "food"
+      imported: true
+      country_of_origin_shown: false
+      medium: "packaging"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["country of origin", "labeling", "imported", "food"]
+    tags: ["labeling", "food"]
+    difficulty: "medium"
+
+  - id: "content_028"
+    description: "Food product with complete nutritional labeling"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_label"
+      text: "Nutritional Information per 100g: Energy 450kcal, Protein 8g, Fat 22g, Carbohydrates 55g, Sodium 320mg. Contains: wheat, eggs, milk. Country of Origin: Japan. Best before: 2026-12-31."
+      product_type: "food"
+      nutritional_info_complete: true
+      allergens_listed: true
+      expiry_shown: true
+      medium: "packaging"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["nutritional", "allergens", "complete", "labeling"]
+    tags: ["labeling", "food"]
+    difficulty: "easy"
+
+  - id: "content_029"
+    description: "Real estate advertisement omitting mandatory property details"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "property_listing"
+      text: "Beautiful 3LDK apartment in Minato-ku! Only 85,000,000 JPY. Contact us today!"
+      missing_details: ["building_age", "management_fees", "land_rights", "floor_area", "transaction_type"]
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["real estate", "mandatory", "disclosure", "building age", "fees"]
+    tags: ["real-estate", "disclosure"]
+    difficulty: "medium"
+
+  - id: "content_030"
+    description: "Financial product advertisement without risk disclosure"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "web_advertisement"
+      text: "Invest in our AI Growth Fund and earn 20% annual returns! Start with just 100,000 JPY."
+      product_type: "investment_fund"
+      risk_disclosure: false
+      guaranteed_returns_claimed: true
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["risk", "disclosure", "guaranteed", "investment", "kinyuu shouhin"]
+    tags: ["financial", "risk-disclosure"]
+    difficulty: "easy"
+
+  - id: "content_031"
+    description: "Financial product with proper risk disclosure and disclaimers"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "web_advertisement"
+      text: "AI Growth Fund — Past performance: 12.3% (2025). Past performance is not indicative of future results. Investment involves risk of loss of principal. Please read the prospectus carefully before investing. Registered with Financial Services Agency."
+      product_type: "investment_fund"
+      risk_disclosure: true
+      past_performance_disclaimer: true
+      regulatory_registration: true
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["risk disclosure", "past performance", "prospectus", "FSA"]
+    tags: ["financial", "risk-disclosure"]
+    difficulty: "medium"
+
+  - id: "content_032"
+    description: "Subscription dark pattern making cancellation deliberately difficult"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "user_interface"
+      text: "Are you REALLY sure you want to cancel? You'll lose all your data and progress! [Keep Subscription - large green button] [Cancel - tiny gray text link at bottom]"
+      dark_patterns: ["confirmshaming", "visual_manipulation", "obstruction"]
+      cancellation_steps: 7
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["dark pattern", "cancellation", "manipulative", "consumer protection"]
+    tags: ["dark-patterns", "ux"]
+    difficulty: "medium"
+
+  - id: "content_033"
+    description: "Clear and easy subscription cancellation flow"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "user_interface"
+      text: "Cancel Subscription. Your subscription will remain active until the end of your current billing period (May 31, 2026). You can resubscribe at any time. [Confirm Cancellation] [Keep Subscription]"
+      dark_patterns: []
+      cancellation_steps: 2
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["clear", "cancellation", "transparent", "easy"]
+    tags: ["dark-patterns", "ux"]
+    difficulty: "easy"
+
+  - id: "content_034"
+    description: "User review platform displaying only positive reviews"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "review_page"
+      text: "Customer Reviews (showing 4-5 star only) — Average Rating: 4.8/5"
+      review_filtering: "positive_only"
+      total_reviews: 500
+      shown_reviews: 200
+      negative_reviews_hidden: 300
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["reviews", "filtered", "misleading", "cherry-picking"]
+    tags: ["reviews", "deceptive"]
+    difficulty: "medium"
+
+  - id: "content_035"
+    description: "Fake urgency countdown timer that resets on page reload"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "landing_page"
+      text: "FLASH SALE ENDS IN 02:34:17! Order now or miss out forever!"
+      timer_behavior: "resets_on_reload"
+      genuine_deadline: false
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["fake urgency", "countdown", "resets", "deceptive"]
+    tags: ["deceptive", "urgency"]
+    difficulty: "medium"
+
+  - id: "content_036"
+    description: "Alcoholic beverage advertisement encouraging excessive consumption"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "social_media_post"
+      text: "Friday night challenge! See how many cans you can finish! Tag us with #DrinkMore for a chance to win!"
+      product_type: "alcohol"
+      encourages_excess: true
+      responsible_drinking_message: false
+      medium: "twitter"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["alcohol", "excessive", "responsible drinking", "challenge"]
+    tags: ["alcohol", "responsible-marketing"]
+    difficulty: "easy"
+
+  - id: "content_037"
+    description: "Alcoholic beverage with responsible messaging and age warning"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "print_advertisement"
+      text: "Craft Brewery Pale Ale — Brewed with locally sourced hops. Please enjoy responsibly. Not for persons under 20 years of age. Drinking during pregnancy may affect fetal development."
+      product_type: "alcohol"
+      age_warning: true
+      responsible_message: true
+      pregnancy_warning: true
+      medium: "print"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["responsible", "age warning", "pregnancy", "compliant"]
+    tags: ["alcohol", "responsible-marketing"]
+    difficulty: "easy"
+
+  - id: "content_038"
+    description: "Fake customer review written by company employee"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_review"
+      text: "Amazing product! Changed my life completely. 5 stars! Best purchase I've ever made."
+      author: "employee"
+      disclosed_as_employee: false
+      review_platform: "company_website"
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["fake review", "employee", "disclosure", "stealth marketing"]
+    tags: ["reviews", "stealth-marketing"]
+    difficulty: "easy"
+
+  - id: "content_039"
+    description: "Price comparison using inflated original price"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_listing"
+      text: "Was 50,000 JPY — Now only 19,800 JPY! Save 60%!"
+      original_price_genuine: false
+      actual_previous_selling_price: 22000
+      inflated_reference_price: 50000
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["inflated", "original price", "double pricing", "futou hyouji"]
+    tags: ["pricing", "deceptive"]
+    difficulty: "medium"
+
+  - id: "content_040"
+    description: "Genuine sale with accurate original price reference"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_listing"
+      text: "Regular price 32,780 JPY (tax included) — Sale price 24,580 JPY (tax included). 25% off through May 31, 2026."
+      original_price_genuine: true
+      sale_period_defined: true
+      tax_inclusive: true
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["genuine", "sale", "accurate", "tax-inclusive"]
+    tags: ["pricing"]
+    difficulty: "easy"
+
+  - id: "content_041"
+    description: "Cookie consent banner with no reject option"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "consent_banner"
+      text: "We use cookies to improve your experience. By continuing to browse, you accept our use of cookies. [Accept All]"
+      reject_option: false
+      granular_control: false
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "NEEDS_CONFIRMATION"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["cookie", "consent", "reject", "APPI", "choice"]
+    tags: ["privacy", "consent"]
+    difficulty: "hard"
+
+  - id: "content_042"
+    description: "Political advertisement without proper sponsorship disclosure"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "online_advertisement"
+      text: "Candidate Tanaka has the experience our city needs. Vote Tanaka for a better future!"
+      ad_type: "political"
+      sponsor_disclosed: false
+      payment_source: "political_pac"
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["political", "sponsor", "disclosure", "transparency"]
+    tags: ["political-advertising"]
+    difficulty: "medium"
+
+  - id: "content_043"
+    description: "Dietary supplement with proper 'Foods with Function Claims' notation"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_label"
+      text: "Foods with Function Claims. This product contains GABA which has been reported to help maintain healthy blood pressure. Not intended for persons with disease. Notification No. X999. This product has not been individually reviewed by the Consumer Affairs Agency."
+      product_type: "functional_food"
+      notification_number: "X999"
+      disclaimer_present: true
+      medium: "packaging"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["functional food", "notification", "Consumer Affairs", "disclaimer"]
+    tags: ["health-claims", "food"]
+    difficulty: "hard"
+
+  - id: "content_044"
+    description: "Recruitment advertisement with discriminatory age requirement"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "job_listing"
+      text: "Seeking energetic sales representatives, ages 22-35. Must be physically fit and attractive."
+      discriminatory_criteria: ["age_restriction", "appearance_requirement"]
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["discrimination", "age", "appearance", "employment equality"]
+    tags: ["recruitment", "discrimination"]
+    difficulty: "easy"
+
+  - id: "content_045"
+    description: "Product claiming to be 'Made in Japan' when only assembled there"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "product_label"
+      text: "Made in Japan — Premium Quality"
+      actual_origin: "Components manufactured in China, assembled in Japan"
+      substantial_transformation: false
+      medium: "packaging"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["origin", "Made in Japan", "assembled", "misleading"]
+    tags: ["labeling", "origin"]
+    difficulty: "hard"
+
+  - id: "content_046"
+    description: "Mobile game loot box without probability disclosure"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "in_app_purchase"
+      text: "Premium Treasure Chest — Contains rare and legendary items! Only 980 JPY!"
+      probability_disclosed: false
+      item_type: "randomized_loot_box"
+      target_audience: "general"
+      medium: "mobile_app"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["loot box", "probability", "gacha", "disclosure", "JOGA"]
+    tags: ["gaming", "gacha"]
+    difficulty: "medium"
+
+  - id: "content_047"
+    description: "Gacha game with proper probability table disclosure"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "in_app_purchase"
+      text: "Super Gacha — Rates: SSR 3%, SR 15%, R 82%. Pity system: guaranteed SSR within 100 draws. See full probability table. 320 JPY per draw."
+      probability_disclosed: true
+      pity_system: true
+      medium: "mobile_app"
+      jurisdiction: "JP"
+    expected_verdict: "ALLOW"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["probability", "disclosed", "gacha", "pity system"]
+    tags: ["gaming", "gacha"]
+    difficulty: "medium"
+
+  - id: "content_048"
+    description: "SMS marketing sent without prior consent"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "sms_message"
+      text: "50% off all items this weekend! Visit our store at Shibuya. Reply STOP to unsubscribe."
+      prior_consent: false
+      sender_identified: true
+      opt_out_mechanism: true
+      medium: "sms"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["SMS", "consent", "unsolicited", "opt-in"]
+    tags: ["sms-marketing", "compliance"]
+    difficulty: "medium"
+
+  - id: "content_049"
+    description: "Weight loss product with unrealistic results claim"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "web_advertisement"
+      text: "Lose 10kg in just 7 days! No exercise needed! Our miracle pill melts fat while you sleep. Results guaranteed or your money back."
+      product_type: "weight_loss_supplement"
+      claims: ["extreme_weight_loss", "no_exercise", "guaranteed"]
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["unrealistic", "weight loss", "misleading", "health claim", "keihyohou"]
+    tags: ["health-claims", "deceptive"]
+    difficulty: "easy"
+
+  - id: "content_050"
+    description: "Multi-level marketing recruitment disguised as job listing"
+    subject_kind: "creative"
+    input_payload:
+      content_type: "job_listing"
+      text: "Be your own boss! Unlimited earning potential! Join our team of independent business owners. Small startup investment of 300,000 JPY required. Earn commissions by building your network."
+      actual_type: "mlm_recruitment"
+      investment_required: true
+      income_disclosure: false
+      medium: "web"
+      jurisdiction: "JP"
+    expected_verdict: "DENY"
+    expected_rule_ids: []
+    expected_reasoning_keywords: ["MLM", "recruitment", "investment", "tokushoho", "income disclosure"]
+    tags: ["mlm", "deceptive"]
+    difficulty: "hard"

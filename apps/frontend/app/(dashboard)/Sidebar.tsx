@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { usePersona, PERSONA_SECTIONS, PersonaSwitcher } from "./PersonaSwitcher";
+import { PersonaSwitcher as PortalSwitcher } from "@/components/PersonaSwitcher";
 import { ProjectSelector } from "./ProjectSelector";
 
 const NAV_ITEMS = [
@@ -37,15 +38,20 @@ export function Sidebar() {
   const tApp = useTranslations("app");
 
   return (
-    <aside className="w-64 border-r bg-white px-4 py-6">
+    <aside className="flex w-64 flex-col border-r bg-white px-4 py-6">
       <Link href="/" className="mb-4 block text-xl font-bold tracking-tight">
         {tApp("title")}
       </Link>
 
+      {/* Portal switcher — navigate to other department portals */}
+      <div className="mb-3">
+        <PortalSwitcher />
+      </div>
+
       <ProjectSelector />
       <PersonaSwitcher />
 
-      <nav className="mt-6 space-y-6">
+      <nav className="mt-6 flex-1 space-y-6 overflow-y-auto">
         {visibleSections.map((section) => (
           <div key={section}>
             <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">

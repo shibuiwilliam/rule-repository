@@ -452,3 +452,70 @@ The gateway (`gateway/router.py`) receives webhooks, normalizes events, matches 
 - Alert webhook notifications are not sent.
 
 To implement: add action executors in `gateway/actions/` that read the policy's `response_actions` config and dispatch to the appropriate channel (webhook callback, Slack API, email, etc.) when the verdict is DENY.
+
+---
+
+## Discovery Connectors (Phase 8)
+
+**Source code**: `apps/server/src/rulerepo_server/services/discovery/connectors/`
+
+Discovery connectors implement the `DocumentSource` and `IncrementalSource` protocols defined in `services/discovery/connectors/base.py`. They enable rule discovery from external document sources.
+
+### Protocols
+
+```python
+class DocumentSource(Protocol):
+    async def list_documents(self, query: SourceQuery) -> AsyncIterator[Document]: ...
+    async def get_content(self, doc_id: str) -> bytes: ...
+    async def get_metadata(self, doc_id: str) -> dict: ...
+
+class IncrementalSource(DocumentSource):
+    async def changes_since(self, cursor: str) -> AsyncIterator[ChangeEvent]: ...
+```
+
+### Available Connectors
+
+| Connector | File | Protocol | Status |
+|---|---|---|---|
+| Confluence | `confluence.py` | `DocumentSource` | Stub |
+| Notion | `notion.py` | `DocumentSource` | Stub |
+| SharePoint | `sharepoint.py` | `DocumentSource` | Implemented (Phase 8) |
+| Google Drive | `google_drive.py` | `DocumentSource` | Implemented (Phase 8) |
+| e-Gov (Japan) | `egov.py` | `IncrementalSource` | Stub |
+| EUR-Lex | `eurlex.py` | `IncrementalSource` | Stub |
+
+### Discovery Sources
+
+| Source | File | Description |
+|---|---|---|
+| Contract DOCX | `sources/contract_docx.py` | Parses DOCX contracts into clauses for rule extraction |
+| Policy Handbook | `sources/policy_handbook.py` | Extracts rules from policy handbooks |
+| Regulation PDF | `sources/regulation_pdf.py` | Extracts rules from regulatory PDFs |
+
+### Contract Corpus Analyzer
+
+`services/discovery/analyzers/contract_corpus.py` clusters historical contracts by semantic similarity, identifies high-frequency clause patterns, and drafts candidate standard-clause rules for Legal department review.
+
+---
+
+## Business System Connectors
+
+**Source code**: `packages/connectors/`
+
+Reference connector implementations for business system integration:
+
+| Connector | Directory | System | Purpose |
+|---|---|---|---|
+| SmartHR HRIS | `hris-smarthr/` | SmartHR | Employee data, attendance, leave |
+| Salesforce CRM | `crm-salesforce/` | Salesforce | Deal data, client relationships |
+| freee ERP | `erp-freee/` | freee | Accounting, expense data |
+
+### Business System Integrations (Server-side)
+
+`apps/server/src/rulerepo_server/integrations/business_systems/` provides normalized adapters for:
+
+- `attendance.py` — Attendance event normalization
+- `contract.py` — Contract data normalization
+- `expense.py` — Expense data normalization
+
+All implement the `base.py` protocol for consistent data access patterns.

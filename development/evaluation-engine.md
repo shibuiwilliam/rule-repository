@@ -479,3 +479,53 @@ The audit log table is append-only with hash chaining (each row links to the pre
 - All structured logging uses `structlog` with JSON output. Never `print()`.
 - Prompt files live in `services/evaluation/prompts/` and are loaded at call time via `_load_prompt()`. They are versioned in git.
 - The `environment` parameter flows from the API layer through `EvaluationService.evaluate()` to `rule_selector.select_rules()`, where it triggers snapshot-based rule resolution.
+
+---
+
+## Domain-Specific Engines (Phase 8)
+
+### Contract Clause Engine
+
+**Endpoint**: `POST /api/v1/evaluate/contract` (`api/v1/contract.py`)
+
+The contract engine wraps the standard evaluation pipeline with clause-specific parsing, comparison, and aggregation:
+
+1. **Parse**: `adapters/contract_parser.py` accepts DOCX (via `python-docx`), PDF (via Gemini Files API), or plain text. Delegates to `services/extraction/contract/clause_segmenter.py` for clause identification and `clause_classifier.py` for type detection. Returns a `ParsedContract`.
+2. **Compare** (optional): `adapters/contract_compare.py` matches draft clauses against standard clauses by type and semantic similarity (embedding-based). Returns a `ComparisonResult` with per-clause diffs.
+3. **Evaluate**: Constructs a `ClauseSetSubject` and routes through `EvaluationService.evaluate(subject_kind=CLAUSE_SET)`.
+4. **Aggregate**: `services/evaluation/clause_aggregator.py` collapses clause-level verdicts to a contract-level verdict:
+   - Any DENY on a MUST/MUST_NOT rule produces contract-level DENY
+   - Any NEEDS_CONFIRMATION on a CRITICAL rule produces contract-level NEEDS_CONFIRMATION
+   - Otherwise ALLOW
+
+**Review types** (via `review_type` parameter):
+- `self_conformance` — Compare draft clauses against company standard clauses
+- `cross_contract` — Detect contradictions with existing contracts
+- `regulatory_compliance` — Check clauses against regulatory rules
+- `risk_scoring` — Score each clause for risk factors
+
+**Prompt templates**: `services/evaluation/prompts/clause_set/` — `evaluate_clause.txt`, `compare_clauses.txt`, `risk_score_clause.txt`.
+
+All contract remediations have `auto_applicable=false` by default.
+
+### Event Engine with Temporal Modes
+
+**Endpoint**: `POST /api/v1/evaluate/event` (`api/v1/event.py`)
+
+The event engine extends single-event evaluation with temporal reasoning for HR compliance:
+
+**Evaluation modes** (via `evaluation_mode` parameter):
+- `single` (default) — Evaluate the event alone
+- `sequence` — Include an `EventWindow` (monthly prior events) as context for cumulative threshold detection (e.g., 45-hour monthly overtime cap)
+- `calendar` — Include a `CalendarContext` (annual aggregates) for annual ceiling enforcement (e.g., 720-hour annual cap, 36-Agreement thresholds)
+
+**Domain types** (`domain/event_sequence.py`):
+- `EventEvaluationMode` — enum: `SINGLE`, `SEQUENCE`, `CALENDAR`
+- `EventRecord` — a historical event with type, date, value, unit
+- `EventWindow` — time-bounded window with events and pre-computed aggregates (total, count, average)
+- `CalendarContext` — fiscal year aggregates: YTD overtime, monthly breakdown, 36-Agreement status
+- `SequenceContext` — combined wrapper for both window and calendar
+
+**Prompt templates**: `services/evaluation/prompts/event/` — `evaluate_sequence.txt`, `evaluate_calendar.txt`.
+
+The caller provides temporal context. In production, HR system adapters (Workday, SmartHR, freee HR) query recent events and aggregates.
