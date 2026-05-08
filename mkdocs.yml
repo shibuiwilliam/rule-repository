@@ -30,6 +30,7 @@ nav:
     - Auto-Remediation: architecture/remediation.md
   - API Reference:
     - REST API: api/rest.md
+    - Search API: api/search.md
     - Evaluate API: api/evaluate.md
     - Intent API: api/intent.md
     - Discovery API: api/discovery.md
@@ -65,8 +66,15 @@ nav:
     - Testing: dev/testing.md
   - Reference:
     - Scope Naming: scope-naming.md
+  - Changelog:
+    - Phase 7: 09_changelog/phase7.md
+    - Phase 7 Status: 09_changelog/phase7-status.md
+    - Phase 8: 09_changelog/phase8.md
   - ADR:
     - "001: Three-Store Architecture": adr/001-three-store-architecture.md
+    - "003: Classification and RLS": adr/003-classification-and-rls.md
+    - "004: Contract Clause Engine": adr/004-contract-clause-engine.md
+    - "005: Event Engine Temporal Modes": adr/005-event-engine-temporal-modes.md
 
 markdown_extensions:
   - admonition

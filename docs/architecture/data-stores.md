@@ -48,7 +48,7 @@ Migrations are managed by **Alembic**.
 
 ### Row-Level Security
 
-Classification-based RLS is enabled on `rules`, `evaluations`, and `audit_log` tables. Session variables (`app.user_id`, `app.user_clearance`, `app.user_departments`) must be set before every query via `with_user_context()`. Classification RLS coexists with tenant-based RLS; both layers must pass for a row to be visible. See [ADR 0003](../../development/adr/0003-classification-and-rls.md).
+Classification-based RLS is enabled on `rules`, `evaluations`, and `audit_log` tables. Session variables (`app.user_id`, `app.user_clearance`, `app.user_departments`) must be set before every query via `with_user_context()`. Classification RLS coexists with tenant-based RLS; both layers must pass for a row to be visible. See [ADR 003](../adr/003-classification-and-rls.md).
 
 ## Elasticsearch (Search Index)
 
