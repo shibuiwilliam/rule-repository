@@ -1,0 +1,211 @@
+version: 1
+template:
+  name: security-access-control
+  description: Access management rules covering least privilege, MFA, access reviews, privileged accounts, and deprovisioning
+  tags:
+  - security
+  - access-control
+  - identity
+  - iam
+  - compliance
+rules:
+- statement: Access to systems and data MUST be granted based on the principle of least privilege. Users MUST receive only the
+    minimum permissions required to perform their job functions.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - security/access-control
+  tags:
+  - least-privilege
+  - rbac
+  - authorization
+  applicable_subject_types:
+  - access_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Least privilege minimizes the blast radius of compromised accounts and reduces the risk of unauthorized data access.
+    It is a foundational principle of ISO 27001, NIST, and SOC 2.
+  source_refs:
+  - authority: ISO/IEC 27001:2022
+    article: A.8.3
+    note: Restriction of information access.
+  - authority: NIST SP 800-53
+    article: AC-6
+    note: Least Privilege.
+  preconditions:
+  - A new access request has been submitted or an existing access grant is being reviewed.
+  exceptions:
+  - Emergency break-glass access may temporarily exceed least privilege, but must be logged, time-limited, and reviewed within
+    24 hours.
+  following_examples:
+  - A marketing analyst is granted read-only access to the analytics dashboard. Write access to the production database is not
+    granted because it is not required for their role.
+  violation_examples:
+  - A new hire in the sales department is granted administrator access to all systems 'to make onboarding easier.'
+
+- statement: Multi-factor authentication (MFA) MUST be enforced for all user accounts accessing production systems, cloud management
+    consoles, and systems containing personal data or financial data.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - security/access-control
+  tags:
+  - mfa
+  - authentication
+  - strong-auth
+  applicable_subject_types:
+  - access_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: MFA significantly reduces the risk of credential-based attacks. It is required by most compliance frameworks including
+    PCI DSS, SOC 2, and ISMS.
+  source_refs:
+  - authority: NIST SP 800-63B
+    note: Digital Identity Guidelines, Authentication and Lifecycle Management.
+  - authority: PCI DSS v4.0
+    article: '8.4'
+    note: Multi-factor authentication requirements.
+  preconditions:
+  - A user account has access to a system that is in scope for MFA enforcement.
+  exceptions:
+  - Service accounts and API keys that cannot support interactive MFA must use compensating controls (IP allowlisting, short-lived
+    tokens, certificate-based authentication).
+  following_examples:
+  - All employees are required to use a hardware security key or authenticator app as a second factor when accessing the cloud
+    console, VPN, and HR system.
+  violation_examples:
+  - The production database is accessible via SSH with password-only authentication and no MFA.
+
+- statement: Access rights MUST be reviewed at least quarterly for privileged accounts and at least semi-annually for standard
+    accounts. Reviews MUST result in documented approval or revocation decisions for each account.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - security/access-control
+  tags:
+  - access-review
+  - periodic
+  - recertification
+  applicable_subject_types:
+  - access_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Access reviews detect and remediate privilege creep, orphaned accounts, and inappropriate access that accumulates
+    over time.
+  source_refs:
+  - authority: ISO/IEC 27001:2022
+    article: A.8.2
+    note: Privileged access rights.
+  - authority: SOC 2 Trust Services Criteria
+    article: CC6.1
+  preconditions:
+  - The organization has users with access to systems.
+  exceptions:
+  - Systems with automated just-in-time (JIT) access provisioning that grants and revokes access per session may follow a semi-annual
+    review cycle for the JIT policy itself instead of per-account reviews.
+  following_examples:
+  - The IT security team sends quarterly access review requests to each system owner. The system owner reviews each user's access,
+    confirms or revokes, and signs off. Revocations are processed within 5 business days.
+  violation_examples:
+  - No access review has been conducted in 18 months, and former employees' accounts remain active.
+
+- statement: User access MUST be deprovisioned within 24 hours of employment termination or role change. For involuntary terminations,
+    access MUST be revoked immediately (within 1 hour of notification).
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - security/access-control
+  tags:
+  - deprovisioning
+  - termination
+  - offboarding
+  applicable_subject_types:
+  - access_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Delayed deprovisioning of terminated employees is one of the most common causes of data breaches and insider threats.
+    Immediate revocation for involuntary terminations prevents retaliatory actions.
+  source_refs:
+  - authority: NIST SP 800-53
+    article: PS-4
+    note: Personnel Termination.
+  preconditions:
+  - An employee has been terminated or has changed roles.
+  exceptions:
+  - Shared accounts or group memberships may take up to 48 hours to fully deprovision if manual steps are required across multiple
+    systems, but critical systems (email, VPN, SSO) must be revoked within the primary timeline.
+  following_examples:
+  - HR notifies IT of a termination. IT disables the user's SSO account within 30 minutes, revokes VPN access, and deactivates
+    all application accounts within 24 hours. A confirmation is sent to HR.
+  violation_examples:
+  - An employee is terminated on Friday; their accounts remain active through the weekend and are not disabled until the following
+    Tuesday.
+
+- statement: Privileged accounts (administrator, root, DBA) MUST NOT be used for routine daily tasks. Administrators MUST use
+    standard accounts for routine work and elevate to privileged accounts only when administrative tasks are required.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - security/access-control
+  tags:
+  - privileged-accounts
+  - separation
+  - admin
+  applicable_subject_types:
+  - access_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Using privileged accounts for routine tasks (browsing, email) increases the risk of credential theft via phishing
+    or malware. Separation limits the exposure window.
+  source_refs:
+  - authority: CIS Controls v8
+    article: '5.4'
+    note: Restrict Administrator Privileges to Dedicated Administrator Accounts.
+  preconditions:
+  - A user has both a standard account and a privileged account.
+  exceptions:
+  - In environments with just-in-time privilege elevation (e.g., PAM tools), the standard account may be temporarily elevated
+    without a separate privileged account.
+  following_examples:
+  - The system administrator uses their standard account for email and browsing, and switches to their admin account (via a PAM
+    tool with MFA) only when performing server maintenance.
+  violation_examples:
+  - The DBA uses the database root account for all activities including reading personal email and browsing the web.
+
+- statement: Access requests MUST include a documented business justification, the requested access level, the expected duration,
+    and approval from the data owner or system owner. Requests without complete information MUST be rejected.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - security/access-control
+  tags:
+  - request-process
+  - documentation
+  - approval
+  applicable_subject_types:
+  - access_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Documented access requests create an audit trail, ensure business justification is validated, and enable meaningful
+    access reviews.
+  source_refs:
+  - authority: ISO/IEC 27001:2022
+    article: A.8.2
+  - authority: SOC 2 Trust Services Criteria
+    article: CC6.2
+  preconditions:
+  - A user is requesting access to a system or dataset.
+  exceptions:
+  - Automated onboarding provisioning based on predefined role profiles may bypass individual request documentation, but the
+    role profile itself must be documented and approved.
+  following_examples:
+  - Employee submits an access request ticket specifying the system (CRM), access level (read-only), business justification (supporting
+    Q4 sales campaign), expected duration (3 months), and the CRM system owner approves the request.
+  violation_examples:
+  - An employee sends a Slack message to IT saying 'I need access to the database' with no additional detail, and access is granted.

@@ -1,0 +1,201 @@
+version: 1
+template:
+  name: security-iac-terraform
+  description: Infrastructure as Code security rules for Terraform covering public access, encryption, tagging, network security, and state management
+  tags:
+  - security
+  - iac
+  - terraform
+  - cloud
+  - aws
+  - infrastructure
+rules:
+- statement: S3 buckets MUST NOT have public access enabled. The `aws_s3_bucket_public_access_block` resource MUST be configured
+    with all four block settings set to true for every bucket.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - security/iac/terraform
+  tags:
+  - s3
+  - public-access
+  - data-exposure
+  applicable_subject_types:
+  - iac_plan
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Publicly accessible S3 buckets are one of the most common causes of data breaches. Blocking public access at the
+    bucket level is a defense-in-depth measure.
+  source_refs:
+  - authority: CIS AWS Foundations Benchmark
+    article: '2.1.5'
+    note: Ensure that S3 Buckets are configured with Block Public Access.
+  - authority: AWS Well-Architected Framework
+    note: Security Pillar, Data Protection.
+  preconditions:
+  - The Terraform plan includes an `aws_s3_bucket` resource.
+  exceptions:
+  - Static website hosting buckets serving public content may have read-only public access if approved by the security team and
+    documented. These must not contain any sensitive data.
+  following_examples:
+  - Every `aws_s3_bucket` has an associated `aws_s3_bucket_public_access_block` with `block_public_acls = true`, `block_public_policy = true`,
+    `ignore_public_acls = true`, and `restrict_public_buckets = true`.
+  violation_examples:
+  - An S3 bucket is created without a public access block, or with `block_public_policy = false`.
+
+- statement: All storage volumes (EBS, RDS, S3) MUST have encryption at rest enabled using KMS customer-managed keys (CMKs).
+    AWS-managed keys MAY be used only for non-sensitive workloads with documented justification.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - security/iac/terraform
+  tags:
+  - encryption
+  - at-rest
+  - kms
+  applicable_subject_types:
+  - iac_plan
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Encryption at rest protects data from unauthorized physical access and is required by most compliance frameworks
+    (SOC 2, PCI DSS, HIPAA, APPI).
+  source_refs:
+  - authority: CIS AWS Foundations Benchmark
+    article: '2.2.1'
+    note: Ensure EBS Volume Encryption is Enabled in All Regions.
+  - authority: NIST SP 800-53
+    article: SC-28
+    note: Protection of Information at Rest.
+  preconditions:
+  - The Terraform plan includes storage resources (EBS volumes, RDS instances, S3 buckets).
+  exceptions:
+  - Ephemeral scratch volumes used only for temporary computation with no persistent data may use AWS-managed keys.
+  following_examples:
+  - An RDS instance is configured with `storage_encrypted = true` and `kms_key_id` pointing to a customer-managed KMS key.
+  violation_examples:
+  - An EBS volume is created with `encrypted = false` or encryption is not specified (defaults to unencrypted in some configurations).
+
+- statement: All infrastructure resources MUST be tagged with at minimum the following tags — `Environment`, `Project`, `Owner`,
+    and `CostCenter`. Resources without required tags MUST be flagged by automated policy checks.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - security/iac/terraform
+  tags:
+  - tagging
+  - cost-management
+  - governance
+  applicable_subject_types:
+  - iac_plan
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Consistent tagging enables cost allocation, resource ownership tracking, and automated security policy enforcement.
+    Untagged resources become orphaned and unmanageable.
+  source_refs:
+  - authority: AWS Well-Architected Framework
+    note: Cost Optimization Pillar, Tagging Strategy.
+  preconditions:
+  - The Terraform plan creates or modifies a taggable resource.
+  exceptions:
+  - Resources that do not support tags (e.g., certain IAM policies) are exempt from the tagging requirement.
+  following_examples:
+  - Every EC2 instance, RDS instance, and S3 bucket includes tags for Environment (production), Project (rule-repository), Owner
+    (platform-team), and CostCenter (ENG-001).
+  violation_examples:
+  - An EC2 instance is created with no tags, making it impossible to determine who owns it or which project it belongs to.
+
+- statement: Security groups MUST NOT allow unrestricted inbound access (0.0.0.0/0 or ::/0) on any port except 80 (HTTP) and
+    443 (HTTPS) for public-facing load balancers. SSH (port 22) and RDP (port 3389) MUST NOT be open to the internet.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - security/iac/terraform
+  tags:
+  - security-group
+  - network
+  - inbound-access
+  applicable_subject_types:
+  - iac_plan
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Unrestricted inbound access exposes services to brute-force attacks, vulnerability exploitation, and unauthorized
+    access. SSH and RDP must be accessed through bastion hosts or VPN only.
+  source_refs:
+  - authority: CIS AWS Foundations Benchmark
+    article: '5.2'
+    note: Ensure no security groups allow ingress from 0.0.0.0/0 to remote server administration ports.
+  preconditions:
+  - The Terraform plan includes `aws_security_group` or `aws_security_group_rule` resources with inbound rules.
+  exceptions:
+  - Public-facing ALB/NLB security groups may allow 0.0.0.0/0 on ports 80 and 443 for serving web traffic.
+  following_examples:
+  - SSH access is restricted to the bastion host's security group. The bastion host is accessible only through the VPN CIDR range.
+  violation_examples:
+  - A security group allows inbound SSH (port 22) from 0.0.0.0/0, exposing the instance to internet-wide brute-force attacks.
+
+- statement: Terraform state files MUST be stored in a remote backend (S3 + DynamoDB for locking) with encryption enabled. State
+    files MUST NOT be committed to version control or stored on local developer machines.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - security/iac/terraform
+  tags:
+  - state-management
+  - remote-backend
+  - secrets
+  applicable_subject_types:
+  - iac_plan
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Terraform state files contain sensitive information including resource IDs, connection strings, and potentially secrets.
+    Local or version-controlled state creates data exposure and state corruption risks.
+  source_refs:
+  - authority: HashiCorp Terraform Best Practices
+    note: Remote state storage with locking is recommended for all production infrastructure.
+  preconditions:
+  - The Terraform project manages infrastructure resources.
+  exceptions:
+  - Local development or experimentation environments that do not manage production resources may use local state temporarily.
+  following_examples:
+  - Terraform backend is configured with an S3 bucket (versioning and encryption enabled) and a DynamoDB table for state locking.
+    The .terraform directory and *.tfstate files are in .gitignore.
+  violation_examples:
+  - The terraform.tfstate file is committed to the Git repository, exposing database passwords and API keys.
+
+- statement: IAM policies MUST NOT use wildcard actions ('*') or wildcard resources ('*') except for read-only policies on non-sensitive
+    resources. All IAM policies MUST follow the principle of least privilege.
+  modality: MUST_NOT
+  severity: HIGH
+  scope:
+  - security/iac/terraform
+  tags:
+  - iam
+  - least-privilege
+  - wildcard
+  applicable_subject_types:
+  - iac_plan
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Wildcard IAM policies grant far more permissions than needed, increasing the blast radius of compromised credentials
+    and violating the principle of least privilege.
+  source_refs:
+  - authority: CIS AWS Foundations Benchmark
+    article: '1.16'
+    note: Ensure IAM policies that allow full administrative privileges are not attached.
+  - authority: AWS Well-Architected Framework
+    note: Security Pillar, Identity and Access Management.
+  preconditions:
+  - The Terraform plan includes `aws_iam_policy` or `aws_iam_role_policy` resources.
+  exceptions:
+  - AWS-managed policies (e.g., ReadOnlyAccess) that use wildcards are maintained by AWS and may be used where appropriate.
+    Custom policies must not use wildcards.
+  following_examples:
+  - An IAM policy grants `s3:GetObject` and `s3:ListBucket` on a specific bucket ARN, not on `*`.
+  violation_examples:
+  - 'An IAM policy grants `"Action": "*", "Resource": "*"`, effectively giving the role full administrator access.'

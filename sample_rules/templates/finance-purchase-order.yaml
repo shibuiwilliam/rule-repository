@@ -1,0 +1,195 @@
+version: 1
+template:
+  name: finance-purchase-order
+  description: Purchase order rules covering authority limits, competitive bidding, vendor approval, and documentation requirements
+  tags:
+  - finance
+  - procurement
+  - purchase-order
+  - internal-controls
+rules:
+- statement: All purchases exceeding 100,000 JPY MUST be supported by an approved purchase order (PO) issued before the goods
+    or services are ordered. Retroactive POs MUST NOT be accepted without CFO approval.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/procurement/po
+  tags:
+  - pre-approval
+  - purchase-order
+  - controls
+  applicable_subject_types:
+  - po_request
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: Pre-approved POs ensure budget availability, proper authorization, and a clear audit trail. Retroactive POs bypass
+    these controls.
+  source_refs:
+  - authority: Company procurement policy
+    note: Standard procurement control aligned with J-SOX requirements.
+  preconditions:
+  - An employee intends to purchase goods or services exceeding 100,000 JPY.
+  exceptions:
+  - Emergency purchases (e.g., critical system failure requiring immediate replacement) may use a blanket PO with post-facto
+    documentation within 5 business days.
+  following_examples:
+  - Employee submits a PO request for 500,000 JPY of server hardware. The PO is approved by the department head before the order
+    is placed with the vendor.
+  violation_examples:
+  - Employee orders 300,000 JPY of equipment from a vendor and submits a retroactive PO request after receiving the invoice.
+
+- statement: Purchase orders MUST specify the authorized approver based on the company's authority matrix. POs up to 500,000 JPY
+    require department head approval; POs from 500,001 to 5,000,000 JPY require division head approval; POs exceeding 5,000,000
+    JPY require CFO approval.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/procurement/po
+  tags:
+  - authority-matrix
+  - approval-levels
+  - delegation
+  applicable_subject_types:
+  - po_request
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: Tiered approval ensures spending authority is proportional to the financial commitment and prevents unauthorized
+    expenditure.
+  source_refs:
+  - authority: Company procurement policy
+    note: Authority matrix should be reviewed annually by the board.
+  preconditions:
+  - A purchase order has been submitted for approval.
+  exceptions:
+  - In the absence of the designated approver, the next-level-up approver may authorize. The absent approver must ratify within
+    5 business days of return.
+  following_examples:
+  - A 3,000,000 JPY annual software subscription PO is approved by the division head.
+  violation_examples:
+  - A 6,000,000 JPY consulting engagement PO is approved by the department head without CFO involvement.
+
+- statement: Purchases exceeding 1,000,000 JPY MUST include competitive quotations from at least 3 qualified vendors, unless
+    a sole-source justification is documented and approved by the procurement team.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/procurement/po
+  tags:
+  - competitive-bidding
+  - vendor-selection
+  - cost-control
+  applicable_subject_types:
+  - po_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Competitive bidding ensures the company receives fair market pricing and prevents favoritism in vendor selection.
+  source_refs:
+  - authority: Company procurement policy
+    note: Three-quote rule is a standard procurement control.
+  preconditions:
+  - The purchase amount exceeds 1,000,000 JPY.
+  exceptions:
+  - Sole-source purchases are permitted when only one vendor can provide the required goods/services (e.g., proprietary software
+    maintenance, patented equipment), but a sole-source justification form must be approved by the procurement team.
+  following_examples:
+  - For a 2,000,000 JPY office furniture purchase, the procurement team obtains quotes from 3 suppliers and selects the best
+    value option, documenting the comparison.
+  violation_examples:
+  - A 3,000,000 JPY IT consulting engagement is awarded to a vendor without obtaining any competitive quotes and without a sole-source
+    justification.
+
+- statement: Purchase orders MUST NOT be split across multiple POs to circumvent approval thresholds. Related purchases for the
+    same project or purpose MUST be aggregated into a single PO.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - finance/procurement/po
+  tags:
+  - po-splitting
+  - fraud-prevention
+  - controls
+  applicable_subject_types:
+  - po_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: PO splitting is a common procurement fraud pattern that bypasses approval controls and competitive bidding requirements.
+  source_refs:
+  - authority: Company procurement policy
+    note: Anti-splitting controls are a key element of internal audit reviews.
+  preconditions:
+  - Multiple purchase orders are being created for related goods or services.
+  exceptions:
+  - Phased project deliveries with genuinely separate scopes and timelines may warrant separate POs if documented in the project
+    plan.
+  following_examples:
+  - A project requiring 3,000,000 JPY of equipment is submitted as a single PO, triggering division head approval.
+  violation_examples:
+  - An employee splits a 3,000,000 JPY equipment purchase into seven POs of 400,000 JPY each to stay within the department head
+    approval threshold.
+
+- statement: Vendors MUST be approved and registered in the vendor master before a purchase order can be issued. New vendor registration
+    MUST include verification of business registration, tax status, and bank account details.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/procurement/po
+  tags:
+  - vendor-approval
+  - vendor-master
+  - due-diligence
+  applicable_subject_types:
+  - po_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Vendor master controls prevent payments to fictitious vendors, ensure proper tax withholding, and maintain an auditable
+    vendor database.
+  source_refs:
+  - authority: Company procurement policy
+    note: Vendor master controls are a key element of fraud prevention and tax compliance.
+  preconditions:
+  - A purchase order is being created for a vendor.
+  exceptions:
+  - One-time small purchases (under 50,000 JPY) from ad-hoc vendors may use a simplified registration process.
+  following_examples:
+  - Before issuing a PO, the procurement team verifies the vendor's business registration certificate, confirms their qualified
+    invoice issuer status, and validates their bank account details.
+  violation_examples:
+  - A PO is issued to a new vendor that has not been registered or verified, and the payment is made to an unverified bank account.
+
+- statement: Purchase orders for recurring services (annual subscriptions, maintenance contracts) MUST be reviewed for renewal
+    terms and pricing at least 30 days before the renewal date. Auto-renewal without review MUST NOT be permitted for contracts
+    exceeding 500,000 JPY annually.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - finance/procurement/po
+  tags:
+  - renewal
+  - review
+  - cost-management
+  applicable_subject_types:
+  - po_request
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Unreviewed auto-renewals lead to cost creep, lock-in to underperforming vendors, and missed opportunities for renegotiation
+    or competitive alternatives.
+  source_refs:
+  - authority: Company procurement policy
+    note: Renewal management is a cost optimization best practice.
+  preconditions:
+  - A recurring service contract is approaching its renewal date.
+  exceptions:
+  - Critical infrastructure services (e.g., core ERP, security tools) where switching cost is prohibitive may follow a simplified
+    review focused on pricing and SLA compliance.
+  following_examples:
+  - The procurement team sends a renewal review reminder 45 days before the renewal date. The department reviews pricing, usage,
+    and alternatives before approving the renewal PO.
+  violation_examples:
+  - A 2,000,000 JPY annual SaaS subscription auto-renews without anyone reviewing whether the tool is still being used or whether
+    pricing is competitive.

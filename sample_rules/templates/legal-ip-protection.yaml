@@ -1,0 +1,201 @@
+version: 1
+template:
+  name: legal-ip-protection
+  description: Intellectual property rules covering ownership clauses, license grants, work-for-hire, non-compete, and trade secret protections
+  tags:
+  - legal
+  - intellectual-property
+  - licensing
+  - ownership
+rules:
+- statement: All contracts involving creation of intellectual property MUST include an explicit IP ownership clause specifying
+    which party owns the deliverables, pre-existing IP, and any jointly developed IP.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - legal/ip/ownership
+  tags:
+  - ownership
+  - deliverables
+  - work-product
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: Without an explicit ownership clause, IP ownership defaults to the creator under most jurisdictions, which may not
+    reflect the parties' intent.
+  source_refs:
+  - authority: Standard IP contract practice
+    note: Default copyright ownership rules vary significantly across jurisdictions (e.g., work-for-hire doctrine applies differently
+      in the US vs. Japan vs. EU).
+  preconditions:
+  - The contract involves creation, development, or customization of IP (software, designs, content, inventions).
+  exceptions:
+  - Pure reseller or distribution agreements where no new IP is created may not require an IP ownership clause.
+  following_examples:
+  - The contract states that all deliverables created under the engagement are owned by the client upon payment. The vendor retains
+    ownership of pre-existing tools and frameworks, licensed to the client on a non-exclusive, perpetual basis.
+  violation_examples:
+  - A software development agreement is silent on IP ownership, leaving ownership with the developer by default.
+
+- statement: License grants MUST specify the scope (exclusive/non-exclusive), territory, duration, permitted uses, and sublicensing
+    rights. Open-ended license grants MUST NOT be accepted without legal review.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/ip/licensing
+  tags:
+  - license
+  - scope
+  - rights
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: Ambiguous license grants create disputes about permitted use and may inadvertently grant broader rights than intended.
+  source_refs:
+  - authority: Standard IP licensing practice
+    note: License specificity is essential for enforceability and commercial certainty.
+  preconditions:
+  - The contract includes a license grant for IP.
+  exceptions:
+  - Open-source licenses follow their own terms and do not require individual negotiation, but the choice of open-source license
+    must be reviewed for compatibility with the project.
+  following_examples:
+  - Licensor grants Licensee a non-exclusive, non-transferable, royalty-free license to use the Software in Japan for internal
+    business purposes for the term of the agreement. Sublicensing is not permitted.
+  violation_examples:
+  - The contract grants a 'worldwide, perpetual, irrevocable license to use the IP for any purpose' with no limitations.
+
+- statement: Contracts MUST clearly identify and list all pre-existing IP (background IP) that each party brings to the engagement,
+    and confirm that no transfer of ownership of pre-existing IP occurs.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/ip/ownership
+  tags:
+  - background-ip
+  - pre-existing
+  - identification
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: Failure to identify pre-existing IP risks inadvertent assignment of a party's core assets and creates disputes about
+    what was newly created versus pre-existing.
+  source_refs:
+  - authority: Standard IP contract practice
+    note: Background IP identification is critical in technology development and consulting agreements.
+  preconditions:
+  - Either party will use its pre-existing IP in performing the contract.
+  exceptions:
+  - If neither party contributes pre-existing IP (e.g., pure greenfield development), this clause may be simplified but should
+    still confirm that no pre-existing IP is being transferred.
+  following_examples:
+  - The contract includes a Schedule listing the vendor's pre-existing frameworks and libraries, with a license granted to the
+    client for use only as embedded in the deliverables.
+  violation_examples:
+  - A development contract assigns 'all IP created or used in connection with the project' to the client, inadvertently transferring
+    the vendor's core platform.
+
+- statement: Non-compete clauses in employment or contractor agreements MUST be limited in duration (typically 1-2 years), geographic
+    scope, and activity scope. Overly broad non-competes MUST be flagged for legal review.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/ip/restrictive-covenants
+  tags:
+  - non-compete
+  - restrictive-covenant
+  - employment
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: Overly broad non-competes are unenforceable in many jurisdictions and may expose the company to claims of restraint
+    of trade. Reasonable limitations protect enforceability.
+  source_refs:
+  - authority: Standard employment law practice
+    note: California prohibits employee non-competes entirely. Japan enforces them only if reasonable in scope, duration, geographic
+      area, and accompanied by adequate consideration.
+  preconditions:
+  - The agreement includes a non-compete or non-solicitation restriction.
+  exceptions:
+  - Non-competes in connection with a business sale (seller non-compete) may have broader scope and longer duration, as they
+    protect the purchased goodwill.
+  following_examples:
+  - The non-compete restricts the employee from working for a direct competitor in the same product category within Japan for
+    12 months after termination, with monthly compensation equal to 50% of the employee's last salary during the restriction
+    period.
+  violation_examples:
+  - The non-compete prohibits the employee from working in 'any technology company worldwide' for 5 years with no compensatory
+    payment.
+
+- statement: Contracts involving AI-generated outputs MUST address ownership of AI-generated content, training data usage rights,
+    and liability for IP infringement claims arising from AI outputs.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/ip/ai-generated
+  tags:
+  - ai
+  - generated-content
+  - training-data
+  - emerging-risk
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: AI-generated content raises novel IP ownership questions. Most jurisdictions do not recognize AI as an author, and
+    training data usage may infringe third-party rights.
+  source_refs:
+  - authority: Emerging IP law and policy
+    note: Japan Copyright Act Article 2(1)(ii) requires human creative contribution; US Copyright Office requires human authorship;
+      EU AI Act imposes transparency obligations on AI-generated content.
+  preconditions:
+  - The contract involves services that may produce AI-generated deliverables.
+  exceptions:
+  - If AI tools are used purely as assistive tools (e.g., code completion) and a human substantially modifies the output, standard
+    IP ownership clauses may suffice with an AI disclosure provision.
+  following_examples:
+  - The contract specifies that AI-generated outputs are owned by the commissioning party, the vendor warrants that training
+    data was lawfully obtained, and the vendor indemnifies against third-party IP claims arising from AI-generated content.
+  violation_examples:
+  - A content creation contract is silent on AI usage even though the vendor uses generative AI to produce deliverables, leaving
+    ownership and infringement liability unaddressed.
+
+- statement: Software license agreements MUST include provisions for escrow of source code (or equivalent access mechanism) to
+    protect the licensee in the event of vendor insolvency, discontinuation, or material breach.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - legal/ip/licensing
+  tags:
+  - escrow
+  - source-code
+  - business-continuity
+  applicable_subject_types:
+  - contract_clause
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: Source code escrow protects the licensee's ability to maintain and operate critical software if the vendor can no
+    longer support it.
+  source_refs:
+  - authority: Standard software licensing practice
+    note: Escrow is particularly important for mission-critical or bespoke software.
+  preconditions:
+  - The licensee depends on proprietary software provided by the vendor for business-critical operations.
+  exceptions:
+  - Open-source software and SaaS agreements with published APIs and data export capabilities may not require escrow.
+  following_examples:
+  - The vendor deposits source code with a neutral escrow agent (e.g., Iron Mountain) and agrees to release conditions including
+    vendor insolvency, discontinuation of the product, or material breach uncured for 60 days.
+  violation_examples:
+  - A license for mission-critical software has no escrow provision, and the vendor enters bankruptcy, leaving the licensee unable
+    to maintain or modify the software.

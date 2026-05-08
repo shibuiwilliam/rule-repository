@@ -1,0 +1,208 @@
+version: 1
+template:
+  name: legal-regulatory-compliance
+  description: Regulatory compliance rules for data protection, GDPR, anti-money-laundering, and cross-border data transfers
+  tags:
+  - legal
+  - regulatory
+  - compliance
+  - data-protection
+  - aml
+rules:
+- statement: Contracts involving processing of personal data MUST include a data processing agreement (DPA) or equivalent data
+    protection clauses specifying the roles (controller/processor), processing purposes, data categories, and retention periods.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - legal/regulatory/data-protection
+  tags:
+  - dpa
+  - personal-data
+  - gdpr
+  - appi
+  applicable_subject_types:
+  - contract_document
+  jurisdiction: global
+  legal_force: statutory
+  classification: confidential
+  rationale: GDPR Article 28, Japan's APPI, and equivalent laws require documented data processing arrangements. Failure to
+    include a DPA exposes both parties to regulatory penalties.
+  source_refs:
+  - statute: General Data Protection Regulation (GDPR)
+    article: '28'
+  - statute: Act on the Protection of Personal Information (個人情報保護法, APPI)
+    article: '25'
+  preconditions:
+  - The contract involves processing of personal data by one party on behalf of the other.
+  exceptions:
+  - Contracts where both parties are independent controllers (not in a controller-processor relationship) require a data sharing
+    agreement instead of a DPA.
+  following_examples:
+  - The services agreement includes a DPA as an annex, specifying the processor's obligations, sub-processor approval requirements,
+    data categories, retention period, and audit rights.
+  violation_examples:
+  - A SaaS vendor processes customer employee data but the contract contains no data protection terms.
+
+- statement: Cross-border transfers of personal data MUST be supported by a lawful transfer mechanism (Standard Contractual Clauses,
+    adequacy decision, Binding Corporate Rules, or equivalent).
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - legal/regulatory/data-protection
+  tags:
+  - cross-border
+  - data-transfer
+  - sccs
+  - adequacy
+  applicable_subject_types:
+  - contract_document
+  jurisdiction: global
+  legal_force: statutory
+  classification: confidential
+  rationale: GDPR Chapter V, APPI Article 28, and similar laws prohibit transfers to countries without adequate protection unless
+    a lawful mechanism is in place.
+  source_refs:
+  - statute: General Data Protection Regulation (GDPR)
+    article: '46'
+  - statute: Act on the Protection of Personal Information (APPI)
+    article: '28'
+  preconditions:
+  - Personal data will be transferred from one jurisdiction to another (e.g., EU to US, Japan to India).
+  exceptions:
+  - Transfers to countries with an adequacy decision (e.g., Japan-EU mutual adequacy) do not require additional mechanisms but
+    must still be documented.
+  following_examples:
+  - The contract incorporates EU Standard Contractual Clauses (Module 2, controller-to-processor) as an annex for transfers
+    from the EU to the US.
+  violation_examples:
+  - Customer data is transferred from the EU to a data center in a non-adequate country with no transfer mechanism in place.
+
+- statement: Privacy notices and consent mechanisms MUST be reviewed when launching new products, services, or data collection
+    activities to ensure they accurately describe the processing and provide valid legal bases.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - legal/regulatory/data-protection
+  tags:
+  - privacy-notice
+  - consent
+  - legal-basis
+  applicable_subject_types:
+  - contract_document
+  jurisdiction: global
+  legal_force: statutory
+  classification: confidential
+  rationale: Outdated or inaccurate privacy notices undermine the legal basis for processing and expose the organization to
+    regulatory action.
+  source_refs:
+  - statute: General Data Protection Regulation (GDPR)
+    article: '13'
+  - statute: Act on the Protection of Personal Information (APPI)
+    article: '21'
+  preconditions:
+  - A new product, service, or data collection activity is being launched or significantly modified.
+  exceptions:
+  - Minor operational changes that do not affect the categories of data collected, purposes, or recipients do not require a
+    full privacy notice review.
+  following_examples:
+  - Before launching a new customer analytics feature, the legal team reviews the privacy notice, confirms the legal basis (legitimate
+    interest with DPIA), and updates the notice to describe the new processing.
+  violation_examples:
+  - A new feature collects location data from mobile users but the privacy notice still states that no location data is collected.
+
+- statement: Contracts with financial institutions or payment processors MUST include anti-money-laundering (AML) and know-your-customer
+    (KYC) compliance representations and cooperation clauses.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - legal/regulatory/aml
+  tags:
+  - aml
+  - kyc
+  - financial-crime
+  applicable_subject_types:
+  - contract_document
+  jurisdiction: global
+  legal_force: statutory
+  classification: confidential
+  rationale: AML regulations require all parties in the financial chain to cooperate with compliance obligations. Contracts without
+    these provisions create regulatory gaps.
+  source_refs:
+  - statute: Act on Prevention of Transfer of Criminal Proceeds (犯罪収益移転防止法)
+  - authority: Financial Action Task Force (FATF) Recommendations
+  preconditions:
+  - The contract involves a financial institution, payment processor, or money services business.
+  exceptions:
+  - Low-risk transactions below regulatory thresholds may have simplified due diligence requirements, but the contractual AML
+    clause should still be present.
+  following_examples:
+  - The contract includes a clause requiring each party to maintain AML/KYC programs compliant with applicable law, to cooperate
+    with regulatory inquiries, and to promptly report suspicious activity.
+  violation_examples:
+  - A payment processing agreement contains no mention of AML compliance, KYC obligations, or suspicious activity reporting.
+
+- statement: Data breach notification clauses MUST require the processor to notify the controller within 72 hours of becoming
+    aware of a personal data breach and to provide sufficient detail to enable regulatory notification.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - legal/regulatory/data-protection
+  tags:
+  - data-breach
+  - notification
+  - incident-response
+  applicable_subject_types:
+  - contract_document
+  jurisdiction: global
+  legal_force: statutory
+  classification: confidential
+  rationale: GDPR Article 33 requires controller notification to supervisory authorities within 72 hours. The processor must
+    notify the controller promptly to enable this.
+  source_refs:
+  - statute: General Data Protection Regulation (GDPR)
+    article: '33'
+  - statute: Act on the Protection of Personal Information (APPI)
+    article: '26'
+  preconditions:
+  - The contract involves a processor handling personal data on behalf of a controller.
+  exceptions:
+  - Breaches that are clearly unlikely to result in a risk to data subjects may be documented internally without notification,
+    but the initial notification obligation remains.
+  following_examples:
+  - The DPA requires the processor to notify the controller without undue delay and no later than 48 hours after awareness of
+    a breach, including the nature of the breach, categories of data affected, approximate number of records, and remediation
+    steps taken.
+  violation_examples:
+  - The DPA states the processor will notify the controller 'as soon as practicable' with no specific timeline and no detail
+    requirements.
+
+- statement: Contracts SHOULD include a regulatory change clause requiring the parties to cooperate in good faith to amend the
+    agreement if changes in applicable law materially affect the rights or obligations under the contract.
+  modality: SHOULD
+  severity: MEDIUM
+  scope:
+  - legal/regulatory/compliance
+  tags:
+  - regulatory-change
+  - amendment
+  - future-proofing
+  applicable_subject_types:
+  - contract_document
+  jurisdiction: global
+  legal_force: contractual
+  classification: confidential
+  rationale: Regulatory landscapes change frequently. A regulatory change clause prevents contracts from becoming non-compliant
+    without a renegotiation mechanism.
+  source_refs:
+  - authority: Standard commercial contract practice
+    note: Regulatory change clauses are increasingly common in long-term technology and outsourcing agreements.
+  preconditions:
+  - The contract has a term exceeding 12 months or operates in a heavily regulated industry.
+  exceptions:
+  - Short-term contracts (under 6 months) in stable regulatory environments may omit this clause.
+  following_examples:
+  - If a change in applicable law materially affects either party's obligations, the parties shall negotiate in good faith to
+    amend the agreement within 60 days. If no agreement is reached, either party may terminate on 90 days' notice.
+  violation_examples:
+  - A 5-year outsourcing agreement contains no mechanism for adapting to regulatory changes, leaving parties unable to modify
+    terms when new data protection laws take effect.

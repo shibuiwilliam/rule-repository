@@ -1,0 +1,214 @@
+version: 1
+template:
+  name: finance-revenue-recognition
+  description: Revenue recognition rules aligned with ASC 606 / IFRS 15 covering the five-step model, contract identification, performance obligations, and disclosure
+  tags:
+  - finance
+  - revenue-recognition
+  - asc-606
+  - ifrs-15
+  - accounting-standards
+rules:
+- statement: Revenue MUST NOT be recognized until a contract with a customer has been identified that meets all five criteria —
+    approval, identifiable rights and obligations, payment terms, commercial substance, and probable collectibility.
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - finance/revenue-recognition
+  tags:
+  - contract-identification
+  - step-1
+  - criteria
+  applicable_subject_types:
+  - contract_document
+  jurisdiction: global
+  legal_force: statutory
+  classification: internal
+  rationale: ASC 606 Step 1 and IFRS 15.9 require all five contract criteria to be met before the revenue recognition model
+    can be applied. Premature recognition overstates revenue.
+  source_refs:
+  - statute: ASC 606 (Revenue from Contracts with Customers)
+    article: 606-10-25-1
+  - statute: IFRS 15 (Revenue from Contracts with Customers)
+    article: '9'
+  preconditions:
+  - The company is entering into or evaluating a contract with a customer.
+  exceptions:
+  - If collectibility is not probable at contract inception, cash received is recognized as a liability until the criteria are
+    met or the contract is terminated.
+  following_examples:
+  - Before recognizing revenue on a new SaaS contract, the accounting team verifies that the contract is signed, payment terms
+    are defined, the services are clearly identified, and the customer's credit is assessed as probable.
+  violation_examples:
+  - Revenue is recognized on a verbal agreement where no written contract exists and collectibility has not been assessed.
+
+- statement: Each performance obligation in a contract MUST be identified separately. Distinct goods or services MUST be accounted
+    for as separate performance obligations.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/revenue-recognition
+  tags:
+  - performance-obligations
+  - step-2
+  - bundled-arrangements
+  applicable_subject_types:
+  - contract_document
+  jurisdiction: global
+  legal_force: statutory
+  classification: internal
+  rationale: ASC 606 Step 2 and IFRS 15.22 require separate identification of performance obligations to ensure revenue is allocated
+    and recognized correctly for each deliverable.
+  source_refs:
+  - statute: ASC 606
+    article: 606-10-25-14
+  - statute: IFRS 15
+    article: '22'
+  preconditions:
+  - The contract includes multiple goods or services.
+  exceptions:
+  - Goods or services that are not distinct (e.g., integration services that significantly modify a software product) are combined
+    into a single performance obligation.
+  following_examples:
+  - A contract for software licensing plus implementation services identifies two performance obligations because the customer
+    can benefit from each independently.
+  violation_examples:
+  - A bundled contract for hardware, software, and 3 years of support is recognized as a single performance obligation with all
+    revenue recorded at delivery of hardware.
+
+- statement: The transaction price MUST be determined considering variable consideration, significant financing components, non-cash
+    consideration, and consideration payable to the customer. Variable consideration MUST be estimated using the expected value
+    or most likely amount method.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/revenue-recognition
+  tags:
+  - transaction-price
+  - step-3
+  - variable-consideration
+  applicable_subject_types:
+  - contract_document
+  jurisdiction: global
+  legal_force: statutory
+  classification: internal
+  rationale: ASC 606 Step 3 and IFRS 15.47 require the transaction price to reflect the amount the entity expects to be entitled
+    to, including variable elements, to prevent revenue overstatement.
+  source_refs:
+  - statute: ASC 606
+    article: 606-10-32-2
+  - statute: IFRS 15
+    article: '47'
+  preconditions:
+  - The contract includes variable pricing elements (rebates, penalties, bonuses, discounts, right of return).
+  exceptions:
+  - Contracts with purely fixed pricing and no variable elements require only the stated contract price.
+  following_examples:
+  - A contract includes a performance bonus of up to 10% of the base fee. The accounting team estimates the most likely bonus
+    amount based on historical performance data and includes it in the transaction price, subject to the constraint.
+  violation_examples:
+  - A contract with volume-based rebates recognizes the full list price as revenue without estimating the rebate.
+
+- statement: Revenue for performance obligations satisfied over time MUST be recognized using a measure of progress that faithfully
+    depicts the transfer of control (output method or input method). The method MUST be applied consistently.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/revenue-recognition
+  tags:
+  - over-time
+  - progress-measurement
+  - step-5
+  applicable_subject_types:
+  - contract_document
+  jurisdiction: global
+  legal_force: statutory
+  classification: internal
+  rationale: ASC 606.35 and IFRS 15.35 specify criteria for over-time recognition. An inappropriate progress measure misstates
+    revenue timing.
+  source_refs:
+  - statute: ASC 606
+    article: 606-10-25-31
+  - statute: IFRS 15
+    article: '35'
+  preconditions:
+  - The performance obligation meets one of the three criteria for over-time recognition (customer simultaneously receives and
+    consumes benefits, creates an asset the customer controls, or creates an asset with no alternative use and the entity has
+    an enforceable right to payment).
+  exceptions:
+  - If a reasonable measure of progress cannot be determined, revenue is recognized only to the extent of costs incurred (zero
+    margin method) until progress can be reasonably measured.
+  following_examples:
+  - A 12-month consulting engagement recognizes revenue monthly based on hours incurred as a percentage of total estimated hours
+    (input method), reviewed and updated quarterly.
+  violation_examples:
+  - A construction contract recognizes revenue equally over 24 months regardless of actual progress, even though the project
+    is 70% complete in month 12.
+
+- statement: Contract modifications MUST be evaluated to determine whether they create a separate contract or modify the existing
+    contract. The accounting treatment MUST be documented with the analysis supporting the conclusion.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/revenue-recognition
+  tags:
+  - contract-modification
+  - assessment
+  - documentation
+  applicable_subject_types:
+  - contract_document
+  jurisdiction: global
+  legal_force: statutory
+  classification: internal
+  rationale: ASC 606.10 and IFRS 15.18-21 provide specific guidance on contract modifications. Incorrect classification leads
+    to misstated revenue in both current and future periods.
+  source_refs:
+  - statute: ASC 606
+    article: 606-10-25-10
+  - statute: IFRS 15
+    article: '18'
+  preconditions:
+  - A customer contract has been modified (scope change, price change, or both).
+  exceptions:
+  - Administrative changes (e.g., change of billing address) that do not affect the scope, price, or performance obligations
+    do not require revenue recognition analysis.
+  following_examples:
+  - A SaaS contract is amended to add 50 additional user licenses at standalone selling price. The modification is treated as
+    a separate contract, and the analysis is documented in the contract modification memo.
+  violation_examples:
+  - A contract scope increase is processed without any revenue recognition analysis, and revenue continues to be recognized under
+    the original contract terms.
+
+- statement: Revenue recognition policies and significant judgments MUST be disclosed in the financial statement notes as required
+    by ASC 606-10-50 / IFRS 15.110-129. Disclosures MUST include disaggregation of revenue, contract balances, and remaining
+    performance obligations.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/revenue-recognition
+  tags:
+  - disclosure
+  - financial-statements
+  - transparency
+  applicable_subject_types:
+  - contract_document
+  jurisdiction: global
+  legal_force: statutory
+  classification: internal
+  rationale: Disclosure requirements are integral to ASC 606 and IFRS 15. Inadequate disclosure results in audit qualifications
+    and regulatory scrutiny.
+  source_refs:
+  - statute: ASC 606
+    article: 606-10-50
+  - statute: IFRS 15
+    article: '110'
+  preconditions:
+  - The company is preparing financial statements.
+  exceptions:
+  - Non-public entities may use reduced disclosure requirements under ASC 606.
+  following_examples:
+  - Financial statement notes disaggregate revenue by product line and geography, disclose contract assets and liabilities with
+    opening and closing balances, and quantify remaining performance obligations by expected timing.
+  violation_examples:
+  - Financial statements report a single revenue line item with no disaggregation, no contract balance disclosure, and no information
+    about remaining performance obligations.

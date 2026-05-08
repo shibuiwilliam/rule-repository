@@ -1,0 +1,196 @@
+version: 1
+template:
+  name: finance-invoice-compliance
+  description: Invoice compliance rules for Japan's Qualified Invoice System (インボイス制度), tax calculation, and documentation standards
+  tags:
+  - finance
+  - invoice
+  - tax
+  - qualified-invoice
+  - japan
+  - compliance
+rules:
+- statement: All invoices issued by the company MUST comply with the Qualified Invoice format, including the registered invoice
+    issuer number (T+13 digits), applicable tax rate(s), and itemized tax amount per rate.
+  modality: MUST
+  severity: CRITICAL
+  scope:
+  - finance/invoice/compliance
+  tags:
+  - qualified-invoice
+  - format
+  - issuer-number
+  applicable_subject_types:
+  - invoice
+  jurisdiction: JP
+  legal_force: statutory
+  classification: internal
+  rationale: Since October 2023, only qualified invoices allow the recipient to claim full input tax credits. Non-compliant invoices
+    cause financial loss to business partners.
+  source_refs:
+  - statute: Consumption Tax Act (消費税法)
+    article: 57-4
+    note: Requirements for qualified invoice issuers (適格請求書発行事業者).
+  preconditions:
+  - The company is a registered qualified invoice issuer.
+  exceptions:
+  - Invoices for tax-exempt transactions (export sales, certain financial services) do not require qualified invoice format but
+    must still reference the applicable exemption.
+  following_examples:
+  - Invoice includes the company's registered number T1234567890123, lists items at 10% and 8% tax rates separately, and shows
+    the calculated tax amount for each rate.
+  violation_examples:
+  - Invoice shows a lump-sum total with 'tax included' but does not itemize the tax rate or amount, and omits the registered
+    number.
+
+- statement: Invoices MUST separately itemize transactions subject to the standard tax rate (10%) and the reduced tax rate (8%).
+    Mixed-rate invoices MUST NOT combine amounts into a single line.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/invoice/compliance
+  tags:
+  - tax-rate
+  - itemization
+  - reduced-rate
+  applicable_subject_types:
+  - invoice
+  jurisdiction: JP
+  legal_force: statutory
+  classification: internal
+  rationale: The Qualified Invoice System requires separate disclosure of amounts per tax rate to enable accurate input tax credit
+    calculations.
+  source_refs:
+  - statute: Consumption Tax Act (消費税法)
+    article: 57-4
+  preconditions:
+  - The invoice includes transactions subject to different tax rates.
+  exceptions:
+  - Invoices where all items are subject to the same tax rate may show a single rate designation.
+  following_examples:
+  - Invoice lists office supplies at 10% tax rate and food/beverage items at 8% tax rate on separate lines, with subtotals per
+    rate.
+  violation_examples:
+  - Invoice combines food and non-food items into a single line item at a blended rate.
+
+- statement: Received invoices from vendors MUST be validated for qualified invoice compliance before processing. Invoices lacking
+    a valid registered issuer number MUST be flagged and the reduced input tax credit rate applied.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/invoice/compliance
+  tags:
+  - vendor-invoice
+  - validation
+  - input-tax-credit
+  applicable_subject_types:
+  - invoice
+  jurisdiction: JP
+  legal_force: statutory
+  classification: internal
+  rationale: Processing non-qualified invoices at the full tax credit rate results in over-claiming input tax credits, which creates
+    a tax liability upon audit.
+  source_refs:
+  - statute: Consumption Tax Act (消費税法)
+    note: Transitional measures allow 80% credit until October 2026, then 50% until October 2029, then 0%.
+  preconditions:
+  - The accounts payable team is processing a vendor invoice.
+  exceptions:
+  - Invoices under 10,000 JPY from certain small-scale vendors may qualify for simplified treatment during the transitional period.
+  following_examples:
+  - AP clerk validates the vendor's registered number against the National Tax Agency registry before processing. A non-registered
+    vendor's invoice is flagged and the 80% credit rate applied.
+  violation_examples:
+  - AP processes all vendor invoices at the full 100% input tax credit rate without checking registration status.
+
+- statement: Invoices MUST be issued within the timeframe specified in the contract or, if not specified, within 30 days of the
+    delivery of goods or completion of services.
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - finance/invoice/compliance
+  tags:
+  - timeliness
+  - issuance
+  - revenue-recognition
+  applicable_subject_types:
+  - invoice
+  jurisdiction: global
+  legal_force: policy
+  classification: internal
+  rationale: Timely invoice issuance ensures accurate revenue recognition and cash flow management. Late invoices may miss accounting
+    period cut-offs.
+  source_refs:
+  - authority: Company billing policy
+    note: Aligns with revenue recognition standards (ASC 606 / IFRS 15) that require timely documentation of performance obligations.
+  preconditions:
+  - Goods have been delivered or services have been completed.
+  exceptions:
+  - Milestone-based contracts issue invoices upon milestone completion per the contract schedule, not upon delivery.
+  following_examples:
+  - Services completed on March 15; invoice issued on March 25 (within 30 days).
+  violation_examples:
+  - Services completed in January; invoice not issued until April, causing revenue to be recognized in the wrong quarter.
+
+- statement: Credit notes and invoice corrections MUST reference the original invoice number and MUST clearly state the reason
+    for the correction. Corrected invoices MUST comply with the same qualified invoice requirements as the original.
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/invoice/compliance
+  tags:
+  - credit-note
+  - correction
+  - traceability
+  applicable_subject_types:
+  - invoice
+  jurisdiction: JP
+  legal_force: statutory
+  classification: internal
+  rationale: Credit notes without original invoice references create reconciliation problems and may fail to satisfy qualified
+    invoice requirements for the corrected transaction.
+  source_refs:
+  - statute: Consumption Tax Act (消費税法)
+    note: Corrective qualified invoices (修正適格請求書) must meet the same format requirements.
+  preconditions:
+  - An invoice needs to be corrected or partially credited.
+  exceptions:
+  - Full invoice cancellation and reissuance may be used instead of a credit note if the original invoice has not been processed
+    by the recipient.
+  following_examples:
+  - "Credit note references original invoice INV-2025-0100, states 'Quantity correction for item #3 (5 units to 3 units)', and
+    recalculates tax at the applicable rate."
+  violation_examples:
+  - A credit note is issued with no reference to the original invoice and a generic description of 'billing adjustment.'
+
+- statement: All invoices (issued and received) MUST be retained for at least 7 years from the end of the fiscal year in which
+    the transaction occurred. Electronic storage MUST comply with the Electronic Books Preservation Act (電子帳簿保存法).
+  modality: MUST
+  severity: HIGH
+  scope:
+  - finance/invoice/compliance
+  tags:
+  - retention
+  - electronic-storage
+  - compliance
+  applicable_subject_types:
+  - invoice
+  jurisdiction: JP
+  legal_force: statutory
+  classification: internal
+  rationale: The Corporation Tax Act requires 7-year retention of transaction documents. Since January 2024, electronic transaction
+    data must be stored electronically.
+  source_refs:
+  - statute: Corporation Tax Act (法人税法)
+    article: '126'
+  - statute: Electronic Books Preservation Act (電子帳簿保存法)
+    note: Mandatory electronic storage for electronic transactions since January 2024.
+  preconditions:
+  - Invoices have been processed.
+  exceptions:
+  - Records subject to a legal hold or regulatory investigation must be retained beyond the 7-year period.
+  following_examples:
+  - Electronic invoices received via email are stored in the approved document management system with timestamps, searchable
+    by date, amount, and vendor name, and retained for 7 years.
+  violation_examples:
+  - Electronic invoices are printed and stored only as paper copies, with the electronic originals deleted.
