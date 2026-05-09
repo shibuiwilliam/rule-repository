@@ -12,6 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from rulerepo_server.core.config import get_settings
 from rulerepo_server.core.logging import get_logger
+from rulerepo_server.workers.norm_lineage_propagation import propagate_norm_amendment
+from rulerepo_server.workers.translation_drift import verify_translation_drift
 
 logger = get_logger(__name__)
 
@@ -428,10 +430,11 @@ async def send_weekly_digest(ctx: dict) -> None:
 class WorkerSettings:
     """arq worker configuration."""
 
-    functions: list = []  # async tasks triggered on demand
+    functions = [propagate_norm_amendment]  # on-demand tasks
     cron_jobs = [
         cron(compute_health_scores, hour=2, minute=0),
         cron(generate_recommendations_task, hour=3, minute=0),
+        cron(verify_translation_drift, hour=3, minute=30),  # daily
         cron(auto_promote_rules, hour=4, minute=0),
         cron(cluster_corrections, hour=5, minute=0),
         cron(compute_correction_stats, minute=0),

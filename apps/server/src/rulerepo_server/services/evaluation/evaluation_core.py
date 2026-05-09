@@ -139,8 +139,26 @@ def _build_prompt(
     Args:
         subject_type: SubjectKind value string (e.g., "code_diff", "event").
     """
+    # Select locale-appropriate statement (cross-locale fallback)
+    statement = rule["statement"]
+    subject_locale = getattr(context, "locale", None) or "en"
+    rule_locale = rule.get("locale", "en")
+    translations = rule.get("statement_translations") or {}
+
+    if subject_locale != rule_locale and subject_locale in translations:
+        statement = translations[subject_locale]
+    elif subject_locale != rule_locale and translations:
+        # Fallback to canonical — log cross-locale warning
+        logger.info(
+            "cross_locale_evaluation",
+            rule_id=rule.get("id"),
+            rule_locale=rule_locale,
+            subject_locale=subject_locale,
+            reason="no_translation_for_subject_locale",
+        )
+
     common_vars = {
-        "rule_statement": rule["statement"],
+        "rule_statement": statement,
         "modality": rule["modality"],
         "severity": rule["severity"],
         "rationale": rule_rationale or "Not specified",
