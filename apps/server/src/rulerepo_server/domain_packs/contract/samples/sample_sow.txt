@@ -1,0 +1,63 @@
+STATEMENT OF WORK #001
+
+Pursuant to the Master Services Agreement dated March 1, 2025 between
+Acme Solutions Inc. ("Provider") and GlobalTech Corp. ("Client").
+
+Effective Date: April 1, 2025
+Project Name: Customer Portal Modernization
+
+1. SCOPE OF WORK
+Provider shall design, develop, and deploy a modernized customer-facing web
+portal comprising: (a) a responsive front-end application; (b) API integration
+with Client's existing CRM and billing systems; (c) single-sign-on
+authentication; and (d) an analytics dashboard for Client's operations team.
+
+2. OUT OF SCOPE
+The following are explicitly excluded: data migration from legacy systems,
+mobile native applications, third-party license procurement, end-user training,
+and ongoing production support beyond the warranty period.
+
+3. DELIVERABLES AND MILESTONES
+
+  Milestone 1 — Discovery & Design (Weeks 1–3)
+    Deliverable: Requirements document and UI/UX wireframes
+    Acceptance: Client review within 10 business days
+    Payment: 20% of total fees ($40,000)
+
+  Milestone 2 — Development Phase 1 (Weeks 4–8)
+    Deliverable: Core portal with CRM integration
+    Acceptance: Functional testing against acceptance criteria in Appendix A
+    Payment: 30% of total fees ($60,000)
+
+  Milestone 3 — Development Phase 2 (Weeks 9–12)
+    Deliverable: SSO integration and analytics dashboard
+    Acceptance: End-to-end testing per Appendix A
+    Payment: 30% of total fees ($60,000)
+
+  Milestone 4 — Deployment & Stabilization (Weeks 13–14)
+    Deliverable: Production deployment and documentation
+    Acceptance: 5 business days of production stability
+    Payment: 20% of total fees ($40,000)
+
+  Total Fees: $200,000 USD
+
+4. KEY PERSONNEL
+  Provider Project Manager: [To be named]
+  Provider Technical Lead: [To be named]
+  Client Project Manager: [To be named]
+  Replacement of key personnel requires 10 business days' written notice
+  and Client's prior written consent.
+
+5. CHANGE ORDERS
+Any changes to scope, timeline, or fees require a written change order
+signed by both Parties' project managers before work begins.
+
+6. WARRANTY
+Provider warrants deliverables against defects for forty-five (45) days
+following final acceptance. Defects shall be corrected at no additional cost
+within 5 business days of written notice.
+
+7. GOVERNANCE
+Weekly written status reports. Bi-weekly steering committee review at
+milestones. Escalation: project manager level (5 business days), then
+executive sponsor level (10 business days).

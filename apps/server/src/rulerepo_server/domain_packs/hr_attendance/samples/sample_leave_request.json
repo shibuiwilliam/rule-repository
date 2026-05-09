@@ -1,0 +1,13 @@
+{
+  "action": "submit_leave_request",
+  "actor_id": "E042",
+  "actor_department": "sales",
+  "facts": {
+    "leave_type": "annual_paid",
+    "start_date": "2026-05-20",
+    "end_date": "2026-05-23",
+    "days_requested": 4,
+    "remaining_annual_leave": 12,
+    "consecutive_days_taken_this_year": 3
+  }
+}

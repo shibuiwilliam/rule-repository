@@ -1,0 +1,7 @@
+{
+  "content": "Hey team, the client asked about pricing for the enterprise tier. I told them we can offer 20% off if they sign by end of month. @sales-lead can you confirm?",
+  "channel": "slack",
+  "sender": "sales-rep-1",
+  "recipients": ["#sales-general"],
+  "thread_id": "thread-2026-0501"
+}

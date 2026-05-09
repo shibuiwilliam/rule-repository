@@ -1,0 +1,200 @@
+rules:
+  - statement: "All business communications MUST NOT contain language that constitutes harassment, including but not limited to threats, slurs, intimidation, or persistent unwelcome conduct."
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [communications/email, communications/chat, communications/customer]
+    tags: [harassment, conduct, zero-tolerance]
+    rationale: "Harassment in any communication channel creates legal liability, damages morale, and violates the company's code of conduct and applicable anti-harassment laws."
+    applicable_subject_types: [creative]
+    jurisdiction: global
+    legal_force: statutory
+
+  - statement: "Customer personal data including names, addresses, phone numbers, financial information, and account details MUST NOT be shared in communication channels that are not designated as secure for such data."
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [communications/email, communications/chat, communications/customer]
+    tags: [customer-data, confidentiality, data-protection, PII]
+    rationale: "Sharing customer data in unsecured channels violates data protection regulations (APPI, GDPR) and exposes the company to regulatory penalties and reputational harm."
+    applicable_subject_types: [creative]
+    jurisdiction: global
+    legal_force: statutory
+
+  - statement: "Communications MUST NOT discuss, promote, or facilitate the use of controlled or regulated substances in any business channel."
+    modality: MUST_NOT
+    severity: HIGH
+    scope: [communications/email, communications/chat]
+    tags: [regulated-substance, compliance, conduct]
+    rationale: "Discussion of regulated substances in business channels creates compliance risk, potential legal exposure, and unprofessional work environment."
+    applicable_subject_types: [creative]
+    jurisdiction: global
+    legal_force: policy
+
+  - statement: "All product claims made in customer-facing communications MUST be factually accurate, substantiated, and consistent with approved marketing materials."
+    modality: MUST
+    severity: HIGH
+    scope: [communications/customer, communications/email]
+    tags: [product-claims, accuracy, marketing, consumer-protection]
+    rationale: "Inaccurate product claims violate consumer protection laws (Act against Unjustifiable Premiums and Misleading Representations) and can result in regulatory action."
+    applicable_subject_types: [creative]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "External communications that represent the company's official position MUST be reviewed and approved by the communications department or an authorized spokesperson before distribution."
+    modality: MUST
+    severity: HIGH
+    scope: [communications/email, communications/customer]
+    tags: [external-communications, approval, spokesperson]
+    rationale: "Unauthorized external statements can misrepresent the company, create legal exposure, or conflict with official messaging strategy."
+    applicable_subject_types: [creative]
+    jurisdiction: global
+    legal_force: policy
+
+  - statement: "Competitor confidential information obtained through any means MUST NOT be discussed, stored, or distributed in any company communication channel."
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [communications/email, communications/chat]
+    tags: [competitor-information, trade-secrets, unfair-competition]
+    rationale: "Handling competitor confidential information violates the Unfair Competition Prevention Act and may constitute trade secret misappropriation."
+    applicable_subject_types: [creative]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Material non-public information about the company or its partners MUST NOT be communicated to anyone who is not authorized to receive it."
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [communications/email, communications/chat]
+    tags: [insider-information, securities, FIEL]
+    rationale: "Sharing insider information violates the Financial Instruments and Exchange Law and may constitute insider trading facilitation."
+    applicable_subject_types: [creative]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Employees SHOULD NOT post company-related content on personal social media accounts without prior approval from the communications department."
+    modality: SHOULD
+    severity: MEDIUM
+    scope: [communications/email, communications/chat]
+    tags: [social-media, personal-accounts, brand-protection]
+    rationale: "Unauthorized social media posts can damage the company brand, leak confidential information, or create unintended contractual commitments."
+    applicable_subject_types: [creative]
+    jurisdiction: global
+    legal_force: policy
+
+  - statement: "Customer complaints received through any channel MUST receive an initial acknowledgment within 24 hours and a substantive response within 3 business days."
+    modality: MUST
+    severity: HIGH
+    scope: [communications/customer]
+    tags: [complaint, SLA, response-time, customer-service]
+    rationale: "Timely complaint response is both a regulatory expectation and essential for customer retention. Delayed responses escalate disputes and increase regulatory risk."
+    applicable_subject_types: [event]
+    jurisdiction: global
+    legal_force: policy
+
+  - statement: "All outgoing business emails MUST include the sender's full name, title, department, and company-approved contact information in the signature block."
+    modality: MUST
+    severity: LOW
+    scope: [communications/email]
+    tags: [email-signature, professional-standards, identity]
+    rationale: "Standardized email signatures ensure professional appearance, enable recipient verification, and comply with the Act on Specified Commercial Transactions for commercial emails."
+    applicable_subject_types: [creative]
+    jurisdiction: JP
+    legal_force: policy
+
+  - statement: "External emails sent to more than 5 recipients outside the organization MUST use BCC for recipient addresses to protect privacy."
+    modality: MUST
+    severity: MEDIUM
+    scope: [communications/email]
+    tags: [BCC, privacy, external-email, data-protection]
+    rationale: "Exposing external recipients' email addresses to each other violates personal information protection obligations under the APPI."
+    applicable_subject_types: [creative]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "All file attachments in business communications MUST be scanned for malware before sending and SHOULD use encrypted formats for sensitive content."
+    modality: MUST
+    severity: HIGH
+    scope: [communications/email, communications/chat]
+    tags: [attachment, security, malware, encryption]
+    rationale: "Malware distribution through business communications can compromise company and customer systems. Security scanning is a baseline information security control."
+    applicable_subject_types: [creative]
+    jurisdiction: global
+    legal_force: policy
+
+  - statement: "Personal data of employees, customers, or partners MUST NOT be shared in group chat channels unless the channel is designated for HR or customer-support use with appropriate access controls."
+    modality: MUST_NOT
+    severity: HIGH
+    scope: [communications/chat]
+    tags: [personal-data, group-chat, access-control, APPI]
+    rationale: "Sharing personal data in broad group channels exceeds the purpose limitation and minimum necessity principles of the APPI."
+    applicable_subject_types: [creative]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Business communications MUST NOT contain profanity, vulgar language, or derogatory terms regardless of the intended audience or channel."
+    modality: MUST_NOT
+    severity: MEDIUM
+    scope: [communications/email, communications/chat, communications/customer]
+    tags: [profanity, professional-standards, conduct]
+    rationale: "Profane or vulgar language in business communications is unprofessional, may constitute harassment, and violates the company code of conduct."
+    applicable_subject_types: [creative]
+    jurisdiction: global
+    legal_force: policy
+
+  - statement: "Business communication channels MUST NOT be used for political campaigning, solicitation, or distribution of partisan political content."
+    modality: MUST_NOT
+    severity: MEDIUM
+    scope: [communications/email, communications/chat]
+    tags: [political-content, neutrality, workplace]
+    rationale: "Political content in business channels creates a divisive work environment and may violate public office election laws if it constitutes solicitation."
+    applicable_subject_types: [creative]
+    jurisdiction: JP
+    legal_force: policy
+
+  - statement: "Business communication channels MUST NOT be used for religious proselytizing or distribution of religious materials."
+    modality: MUST_NOT
+    severity: MEDIUM
+    scope: [communications/email, communications/chat]
+    tags: [religious-content, neutrality, workplace]
+    rationale: "Religious proselytizing in business channels can create an uncomfortable work environment and may constitute harassment if persistent or unwelcome."
+    applicable_subject_types: [creative]
+    jurisdiction: global
+    legal_force: policy
+
+  - statement: "Employees MUST NOT offer unauthorized discounts, rebates, or special pricing to customers through any communication channel without explicit approval from the pricing authority."
+    modality: MUST_NOT
+    severity: HIGH
+    scope: [communications/customer, communications/email]
+    tags: [unauthorized-discount, pricing, approval, revenue-protection]
+    rationale: "Unauthorized pricing commitments create binding obligations, erode margins, and may violate the Antimonopoly Act if they constitute discriminatory pricing."
+    applicable_subject_types: [creative]
+    jurisdiction: JP
+    legal_force: policy
+
+  - statement: "Business communications containing contractual commitments, negotiation records, or regulatory correspondence MUST be retained for the period specified by applicable law, and at minimum for 7 years."
+    modality: MUST
+    severity: HIGH
+    scope: [communications/email, communications/customer]
+    tags: [data-retention, record-keeping, regulatory, archival]
+    rationale: "Legal and regulatory retention requirements (Companies Act, tax laws, securities regulations) mandate preservation of business records including communications."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Communications involving sensitive topics including legal disputes, regulatory inquiries, or personnel actions SHOULD be conducted through secure, designated channels rather than general-purpose chat or email."
+    modality: SHOULD
+    severity: MEDIUM
+    scope: [communications/email, communications/chat]
+    tags: [channel-appropriate, sensitive-topics, security]
+    rationale: "Using appropriate channels for sensitive topics reduces risk of accidental disclosure, ensures proper access control, and maintains attorney-client or work-product privilege where applicable."
+    applicable_subject_types: [creative]
+    jurisdiction: global
+    legal_force: policy
+
+  - statement: "Customer complaints that involve potential legal liability, regulatory violations, or physical harm MUST be escalated to the legal department and the relevant business unit head within 4 hours of receipt."
+    modality: MUST
+    severity: CRITICAL
+    scope: [communications/customer]
+    tags: [escalation, complaint, legal-liability, urgent]
+    rationale: "Delayed escalation of serious complaints increases legal exposure, may violate incident-reporting obligations, and risks regulatory censure."
+    applicable_subject_types: [event]
+    jurisdiction: global
+    legal_force: policy

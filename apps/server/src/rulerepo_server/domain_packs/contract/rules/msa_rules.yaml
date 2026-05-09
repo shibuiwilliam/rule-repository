@@ -1,0 +1,198 @@
+rules:
+  - id: msa-001
+    statement: >
+      The MSA must include a limitation of liability clause that caps each
+      party's total aggregate liability under the agreement at the greater
+      of (a) the fees paid or payable in the twelve months preceding the
+      claim, or (b) a specified dollar amount. The cap must not apply to
+      breaches of confidentiality, indemnification obligations, willful
+      misconduct, or gross negligence.
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/msa]
+    tags: [msa, liability, cap]
+    rationale: >
+      An uncapped or missing liability limitation exposes the company to
+      unbounded financial risk. Carve-outs for serious breaches are
+      standard market practice.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: msa-002
+    statement: >
+      The MSA must include mutual indemnification obligations. Each party
+      must indemnify the other against third-party claims arising from
+      (a) breach of the agreement, (b) negligence or willful misconduct,
+      and (c) infringement of intellectual property rights. The
+      indemnification clause must specify the procedure for notice,
+      defense, and settlement of claims.
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/msa]
+    tags: [msa, indemnification, third-party-claims]
+    rationale: >
+      One-sided indemnification creates imbalanced risk allocation.
+      Procedural requirements ensure the indemnifying party can control
+      defense costs.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: msa-003
+    statement: >
+      The MSA must clearly allocate intellectual property ownership.
+      Pre-existing IP remains with the originating party. Newly created
+      IP developed solely by one party remains with that party. Jointly
+      developed IP ownership and licensing rights must be explicitly
+      addressed. The client must receive at minimum an irrevocable,
+      perpetual license to use deliverables for their intended purpose.
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/msa]
+    tags: [msa, ip, ownership, license]
+    rationale: >
+      Ambiguous IP clauses are among the most common sources of commercial
+      disputes. Clear allocation at the MSA level prevents SOW-by-SOW
+      renegotiation.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: msa-004
+    statement: >
+      The MSA must include warranty disclaimers that disclaim all implied
+      warranties including merchantability and fitness for a particular
+      purpose, while preserving any express warranties stated in individual
+      SOWs. The disclaimer must be conspicuous (e.g., capitalized or
+      bold) to satisfy enforceability requirements in applicable
+      jurisdictions.
+    modality: MUST
+    severity: MEDIUM
+    scope: [legal/contract/msa]
+    tags: [msa, warranty, disclaimer]
+    rationale: >
+      Implied warranties can create unexpected obligations. Conspicuousness
+      requirements are mandated by the UCC and equivalent statutes in
+      many jurisdictions.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: msa-005
+    statement: >
+      The MSA must include a termination-for-convenience clause that
+      permits either party to terminate the agreement upon at least
+      thirty days' written notice, subject to payment for work completed
+      and non-cancelable commitments incurred prior to the effective
+      date of termination.
+    modality: MUST
+    severity: MEDIUM
+    scope: [legal/contract/msa]
+    tags: [msa, termination, convenience]
+    rationale: >
+      Long-term service agreements require an exit mechanism that does
+      not depend on fault. Payment for completed work protects the
+      performing party.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: msa-006
+    statement: >
+      The MSA must include a termination-for-cause clause that permits
+      either party to terminate upon material breach if the breaching
+      party fails to cure within thirty days of written notice specifying
+      the breach. Termination for cause must also be permitted immediately
+      upon the other party's insolvency, bankruptcy filing, or assignment
+      for the benefit of creditors.
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/msa]
+    tags: [msa, termination, cause, breach]
+    rationale: >
+      A cure period balances the need for accountability with the reality
+      that minor breaches are often correctable. Immediate termination
+      for insolvency protects against counterparty risk.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: msa-007
+    statement: >
+      The MSA must specify the governing law and jurisdiction. The
+      governing law must be a specific state or national law (not
+      "international law" or "principles of equity"). The jurisdiction
+      clause must identify specific courts or require arbitration under
+      a named set of rules (e.g., ICC, AAA, JCAA).
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/msa]
+    tags: [msa, governing-law, jurisdiction]
+    rationale: >
+      Vague governing-law clauses create forum-shopping risk and
+      unpredictable outcomes. Specificity is essential for enforceability.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: msa-008
+    statement: >
+      The MSA must include a dispute resolution clause that specifies
+      a tiered process: (1) good-faith negotiation between designated
+      representatives for at least thirty days, (2) mediation or
+      escalation to senior executives, and (3) binding arbitration or
+      litigation as the final step. The clause must specify the seat
+      of arbitration, language of proceedings, and number of arbitrators.
+    modality: MUST
+    severity: MEDIUM
+    scope: [legal/contract/msa]
+    tags: [msa, dispute-resolution, arbitration]
+    rationale: >
+      Tiered dispute resolution reduces litigation costs and preserves
+      commercial relationships. Specificity prevents procedural disputes
+      about the dispute process itself.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: msa-009
+    statement: >
+      The MSA must include a force majeure clause that excuses
+      non-performance due to events beyond a party's reasonable control,
+      including natural disasters, pandemics, government actions, war,
+      and infrastructure failures. The clause must require prompt written
+      notice, mitigation efforts, and must permit termination if the
+      force majeure event continues for more than ninety days.
+    modality: MUST
+    severity: MEDIUM
+    scope: [legal/contract/msa]
+    tags: [msa, force-majeure, excused-performance]
+    rationale: >
+      Post-2020, force majeure clauses require explicit pandemic coverage.
+      A termination trigger for prolonged events prevents indefinite
+      suspension of obligations.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: msa-010
+    statement: >
+      The MSA must include data protection obligations that require each
+      party to comply with applicable data protection laws (including
+      GDPR, CCPA, and APPI where applicable), execute a data processing
+      agreement if personal data is processed, implement appropriate
+      technical and organizational security measures, and notify the
+      other party of any data breach within seventy-two hours of
+      discovery.
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/msa]
+    tags: [msa, data-protection, privacy, gdpr, security]
+    rationale: >
+      Regulatory penalties for data protection failures can exceed
+      contract value by orders of magnitude. Breach notification within
+      72 hours aligns with GDPR requirements.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual

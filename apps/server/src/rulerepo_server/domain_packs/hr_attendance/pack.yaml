@@ -1,0 +1,11 @@
+name: hr_attendance
+version: 0.1.0
+display_name: HR Attendance Pack
+description: Labor law compliance, overtime tracking, leave management, and 36-agreement monitoring
+surfaces: [human_action]
+required_adapters: []
+default_scopes: [hr/attendance, hr/overtime, hr/leave]
+ui_routes: [/hr/violations, /hr/attendance, /hr/lifecycle, /hr/policies]
+seed_rules_path: rules/
+required_connectors: [workday]
+persona: hr

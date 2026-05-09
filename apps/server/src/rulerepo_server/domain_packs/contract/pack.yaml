@@ -1,0 +1,11 @@
+name: contract
+version: 0.1.0
+display_name: Contract Pack
+description: Contract review, clause-vs-policy compliance, and redline tracking
+surfaces: [contract, document]
+required_adapters: [contract_clause_extractor]
+default_scopes: [legal/contract/nda, legal/contract/msa, legal/contract/sow]
+ui_routes: [/legal/contracts, /legal/clauses, /legal/redlines, /legal/lineage]
+seed_rules_path: rules/
+required_connectors: []
+persona: legal

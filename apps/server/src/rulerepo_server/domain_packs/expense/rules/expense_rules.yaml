@@ -1,0 +1,182 @@
+rules:
+  - id: EXP-001
+    statement: "All expense claims exceeding 5,000 JPY (or equivalent) must include a receipt or invoice as supporting documentation."
+    severity: HIGH
+    modality: MUST
+    tags: [receipt, documentation, expense-claim]
+    org_scope: [finance/expense]
+    applies_to_surfaces: [transaction]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "5,000円（または同等額）を超える全ての経費申請には、領収書または請求書を添付しなければならない。"
+
+  - id: EXP-002
+    statement: "Expense claims above 100,000 JPY require approval from a department head or above. Claims above 500,000 JPY require executive approval."
+    severity: HIGH
+    modality: MUST
+    tags: [approval, authority-level, expense-claim]
+    org_scope: [finance/expense]
+    applies_to_surfaces: [transaction]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "10万円を超える経費申請は部長以上の承認が必要。50万円を超える場合は役員承認が必要。"
+
+  - id: EXP-003
+    statement: "Domestic per diem allowances must not exceed the company-defined daily limits: 2,500 JPY for meals, 10,000 JPY for accommodation in standard regions, 15,000 JPY in designated high-cost regions."
+    severity: MEDIUM
+    modality: MUST_NOT
+    tags: [per-diem, travel, daily-limit]
+    org_scope: [finance/expense]
+    applies_to_surfaces: [transaction]
+    norm_tier: DEPARTMENT_RULE
+    locale: en
+    statement_translations:
+      ja: "国内出張の日当は会社規定の上限を超えてはならない。食事2,500円、宿泊は一般地域10,000円、指定高額地域15,000円。"
+
+  - id: EXP-004
+    statement: "Air travel for domestic trips must be economy class. Business class is permitted only for international flights exceeding 6 hours or with prior written approval from a director."
+    severity: MEDIUM
+    modality: MUST
+    tags: [travel, flight-class, air-travel]
+    org_scope: [finance/expense]
+    applies_to_surfaces: [transaction]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "国内出張の航空券はエコノミークラスとする。ビジネスクラスは6時間超の国際線または部長の事前書面承認がある場合のみ許可。"
+
+  - id: EXP-005
+    statement: "Entertainment expenses must not exceed 5,000 JPY per person per event. The expense report must list all attendees, their affiliations, and the business purpose."
+    severity: HIGH
+    modality: MUST_NOT
+    tags: [entertainment, hospitality, per-person-cap]
+    org_scope: [finance/expense]
+    applies_to_surfaces: [transaction]
+    norm_tier: CORPORATE_POLICY
+    norm_authority: "Tax Special Measures Act Article 61-4 (Japan)"
+    locale: en
+    statement_translations:
+      ja: "交際費は1人当たり5,000円を超えてはならない。経費報告書には全出席者の氏名・所属・業務目的を記載すること。"
+
+  - id: EXP-006
+    statement: "Duplicate expense submissions for the same date, vendor, and amount are prohibited. The system must flag potential duplicates for manual review before processing."
+    severity: CRITICAL
+    modality: MUST_NOT
+    tags: [duplicate, fraud-prevention, validation]
+    org_scope: [finance/expense]
+    applies_to_surfaces: [transaction]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "同一日付・同一取引先・同一金額の経費の重複申請は禁止。処理前にシステムが重複の可能性をフラグし、手動確認を行うこと。"
+
+  - id: EXP-007
+    statement: "All expense claims must be allocated to a valid budget code. Claims against depleted or frozen budget lines must be rejected or escalated to the budget owner."
+    severity: HIGH
+    modality: MUST
+    tags: [budget, allocation, cost-center]
+    org_scope: [finance/budget]
+    applies_to_surfaces: [transaction]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "全ての経費申請は有効な予算コードに紐付けること。消化済みまたは凍結された予算への申請は却下または予算責任者にエスカレーションすること。"
+
+  - id: EXP-008
+    statement: "Vendor invoices must be paid within the agreed payment terms (default: Net 30). Late payments require documentation of the delay reason and CFO notification if exceeding 15 days past due."
+    severity: HIGH
+    modality: MUST
+    tags: [vendor, payment-terms, accounts-payable]
+    org_scope: [finance/invoice]
+    applies_to_surfaces: [transaction]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "取引先請求書は合意された支払条件（デフォルト：30日以内）で支払うこと。15日以上の支払遅延はCFOへの報告と遅延理由の文書化が必要。"
+
+  - id: EXP-009
+    statement: "Consumption tax (VAT) must be correctly recorded on all domestic transactions. Tax-exempt items must be flagged with the applicable exemption category."
+    severity: HIGH
+    modality: MUST
+    tags: [tax, consumption-tax, vat, compliance]
+    org_scope: [finance/expense]
+    applies_to_surfaces: [transaction]
+    norm_tier: CORPORATE_POLICY
+    norm_authority: "Consumption Tax Act (Japan)"
+    locale: en
+    statement_translations:
+      ja: "国内取引の消費税は正確に記録すること。非課税項目は該当する非課税区分を付与すること。"
+
+  - id: EXP-010
+    statement: "Foreign currency expenses must be converted using the company-designated exchange rate source (Bank of Japan TTM rate on the transaction date). Manual rate overrides require finance team approval."
+    severity: MEDIUM
+    modality: MUST
+    tags: [currency, exchange-rate, foreign-expense]
+    org_scope: [finance/expense]
+    applies_to_surfaces: [transaction]
+    norm_tier: DEPARTMENT_RULE
+    locale: en
+    statement_translations:
+      ja: "外貨建て経費は会社指定のレートソース（取引日の日本銀行TTMレート）で換算すること。手動レート変更には経理部門の承認が必要。"
+
+  - id: EXP-011
+    statement: "Expense reports must be submitted within 30 calendar days of the expense date. Reports submitted after 60 days will not be reimbursed without VP-level exception approval."
+    severity: MEDIUM
+    modality: MUST
+    tags: [deadline, submission, timeliness]
+    org_scope: [finance/expense]
+    applies_to_surfaces: [transaction]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "経費報告書は経費発生日から30日以内に提出すること。60日を超えた場合はVP以上の例外承認がなければ精算されない。"
+
+  - id: EXP-012
+    statement: "Personal expenses must not be commingled with business expenses. If a receipt includes both personal and business items, only the business portion may be claimed, with the personal portion clearly deducted and annotated."
+    severity: HIGH
+    modality: MUST_NOT
+    tags: [personal-expense, separation, compliance]
+    org_scope: [finance/expense]
+    applies_to_surfaces: [transaction]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "個人経費と業務経費を混同してはならない。領収書に個人分と業務分が含まれる場合、業務分のみ申請し、個人分は明確に控除・注記すること。"
+
+  - id: EXP-013
+    statement: "Corporate credit card transactions must be reconciled within 15 business days of the statement date. Unreconciled transactions are flagged to the cardholder's manager and the finance team."
+    severity: MEDIUM
+    modality: MUST
+    tags: [credit-card, reconciliation, corporate-card]
+    org_scope: [finance/expense]
+    applies_to_surfaces: [transaction]
+    norm_tier: DEPARTMENT_RULE
+    locale: en
+    statement_translations:
+      ja: "法人カード利用明細は明細発行日から15営業日以内に精算すること。未精算の取引はカード所有者の上長および経理部門に通知される。"
+
+  - id: EXP-014
+    statement: "Cash advances must be reconciled within 10 business days of trip completion. Any unspent advance must be returned to the company. Failure to reconcile within 30 days results in payroll deduction."
+    severity: HIGH
+    modality: MUST
+    tags: [cash-advance, reconciliation, advance-payment]
+    org_scope: [finance/expense]
+    applies_to_surfaces: [transaction]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "仮払金は出張完了後10営業日以内に精算すること。未使用分は返金すること。30日以内に精算されない場合は給与控除となる。"
+
+  - id: EXP-015
+    statement: "Each department's quarterly expenses must not exceed 110% of the approved quarterly budget without a formal budget revision request approved by the CFO."
+    severity: CRITICAL
+    modality: MUST_NOT
+    tags: [budget-cap, department, quarterly-limit]
+    org_scope: [finance/budget]
+    applies_to_surfaces: [transaction]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "各部門の四半期経費はCFO承認の予算修正申請なしに承認済み四半期予算の110%を超えてはならない。"

@@ -1,0 +1,12 @@
+{
+  "action": "register_overtime",
+  "actor_id": "E001",
+  "actor_department": "engineering",
+  "facts": {
+    "hours_this_month": 48,
+    "hours_this_year": 280,
+    "has_36_agreement": true,
+    "agreement_monthly_cap": 45,
+    "date": "2026-04-15"
+  }
+}

@@ -1,0 +1,11 @@
+name: communication
+version: 0.1.0
+display_name: Communication Pack
+description: Communication compliance for email, chat, and customer interactions
+surfaces: [message]
+required_adapters: []
+default_scopes: [communications/email, communications/chat, communications/customer]
+ui_routes: [/compliance/communications]
+seed_rules_path: rules/
+required_connectors: [slack, email]
+persona: compliance

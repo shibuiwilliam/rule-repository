@@ -1,0 +1,100 @@
+rules:
+  - statement: "Monthly overtime hours MUST NOT exceed 45 hours per employee unless a special-clause 36-agreement is in effect."
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [hr/overtime]
+    tags: [overtime, 36-agreement, labor-standards-act]
+    rationale: "Article 36 of the Labor Standards Act caps ordinary overtime at 45 hours per month. Exceeding this without a special clause violates the law."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Annual overtime hours MUST NOT exceed 360 hours per employee unless a special-clause 36-agreement is in effect."
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [hr/overtime]
+    tags: [overtime, 36-agreement, annual-cap, labor-standards-act]
+    rationale: "Article 36 of the Labor Standards Act sets the annual overtime cap at 360 hours. This is a hard legal limit absent a special clause."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "A valid 36-agreement (saburoku kyoutei) MUST be filed with the Labor Standards Inspection Office before any overtime or holiday work is assigned."
+    modality: MUST
+    severity: CRITICAL
+    scope: [hr/overtime, hr/compliance]
+    tags: [36-agreement, filing, labor-standards-act]
+    rationale: "Overtime without a filed 36-agreement is illegal under Article 36 of the Labor Standards Act, regardless of employee consent."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "A minimum rest period of 11 hours MUST be ensured between the end of one work shift and the start of the next."
+    modality: MUST
+    severity: HIGH
+    scope: [hr/attendance, hr/overtime]
+    tags: [rest-period, interval, health-safety]
+    rationale: "The interval rest provision (effort obligation under the Work Style Reform Act) protects employee health by ensuring adequate recovery time between shifts."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Late-night work (22:00-05:00) MUST NOT be assigned to employees under 18 years of age."
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [hr/overtime, hr/attendance]
+    tags: [late-night, minor-protection, labor-standards-act]
+    rationale: "Article 61 of the Labor Standards Act prohibits late-night work for minors to protect their health and development."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Overtime work MUST be compensated at a premium rate of at least 25% above the base hourly wage, and late-night overtime at 50% above."
+    modality: MUST
+    severity: HIGH
+    scope: [hr/overtime]
+    tags: [overtime-premium, wage, compensation, labor-standards-act]
+    rationale: "Articles 37 of the Labor Standards Act mandates premium pay rates for overtime (25%), holiday work (35%), and late-night work (additional 25%)."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "An employee MUST NOT be required to work more than 6 consecutive calendar days without a rest day, unless a variable rest-day schedule is agreed upon in the 36-agreement."
+    modality: MUST_NOT
+    severity: HIGH
+    scope: [hr/attendance, hr/overtime]
+    tags: [consecutive-work, rest-day, labor-standards-act]
+    rationale: "Article 35 of the Labor Standards Act requires at least one rest day per week or four per four-week period."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Managers classified as supervisory employees (kanri-kantokusha) SHOULD still have their overtime hours monitored even when overtime premium exemptions apply."
+    modality: SHOULD
+    severity: MEDIUM
+    scope: [hr/overtime]
+    tags: [manager, supervisory, health-management, work-style-reform]
+    rationale: "The 2019 Work Style Reform Act requires health management for all employees including supervisory staff, even if overtime premium pay does not apply."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: policy
+
+  - statement: "All overtime hours MUST be recorded accurately in the attendance system at the time they are worked, with start and end timestamps."
+    modality: MUST
+    severity: HIGH
+    scope: [hr/overtime, hr/attendance]
+    tags: [recording, attendance, accuracy, labor-standards-act]
+    rationale: "The employer has an obligation to accurately track working hours (Ministry of Health, Labour and Welfare guidelines). Inaccurate records may constitute a labor violation."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Overtime work exceeding the standard 36-agreement cap MUST be pre-approved by the employee's department head and HR before it is performed."
+    modality: MUST
+    severity: HIGH
+    scope: [hr/overtime]
+    tags: [approval, workflow, overtime, governance]
+    rationale: "Pre-approval ensures that overtime beyond the standard cap is intentional, justified, and trackable for compliance with the special-clause 36-agreement."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: policy

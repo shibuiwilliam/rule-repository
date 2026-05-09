@@ -1,0 +1,86 @@
+{
+  "description": "Sample expense claim event for evaluation testing",
+  "surface": "transaction",
+  "identifier": "sap:expense:EXP-2026-04821",
+  "payload": {
+    "document_type": "expense_claim",
+    "document_number": "EXP-2026-04821",
+    "company_code": "JP01",
+    "line_items": [
+      {
+        "line": 1,
+        "description": "Client dinner at Roppongi restaurant",
+        "category": "entertainment",
+        "amount": 42000,
+        "currency": "JPY",
+        "date": "2026-04-15",
+        "attendees": [
+          {"name": "Tanaka Ichiro", "affiliation": "Internal - Sales"},
+          {"name": "Suzuki Hanako", "affiliation": "Internal - Sales"},
+          {"name": "John Smith", "affiliation": "Acme Corp - Procurement"},
+          {"name": "Jane Doe", "affiliation": "Acme Corp - Engineering"}
+        ],
+        "receipt_attached": true,
+        "tax_amount": 3818,
+        "tax_rate": 0.10
+      },
+      {
+        "line": 2,
+        "description": "Taxi to client office (Shibuya to Shinagawa)",
+        "category": "transportation",
+        "amount": 3200,
+        "currency": "JPY",
+        "date": "2026-04-15",
+        "receipt_attached": false,
+        "tax_amount": 290,
+        "tax_rate": 0.10
+      },
+      {
+        "line": 3,
+        "description": "Hotel accommodation - Osaka business trip",
+        "category": "accommodation",
+        "amount": 14500,
+        "currency": "JPY",
+        "date": "2026-04-20",
+        "receipt_attached": true,
+        "tax_amount": 1318,
+        "tax_rate": 0.10,
+        "region": "standard"
+      }
+    ],
+    "total_amount": 59700,
+    "currency": "JPY",
+    "cost_center": "SALES-001",
+    "budget_code": "FY2026-Q2-SALES-TRAVEL",
+    "submission_date": "2026-05-01",
+    "payment_method": "corporate_credit_card"
+  },
+  "facts": {
+    "source_system": "sap",
+    "submitter_department": "Sales",
+    "submitter_title": "Account Manager",
+    "approver": "sales_director_001",
+    "budget_remaining": 450000,
+    "budget_total": 2000000,
+    "days_since_oldest_expense": 16,
+    "per_person_entertainment": 10500
+  },
+  "actor": {
+    "kind": "human",
+    "identifier": "sap:E001234",
+    "attributes": {
+      "department": "Sales",
+      "job_title": "Account Manager",
+      "employee_id": "E001234"
+    }
+  },
+  "timestamp": "2026-05-01T09:30:00+09:00",
+  "locale": "ja",
+  "_evaluation_notes": [
+    "EXP-001: Line 2 (taxi 3,200 JPY) lacks receipt but is under 5,000 JPY threshold - PASS",
+    "EXP-005: Entertainment per-person is 10,500 JPY (42,000 / 4 attendees) which exceeds the 5,000 JPY cap - VIOLATION",
+    "EXP-003: Accommodation 14,500 JPY exceeds standard region limit of 10,000 JPY - VIOLATION",
+    "EXP-011: Oldest expense is 16 days old, within 30-day window - PASS",
+    "EXP-009: Tax amounts correctly recorded with 10% rate - PASS"
+  ]
+}

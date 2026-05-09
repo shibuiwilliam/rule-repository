@@ -1,0 +1,194 @@
+rules:
+  - id: sow-001
+    statement: >
+      The SOW must include a scope-of-work section that describes the
+      services, deliverables, and activities to be performed in sufficient
+      detail that an independent third party could determine whether a
+      given task falls within scope. The description must use specific,
+      measurable language and avoid open-ended phrases such as "and
+      other related services" or "as reasonably requested."
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/sow]
+    tags: [sow, scope, clarity]
+    rationale: >
+      Vague scope definitions are the primary cause of scope creep
+      disputes. Measurable language enables objective determination of
+      whether work is in-scope.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: sow-002
+    statement: >
+      The SOW must define acceptance criteria for each deliverable,
+      including specific pass/fail conditions, the acceptance testing
+      period (not to exceed fifteen business days unless justified),
+      the process for reporting deficiencies, and the deemed-acceptance
+      rule that applies if the client fails to respond within the
+      testing period.
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/sow]
+    tags: [sow, acceptance, criteria, testing]
+    rationale: >
+      Without objective acceptance criteria, deliverable approval
+      becomes subjective and can be withheld unreasonably, blocking
+      payment and project progress.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: sow-003
+    statement: >
+      The SOW must include a change order process that requires all
+      scope changes to be documented in a written change order signed
+      by authorized representatives of both parties before work begins.
+      The change order must specify the impact on scope, timeline,
+      fees, and any modified acceptance criteria.
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/sow]
+    tags: [sow, change-order, scope-change]
+    rationale: >
+      Informal scope changes lead to disputes about additional fees
+      and timeline extensions. A formal change-order process protects
+      both parties.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: sow-004
+    statement: >
+      The SOW must define payment milestones tied to specific
+      deliverables or project phases. Each milestone must specify the
+      deliverable or phase completion criteria, the payment amount or
+      percentage, and the payment terms (net days). The SOW must not
+      require more than thirty percent of total fees as an upfront
+      payment before any deliverable is accepted.
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/sow]
+    tags: [sow, payment, milestones, fees]
+    rationale: >
+      Milestone-based payment aligns incentives with delivery progress.
+      Capping upfront payments limits financial exposure before value
+      is demonstrated.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: sow-005
+    statement: >
+      The SOW must include a delivery timeline with specific dates or
+      durations for each milestone and deliverable. The timeline must
+      identify critical-path dependencies, and must specify whether
+      dates are estimates or firm commitments. Any liquidated damages
+      or service credits for late delivery must be stated explicitly.
+    modality: MUST
+    severity: MEDIUM
+    scope: [legal/contract/sow]
+    tags: [sow, timeline, delivery, schedule]
+    rationale: >
+      Ambiguous timelines make it impossible to determine whether
+      performance is timely. Distinguishing estimates from commitments
+      sets appropriate expectations.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: sow-006
+    statement: >
+      The SOW must identify the key personnel and resource commitments
+      from each party, including named individuals for project manager
+      and technical lead roles. The SOW must require prior written
+      consent before replacing key personnel, and must specify the
+      minimum qualifications for replacements.
+    modality: SHOULD
+    severity: MEDIUM
+    scope: [legal/contract/sow]
+    tags: [sow, resources, personnel, staffing]
+    rationale: >
+      Project success often depends on specific individuals. Consent
+      requirements for replacement protect the client from bait-and-switch
+      staffing practices.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: sow-007
+    statement: >
+      The SOW must include an explicit out-of-scope section that lists
+      services, deliverables, and activities that are not included in
+      the engagement. The out-of-scope section must address commonly
+      assumed inclusions such as training, documentation, data migration,
+      production support, and third-party license procurement.
+    modality: MUST
+    severity: MEDIUM
+    scope: [legal/contract/sow]
+    tags: [sow, out-of-scope, exclusions]
+    rationale: >
+      An explicit out-of-scope section prevents assumptions and reduces
+      scope disputes. Listing commonly assumed items proactively addresses
+      the most frequent sources of disagreement.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: sow-008
+    statement: >
+      The SOW must define an escalation procedure with at least two
+      tiers: (1) project-manager-level resolution within five business
+      days, and (2) executive-sponsor-level resolution within ten
+      business days. The procedure must specify named roles (not
+      individuals) at each tier and the criteria for escalation.
+    modality: SHOULD
+    severity: LOW
+    scope: [legal/contract/sow]
+    tags: [sow, escalation, dispute, governance]
+    rationale: >
+      Structured escalation prevents minor disagreements from stalling
+      project progress while ensuring serious issues reach decision-makers
+      with appropriate urgency.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: sow-009
+    statement: >
+      The SOW must establish a project governance structure that defines
+      the frequency and format of status reporting (at minimum weekly
+      written reports), the decision-making authority of each party's
+      project manager, and the process for joint steering committee
+      reviews at major milestones.
+    modality: SHOULD
+    severity: LOW
+    scope: [legal/contract/sow]
+    tags: [sow, governance, reporting, oversight]
+    rationale: >
+      Regular governance touchpoints provide early warning of issues
+      and ensure alignment between parties. Written reports create an
+      auditable record of project health.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: sow-010
+    statement: >
+      The SOW must specify a warranty period of at least thirty days
+      following final acceptance during which the service provider must
+      correct defects in deliverables at no additional cost. The
+      warranty clause must define what constitutes a defect (failure to
+      meet acceptance criteria), the process for reporting defects,
+      and the expected response and resolution times.
+    modality: MUST
+    severity: MEDIUM
+    scope: [legal/contract/sow]
+    tags: [sow, warranty, defects, post-acceptance]
+    rationale: >
+      A warranty period incentivizes quality delivery and provides the
+      client with a safety net for defects discovered after acceptance
+      testing.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual

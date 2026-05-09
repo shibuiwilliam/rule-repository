@@ -1,0 +1,80 @@
+rules:
+  - statement: "An employee who has been continuously employed for 6 months with at least 80% attendance MUST be granted a minimum of 10 days of annual paid leave."
+    modality: MUST
+    severity: CRITICAL
+    scope: [hr/leave]
+    tags: [annual-leave, paid-leave, labor-standards-act]
+    rationale: "Article 39 of the Labor Standards Act requires employers to grant annual paid leave to qualifying employees. The minimum is 10 days, increasing with tenure."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Unused annual paid leave MUST NOT be carried over beyond 2 years from the date it was granted."
+    modality: MUST_NOT
+    severity: MEDIUM
+    scope: [hr/leave]
+    tags: [leave-carryover, expiration, labor-standards-act]
+    rationale: "Under Article 115 of the Labor Standards Act, the right to paid leave lapses after 2 years. Employers should encourage timely use."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "The employer MUST ensure that each employee with 10 or more days of annual paid leave entitlement takes at least 5 days of paid leave per year."
+    modality: MUST
+    severity: CRITICAL
+    scope: [hr/leave]
+    tags: [mandatory-leave, 5-day-rule, work-style-reform]
+    rationale: "The 2019 Work Style Reform Act amended Article 39 to require employers to ensure at least 5 days of annual paid leave consumption per year."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Sick leave exceeding 3 consecutive working days MUST be accompanied by a medical certificate from a licensed physician."
+    modality: MUST
+    severity: MEDIUM
+    scope: [hr/leave]
+    tags: [sick-leave, documentation, medical-certificate]
+    rationale: "Company policy requires medical documentation for extended sick leave to verify the need for absence and ensure appropriate support."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: policy
+
+  - statement: "An employee who has been continuously employed for at least 1 year MUST be eligible to take child-care leave for a child under the age of 1, extendable to age 2 under qualifying circumstances."
+    modality: MUST
+    severity: CRITICAL
+    scope: [hr/leave]
+    tags: [child-care, parental-leave, child-care-leave-act]
+    rationale: "The Child Care and Family Care Leave Act guarantees child-care leave. Employers must not deny eligible requests."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "An employee MUST be eligible to take up to 93 days of elder-care leave per qualifying family member, which may be split into up to 3 separate periods."
+    modality: MUST
+    severity: HIGH
+    scope: [hr/leave]
+    tags: [elder-care, family-care, child-care-leave-act]
+    rationale: "The Child Care and Family Care Leave Act provides for elder-care leave. Denial of eligible requests is a legal violation."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Bereavement leave SHOULD be granted according to the company's work regulations: at least 5 days for a spouse or first-degree relative, and at least 3 days for a second-degree relative."
+    modality: SHOULD
+    severity: MEDIUM
+    scope: [hr/leave]
+    tags: [bereavement, special-leave, work-regulations]
+    rationale: "While not statutorily mandated, bereavement leave provisions are a standard part of Japanese work regulations and reflect employer duty of care."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: policy
+
+  - statement: "Special leave requests outside of standard leave categories MUST be approved by both the direct supervisor and the HR department before the leave commences."
+    modality: MUST
+    severity: MEDIUM
+    scope: [hr/leave]
+    tags: [special-leave, approval, workflow]
+    rationale: "Non-standard leave requires dual approval to ensure coverage, fairness, and proper record-keeping."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: policy

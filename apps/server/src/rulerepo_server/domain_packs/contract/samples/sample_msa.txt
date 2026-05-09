@@ -1,0 +1,99 @@
+MASTER SERVICES AGREEMENT — KEY CLAUSES (EXCERPT)
+
+Effective Date: March 1, 2025
+Parties: Acme Solutions Inc. ("Provider") and GlobalTech Corp. ("Client")
+
+--- SECTION 5: LIMITATION OF LIABILITY ---
+
+5.1 EXCEPT FOR OBLIGATIONS UNDER SECTIONS 7 (INDEMNIFICATION), 8
+(CONFIDENTIALITY), AND CLAIMS ARISING FROM WILLFUL MISCONDUCT OR GROSS
+NEGLIGENCE, NEITHER PARTY'S TOTAL AGGREGATE LIABILITY UNDER THIS AGREEMENT
+SHALL EXCEED THE GREATER OF (A) THE FEES PAID OR PAYABLE BY CLIENT IN THE
+TWELVE (12) MONTHS PRECEDING THE EVENT GIVING RISE TO THE CLAIM, OR (B) FIVE
+HUNDRED THOUSAND U.S. DOLLARS ($500,000).
+
+5.2 IN NO EVENT SHALL EITHER PARTY BE LIABLE FOR INDIRECT, INCIDENTAL,
+SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, DATA,
+OR BUSINESS OPPORTUNITY, REGARDLESS OF THE FORM OF ACTION OR THEORY OF
+LIABILITY.
+
+--- SECTION 6: INTELLECTUAL PROPERTY ---
+
+6.1 Pre-Existing IP. Each Party retains all rights in its pre-existing
+intellectual property. Neither Party acquires any rights in the other Party's
+pre-existing IP except as expressly granted herein.
+
+6.2 Deliverables. Upon full payment, Client shall own all intellectual
+property rights in custom deliverables created specifically for Client under
+a SOW. Provider retains ownership of its tools, methodologies, and
+pre-existing components incorporated into deliverables, and grants Client
+an irrevocable, perpetual, royalty-free license to use such components as
+part of the deliverables.
+
+6.3 Jointly Developed IP. Any intellectual property jointly developed by the
+Parties shall be jointly owned. Each Party may use jointly developed IP without
+accounting to the other, but neither Party may license it to third parties
+without the other Party's written consent.
+
+--- SECTION 7: INDEMNIFICATION ---
+
+7.1 Mutual Indemnification. Each Party ("Indemnifying Party") shall defend,
+indemnify, and hold harmless the other Party from and against any third-party
+claims, damages, and reasonable expenses (including attorneys' fees) arising
+from: (a) the Indemnifying Party's breach of this Agreement; (b) the
+Indemnifying Party's negligence or willful misconduct; or (c) infringement
+of third-party intellectual property rights by the Indemnifying Party's
+materials or deliverables.
+
+7.2 Procedure. The indemnified Party shall: (a) provide prompt written notice
+of any claim; (b) grant the Indemnifying Party sole control of the defense
+and settlement; and (c) provide reasonable cooperation at the Indemnifying
+Party's expense.
+
+--- SECTION 9: TERMINATION ---
+
+9.1 For Convenience. Either Party may terminate this Agreement upon thirty
+(30) days' written notice. Client shall pay for all work completed and
+non-cancelable commitments incurred prior to the effective date of
+termination.
+
+9.2 For Cause. Either Party may terminate this Agreement upon material breach
+if the breaching Party fails to cure within thirty (30) days of written
+notice specifying the breach. Either Party may terminate immediately if the
+other Party becomes insolvent, files for bankruptcy, or makes an assignment
+for the benefit of creditors.
+
+--- SECTION 11: GOVERNING LAW AND DISPUTE RESOLUTION ---
+
+11.1 Governing Law. This Agreement shall be governed by the laws of the
+State of Delaware, without regard to conflict-of-laws principles.
+
+11.2 Dispute Resolution. The Parties shall attempt to resolve disputes
+through good-faith negotiation for thirty (30) days. If unresolved, disputes
+shall be submitted to binding arbitration under the rules of the American
+Arbitration Association in Wilmington, Delaware, before a single arbitrator.
+
+--- SECTION 12: DATA PROTECTION ---
+
+12.1 Each Party shall comply with all applicable data protection laws,
+including GDPR and CCPA, in connection with any personal data processed
+under this Agreement.
+
+12.2 If Provider processes personal data on behalf of Client, the Parties
+shall execute a Data Processing Agreement in substantially the form attached
+as Exhibit B.
+
+12.3 Each Party shall implement appropriate technical and organizational
+security measures and shall notify the other Party of any personal data
+breach within seventy-two (72) hours of discovery.
+
+--- SECTION 13: FORCE MAJEURE ---
+
+13.1 Neither Party shall be liable for failure or delay in performance caused
+by events beyond its reasonable control, including natural disasters,
+pandemics, government actions, war, terrorism, or widespread infrastructure
+failures, provided the affected Party gives prompt written notice and uses
+reasonable efforts to mitigate the impact.
+
+13.2 If a force majeure event continues for more than ninety (90) days,
+either Party may terminate this Agreement upon written notice.

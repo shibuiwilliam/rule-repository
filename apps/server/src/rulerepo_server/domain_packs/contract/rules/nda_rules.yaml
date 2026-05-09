@@ -1,0 +1,185 @@
+rules:
+  - id: nda-001
+    statement: >
+      Every NDA must include a clear and comprehensive definition of
+      Confidential Information that specifies the categories of information
+      covered, including but not limited to technical data, business plans,
+      financial records, customer lists, and trade secrets.
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/nda]
+    tags: [nda, confidentiality, definition]
+    rationale: >
+      Without a precise definition, parties may dispute whether specific
+      information falls under the agreement, rendering the NDA unenforceable
+      in practice.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: nda-002
+    statement: >
+      The NDA must enumerate standard exclusions from Confidential Information,
+      including information that is publicly available, independently developed,
+      rightfully received from a third party without restriction, or already
+      known to the receiving party prior to disclosure.
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/nda]
+    tags: [nda, confidentiality, exclusions]
+    rationale: >
+      Standard exclusions protect the receiving party from unreasonable
+      obligations and are expected by courts when assessing enforceability.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: nda-003
+    statement: >
+      The NDA must specify both the term of the agreement (the period during
+      which disclosures may occur) and the duration of confidentiality
+      obligations (the period after termination during which disclosed
+      information must remain protected), and the confidentiality duration
+      must be at least two years from the date of disclosure.
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/nda]
+    tags: [nda, term, duration]
+    rationale: >
+      Indefinite or missing duration clauses create uncertainty and may be
+      struck down by courts. A minimum two-year duration is standard market
+      practice for commercial NDAs.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: nda-004
+    statement: >
+      The NDA must include a clause requiring the receiving party to return
+      or destroy all Confidential Information, including copies and derivative
+      works, within thirty days of written request or upon termination of
+      the agreement, and to certify in writing that such return or
+      destruction has been completed.
+    modality: MUST
+    severity: MEDIUM
+    scope: [legal/contract/nda]
+    tags: [nda, return, destruction]
+    rationale: >
+      Return-or-destroy obligations limit the window of exposure after the
+      relationship ends and provide an auditable compliance mechanism.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: nda-005
+    statement: >
+      The NDA must limit permitted disclosures of Confidential Information
+      to employees, contractors, and advisors of the receiving party who
+      have a need to know, and must require that such individuals be bound
+      by confidentiality obligations at least as protective as those in
+      the NDA.
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract/nda]
+    tags: [nda, permitted-disclosure, need-to-know]
+    rationale: >
+      Uncontrolled downstream disclosure defeats the purpose of the NDA.
+      Binding downstream recipients to equivalent obligations is essential
+      for practical protection.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: nda-006
+    statement: >
+      The NDA must state the remedies available for breach, including the
+      right to seek injunctive relief without the requirement to prove
+      actual damages or post a bond, and must acknowledge that monetary
+      damages alone may be insufficient to compensate for unauthorized
+      disclosure.
+    modality: MUST
+    severity: MEDIUM
+    scope: [legal/contract/nda]
+    tags: [nda, remedies, breach, injunctive-relief]
+    rationale: >
+      Confidential information, once disclosed, cannot be un-disclosed.
+      Injunctive relief language strengthens the disclosing party's ability
+      to obtain immediate court protection.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: nda-007
+    statement: >
+      The NDA must identify which obligations survive termination or
+      expiration of the agreement. At a minimum, confidentiality obligations,
+      return-or-destroy obligations, and remedies provisions must be
+      listed as surviving clauses.
+    modality: MUST
+    severity: MEDIUM
+    scope: [legal/contract/nda]
+    tags: [nda, survival, termination]
+    rationale: >
+      Without explicit survival language, a court may hold that obligations
+      cease upon termination, leaving disclosed information unprotected.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: nda-008
+    statement: >
+      If the NDA contains a non-solicitation clause, it must be narrowly
+      scoped to employees and contractors who were directly involved in
+      the disclosed project, limited to a maximum of twelve months after
+      termination, and must not restrict general hiring through public
+      job postings.
+    modality: SHOULD
+    severity: MEDIUM
+    scope: [legal/contract/nda]
+    tags: [nda, non-solicitation, hiring]
+    rationale: >
+      Overly broad non-solicitation clauses may be unenforceable and create
+      unnecessary friction during negotiations. Narrow scope increases
+      enforceability and commercial acceptability.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: nda-009
+    statement: >
+      The NDA should include a residual-knowledge clause that permits the
+      receiving party to use general knowledge, skills, and experience
+      retained in unaided memory by its personnel, provided that such use
+      does not involve reproduction of specific Confidential Information
+      such as documents, source code, or detailed specifications.
+    modality: SHOULD
+    severity: LOW
+    scope: [legal/contract/nda]
+    tags: [nda, residual-knowledge, practical]
+    rationale: >
+      A residual-knowledge carve-out reflects practical reality that
+      individuals cannot selectively forget what they have learned, and
+      its absence can make the NDA commercially unacceptable to
+      sophisticated counterparties.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual
+
+  - id: nda-010
+    statement: >
+      The NDA must prohibit assignment of the agreement by either party
+      without the prior written consent of the other party, except in
+      connection with a merger, acquisition, or sale of substantially
+      all assets of the assigning party, in which case the assignee
+      must assume all obligations under the agreement.
+    modality: MUST
+    severity: MEDIUM
+    scope: [legal/contract/nda]
+    tags: [nda, assignment, transfer]
+    rationale: >
+      Unrestricted assignment could place confidential information in the
+      hands of unknown third parties. The M&A exception is standard
+      commercial practice.
+    applicable_subject_types: [clause_set]
+    jurisdiction: global
+    legal_force: contractual

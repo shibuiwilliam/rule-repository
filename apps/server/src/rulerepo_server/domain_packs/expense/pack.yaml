@@ -1,0 +1,11 @@
+name: expense
+version: 0.1.0
+display_name: Expense Pack
+description: Expense policy enforcement, budget compliance, vendor payment controls, and financial audit rules
+surfaces: [transaction]
+required_adapters: []
+default_scopes: [finance/expense, finance/invoice, finance/budget]
+ui_routes: [/finance/expenses, /finance/budgets, /finance/vendors, /finance/audit]
+seed_rules_path: rules/
+required_connectors: [sap]
+persona: finance

@@ -1,0 +1,70 @@
+rules:
+  - statement: "The employer MUST display a summary of the work regulations in a location accessible to all employees at the workplace."
+    modality: MUST
+    severity: HIGH
+    scope: [hr/compliance]
+    tags: [work-regulations, posting, labor-standards-act]
+    rationale: "Article 106 of the Labor Standards Act requires employers to make work regulations known to employees through posting, distribution, or electronic means."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "A labor-management agreement MUST be concluded and filed with the Labor Standards Inspection Office for any matter requiring such agreement under the Labor Standards Act."
+    modality: MUST
+    severity: CRITICAL
+    scope: [hr/compliance]
+    tags: [labor-management-agreement, filing, labor-standards-act]
+    rationale: "Various provisions of the Labor Standards Act (e.g., Articles 24, 32, 36) require written labor-management agreements filed with the competent authority."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "The employer MUST provide written notification of essential working conditions to each employee at the time of hiring, including wages, working hours, and place of work."
+    modality: MUST
+    severity: HIGH
+    scope: [hr/compliance]
+    tags: [notification, hiring, working-conditions, labor-standards-act]
+    rationale: "Article 15 of the Labor Standards Act requires explicit notification of working conditions. Failure may render the employment contract voidable at the employee's option."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Employment decisions MUST NOT discriminate based on nationality, creed, social status, gender, disability, or other protected characteristics."
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [hr/compliance]
+    tags: [discrimination, equal-opportunity, labor-standards-act, equal-employment-act]
+    rationale: "Article 3 of the Labor Standards Act and the Equal Employment Opportunity Act prohibit discrimination in employment. Violations carry penalties and reputational risk."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "The employer MUST implement measures to prevent workplace harassment including power harassment, sexual harassment, and maternity harassment, and MUST establish a consultation system."
+    modality: MUST
+    severity: CRITICAL
+    scope: [hr/compliance]
+    tags: [harassment, prevention, consultation, power-harassment-prevention-act]
+    rationale: "The Comprehensive Labor Policy Promotion Act (amended 2020) mandates harassment prevention measures and a consultation mechanism for all employers."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "Employees who report legal violations or compliance concerns in good faith MUST NOT be subjected to dismissal, demotion, or any other disadvantageous treatment."
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [hr/compliance]
+    tags: [whistleblower, protection, whistleblower-protection-act]
+    rationale: "The Whistleblower Protection Act protects employees who report wrongdoing. Retaliation is illegal and exposes the employer to civil liability."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "The employer MUST conduct workplace safety risk assessments at least annually and implement corrective measures for identified hazards in accordance with the Industrial Safety and Health Act."
+    modality: MUST
+    severity: HIGH
+    scope: [hr/compliance]
+    tags: [safety, risk-assessment, industrial-safety-act]
+    rationale: "The Industrial Safety and Health Act requires employers to identify and mitigate workplace hazards. Annual assessments are the minimum standard for ongoing compliance."
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
