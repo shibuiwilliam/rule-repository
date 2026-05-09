@@ -1,6 +1,6 @@
 """Unit tests for Operability (workstream 7h).
 
-Tests metrics collection, cost tracking, leader election, LLM fallback.
+Tests cost tracking, leader election, LLM fallback.
 """
 
 from __future__ import annotations
@@ -8,55 +8,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-
-# ---------------------------------------------------------------------------
-# Metrics collection tests
-# ---------------------------------------------------------------------------
-
-
-class TestMetricsCollector:
-    def test_record_evaluation(self) -> None:
-        try:
-            from rulerepo_server.core.metrics import MetricsCollector
-        except ImportError:
-            pytest.skip("Metrics collector not yet available")
-
-        collector = MetricsCollector()
-        collector.record_evaluation("engineering", "ALLOW", 150.0, "tenant_1")
-        collector.record_evaluation("engineering", "DENY", 200.0, "tenant_1")
-        output = collector.get_prometheus_output()
-        assert "rulerepo_evaluations_total" in output
-
-    def test_record_llm_call(self) -> None:
-        try:
-            from rulerepo_server.core.metrics import MetricsCollector
-        except ImportError:
-            pytest.skip("Metrics collector not yet available")
-
-        collector = MetricsCollector()
-        collector.record_llm_call(
-            model="gemini-3-flash-preview",
-            tokens_in=500,
-            tokens_out=200,
-            cost_usd=0.001,
-            latency_ms=300.0,
-            tenant_id="tenant_1",
-        )
-        output = collector.get_prometheus_output()
-        assert "rulerepo_llm" in output
-
-    def test_cache_event(self) -> None:
-        try:
-            from rulerepo_server.core.metrics import MetricsCollector
-        except ImportError:
-            pytest.skip("Metrics collector not yet available")
-
-        collector = MetricsCollector()
-        collector.record_cache_event(hit=True, cache_type="evaluation")
-        collector.record_cache_event(hit=False, cache_type="evaluation")
-        output = collector.get_prometheus_output()
-        assert "cache" in output.lower()
-
 
 # ---------------------------------------------------------------------------
 # Cost tracker tests

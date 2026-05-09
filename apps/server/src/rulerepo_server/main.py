@@ -64,12 +64,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     else:
         logger.info("neo4j_disabled", fallback="postgres_adjacency")
 
-    # OpenTelemetry — initialize tracing and metrics (RR-025)
-    from rulerepo_server.core.telemetry import init_telemetry
-
-    otel_endpoint = getattr(settings, "otel_exporter_otlp_endpoint", None)
-    init_telemetry(service_name="rulerepo-server", otlp_endpoint=otel_endpoint or None)
-
     logger.info("all_connections_initialized", tier=flags.tier)
 
     yield
@@ -218,24 +212,6 @@ def create_app() -> FastAPI:
             "checks": checks,
             "tier": flags.tier,
         }
-
-    # --- Prometheus metrics endpoint ---
-
-    @app.get("/metrics", tags=["observability"])
-    async def metrics() -> str:
-        """Prometheus-compatible metrics endpoint (RR-026).
-
-        Serves real counters, histograms, and gauges from the
-        in-process MetricsCollector. Scraped by Prometheus.
-        """
-        from fastapi.responses import PlainTextResponse
-
-        from rulerepo_server.core.metrics import metrics_collector
-
-        return PlainTextResponse(
-            metrics_collector.get_prometheus_output(),
-            media_type="text/plain",
-        )
 
     # --- Register API routers ---
     from rulerepo_server.api.v1 import v1_router

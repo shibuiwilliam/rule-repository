@@ -85,10 +85,6 @@ class Settings(BaseSettings):
     audit_worm_s3_bucket: str = ""
     audit_worm_s3_region: str = ""
 
-    # Observability (RR-025)
-    otel_exporter_otlp_endpoint: str = ""
-    prometheus_enabled: bool = True
-
     # Weekly digest
     digest_webhook_url: str = ""
 

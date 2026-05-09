@@ -282,11 +282,6 @@ class HealthService:
         else:
             overall = "degraded"
 
-        from rulerepo_server.core.metrics import metrics_collector
-
-        for name, check in checks.items():
-            metrics_collector.set_connector_health(name, check.status == "healthy")
-
         return SystemHealth(
             overall=overall,
             checks=checks,

@@ -5,7 +5,6 @@ Covers:
 - Extraction tools (bilingual pairer, redline differ, clause normalizer)
 - Norm Lineage walker
 - Domain Pack loader
-- Marketplace pack distribution
 - HR and Communication pack structure
 - Connector ABC
 - Japanese sample rules existence
@@ -219,7 +218,7 @@ class TestConnectorABC:
 
 
 # ---------------------------------------------------------------------------
-# Phase 13: Marketplace
+# Domain Pack Loader
 # ---------------------------------------------------------------------------
 
 
@@ -243,21 +242,6 @@ class TestDomainPackLoader:
         # Should find at least contract, hr_attendance, communication packs
         pack_names = {p.name for p in packs}
         assert len(packs) >= 1, f"Should discover at least 1 pack, found: {pack_names}"
-
-
-class TestMarketplacePackDistribution:
-    """Tests for marketplace pack distribution."""
-
-    def test_pack_distribution_import(self) -> None:
-        from rulerepo_server.services.marketplace.pack_distribution import (
-            PackListing,
-            detect_composition_conflicts,
-            list_available_packs,
-        )
-
-        assert list_available_packs is not None
-        assert detect_composition_conflicts is not None
-        assert PackListing is not None
 
 
 # ---------------------------------------------------------------------------

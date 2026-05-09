@@ -55,8 +55,6 @@ Once all containers are healthy, the following services are available:
 | MCP Server | [http://localhost:8001](http://localhost:8001) | Model Context Protocol server for AI agents (12+ tools) |
 | Redis | localhost:6379 | Job queue for background workers |
 | arq-worker | -- | Background worker running 9+ cron jobs (health, recommendations, feedback, drift, digest) |
-| Jaeger | [http://localhost:16686](http://localhost:16686) | Distributed tracing UI (OpenTelemetry) |
-| Prometheus | [http://localhost:9090](http://localhost:9090) | Metrics collection |
 
 ## Try It Out
 

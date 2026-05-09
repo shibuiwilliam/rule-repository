@@ -2,7 +2,7 @@
 
 ## Deployable Components
 
-The Rule Repository consists of twelve services (plus setup containers and observability), all orchestrated locally via Docker Compose. The backend exposes 22 API routers backed by 20+ service directories. Rules are scoped to projects and departments for multi-team, cross-organizational governance.
+The Rule Repository consists of eleven services (plus setup containers and observability), all orchestrated locally via Docker Compose. The backend exposes 22 API routers backed by 20+ service directories. Rules are scoped to projects and departments for multi-team, cross-organizational governance.
 
 | Component | Technology | Port | Role |
 |---|---|---|---|
@@ -14,8 +14,6 @@ The Rule Repository consists of twelve services (plus setup containers and obser
 | **Neo4j** | Neo4j 5 Community | 7474 / 7687 | Directed graph of rule relationships (REFINES, OVERRIDES, CONFLICTS_WITH, DEPENDS_ON, DERIVES_FROM, SUCCEEDS, LOCALIZES). |
 | **Redis** | Redis 7 Alpine | 6379 | Job queue and result backend for background workers. |
 | **arq-worker** | Python 3.13 / arq | -- | Background worker running 9+ scheduled cron jobs (health scoring, recommendations, rule promotion, correction clustering, verdict drift, weekly digest, conflict scanning, policy review cycle, archival). |
-| **Jaeger** | Jaeger 1.62 | 16686 | Distributed tracing via OpenTelemetry (OTLP gRPC on 4317, OTLP HTTP on 4318). |
-| **Prometheus** | Prometheus v3.4 | 9090 | Metrics collection from the backend `/metrics` endpoint. |
 
 ## Data Store Roles
 
@@ -63,7 +61,7 @@ Rules belong to departments (Legal, HR, Finance, Sales, Marketing, IT, Operation
 - **Approvers** -- who must approve proposals (severity-based thresholds)
 - **Audiences** -- who gets notifications for a capacity (OWNER, REVIEWER, SUBSCRIBER, AUDITOR)
 
-Proposals, intelligence digests, marketplace publishing, and audit read access all route through department resolvers.
+Proposals, intelligence digests, and audit read access all route through department resolvers.
 
 ## Classification and Access Control
 

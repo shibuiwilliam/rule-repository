@@ -53,8 +53,6 @@ After about a minute:
 | Neo4j | localhost:7474 | Rule relationship graph |
 | Redis | localhost:6379 | Background job queue (arq) |
 | MCP Server | localhost:8001 | AI agent tool integration (12 tools) |
-| Jaeger | localhost:16686 | Distributed tracing |
-| Prometheus | localhost:9090 | Metrics collection |
 
 ### Start with Postgres only (Tier 1)
 
@@ -260,7 +258,7 @@ LLM_PROVIDER_FALLBACK=anthropic,openai
 LLM_TENANT_OVERRIDES={"hr-confidential": "local"}
 ```
 
-Each provider implements the `LLMProvider` protocol: `generate`, `generate_structured`, `embed`, `count_tokens`, plus cost properties. The router records telemetry (OpenTelemetry spans + Prometheus counters) for every call.
+Each provider implements the `LLMProvider` protocol: `generate`, `generate_structured`, `embed`, `count_tokens`, plus cost properties. The router records structured logs for every call.
 
 ---
 
@@ -408,7 +406,7 @@ make dev.frontend             # Next.js with hot-reload
 | LLM | Gemini via `google-genai` (pluggable to Anthropic, OpenAI, self-hosted) |
 | Data | PostgreSQL 17 (RLS), Elasticsearch 8, Neo4j 5, Redis 7 |
 | MCP | FastMCP (mcp >= 1.9) |
-| Observability | OpenTelemetry, Prometheus, Jaeger |
+| Observability | structlog (JSON), structured audit log |
 | Quality | ruff + mypy, ESLint + Prettier, eval harness (90 golden cases) |
 | Packages | uv (Python), pnpm (frontend) |
 

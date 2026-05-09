@@ -1,11 +1,10 @@
 """Operability API endpoints.
 
-Provides system health, Prometheus metrics, per-tenant cost tracking,
+Provides system health, per-tenant cost tracking,
 SLO monitoring, and circuit breaker status.
 
 Routes:
     GET /api/v1/ops/health              — full system health
-    GET /api/v1/ops/metrics             — Prometheus-compatible metrics
     GET /api/v1/ops/cost/{tenant_id}    — tenant cost summary
     GET /api/v1/ops/cost/{tenant_id}/breakdown — detailed cost breakdown
     GET /api/v1/ops/slo                 — SLO status
@@ -18,7 +17,6 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Query
-from fastapi.responses import PlainTextResponse
 
 from rulerepo_server.core.logging import get_logger
 
@@ -41,23 +39,6 @@ async def ops_health() -> dict:
 
     health = await health_service.full_health_check()
     return asdict(health)
-
-
-@router.get("/metrics")
-async def ops_metrics() -> PlainTextResponse:
-    """Prometheus-compatible metrics endpoint.
-
-    Returns all accumulated metrics in Prometheus text exposition format.
-    This replaces the placeholder ``/metrics`` endpoint with detailed
-    per-domain, per-tenant, and per-model metrics.
-
-    Returns:
-        Plain text in Prometheus exposition format.
-    """
-    from rulerepo_server.core.metrics import metrics_collector
-
-    output = metrics_collector.get_prometheus_output()
-    return PlainTextResponse(output, media_type="text/plain; charset=utf-8")
 
 
 @router.get("/cost/{tenant_id}")
@@ -85,7 +66,7 @@ async def ops_tenant_cost(
     Returns:
         A TenantCostSummary dict.
     """
-    from rulerepo_server.core.metrics import metrics_collector
+    from rulerepo_server.services.operability.cost_tracker import cost_tracker
 
     now = datetime.now(tz=UTC)
     if period_start:
@@ -95,8 +76,8 @@ async def ops_tenant_cost(
 
     end = datetime.fromisoformat(period_end) if period_end else now
 
-    summary = metrics_collector.get_tenant_cost_summary(tenant_id, start, end)
-    return asdict(summary)
+    breakdown = cost_tracker.get_cost_breakdown(tenant_id, start, end)
+    return asdict(breakdown)
 
 
 @router.get("/cost/{tenant_id}/breakdown")

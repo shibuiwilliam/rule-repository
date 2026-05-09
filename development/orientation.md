@@ -12,9 +12,9 @@ The Rule Repository is pivoting from a software-engineering governance tool into
 
 Phases 1 through 5 deliver the core platform: rule storage, multi-modal search, code evaluation, MCP integration, discovery (code-based), feedback flywheel, playground, snapshots, alerts, and intelligence. All 418 tests pass. This infrastructure is **fully reusable** and serves as the foundation for the cross-org expansion.
 
-### Phase 6 [PARTIALLY COMPLETE] — Proposals, Agent Governance, Marketplace done
+### Phase 6 [PARTIALLY COMPLETE] — Proposals, Agent Governance done
 
-Proposals lifecycle, autonomous agent governance loop, and rule marketplace are implemented. These features generalize straightforwardly to non-engineering domains once subject polymorphism and department-aware routing are in place.
+Proposals lifecycle and autonomous agent governance loop are implemented. These features generalize straightforwardly to non-engineering domains once subject polymorphism and department-aware routing are in place.
 
 ### Phase 7 [COMPLETE] — All gaps resolved
 
@@ -65,7 +65,7 @@ All Phase 7 work items below were completed and verified. Kept here for historic
 | B2 | Domain types (`department.py`) | S | `Department`, `DepartmentType`, `Capacity`, `RuleOwnership`, `CapacityAssignment` |
 | B3 | Alembic migration for departments, capacities, ownerships | M | |
 | B4 | Service layer (`services/departments/service.py`) | M | `resolve_owner`, `resolve_approvers`, `resolve_audience`, `effective_capacity` |
-| B5 | Wire into proposals, intelligence, marketplace, notifications | M | |
+| B5 | Wire into proposals, intelligence, notifications | M | |
 | B6 | REST API for departments/capacities | S | |
 | B7 | Frontend: department selector + "owned by" display | S | |
 | B8 | Seed data for default departments | S | |

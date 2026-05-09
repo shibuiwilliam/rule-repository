@@ -309,9 +309,7 @@ def build_feature_checks() -> list[FeatureCheck]:
     add("Neo4j multi-database per tenant", "Multi-tenancy", "IMPLEMENTED")
 
     # --- Observability ---
-    add("OpenTelemetry instrumentation", "Observability", "IMPLEMENTED")
-    add("Prometheus /metrics endpoint", "Observability", "IMPLEMENTED")
-    add("Jaeger integration", "Observability", "IMPLEMENTED")
+    add("Structured logging (structlog)", "Observability", "IMPLEMENTED")
     add("Cost ledger (token counts on evaluations)", "Observability", "IMPLEMENTED")
 
     # --- LLM Provider ---
@@ -372,8 +370,6 @@ def build_feature_checks() -> list[FeatureCheck]:
     add("Redis service", "Infrastructure", "IMPLEMENTED")
     add("arq-worker service", "Infrastructure", "IMPLEMENTED")
     add("MCP server service", "Infrastructure", "IMPLEMENTED")
-    add("Jaeger service", "Infrastructure", "IMPLEMENTED")
-    add("Prometheus service", "Infrastructure", "IMPLEMENTED")
 
     # --- Scripts ---
     add("seed_data.py", "Scripts", "IMPLEMENTED")
@@ -743,17 +739,7 @@ def verify_feature(fc: FeatureCheck) -> None:
     # -- Observability --
     elif cat == "Observability":
         if "OpenTelemetry" in name:
-            _check_file(fc, "apps/server/src/rulerepo_server/core/telemetry.py")
-        elif "Prometheus" in name:
-            _check_endpoint_in_file(fc, "metrics", "apps/server/src/rulerepo_server/main.py")
-        elif "Jaeger" in name:
-            dc = ROOT / "docker-compose.yml"
-            matches = grep_in_file(dc, r"jaeger")
-            if matches:
-                fc.actual_status = STATUS_IMPLEMENTED
-                fc.evidence = matches[:3]
-            else:
-                fc.actual_status = STATUS_PLANNED
+            _check_file(fc, "apps/server/src/rulerepo_server/core/logging.py")
         elif "Cost ledger" in name:
             models = "apps/server/src/rulerepo_server/adapters/postgres/models.py"
             _check_field_in_model(fc, "input_tokens", models)
@@ -896,14 +882,6 @@ def verify_feature(fc: FeatureCheck) -> None:
             fc.evidence = matches[:3]
         elif "MCP server" in name:
             matches = grep_in_file(dc, r"mcp.server|mcp-server")
-            fc.actual_status = STATUS_IMPLEMENTED if matches else STATUS_PLANNED
-            fc.evidence = matches[:3]
-        elif "Jaeger" in name:
-            matches = grep_in_file(dc, r"jaeger")
-            fc.actual_status = STATUS_IMPLEMENTED if matches else STATUS_PLANNED
-            fc.evidence = matches[:3]
-        elif "Prometheus" in name:
-            matches = grep_in_file(dc, r"prometheus")
             fc.actual_status = STATUS_IMPLEMENTED if matches else STATUS_PLANNED
             fc.evidence = matches[:3]
 

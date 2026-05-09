@@ -111,24 +111,6 @@ Redis serves as the job queue and result backend for the arq background worker. 
 
 Runs 9+ scheduled background jobs: health scoring, recommendations, rule promotion, correction clustering, verdict drift, weekly digest, conflict scanning, policy review cycle, and archival. Shares the same Docker image as the backend server but uses the arq entrypoint.
 
-### jaeger
-
-| Property | Value |
-|---|---|
-| Image | `jaegertracing/all-in-one:1.62` |
-| Port | 16686 (UI), 4317 (OTLP gRPC), 4318 (OTLP HTTP) |
-
-Distributed tracing UI for OpenTelemetry traces emitted by the backend. Access the Jaeger UI at [http://localhost:16686](http://localhost:16686).
-
-### prometheus
-
-| Property | Value |
-|---|---|
-| Image | `prom/prometheus:v3.4.0` |
-| Port | 9090 |
-
-Metrics collection. Scrapes the backend `/metrics` endpoint at 15-second intervals. Configuration in `infra/prometheus/prometheus.yml`.
-
 ## Volumes
 
 | Volume | Purpose |

@@ -8,11 +8,11 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| IMPLEMENTED | 174 | 98.9% |
-| PARTIAL | 2 | 1.1% |
+| IMPLEMENTED | 169 | 98.8% |
+| PARTIAL | 2 | 1.2% |
 | PLANNED | 0 | 0.0% |
 | MISSING | 0 | 0.0% |
-| **Total** | **176** | |
+| **Total** | **171** | |
 
 ## Detailed Breakdown
 
@@ -171,8 +171,6 @@
 | Redis service | IMPLEMENTED | IMPLEMENTED | Y | redis:; image: redis:7-alpine |
 | arq-worker service | IMPLEMENTED | IMPLEMENTED | Y | arq-worker: |
 | MCP server service | IMPLEMENTED | IMPLEMENTED | Y | mcp-server: |
-| Jaeger service | IMPLEMENTED | IMPLEMENTED | Y | jaeger:; image: jaegertracing/all-in-one:1.62 |
-| Prometheus service | IMPLEMENTED | IMPLEMENTED | Y | prometheus:; image: prom/prometheus:v3.4.0 |
 
 ### Integrations
 
@@ -231,9 +229,6 @@
 
 | Feature | Declared | Actual | Match | Evidence |
 |---------|----------|--------|-------|----------|
-| OpenTelemetry instrumentation | IMPLEMENTED | IMPLEMENTED | Y | apps/server/src/rulerepo_server/core/telemetry.py |
-| Prometheus /metrics endpoint | IMPLEMENTED | IMPLEMENTED | Y | # --- Prometheus metrics endpoint ---; @app.get("/metrics", tags=["observability"]) |
-| Jaeger integration | IMPLEMENTED | IMPLEMENTED | Y | jaeger:; image: jaegertracing/all-in-one:1.62 |
 | Cost ledger (token counts on evaluations) | IMPLEMENTED | IMPLEMENTED | Y | input_tokens: Mapped[int \| None] = mapped_column(Integer, nullable=True) |
 
 ### PII

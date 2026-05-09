@@ -24,7 +24,7 @@ All four streams are implemented, all quality gates passed, 500 tests pass.
   - `resolve_approvers(rule_id, severity) -> list[UserRef]`
   - `resolve_audience(rule_id, capacity) -> list[UserRef]`
   - `effective_capacity(user_id, rule_id) -> Capacity | None`
-- Proposals, intelligence digest, marketplace, and audit read access all route through department resolvers
+- Proposals, intelligence digest, and audit read access all route through department resolvers
 - REST endpoints at `/api/v1/departments` and `/api/v1/capacities`
 
 ## Stream C — Classification and RLS: COMPLETE

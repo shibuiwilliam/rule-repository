@@ -41,7 +41,7 @@ Where traditional rule engines require translating human rules into formal logic
 - **Tier 1 infrastructure**: run the full platform with Postgres only (no Elasticsearch, Neo4j, or Redis required). Postgres FTS, adjacency tables, and in-process scheduling provide graceful fallbacks.
 - **Pluggable LLM providers**: Gemini (default), Anthropic Claude, OpenAI, Azure OpenAI, Bedrock, and self-hosted. LLM router with fallback chain and circuit breaker. Per-tenant provider overrides.
 - **Eval harness**: 90 golden cases across 8 domains validate LLM evaluation quality. Nightly regression with CI gates that block merges on quality drops.
-- **Safety**: prompt injection defense (20 patterns, 31 tests), mandatory PII scrubbing middleware, pre-ingest secrets/PII scanner, marketplace publication guards.
+- **Safety**: prompt injection defense (20 patterns, 31 tests), mandatory PII scrubbing middleware, pre-ingest secrets/PII scanner.
 - **Risk register**: map rules to organizational risks. Track coverage gaps and risk exposure.
 - **Attestation campaigns**: require periodic human attestation of rule compliance. Track campaign status and responses.
 - **Regulatory source feeds**: track regulation amendments (e-Gov, FSA). Auto-draft proposals when upstream regulations change.

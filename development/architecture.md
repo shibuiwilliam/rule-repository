@@ -14,8 +14,6 @@ The Rule Repository is a monorepo with 12 services orchestrated via Docker Compo
 | Neo4j | 5-community | 7474/7687 | Rule relationship graph |
 | Redis | 7-alpine | 6379 | Job queue for arq background worker |
 | arq worker | Python 3.13 + arq | -- | Background cron jobs (health scores, recommendations, correction stats, rule promotion, verdict drift, conflict scanning, policy review cycle, weekly digest) + alert generation |
-| Jaeger | 1.62 | 16686 | Distributed tracing via OpenTelemetry |
-| Prometheus | v3.4 | 9090 | Metrics collection |
 | es-setup | curlimages/curl | -- | One-shot: creates ES index templates on startup |
 | neo4j-setup | neo4j:5-community | -- | One-shot: applies Cypher constraints on startup |
 
@@ -49,7 +47,6 @@ src/rulerepo_server/
 │       ├── agent_governance.py     #   agent profiles, trust levels, personalized rules, mastery, exceptions, negotiations, sessions
 │       ├── review.py               #   two-tier activity review (rough triage + detailed evaluation)
 │       ├── audit.py                #   audit log entries with filters and hash-chain verification
-│       ├── marketplace.py          #   rule package CRUD, publishing, subscriptions, conflict resolution
 │       ├── approval_workflows.py   #   per-scope approval workflows (RR-021)
 │       ├── ask.py                  #   conversational assistant (RR-005)
 │       ├── attestation.py          #   attestation campaigns (RR-014)
@@ -659,7 +656,6 @@ The Next.js frontend has 30+ pages (including nested routes and domain-specific 
 | `/review` | Two-tier activity review (rough triage + detailed LLM evaluation) |
 | `/audit` | Immutable audit log with hash-chain verification |
 | `/tutor` | Conversational Q&A about rules with LLM-powered explanations |
-| `/marketplace` | Rule package browsing, subscriptions, and publishing |
 | `/onboarding` | Setup wizard for new users |
 | `/contracts/review/[id]` | Legal: clause-by-clause verdict view |
 | `/events/[id]` | HR: event submission with applicable rules |

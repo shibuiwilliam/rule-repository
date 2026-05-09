@@ -27,23 +27,7 @@
 
 ---
 
-### 2. Snapshot x Marketplace
-
-**Question**: Does a snapshot include subscribed package updates?
-
-**Intended behavior**: Snapshots should capture the full rule set at creation time, including any rules imported from marketplace packages.
-
-**Current behavior**: **Marketplace has been removed** (commit `8fc7e6c`). All marketplace models, services, routers, and schemas have been cleanly deleted. There are no package subscriptions, no rule packages, and no composition conflicts in the codebase.
-
-**Gap**: N/A — marketplace does not exist. If marketplace is re-introduced in the future, the snapshot service should be updated to include package-sourced rules and record `source_package_id` in snapshot metadata.
-
-**Remediation**: None required now. When marketplace is re-introduced, add a feature interaction test for this pair.
-
-**Priority**: Deferred until marketplace re-introduction.
-
----
-
-### 3. Proposal x Federation
+### 2. Proposal x Federation
 
 **Question**: Who approves a child override of a parent rule?
 
@@ -66,7 +50,7 @@ Separately, the proposal service operates within a single `project_id` scope. Wh
 
 ---
 
-### 4. Agent Governance x Federation
+### 3. Agent Governance x Federation
 
 **Question**: Does personalization walk the federation chain?
 
@@ -87,7 +71,7 @@ Separately, the proposal service operates within a single `project_id` scope. Wh
 
 ---
 
-### 5. Maturity x Snapshot
+### 4. Maturity x Snapshot
 
 **Question**: Does an experimental rule keep shadow behavior in deployed snapshots?
 
@@ -111,26 +95,7 @@ However, `rule_selector._rule_to_dict()` does include `maturity_level` (defaulti
 
 ---
 
-### 6. Marketplace x Maturity
-
-**Question**: Are imported rules subject to local maturity lifecycle?
-
-**Intended behavior**: Rules imported from marketplace packages should start at `experimental` maturity and progress through the local maturity lifecycle independently of their maturity in the source package.
-
-**Current behavior**: **Marketplace has been removed** (commit `8fc7e6c`). No imported rules exist.
-
-**Gap**: N/A. When marketplace is re-introduced, imported rules should:
-- Always start at `experimental` regardless of source maturity.
-- Progress through `experimental → stable → proven` based on local false-positive rates.
-- Track both `source_maturity` (from package) and `local_maturity` (from local evaluation).
-
-**Remediation**: None required now. Document this requirement for marketplace re-introduction.
-
-**Priority**: Deferred until marketplace re-introduction.
-
----
-
-### 7. Proposal x Snapshot
+### 5. Proposal x Snapshot
 
 **Question**: What happens to live snapshots when a referenced rule is retired by proposal?
 
@@ -157,12 +122,10 @@ However, there is **no notification mechanism**. When a rule is retired via prop
 | # | Pair | Status | Gap Severity | Priority |
 |---|------|--------|-------------|----------|
 | 1 | Federation x Snapshot | Undefined | Medium | Tier 2 |
-| 2 | Snapshot x Marketplace | N/A (removed) | — | Deferred |
-| 3 | Proposal x Federation | Undefined | High | Tier 2 |
-| 4 | Agent Governance x Federation | Undefined | Medium | Tier 2 |
-| 5 | Maturity x Snapshot | **Fixed** (Tier 1.0) | Resolved | Done |
-| 6 | Marketplace x Maturity | N/A (removed) | — | Deferred |
-| 7 | Proposal x Snapshot | Partial | Low | Tier 2 |
+| 2 | Proposal x Federation | Undefined | High | Tier 2 |
+| 3 | Agent Governance x Federation | Undefined | Medium | Tier 2 |
+| 4 | Maturity x Snapshot | **Fixed** (Tier 1.0) | Resolved | Done |
+| 5 | Proposal x Snapshot | Partial | Low | Tier 2 |
 
 ---
 
@@ -170,6 +133,5 @@ However, there is **no notification mechanism**. When a rule is retired via prop
 
 | Date | Pair | Decision | Rationale |
 |------|------|----------|-----------|
-| 2026-05-06 | #5 Maturity x Snapshot | Fix in Tier 1: serialize maturity_level in snapshots | Data integrity: experimental rules lose shadow protection |
-| 2026-05-06 | #2, #6 Marketplace | Defer: marketplace removed | No code exists; document requirements for re-introduction |
-| 2026-05-06 | #7 Proposal x Snapshot | Snapshots are immutable; add retirement alerts | Immutability is correct; visibility gap needs alerts |
+| 2026-05-06 | #4 Maturity x Snapshot | Fix in Tier 1: serialize maturity_level in snapshots | Data integrity: experimental rules lose shadow protection |
+| 2026-05-06 | #5 Proposal x Snapshot | Snapshots are immutable; add retirement alerts | Immutability is correct; visibility gap needs alerts |

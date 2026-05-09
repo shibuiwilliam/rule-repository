@@ -240,14 +240,6 @@ See [Federation API](federation.md) for detailed request/response documentation.
 | POST | `/api/v1/evaluate/review/rough` | Rough triage: evaluate all rules for relevance to an activity. |
 | POST | `/api/v1/evaluate/review/detailed` | Detailed evaluation: full LLM evaluation on a shortlisted set of rules. |
 
-## Marketplace
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/v1/marketplace/packages` | Browse available rule packages. |
-| POST | `/api/v1/marketplace/packages` | Publish a rule package. |
-| POST | `/api/v1/marketplace/packages/{package_id}/subscribe` | Subscribe to a rule package. |
-
 ## Approval Workflows
 
 | Method | Path | Description |

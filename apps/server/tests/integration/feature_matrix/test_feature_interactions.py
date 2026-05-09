@@ -294,30 +294,3 @@ class TestProposalSnapshot:
 
         # GAP: No mechanism checks deployed snapshots for retired rules
         # and creates alerts. This is documented in feature_interactions.md.
-
-
-# ===========================================================================
-# Pair 2 & 6: Marketplace interactions (N/A — marketplace removed)
-# ===========================================================================
-
-
-class TestMarketplaceRemoved:
-    """Pairs 2 & 6: Marketplace was removed (commit 8fc7e6c).
-
-    These tests verify that marketplace code no longer exists,
-    documenting that the interaction pairs are N/A until re-introduction.
-    """
-
-    def test_no_marketplace_router(self) -> None:
-        """Marketplace API router does not exist."""
-        from pathlib import Path
-
-        router_path = Path(__file__).parents[3] / "src" / "rulerepo_server" / "api" / "v1" / "marketplace.py"
-        assert not router_path.exists(), "Marketplace router should not exist (was removed)"
-
-    def test_marketplace_guards_exist(self) -> None:
-        """Marketplace publication guards exist (RR-030)."""
-        from pathlib import Path
-
-        guards_path = Path(__file__).parents[3] / "src" / "rulerepo_server" / "services" / "marketplace" / "guards.py"
-        assert guards_path.exists(), "Marketplace guards should exist (RR-030)"

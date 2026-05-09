@@ -195,23 +195,6 @@ services:
     command: ["python", "-m", "arq", "rulerepo_server.workers.settings.WorkerSettings"]
     restart: "no"
 
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    environment:
-      COLLECTOR_OTLP_ENABLED: "true"
-    ports:
-      - "16686:16686"
-      - "4317:4317"
-      - "4318:4318"
-    restart: "no"
-
-  prometheus:
-    image: prom/prometheus:v3.4.0
-    volumes:
-      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    ports:
-      - "9090:9090"
-    restart: "no"
 
 volumes:
   pgdata:
