@@ -6,7 +6,7 @@ The Rule Repository is a monorepo with 12 services orchestrated via Docker Compo
 
 | Component | Tech | Port | Purpose |
 |---|---|---|---|
-| Backend API | Python 3.13 + FastAPI | 8000 | REST, Evaluate, Intent, Gateway, Intelligence, Discovery, Feedback, Federation, Playground, Alerts, Snapshots, Departments, Classification, Audit APIs |
+| Backend API | Python 3.13 + FastAPI | 8000 | REST, Evaluate, Intent, Gateway, Intelligence, Discovery, Feedback, Federation, Playground, Alerts, Snapshots, Departments, Classification, Audit, Compliance, Facts, Risks, Regulatory, Attestation, Connectors, SCIM, Tenants APIs (28+ routers) |
 | MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 12+ tools) |
 | Frontend | TypeScript + Next.js 15 | 3000 | Compliance dashboard + 30+ operator pages, persona-aware, English/Japanese i18n |
 | PostgreSQL | 17-alpine | 5432 | System of record (rules, revisions, audit log, evaluations, departments, classifications, 35+ ORM models) with Row-Level Security |
@@ -27,7 +27,7 @@ The Rule Repository is a monorepo with 12 services orchestrated via Docker Compo
 src/rulerepo_server/
 ├── main.py                         # FastAPI app factory, router registration
 ├── api/
-│   └── v1/                         # 22 API routers
+│   └── v1/                         # 28+ API routers
 │       ├── rules.py                #   CRUD, retire, revisions, relationships, graph
 │       ├── search.py               #   fulltext, vector, hybrid, category, context
 │       ├── evaluation.py           #   evaluate, quick, applicable-rules, get by ID
@@ -49,7 +49,21 @@ src/rulerepo_server/
 │       ├── agent_governance.py     #   agent profiles, trust levels, personalized rules, mastery, exceptions, negotiations, sessions
 │       ├── review.py               #   two-tier activity review (rough triage + detailed evaluation)
 │       ├── audit.py                #   audit log entries with filters and hash-chain verification
-│       └── marketplace.py          #   rule package CRUD, publishing, subscriptions, conflict resolution
+│       ├── marketplace.py          #   rule package CRUD, publishing, subscriptions, conflict resolution
+│       ├── approval_workflows.py   #   per-scope approval workflows (RR-021)
+│       ├── ask.py                  #   conversational assistant (RR-005)
+│       ├── attestation.py          #   attestation campaigns (RR-014)
+│       ├── compliance.py           #   compliance workflows (RR-011,015)
+│       ├── connectors.py           #   connector registry (RR-018)
+│       ├── cost.py                 #   LLM cost tracking (RR-027)
+│       ├── facts.py                #   fact store queries (RR-003)
+│       ├── operability.py          #   health, DR endpoints (RR-028)
+│       ├── regulatory.py           #   regulatory source management (RR-012)
+│       ├── risks.py                #   risk register (RR-019)
+│       ├── scim.py                 #   SCIM 2.0 protocol (RR-007)
+│       ├── tenants.py              #   tenant management (RR-007)
+│       ├── translations.py         #   polyglot translation management (RR-020)
+│       └── upcoming_changes.py     #   scheduled rule changes (RR-036)
 ├── core/
 │   ├── config.py                   # Settings (Pydantic BaseSettings)
 │   ├── logging.py                  # structlog JSON logger
@@ -79,7 +93,15 @@ src/rulerepo_server/
 │   ├── proposal.py                 # Proposal, ProposalStatus, ProposalVote
 │   ├── agent.py                    # AgentProfile, TrustLevel, AgentSession
 │   ├── revision.py                 # Revision tracking
-│   └── federation.py               # Federation domain objects
+│   ├── federation.py               # Federation domain objects
+│   ├── applies_to.py               # AppliesTo model (artifact_type, triggering_events)
+│   ├── evaluable.py                # Evaluable abstraction for non-diff artifacts
+│   ├── attestation.py              # Attestation campaigns
+│   ├── fact.py                     # Fact store entries
+│   ├── regulatory.py               # Regulatory source tracking
+│   ├── risk.py                     # Risk register
+│   ├── scope.py                    # Structured scope with dimensions
+│   └── translation.py              # Polyglot rule translations
 ├── services/
 │   ├── rule_service.py             # Rule CRUD orchestration (PG + ES + Neo4j)
 │   ├── search.py                   # Search coordination (ES + PG hydration + classification filter)
@@ -188,7 +210,41 @@ src/rulerepo_server/
 │   ├── proposals/                  # Governance proposals
 │   │   ├── service.py
 │   │   └── enactor.py
-│   └── agent_governance/           # Agent trust and governance
+│   ├── agent_governance/           # Agent trust and governance
+│   │   └── service.py
+│   ├── domains/                    # Domain modules (RR-002,008,009,016,017,018)
+│   │   ├── _protocol.py            #   DomainModule interface
+│   │   ├── _base_evaluator.py      #   BaseDomainEvaluator (LLM router wiring)
+│   │   ├── __init__.py              #   Domain registry
+│   │   ├── engineering/             #   Code evaluation domain
+│   │   ├── legal/                   #   Contract/clause evaluation domain
+│   │   ├── hr/                      #   HR event/form evaluation domain
+│   │   ├── finance/                 #   Financial transaction domain
+│   │   ├── it_security/             #   IaC/vulnerability domain
+│   │   ├── sales/                   #   Discount/quote/ad-copy domain
+│   │   ├── communications/          #   Email/Slack/Teams message domain
+│   │   └── governance/              #   Disclosure/board-minutes/ESG domain
+│   ├── fact_store/                 # External fact resolution (RR-003)
+│   │   ├── service.py, cache.py, registry.py
+│   │   └── providers/              #   employee_attributes, ofac_sanctions, regulatory_feed, internal_master_data
+│   ├── compliance/                 # Regulatory compliance (RR-011,015)
+│   │   ├── approval_policy.py, erasure.py, cmek.py, read_access_log.py, regional_routing.py
+│   │   └── ...
+│   ├── operability/                # Operational monitoring (RR-025,026,028)
+│   │   ├── health.py, cost_tracker.py, llm_fallback.py, dr_runbook.py, leader_election.py
+│   │   └── ...
+│   ├── identity/                   # User/tenant management (RR-007)
+│   │   ├── scim.py, service.py
+│   │   └── ...
+│   ├── regulatory/                 # Regulation tracking (RR-012)
+│   │   └── service.py
+│   ├── risk/                       # Risk register (RR-019)
+│   │   └── service.py
+│   ├── approval/                   # Per-scope approval workflows (RR-021)
+│   │   └── service.py
+│   ├── attestation/                # Attestation campaigns (RR-014)
+│   │   └── service.py
+│   └── translation/                # Polyglot rule management (RR-020)
 │       └── service.py
 ├── adapters/
 │   ├── postgres/
@@ -203,11 +259,17 @@ src/rulerepo_server/
 │   │   ├── client.py
 │   │   ├── documents.py
 │   │   └── embeddings.py
-│   ├── llm/                        # Pluggable LLM providers
+│   ├── llm/                        # Pluggable LLM providers (RR-010)
 │   │   ├── base.py                 #   LLMProvider Protocol
-│   │   ├── anthropic.py
-│   │   ├── openai.py
-│   │   └── local.py
+│   │   ├── router.py               #   LLM provider router with fallback chain
+│   │   ├── gemini.py               #   Google Gemini integration
+│   │   ├── anthropic.py            #   Anthropic Claude
+│   │   ├── openai.py               #   OpenAI
+│   │   └── local.py                #   Self-hosted LLM
+│   ├── graph/                      # Tier 1 graph fallback
+│   │   └── postgres_adjacency.py   #   Neo4j fallback using Postgres adjacency tables
+│   ├── search/                     # Tier 1 search fallback
+│   │   └── postgres_fts.py         #   ES fallback using Postgres full-text search
 │   ├── files/                      # Local file storage for uploads
 │   ├── contract_parser.py          # Contract parsing and structure extraction
 │   └── contract_compare.py         # Contract diff and comparison
@@ -463,6 +525,30 @@ Background worker (policy_review_cycle) --> Rule overdue for review --> AlertMod
 | Redis | arq job queue for background workers | No -- transient |
 
 If Neo4j and Postgres disagree, **Postgres wins**. Use `scripts/reconcile_graph.py` to rebuild.
+
+---
+
+## Tier 1 Infrastructure (Postgres-only)
+
+The system supports **three deployment tiers** (RR-001):
+
+| Tier | Services | Use Case |
+|---|---|---|
+| **Tier 1** | Postgres only | Minimal deployments, dev machines, CI |
+| **Tier 2** | Postgres + Elasticsearch | Search-heavy workloads without graph |
+| **Tier 3** | Postgres + Elasticsearch + Neo4j + Redis | Full production stack |
+
+Feature flags control degradation: `ELASTICSEARCH_ENABLED`, `NEO4J_ENABLED`, `REDIS_ENABLED`.
+
+Fallback adapters:
+- Elasticsearch → `adapters/search/postgres_fts.py` (Postgres `tsvector` + `pgvector`)
+- Neo4j → `adapters/graph/postgres_adjacency.py` (recursive CTEs)
+- Redis → APScheduler in-process
+
+Docker Compose files:
+- `infra/compose/tier1.yml` — Postgres only
+- `infra/compose/tier2.yml` — Postgres + Elasticsearch
+- `infra/compose/tier3.yml` — Full stack (default)
 
 ---
 

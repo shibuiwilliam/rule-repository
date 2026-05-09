@@ -33,12 +33,16 @@ The arq worker runs nine scheduled jobs. All are fully implemented with real dat
 | `conflict_scanner` | Daily | Detects conflicting rules across the corpus. Creates alerts for newly discovered conflicts. |
 | `policy_review_cycle` | 6:00 AM daily | Alerts for rules due for review. Escalation logic triggers at 30 days and 60 days overdue. |
 
-Additional workers that may be enabled:
+Additional workers:
 
 | Job | Description |
 |---|---|
 | `archival` | Rule archival and retention policy enforcement. Respects legal holds. |
 | `polyglot_validator` | Multi-language code validation for rules targeting polyglot codebases. |
+| `verdict_drift_canary` | Weekly replay of canary inputs to detect LLM behavior changes (RR-024). Creates `verdict_drift` alerts. |
+| `regulatory_feed_poll` | Polls registered regulatory sources for amendments. Creates `regulation_amendment` alerts and auto-drafts proposals (RR-012). |
+| `translation_consistency` | Checks semantic equivalence of translated rule locales. Creates `locale_drift` alerts (RR-020). |
+| `duplicate_detector` | Scans corpus for semantically similar rules. Creates `near_duplicate` alerts (RR-033). |
 
 Jobs are idempotent and safe to run concurrently with API requests.
 

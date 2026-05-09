@@ -216,8 +216,48 @@ Plugins are registered via `plugins/_registry.py` and extend the base protocol i
 
 Two specialized evaluation engines were added in Phase 8:
 
-- **Contract Clause Engine** (`POST /api/v1/evaluate/contract`): parses contracts (DOCX/PDF/text) via `adapters/contract_parser.py`, compares clauses via `adapters/contract_compare.py`, aggregates clause-level verdicts via `services/evaluation/clause_aggregator.py`. Supports self-conformance, cross-contract, regulatory compliance, and risk scoring modes. See [ADR 004](../adr/004-contract-clause-engine.md).
-- **Event Engine** (`POST /api/v1/evaluate/event`): evaluates business events (overtime, leave, attendance) with three temporal modes -- single, sequence (monthly), and calendar (annual). Domain types in `domain/event_sequence.py`. See [ADR 005](../adr/005-event-engine-temporal-modes.md).
+- **Contract Clause Engine** (`POST /api/v1/evaluate/contract`): parses contracts (DOCX/PDF/text) via `adapters/contract_parser.py`, compares clauses via `adapters/contract_compare.py`, aggregates clause-level verdicts via `services/evaluation/clause_aggregator.py`. Supports self-conformance, cross-contract, regulatory compliance, and risk scoring modes. See [ADR 004](../../development/adr/0004-contract-clause-engine.md).
+- **Event Engine** (`POST /api/v1/evaluate/event`): evaluates business events (overtime, leave, attendance) with three temporal modes -- single, sequence (monthly), and calendar (annual). Domain types in `domain/event_sequence.py`. See [ADR 005](../../development/adr/0005-event-engine-temporal-modes.md).
+
+## Domain Module Architecture
+
+The system supports 8 domain modules under `services/domains/`, each with evaluators, context assemblers, discovery analyzers, and evaluation prompts:
+
+| Domain | Module | Evaluates |
+|---|---|---|
+| **Engineering** | `domains/engineering/` | Code changes, diffs, linter configs |
+| **Legal** | `domains/legal/` | Contracts, clauses, regulatory documents |
+| **HR** | `domains/hr/` | Attendance, overtime, leave, forms |
+| **Finance** | `domains/finance/` | Invoices, journal entries, POs, expenses |
+| **IT Security** | `domains/it_security/` | IaC configs, vulnerability reports, access requests |
+| **Sales** | `domains/sales/` | Discount approvals, quotes, ad copy |
+| **Communications** | `domains/communications/` | Emails, Slack/Teams messages |
+| **Governance** | `domains/governance/` | Disclosures, board minutes, ESG reports |
+
+All domain evaluators extend `BaseDomainEvaluator` which handles LLM routing, prompt loading, and structured output. The domain-neutral core (`services/evaluation/service.py`) dispatches to domain modules through the domain registry.
+
+## Tier 1 Infrastructure (Postgres-Only)
+
+The system supports three deployment tiers:
+
+- **Tier 1** (Postgres only): Postgres FTS replaces Elasticsearch, adjacency tables replace Neo4j, APScheduler replaces Redis. For dev machines, CI, and minimal deployments.
+- **Tier 2** (Postgres + Elasticsearch): Adds vector/hybrid search. No graph or background queue.
+- **Tier 3** (Full stack): Postgres + Elasticsearch + Neo4j + Redis. Production default.
+
+Feature flags: `ELASTICSEARCH_ENABLED`, `NEO4J_ENABLED`, `REDIS_ENABLED`.
+
+## Pluggable LLM Providers
+
+The LLM layer supports multiple providers via `adapters/llm/router.py`:
+
+| Provider | Status | Notes |
+|---|---|---|
+| Gemini (Google) | Primary | Default provider |
+| Anthropic Claude | Available | Via `adapters/llm/anthropic.py` |
+| OpenAI | Available | Via `adapters/llm/openai.py` |
+| Self-hosted | Available | Via `adapters/llm/local.py` |
+
+The router provides fallback chains, circuit breaker pattern, and per-tenant provider overrides.
 
 ## Further Reading
 

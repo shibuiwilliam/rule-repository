@@ -47,7 +47,7 @@ cd packages/rule-client && uv run pytest
 
 ## Test Structure
 
-The project has **500+ test functions** across four locations (unit + integration + e2e + SDK). Test count grew significantly during Phase 7 with the addition of subject polymorphism, classification RLS, department/capacity, and domain template tests.
+The project has **746 test functions** across five locations (unit + integration + safety + e2e + SDK). Test count grew significantly through Phase 7 (subject polymorphism, classification RLS) and the RR-001–040 improvements (domain modules, safety, operability, eval harness).
 
 ### Unit Tests (`apps/server/tests/unit/`)
 
@@ -68,6 +68,32 @@ Pure logic tests with no external services. Fast (sub-second per file).
 | `test_github_integration.py` | 4 | GitHub review comment formatting: all-allow message, violations shown, warnings shown, violation count in header |
 | `test_discovery.py` | 16 | Rule discovery analyzers and pattern detection: `ClaudeMdAnalyzer` (MUST/SHOULD/MUST_NOT rules, heading scope, empty/non-claude files), `LinterConfigAnalyzer` (ruff.toml, .eslintrc.json, tsconfig.json, empty config), `CodePatternsAnalyzer` (test naming, docstring detection, below-threshold detection), `deduplicate_and_score` (dedup similar patterns, keep different, confidence boost from multiple sources) |
 | `test_playground.py` | 6 | Playground service: sandbox evaluation returns verdict, sandbox evaluation without Gemini returns NEEDS_CONFIRMATION, sandbox evaluation without audit log; snapshot serializer: serialize/deserialize round trip, serialize empty list, deserialize empty snapshot |
+| `test_abac.py` | 13 | ABAC policy engine: policy effects, conditions, engine deny-by-default, allow/deny with priority, action/resource mismatch; segregation of duties |
+| `test_classification.py` | 19 | Classification enum, clearance checks, RLS context, ES document-level security filter, PII redaction (simple, nested, deeply nested, missing fields) |
+| `test_departments.py` | 12 | Department/Capacity domain types, DepartmentService resolvers (owner, approvers, audience, effective capacity) |
+| `test_subjects.py` | 20 | SubjectKind enum, EvaluationSubject, CodeDiffAdapter, EventAdapter, ClauseSetAdapter, TransactionAdapter, Subject Registry |
+| `test_compliance.py` | 11 | Classification ordering, PII redaction/restore, field detection, shadow store, approval policies, read access log |
+| `test_connector_hub.py` | 12 | Connector status values, health checks, config, registry (register, tenant isolation, unregister, list), connector protocols |
+| `test_fact_store.py` | 16 | Fact domain, status values, schema, resolution, provider registry, cache, FactStore resolve/health/caching |
+| `test_operability.py` | 12 | Metrics collector, cost tracker (record, budget, breakdown), LLM fallback, circuit breaker status, leader election, health service |
+| `test_plugins.py` | 13 | Core isolation, plugin protocols, plugin registry, engineering/HR/legal/finance/marketing plugin verification |
+| `test_eval_harness.py` | 5 | Golden case structure, eval result structure, domain report F1, drift detector |
+| `test_clause_aggregator.py` | 8 | Clause verdict aggregation: all allow, deny propagation, needs confirmation, risk scores, empty verdicts |
+| `test_contract_parser.py` | 6 | Contract parsing: simple NDA, Japanese contracts, empty text, classified clauses, references |
+| `test_contract_compare.py` | 7 | Contract comparison: identical/similar/unmatched clauses, missing standards, type matching, risk levels |
+| `test_event_sequence.py` | 11 | Event window (total hours, leave days, aggregates), calendar context, sequence context, temporal mode narratives |
+| `test_document_discovery.py` | 11 | Source query, document meta, change event, contract corpus analyzer, contract file selection |
+| `test_conflict_scanner.py` | 11 | Scope overlap, statement similarity, contradictory pairs, potential conflicts, scanner integration |
+| `test_cost_tracker.py` | 9 | Cost estimation (per-model rates, zero/large tokens, rounding), cost records, tracking |
+| `test_llm_providers.py` | 8 | LLM provider protocol compliance (Anthropic, OpenAI, Local), names, generate/embed interfaces |
+
+### Safety Tests (`apps/server/tests/safety/`)
+
+Dedicated security tests. Run as part of the normal test suite.
+
+| File | Tests | What it covers |
+|---|---|---|
+| `test_prompt_injection.py` | 31 | 20+ prompt injection patterns: role injection, system override, encoding evasion, Unicode tricks, delimiter attacks. All must be blocked. |
 
 ### Integration Tests (`apps/server/tests/integration/`)
 
@@ -81,6 +107,8 @@ Test API endpoints with mocked external services (Postgres, Elasticsearch, Neo4j
 | `test_relationships_api.py` | 2 | Relationship CRUD: create and delete rule relationships |
 | `test_proposals.py` | -- | Proposal lifecycle: create, submit, vote, enact, revert, close, comments, notifications |
 | `test_agent_governance.py` | -- | Agent registration, profiles, trust levels, personalized rules, mastery, exceptions, negotiations, sessions |
+| `test_tier1.py` | 13 | Tier 1 (Postgres-only) end-to-end: health checks, CRUD, search fallback, evaluation, discovery, feedback (RR-001) |
+| `test_tenant_isolation.py` | 6 | Multi-tenant context isolation, cross-tenant leakage prevention |
 
 ### End-to-End Tests (`apps/server/tests/e2e/`)
 
@@ -99,6 +127,26 @@ make test.e2e                # starts stack if needed, runs all e2e tests
 make test.e2e.extraction     # extraction tests only (stack must be running)
 make test.e2e.evaluation     # evaluation tests only
 make test.e2e.workflow       # full workflow test only
+```
+
+### Eval Harness (`apps/server/eval_harness/`)
+
+Nightly regression suite validating LLM-driven evaluation quality across all 8 domains. Runs against golden datasets with annotated expected verdicts.
+
+| Component | Purpose |
+|---|---|
+| `runner.py` | Runs all golden datasets, computes precision/recall/F1 per domain |
+| `metrics.py` | Precision, recall, F1 calculation |
+| `regression_gates.py` | CI blocking gates (fails build if F1 drops below threshold) |
+| `datasets/` | 8 golden datasets: engineering, legal, hr, finance, it_security, sales, communications, governance |
+
+**90/90 golden cases pass** across all 8 domains (as of 2026-05-09).
+
+Run with:
+
+```bash
+make eval.harness              # run full harness
+make eval.harness.domain D=hr  # run single domain
 ```
 
 ### SDK Tests (`packages/rule-client/tests/`)

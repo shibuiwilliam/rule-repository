@@ -1,6 +1,6 @@
 # Testing
 
-The project has **500+ tests** across backend, frontend, and SDK packages.
+The project has **746 tests** across backend, frontend, and SDK packages.
 
 ## Commands
 
@@ -55,7 +55,7 @@ Pure logic tests with no external dependencies. These test domain models, utilit
 - Located in `tests/unit/` within each package
 - No database, no Elasticsearch, no Neo4j, no network calls
 - Fast: should complete in seconds
-- Covers: domain models, evaluation pipeline stages, diff parsing, context assembly, verdict aggregation, conflict aggregation, PII sanitization, health scoring, gateway normalization, discovery analyzers, playground, context delivery formatting
+- Covers: domain models, evaluation pipeline stages, diff parsing, context assembly, verdict aggregation, conflict aggregation, PII sanitization, health scoring, gateway normalization, discovery analyzers, playground, context delivery formatting, ABAC, classification/RLS, departments, subjects, compliance, connector hub, fact store, operability, plugins, eval harness, contract parser/comparator, clause aggregator, event sequences, document discovery, conflict scanner, cost tracker, LLM providers
 
 ### Integration Tests
 
@@ -64,7 +64,7 @@ Tests that run against the Docker Compose services (PostgreSQL, Elasticsearch, N
 - Located in `tests/integration/` within each package
 - Require `docker compose up` to be running
 - Test actual database queries, search indexing, and graph operations
-- Covers: rules CRUD API, search API, intent API, relationships API, proposals lifecycle, agent governance
+- Covers: rules CRUD API, search API, intent API, relationships API, proposals lifecycle, agent governance, Tier 1 end-to-end (Postgres-only), tenant isolation
 
 ### Subject-Specific Tests
 
@@ -116,6 +116,22 @@ Full-stack tests that run against a live Docker Compose stack with real Gemini A
 - Gated behind `RULEREPO_LIVE_LLM=1`
 - Tests: document extraction, code evaluation, and full workflow (create rule, evaluate, verify verdict)
 - Run with `make test.e2e` (starts the stack automatically)
+
+### Safety Tests
+
+Dedicated security tests under `tests/safety/`:
+
+- **Prompt injection defense**: 31 tests covering 20+ injection patterns (role injection, system override, encoding evasion, Unicode tricks, delimiter attacks). All must be blocked.
+- Run as part of the normal test suite
+
+### Eval Harness
+
+Nightly regression suite under `apps/server/eval_harness/`:
+
+- 90 golden cases across 8 domains (engineering, legal, HR, finance, IT security, sales, communications, governance)
+- Computes precision/recall/F1 per domain
+- CI regression gates block merges on quality drops
+- Run with `make eval.harness`
 
 ### Frontend Tests
 

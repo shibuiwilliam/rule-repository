@@ -247,3 +247,107 @@ See [Federation API](federation.md) for detailed request/response documentation.
 | GET | `/api/v1/marketplace/packages` | Browse available rule packages. |
 | POST | `/api/v1/marketplace/packages` | Publish a rule package. |
 | POST | `/api/v1/marketplace/packages/{package_id}/subscribe` | Subscribe to a rule package. |
+
+## Approval Workflows
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/approval-workflows` | Create a per-scope approval workflow. |
+| GET | `/api/v1/approval-workflows` | List approval workflows. |
+| GET | `/api/v1/approval-workflows/{scope}` | Get the workflow for a scope. |
+
+## Attestation
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/attestation/campaigns` | Create an attestation campaign. |
+| GET | `/api/v1/attestation/campaigns` | List campaigns. |
+| POST | `/api/v1/attestation/campaigns/{id}/respond` | Submit an attestation response. |
+
+## Compliance
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v1/compliance/status` | Get compliance status for a scope. |
+| POST | `/api/v1/compliance/erasure` | Submit a data erasure request (GDPR). |
+
+## Connectors
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/connectors` | Register a connector. |
+| GET | `/api/v1/connectors` | List connectors for the current tenant. |
+| GET | `/api/v1/connectors/{type}/health` | Check connector health. |
+
+## Cost
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v1/cost/summary` | Get LLM cost summary for the current tenant. |
+| GET | `/api/v1/cost/breakdown` | Get cost breakdown by model/domain/period. |
+
+## Facts
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/facts/resolve` | Resolve external facts for evaluation context. |
+| GET | `/api/v1/facts/providers` | List available fact providers. |
+| GET | `/api/v1/facts/providers/{key}/health` | Check fact provider health. |
+
+## Operability
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v1/operability/health` | Detailed system health check. |
+| GET | `/api/v1/operability/dr/status` | Disaster recovery status. |
+
+## Regulatory
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/regulatory/sources` | Register a regulatory source. |
+| GET | `/api/v1/regulatory/sources` | List tracked regulatory sources. |
+| GET | `/api/v1/regulatory/sources/{id}/amendments` | Get amendments for a source. |
+
+## Risks
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/risks` | Create a risk register entry. |
+| GET | `/api/v1/risks` | List risk entries. |
+| POST | `/api/v1/risks/{id}/rules` | Map rules to a risk. |
+
+## SCIM
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v1/scim/Users` | List SCIM users. |
+| POST | `/api/v1/scim/Users` | Provision a SCIM user. |
+| GET | `/api/v1/scim/Groups` | List SCIM groups. |
+
+## Tenants
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/tenants` | Create a tenant. |
+| GET | `/api/v1/tenants` | List tenants. |
+| GET | `/api/v1/tenants/{id}` | Get a tenant by ID. |
+
+## Translations
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/translations/{rule_id}` | Add a translation for a rule. |
+| GET | `/api/v1/translations/{rule_id}` | Get translations for a rule. |
+
+## Upcoming Changes
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v1/upcoming-changes` | List scheduled rule changes (effective_from in the future). |
+
+## Ask (Conversational Assistant)
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/ask` | Ask a natural-language question about rules. Returns LLM-powered explanation. |

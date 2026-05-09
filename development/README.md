@@ -6,9 +6,11 @@ Technical documentation for developing and extending the Rule Repository.
 
 ## Current Status
 
-**Phase 7 (Cross-Organizational Pivot): COMPLETE** -- Subject polymorphism, department/capacity model, classification-based RLS, and domain template packs are all implemented. 500 tests pass.
+**Phase 7 (Cross-Organizational Pivot): COMPLETE** -- Subject polymorphism, department/capacity model, classification-based RLS, and domain template packs.
 
-**Phase 8 (Domain Engines and Discovery): IN PROGRESS** -- Contract clause engine, event engine temporal modes, document discovery analyzers, and domain-aware UX. See [phase-8-backlog.md](phase-8-backlog.md).
+**Phase 8 (Domain Engines and Discovery): IN PROGRESS** -- Contract clause engine and event engine temporal modes substantially complete. Document discovery and domain UX partially complete. See [phase-8-backlog.md](phase-8-backlog.md).
+
+**IMPROVEMENT.md (RR-001 through RR-040): ALL MERGED** -- All 40 improvement items are implemented. 8 domain modules, Tier 1 infrastructure, eval harness, safety features, LLM provider abstraction, and operational maturity. 746 tests pass, 90/90 eval harness golden cases across 8 domains. See [progress-log.md](progress-log.md) for the complete audit trail.
 
 ---
 
@@ -16,12 +18,12 @@ Technical documentation for developing and extending the Rule Repository.
 
 | Document | Description |
 |---|---|
-| [architecture.md](architecture.md) | System architecture: 12 deployable services, server module map (22 routers, 20+ service areas), layering rules, data flows, 26 migrations, 35+ ORM models |
+| [architecture.md](architecture.md) | System architecture: 12 deployable services, server module map (28+ routers, 30+ service areas), 8 domain modules, layering rules, data flows, 26+ migrations, 35+ ORM models, Tier 1/2/3 infrastructure |
 | [evaluation-engine.md](evaluation-engine.md) | How the Evaluation Engine works: subject-polymorphic batched evaluation, diff parsing, context assembly, rule selection (with project + environment scoping), verdict aggregation, shadow mode, structured remediations, 8 subject kinds with adapters |
-| [api-reference.md](api-reference.md) | All API endpoints (22 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects, proposals, agent-governance, review, audit, marketplace, departments, capacities, classifications, contracts, events |
+| [api-reference.md](api-reference.md) | All API endpoints (28+ routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects, proposals, agent-governance, review, audit, marketplace, departments, contracts, events, approval-workflows, attestation, compliance, connectors, cost, facts, operability, regulatory, risks, SCIM, tenants, translations, upcoming-changes, ask |
 | [mcp-server.md](mcp-server.md) | MCP tools (12+ tools), resources, prompts, and transport configuration (stdio + streamable-HTTP) |
 | [integrations.md](integrations.md) | GitHub App, CI CLI, agent hooks, rule ingestion, background workers (arq + Redis, 9+ cron jobs), and webhook gateway (5 sources: GitHub, Slack, Teams, Email, generic) |
-| [testing.md](testing.md) | Test strategy (500+ tests), running tests, writing new tests, LLM mocking, classification bidirectional tests, and linting |
+| [testing.md](testing.md) | Test strategy (746 tests), running tests, writing new tests, LLM mocking, classification bidirectional tests, safety tests, eval harness, and linting |
 | [feedback-flywheel.md](feedback-flywheel.md) | Correction capture -> analysis -> auto-drafting -> rule improvement loop (flywheel with clustering + proposals + auto-promotion) |
 | [rule-registration-workflows.md](rule-registration-workflows.md) | Sequence diagrams for all 4 rule registration paths: manual, extraction, discovery, feedback. Data store sync matrix |
 | [database-schema.md](database-schema.md) | Database schema: 35+ ORM models across 26 Alembic migrations, ER diagram, design decisions |
@@ -31,11 +33,12 @@ Technical documentation for developing and extending the Rule Repository.
 | [phase5-improvements.md](phase5-improvements.md) | Phase 5 self-improving governance: batched evaluation, evaluation persistence, dashboard summary, outcome-oriented home page, maturity model, remediation, flywheel |
 | [agent-integration-and-analytics.md](agent-integration-and-analytics.md) | Seamless agent integration (scope resolution, session context API), rule impact analytics (effectiveness score, weekly digest, team comparison), rule templates library, bulk import API |
 | [proactive-delivery-and-quality.md](proactive-delivery-and-quality.md) | CLAUDE.md context generator CLI, effectiveness visibility (rule detail, dashboard, rules list, digest), alert banner, effectiveness-based alerts |
-| [phase7-status.md](phase7-status.md) | Phase 7 status: COMPLETE. 4 streams delivered: Subject Polymorphism, Department/Capacity, Classification/RLS, Domain Templates (60 rules across 3 domain packs). 500 tests pass. |
+| [phase7-status.md](phase7-status.md) | Phase 7 status: COMPLETE. 4 streams delivered: Subject Polymorphism, Department/Capacity, Classification/RLS, Domain Templates (60 rules across 3 domain packs). |
 | [phase-8-backlog.md](phase-8-backlog.md) | Phase 8 backlog: IN PROGRESS. Streams A (Contract Clause Engine) and B (Event Engine) substantially complete. Streams C (Document Discovery) and D (Domain UX) partially complete. |
 | [orientation.md](orientation.md) | Cross-organizational pivot orientation: gap analysis (now resolved), Phase 7 streams, execution order, closure notes |
 | [spec_implementation_audit.md](spec_implementation_audit.md) | Code-only audit of PROJECT.md/CLAUDE.md specs vs. implementation: 174/176 features (98.9%) implemented |
 | [feature_interactions.md](feature_interactions.md) | Cross-feature interaction pairs: intended vs. actual behavior, gap analysis, and remediations (federation x snapshot, proposal x federation, agent governance x federation) |
+| [progress-log.md](progress-log.md) | Chronological log of all RR-001 through RR-040 improvement items with merge dates, eval deltas, and verification checkpoints |
 
 ---
 
@@ -55,7 +58,7 @@ Technical documentation for developing and extending the Rule Repository.
 
 - **[PROJECT.md](../PROJECT.md)** -- Project vision, domain model, roadmap, and specification. Read this first for context on what the system does and why.
 - **[CLAUDE.md](../CLAUDE.md)** -- Operational contract for Claude Code: coding conventions, tech stack rules, Gemini API constraints, and non-negotiable development rules.
-- **[IMPROVEMENT.md](../IMPROVEMENT.md)** -- Gap analysis comparing vision vs. implementation, with Phase 7 action plan for cross-organizational generalization.
+- **[IMPROVEMENT.md](../IMPROVEMENT.md)** -- Gap analysis comparing vision vs. implementation, with 40 improvement items (RR-001 through RR-040). All items now Merged.
 
 ---
 

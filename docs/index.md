@@ -7,7 +7,7 @@ Where traditional rule engines require translating human rules into formal logic
 ## Key Capabilities
 
 - **Store rules** as natural-language statements with document context, preconditions, exceptions, following/violation examples, provenance, revision history, governance metadata, classification level, and maturity level.
-- **Multi-domain coverage**: 15 pre-built rule templates (200+ rules) spanning HR/labor law, contracts, expenses, anti-corruption, data privacy, advertising compliance, Python/FastAPI, TypeScript/React, security (OWASP), API design, testing, documentation, meta-governance, and NDA review.
+- **Multi-domain coverage**: 28 pre-built rule templates (280+ rules) spanning HR/labor law, contracts, expenses, anti-corruption, data privacy, advertising compliance, Python/FastAPI, TypeScript/React, security (OWASP/IaC), API design, testing, documentation, meta-governance, NDA review, finance (invoices, journal entries, POs, revenue recognition), access control, and more.
 - **Subject polymorphism**: eight subject kinds (`CODE_DIFF`, `CLAUSE_SET`, `EVENT`, `TRANSACTION`, `CREATIVE`, `DECISION`, `IDENTITY`, `DOCUMENT`) allow the same evaluation pipeline to handle code diffs, contract clauses, HR events, financial transactions, and more. Adding a new domain means writing one adapter.
 - **Department-aware governance**: rules belong to departments (Legal, HR, Finance, Sales, Marketing, IT, Operations, R&D, Executive). Proposals, intelligence digests, and notifications route through department resolvers to reach the right owners, approvers, and audiences.
 - **Classification-based access control**: every rule, document, evaluation, and audit entry carries a classification (`PUBLIC`, `INTERNAL`, `CONFIDENTIAL`, `RESTRICTED`). PostgreSQL Row-Level Security, Elasticsearch document-level security, and MCP clearance enforcement ensure data boundaries.
@@ -37,6 +37,17 @@ Where traditional rule engines require translating human rules into formal logic
 - **Persona-aware UI**: sidebar navigation adapts to role (All / Compliance / Legal / HR / Finance / Engineering / Sales / Executive), showing the most relevant pages for each workflow.
 - **Multilingual**: English and Japanese UI via `next-intl`.
 - **Compliance-grade audit**: append-only, hash-chained audit log with WORM storage mirroring, transparency log anchoring (Sigstore Rekor), PII redaction, legal hold, and regulator export formats (J-SOX, SOX, FSA, GDPR).
+- **8 domain modules**: engineering, legal, HR, finance, IT security, sales, communications, and governance -- each with its own evaluators, context assemblers, discovery analyzers, and evaluation prompts.
+- **Tier 1 infrastructure**: run the full platform with Postgres only (no Elasticsearch, Neo4j, or Redis required). Postgres FTS, adjacency tables, and in-process scheduling provide graceful fallbacks.
+- **Pluggable LLM providers**: Gemini (default), Anthropic Claude, OpenAI, Azure OpenAI, Bedrock, and self-hosted. LLM router with fallback chain and circuit breaker. Per-tenant provider overrides.
+- **Eval harness**: 90 golden cases across 8 domains validate LLM evaluation quality. Nightly regression with CI gates that block merges on quality drops.
+- **Safety**: prompt injection defense (20 patterns, 31 tests), mandatory PII scrubbing middleware, pre-ingest secrets/PII scanner, marketplace publication guards.
+- **Risk register**: map rules to organizational risks. Track coverage gaps and risk exposure.
+- **Attestation campaigns**: require periodic human attestation of rule compliance. Track campaign status and responses.
+- **Regulatory source feeds**: track regulation amendments (e-Gov, FSA). Auto-draft proposals when upstream regulations change.
+- **Confidence calibration**: conformal prediction for high-stakes scopes. Multi-judge consensus for CRITICAL evaluations.
+- **Verdict drift detection**: weekly replay of canary inputs detects unexpected LLM behavior changes.
+- **Polyglot rules**: rules can have translations in multiple locales with consistency verification.
 
 ## Get Started
 
