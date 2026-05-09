@@ -50,7 +50,7 @@ After about a minute:
 
 | Service | URL | Purpose |
 |---|---|---|
-| Backend API | http://localhost:8000 | FastAPI server (37 API routers) |
+| Backend API | http://localhost:8000 | FastAPI server (36 API routers) |
 | Swagger UI | http://localhost:8000/docs | Interactive API explorer |
 | Frontend | http://localhost:3000 | Persona-specific consoles (55 pages) |
 | PostgreSQL | localhost:5432 | Source of truth with Row-Level Security |
@@ -158,7 +158,7 @@ Each rule carries structured metadata: modality (MUST / MUST_NOT / SHOULD / MAY 
 
 3. **Track norm lineage.** Rules don't exist in isolation. A department overtime policy *derives from* the Labor Standards Act. When the law changes, every downstream rule is automatically flagged for review.
 
-4. **Act on the results.** Integrate via REST API, MCP tools for AI agents, CLI commands in CI/CD, or webhooks from business systems. Each persona (Legal, HR, Finance, Engineering, Compliance) has a dedicated console.
+4. **Act on the results.** Integrate via REST API, MCP tools for AI agents, or CLI commands in CI/CD. Each persona (Legal, HR, Finance, Engineering, Compliance) has a dedicated console.
 
 ---
 
@@ -175,7 +175,7 @@ A **Surface** defines a type of thing being evaluated. The evaluation engine is 
 | **Human Action** | HR events, attendance, leave requests | Overtime registration |
 | **Transaction** | Expenses, invoices, journal entries | Expense claim with amount |
 | **Document** | Policies, reports, marketing copy | Internal policy section |
-| **Message** | Emails, Slack messages, chat logs | Chat message content |
+| **Message** | Emails, chat messages, chat logs | Chat message content |
 | **Generic** | Anything else | Free-form text + facts |
 
 Each surface provides: a Subject dataclass, a SurfaceAdapter (parses input, resolves scopes, provides prompt hints), a PII field list, and a default audit retention period.
@@ -192,59 +192,42 @@ A **Domain Pack** bundles rules, prompt hints, samples, and frontend route decla
 | **Communication** | Message | Compliance | 20 communication policies |
 | **Expense** | Transaction | Finance | 15 fiscal policy rules |
 
-### Connectors
-
-**Connectors** normalize events from external business systems into Subjects and feed them to the evaluation pipeline:
-
-| Connector | Surfaces | Integration |
-|---|---|---|
-| GitHub | Code | Webhooks, PR checks |
-| Slack | Message | Channel event subscription |
-| Email (IMAP) | Message | Inbox scanning |
-| Workday | Human Action | Time-tracking events |
-| Salesforce | Transaction, Document | Opportunity and contract events |
-| SAP | Transaction | ERP transaction events |
-| DocuSign | Contract, Document | E-signature workflow events |
-| Kintone | Transaction | Form submission events |
-| Microsoft Teams | Message | Channel message events |
-| Webhook (generic) | Any | Custom HTTP payloads |
-
 ---
 
 ## Architecture
 
 ```
-┌───────────────────────────────────────────────────────────────┐
-│                    Rule Repository Server                      │
-│                                                                │
-│  ┌──────────────────┐  ┌───────────────────────────────────┐  │
-│  │ Domain-Neutral    │  │ Surfaces (7)                      │  │
-│  │ Core              │  │                                   │  │
-│  │                   │  │ Code  Contract  Human Action      │  │
-│  │ Rule CRUD+Search  │  │ Transaction  Document  Message    │  │
-│  │ Evaluation Engine │  │ Generic                           │  │
-│  │ Norm Lineage      │  │                                   │  │
-│  │ Audit + Compliance│  │ Each: adapter, subject dataclass, │  │
-│  │ Intelligence      │  │ prompt hints, PII config          │  │
-│  │ Proposals + Gov.  │  ├───────────────────────────────────┤  │
-│  │ Fact Store        │  │ Domain Packs (5)                  │  │
-│  │ Risk Register     │  │                                   │  │
-│  │ Attestation       │  │ Code  Contract  HR Attendance     │  │
-│  │ Multi-tenant      │  │ Communication  Expense            │  │
-│  └──────────────────┘  └───────────────────────────────────┘  │
-│                                                                │
-│  ┌──────────────────┐  ┌───────────────────────────────────┐  │
-│  │ LLM Abstraction  │  │ Integration Layer                 │  │
-│  │                   │  │                                   │  │
-│  │ Primary/fallback  │  │ 37 REST API routers               │  │
-│  │ Gemini, Anthropic │  │ MCP Server (18 tools)             │  │
-│  │ OpenAI, self-host │  │ Gateway (webhooks)                │  │
-│  └──────────────────┘  │ 10 business system connectors     │  │
-│                         └───────────────────────────────────┘  │
-│                                                                │
-│  PostgreSQL 17     Elasticsearch 8    Neo4j 5     Redis 7     │
-│  (source of truth) (search index)     (graph)     (jobs)      │
-└────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│                     Rule Repository Server                      │
+│                                                                 │
+│  ┌──────────────────┐  ┌────────────────────────────────────┐  │
+│  │ Domain-Neutral    │  │ Surfaces (7)                       │  │
+│  │ Core              │  │                                    │  │
+│  │                   │  │ Code  Contract  Human Action       │  │
+│  │ Rule CRUD+Search  │  │ Transaction  Document  Message     │  │
+│  │ Evaluation Engine │  │ Generic                            │  │
+│  │ Norm Lineage      │  │                                    │  │
+│  │ Audit + Compliance│  │ Each: adapter, subject dataclass,  │  │
+│  │ Intelligence      │  │ prompt hints, PII config           │  │
+│  │ Proposals + Gov.  │  ├────────────────────────────────────┤  │
+│  │ Fact Store        │  │ Domain Packs (5)                   │  │
+│  │ Risk Register     │  │                                    │  │
+│  │ Attestation       │  │ Code  Contract  HR Attendance      │  │
+│  │ Multi-tenant      │  │ Communication  Expense             │  │
+│  └──────────────────┘  └────────────────────────────────────┘  │
+│                                                                 │
+│  ┌──────────────────┐  ┌────────────────────────────────────┐  │
+│  │ LLM Abstraction  │  │ Integration Layer                  │  │
+│  │                   │  │                                    │  │
+│  │ Primary/fallback  │  │ 36 REST API routers                │  │
+│  │ Gemini, Anthropic │  │ MCP Server (18 tools)              │  │
+│  │ OpenAI, self-host │  │ Gateway (webhooks)                 │  │
+│  └──────────────────┘  │ GitHub integration                  │  │
+│                         └────────────────────────────────────┘  │
+│                                                                 │
+│  PostgreSQL 17     Elasticsearch 8     Neo4j 5     Redis 7     │
+│  (source of truth) (search index)      (graph)     (jobs)      │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 **Design principles:**
@@ -340,11 +323,11 @@ A Next.js 15 + React 19 + Tailwind CSS frontend with 55 pages organized into per
 
 | Console | Route | Key pages |
 |---|---|---|
-| **Engineering** | `/dashboard` | Rules, search, proposals, playground, agents, intelligence, audit (26 pages) |
-| **Legal** | `/legal` | Contract review, clause library, redlines, norm lineage (5 pages) |
-| **HR** | `/hr` | Violations, attendance, leave, lifecycle, policies (7 pages) |
-| **Finance** | `/finance` | Transactions, expense policies, audit reports, controls (5 pages) |
-| **Compliance** | `/compliance` | Bundles, audit packets, exception tracking, regulatory feed (5 pages) |
+| **Engineering** | `/dashboard` | Rules, search, proposals, playground, agents, intelligence, audit |
+| **Legal** | `/legal` | Contract review, clause library, redlines, norm lineage |
+| **HR** | `/hr` | Violations, attendance, leave, lifecycle, policies |
+| **Finance** | `/finance` | Transactions, expense policies, audit reports, controls |
+| **Compliance** | `/compliance` | Bundles, audit packets, exception tracking, regulatory feed |
 | **Security** | `/security` | Classification overview |
 | **Marketing** | `/marketing` | Creative review |
 | **Admin** | `/admin` | Tenant management, user provisioning |
@@ -360,7 +343,7 @@ The frontend supports English and Japanese via `next-intl`, with a locale switch
 The evaluation pipeline works the same regardless of the surface:
 
 1. **Surface adapter** -- transforms domain-specific input (diff, contract clause, HR event, etc.) into a uniform Subject
-2. **Rule selection** -- 7-stage filter pipeline: scope, subject type, artifact type, dimensions, severity, relevance scoring, agent boosting
+2. **Rule selection** -- multi-stage filter pipeline: scope, subject type, artifact type, dimensions, severity, relevance scoring
 3. **Fact resolution** -- the Fact Store resolves external facts (employee grade, 36-agreement status, contract value)
 4. **LLM evaluation** -- the selected rules and the subject are sent to the LLM with surface-specific prompt hints. Cross-locale fallback selects translated rule statements when available, with structured logging when it falls back to the canonical locale
 5. **Verdict aggregation** -- per-rule verdicts are aggregated into ALLOW / DENY / NEEDS_CONFIRMATION / ALLOW_WITH_CONDITIONS / REQUIRES_DISCLOSURE
@@ -396,7 +379,7 @@ The norm lineage is **orthogonal** to the organizational federation (Org / Team 
 
 ## Rule Templates
 
-27 ready-to-use templates covering 270+ rules across 8 domains:
+27 ready-to-use templates covering 270+ rules across 7 domains:
 
 | Domain | Templates | Example topics |
 |---|---|---|
@@ -478,30 +461,30 @@ rule-repository/
 ├── apps/
 │   ├── server/                        # FastAPI backend
 │   │   ├── src/rulerepo_server/
-│   │   │   ├── api/v1/                # 37 REST API routers
+│   │   │   ├── api/v1/                # 36 REST API routers
 │   │   │   ├── domain/                # Pure domain models (Rule, Surface, Actor, NormTier)
 │   │   │   ├── services/
 │   │   │   │   ├── evaluation/        # Surface-agnostic evaluation engine
 │   │   │   │   │   ├── core/          # Universal pipeline (no surface imports)
-│   │   │   │   │   └── surfaces/      # Per-surface adapters (code, contract, ...)
+│   │   │   │   │   └── surfaces/      # 7 per-surface adapters
 │   │   │   │   ├── domains/           # 8 domain modules
 │   │   │   │   ├── intelligence/      # Health scoring, drift detection, analytics
 │   │   │   │   ├── norm_lineage/      # Upstream/downstream lineage walker
 │   │   │   │   ├── extraction/        # Document ingestion, bilingual pairing, redline diff
 │   │   │   │   ├── discovery/         # Rule discovery from documents and code
 │   │   │   │   ├── feedback/          # Correction-to-rule flywheel
-│   │   │   │   └── ...               # 30+ service modules
+│   │   │   │   └── ...               # 25+ more service modules
 │   │   │   ├── domain_packs/          # Code, Contract, HR, Communication, Expense
-│   │   │   ├── adapters/              # Postgres, ES, Neo4j, Gemini, connectors (10)
+│   │   │   ├── adapters/              # Postgres, ES, Neo4j, Gemini, LLM router
 │   │   │   ├── mcp/                   # MCP server (18 tools)
-│   │   │   └── workers/               # Background jobs (9 workers)
+│   │   │   └── workers/               # 9 background job workers
 │   │   ├── eval_harness/              # 90 golden test cases
-│   │   └── tests/                     # 68 test files
+│   │   └── tests/                     # 65 test files
 │   └── frontend/                      # Next.js 15 (55 pages, 12 components)
 ├── packages/
 │   ├── rule-client/                   # Python SDK
 │   ├── agentic-client/                # Python agentic SDK
-│   └── cli/                           # CLI tools (8 entry points)
+│   └── cli/                           # CLI tools (8 commands)
 ├── sample_rules/                      # Sample rules + 27 templates (270+ rules)
 ├── infra/                             # Docker, Postgres init, ES templates
 ├── scripts/                           # Seeding, graph reconciliation, audit verification
