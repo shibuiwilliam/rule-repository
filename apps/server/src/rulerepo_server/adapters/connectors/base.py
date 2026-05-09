@@ -50,6 +50,22 @@ class SubjectConnector(ABC):
         """
         ...
 
+    async def push(self, subject: dict[str, Any], result: dict[str, Any]) -> None:
+        """Push an evaluation result back to the external system.
+
+        Called after the evaluation pipeline has produced a verdict. The
+        connector may translate the result into a notification, status
+        update, or other action in the external system.
+
+        The default implementation is a no-op; connectors that support
+        bidirectional integration should override this.
+
+        Args:
+            subject: The evaluated Subject payload.
+            result: The evaluation result (verdict, violations, etc.).
+        """
+        return  # no-op by default; override for bidirectional connectors
+
     async def list_event_types(self) -> list[str]:
         """List event types this connector can process."""
         return []

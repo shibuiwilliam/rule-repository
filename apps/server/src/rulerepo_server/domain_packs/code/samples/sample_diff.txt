@@ -1,0 +1,16 @@
+--- a/src/api/handler.py
++++ b/src/api/handler.py
+@@ -15,6 +15,12 @@
+ from fastapi import APIRouter, Depends, HTTPException
+
+ router = APIRouter()
+
++@router.post("/users")
++async def create_user(name: str, email: str):
++    query = f"INSERT INTO users (name, email) VALUES ('{name}', '{email}')"
++    await db.execute(query)
++    return {"status": "ok"}
++
+ @router.get("/health")
+ async def health():
+     return {"status": "healthy"}

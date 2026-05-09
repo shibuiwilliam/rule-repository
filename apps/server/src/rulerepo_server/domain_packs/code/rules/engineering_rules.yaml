@@ -1,0 +1,56 @@
+rules:
+  - statement: "All public API endpoints MUST validate input using Pydantic models or equivalent schema validation before processing."
+    modality: MUST
+    severity: HIGH
+    scope: [engineering/api, engineering/python]
+    tags: [api-design, validation, security, pydantic]
+    rationale: "Input validation at the API boundary prevents injection attacks, malformed data propagation, and hard-to-debug downstream errors."
+    applicable_subject_types: [code_diff]
+
+  - statement: "Database queries MUST use parameterized queries or ORM methods. Raw string concatenation for SQL MUST NOT be used."
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [engineering/python, engineering/security]
+    tags: [security, sql-injection, owasp, database]
+    rationale: "SQL injection is OWASP Top 10 A03. Parameterized queries eliminate the attack vector entirely."
+    applicable_subject_types: [code_diff]
+
+  - statement: "Secrets, API keys, and credentials MUST NOT be hardcoded in source files. Use environment variables or a secrets manager."
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [engineering/python, engineering/typescript, engineering/security]
+    tags: [security, secrets, credentials, owasp]
+    rationale: "Hardcoded secrets in source code are exposed in version control, CI logs, and error traces. This is OWASP A07."
+    applicable_subject_types: [code_diff]
+
+  - statement: "All async functions that perform I/O MUST use await and MUST NOT block the event loop with synchronous I/O calls."
+    modality: MUST_NOT
+    severity: HIGH
+    scope: [engineering/python]
+    tags: [async, performance, fastapi, event-loop]
+    rationale: "Blocking the event loop degrades throughput for all concurrent requests, not just the current one."
+    applicable_subject_types: [code_diff]
+
+  - statement: "Error responses from APIs MUST use structured error formats with error codes, not bare strings or stack traces."
+    modality: MUST
+    severity: MEDIUM
+    scope: [engineering/api]
+    tags: [api-design, error-handling, observability]
+    rationale: "Structured errors enable client-side error handling, monitoring, and debugging without exposing internal implementation details."
+    applicable_subject_types: [code_diff]
+
+  - statement: "All public functions and classes MUST have type annotations. mypy strict mode MUST pass without errors."
+    modality: MUST
+    severity: MEDIUM
+    scope: [engineering/python]
+    tags: [type-safety, mypy, code-quality]
+    rationale: "Type annotations improve IDE support, catch bugs at static analysis time, and serve as executable documentation."
+    applicable_subject_types: [code_diff]
+
+  - statement: "Test files MUST NOT make network calls to external services. Use mocks, fixtures, or test containers for external dependencies."
+    modality: MUST_NOT
+    severity: HIGH
+    scope: [engineering/testing]
+    tags: [testing, isolation, mocking, reliability]
+    rationale: "Tests that depend on external services are flaky, slow, and can fail due to network issues unrelated to the code being tested."
+    applicable_subject_types: [code_diff]

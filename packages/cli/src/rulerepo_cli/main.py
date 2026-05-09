@@ -20,9 +20,11 @@ from __future__ import annotations
 import click
 
 from rulerepo_cli.check import main as check_cmd
+from rulerepo_cli.check_action import main as check_action_cmd
 from rulerepo_cli.export import main as export_cmd
 from rulerepo_cli.hook import main as hook_cmd
 from rulerepo_cli.ingest import main as ingest_cmd
+from rulerepo_cli.review_contract import main as review_contract_cmd
 
 
 @click.group()
@@ -37,6 +39,8 @@ cli.add_command(check_cmd, name="check")
 cli.add_command(hook_cmd, name="hook")
 cli.add_command(ingest_cmd, name="ingest")
 cli.add_command(export_cmd, name="export")
+cli.add_command(review_contract_cmd, name="review-contract")
+cli.add_command(check_action_cmd, name="check-action")
 
 
 # --- Context subcommand (wraps argparse-based module) ---

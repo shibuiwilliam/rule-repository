@@ -1,0 +1,50 @@
+rules:
+  - statement: "事業主は、労働者からの育児休業の申出があったときは、これを拒むことができない（育児介護休業法6条1項）"
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [hr/leave, hr/childcare]
+    tags: [childcare-leave, parental-leave, article-6]
+    rationale: "Child Care and Family Care Leave Act Article 6 — employer must not refuse childcare leave request"
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "育児休業の申出は、原則として、子が1歳に達するまでの期間について行うことができる（育児介護休業法5条1項）"
+    modality: MUST
+    severity: HIGH
+    scope: [hr/leave, hr/childcare]
+    tags: [childcare-leave, duration, article-5]
+    rationale: "Child Care and Family Care Leave Act Article 5 — leave available until child turns 1 year old"
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "事業主は、育児休業の申出をし、又は育児休業をしたことを理由として、解雇その他不利益な取扱いをしてはならない（育児介護休業法10条）"
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [hr/leave, hr/childcare]
+    tags: [childcare-leave, anti-retaliation, article-10]
+    rationale: "Child Care and Family Care Leave Act Article 10 — prohibition of adverse treatment for taking childcare leave"
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "事業主は、3歳に満たない子を養育する労働者について、所定労働時間の短縮措置を講じなければならない（育児介護休業法23条1項）"
+    modality: MUST
+    severity: HIGH
+    scope: [hr/attendance, hr/childcare]
+    tags: [childcare, shortened-hours, article-23]
+    rationale: "Child Care and Family Care Leave Act Article 23 — employer must offer shortened working hours for workers with children under 3"
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "事業主は、要介護状態にある対象家族を介護する労働者からの介護休業の申出を拒むことができない（育児介護休業法12条）"
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [hr/leave, hr/eldercare]
+    tags: [family-care-leave, eldercare, article-12]
+    rationale: "Child Care and Family Care Leave Act Article 12 — employer must not refuse family care leave request"
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory

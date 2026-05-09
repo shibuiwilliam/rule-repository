@@ -1,0 +1,28 @@
+name: code
+version: "1.0.0"
+display_name: "Code Pack"
+description: >
+  Engineering coding standards, security rules, API design conventions,
+  and testing standards. The most mature domain pack — covers Python,
+  TypeScript, OWASP, and general software engineering practices.
+persona: engineering
+surfaces:
+  - code
+default_scopes:
+  - engineering/python
+  - engineering/typescript
+  - engineering/api
+  - engineering/security
+  - engineering/testing
+required_adapters:
+  - code
+required_connectors: []
+recommended_connectors:
+  - github
+ui_routes:
+  - path: /dashboard
+    label: Engineering Dashboard
+  - path: /dashboard/rules
+    label: Rule Library
+  - path: /dashboard/evaluations
+    label: Evaluation History

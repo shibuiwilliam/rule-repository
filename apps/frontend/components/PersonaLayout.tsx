@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PersonaSwitcher } from "./PersonaSwitcher";
+import { LocaleSwitcher } from "./LocaleSwitcher";
 
 export interface NavItem {
   label: string;
@@ -101,6 +102,9 @@ export function PersonaLayout({
             {persona} Portal
           </div>
           <div className="flex items-center gap-4">
+            {/* Locale switcher */}
+            <LocaleSwitcher />
+
             {/* Notifications bell */}
             <button
               type="button"
