@@ -40,7 +40,7 @@ PostgreSQL 17 holds the canonical data. All writes go through PostgreSQL first. 
 | `agent_negotiations` | Agent-initiated verdict challenges and negotiations. |
 | `governance_sessions` | Multi-agent governance session tracking. |
 
-35+ tables across 26 Alembic migrations. Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
+35+ tables across 31 Alembic migrations. Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
 
 Note: The `rules` table includes `maturity_level` (experimental/stable/proven), `false_positive_count`, `true_positive_count`, `classification`, `subject_kinds`, and `jurisdiction` columns.
 

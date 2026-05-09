@@ -263,14 +263,6 @@ See [Federation API](federation.md) for detailed request/response documentation.
 | GET | `/api/v1/compliance/status` | Get compliance status for a scope. |
 | POST | `/api/v1/compliance/erasure` | Submit a data erasure request (GDPR). |
 
-## Connectors
-
-| Method | Path | Description |
-|---|---|---|
-| POST | `/api/v1/connectors` | Register a connector. |
-| GET | `/api/v1/connectors` | List connectors for the current tenant. |
-| GET | `/api/v1/connectors/{type}/health` | Check connector health. |
-
 ## Cost
 
 | Method | Path | Description |
@@ -343,3 +335,10 @@ See [Federation API](federation.md) for detailed request/response documentation.
 | Method | Path | Description |
 |---|---|---|
 | POST | `/api/v1/ask` | Ask a natural-language question about rules. Returns LLM-powered explanation. |
+
+## Norm Lineage
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v1/lineage/{rule_id}/upstream` | Trace rule derivation chain upstream to source law/regulation (max_depth=20). |
+| GET | `/api/v1/lineage/{rule_id}/downstream` | Trace rule derivation chain downstream to all derived operational rules (max_depth=20). |

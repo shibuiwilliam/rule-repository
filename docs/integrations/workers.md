@@ -19,30 +19,34 @@ Both services are included in `docker-compose.yml` and start automatically with 
 
 ## Scheduled Jobs
 
-The arq worker runs nine scheduled jobs. All are fully implemented with real database operations.
+The arq worker runs seven scheduled cron jobs plus on-demand tasks. All are fully implemented with real database operations.
 
 | Job | Schedule | Description |
 |---|---|---|
 | `compute_health_scores` | 2:00 AM daily | Recomputes rule health scores (6 dimensions). Creates alerts for unhealthy (score < 40), dormant (0 evaluations), and effectiveness decline (score < 30 with 10+ judgments) rules. |
 | `generate_recommendations_task` | 3:00 AM daily | Analyzes rule usage patterns, generates improvement recommendations. Alerts on high deny rate (> 50%). |
+| `verify_translation_drift` | 3:30 AM daily | Checks semantic equivalence of translated rule locales. Creates alerts for locale drift. |
 | `auto_promote_rules` | 4:00 AM daily | Promotes rules through maturity levels (experimental -> stable -> proven) based on false-positive rate. Demotes if FP exceeds 10%. |
 | `cluster_corrections` | 5:00 AM daily | Clusters similar corrections by embedding similarity, auto-drafts rule proposals via Gemini. Creates `DraftRuleProposalModel` entries for human review. |
 | `compute_correction_stats` | Every hour | Aggregates correction statistics by analysis_type and status. |
 | `send_weekly_digest` | Monday 9:00 AM | Generates weekly governance digest (compliance trends, top violations, most effective rules, declining rules, pending actions). Sends to `DIGEST_WEBHOOK_URL` if configured. |
-| `verdict_drift_monitor` | Daily | Monitors verdict distribution changes over time. Creates alerts when significant drift is detected. |
-| `conflict_scanner` | Daily | Detects conflicting rules across the corpus. Creates alerts for newly discovered conflicts. |
-| `policy_review_cycle` | 6:00 AM daily | Alerts for rules due for review. Escalation logic triggers at 30 days and 60 days overdue. |
 
-Additional workers:
+On-demand tasks (triggered by API or events):
 
-| Job | Description |
+| Task | Description |
 |---|---|
-| `archival` | Rule archival and retention policy enforcement. Respects legal holds. |
-| `polyglot_validator` | Multi-language code validation for rules targeting polyglot codebases. |
-| `verdict_drift_canary` | Weekly replay of canary inputs to detect LLM behavior changes (RR-024). Creates `verdict_drift` alerts. |
-| `regulatory_feed_poll` | Polls registered regulatory sources for amendments. Creates `regulation_amendment` alerts and auto-drafts proposals (RR-012). |
-| `translation_consistency` | Checks semantic equivalence of translated rule locales. Creates `locale_drift` alerts (RR-020). |
-| `duplicate_detector` | Scans corpus for semantically similar rules. Creates `near_duplicate` alerts (RR-033). |
+| `propagate_norm_amendment` | Propagates upstream norm changes downstream through DERIVES_FROM lineage. |
+
+Additional worker modules (available but not in the cron schedule):
+
+| Module | Description |
+|---|---|
+| `archival.py` | Rule archival and retention policy enforcement. Respects legal holds. |
+| `conflict_scanner.py` | Detects conflicting rules across the corpus. |
+| `norm_lineage_propagation.py` | Walks DERIVES_FROM chain to propagate norm amendments. |
+| `policy_review_cycle.py` | Alerts for rules due for periodic review. |
+| `polyglot_validator.py` | Multi-language code validation for polyglot codebases. |
+| `verdict_drift.py` | Monitors verdict distribution changes over time. |
 
 Jobs are idempotent and safe to run concurrently with API requests.
 

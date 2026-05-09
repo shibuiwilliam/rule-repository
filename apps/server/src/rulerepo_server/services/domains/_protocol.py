@@ -49,15 +49,6 @@ class DiscoveryAnalyzer(Protocol):
 
 
 @runtime_checkable
-class Connector(Protocol):
-    """Integrates with external systems for a specific domain."""
-
-    name: str
-
-    async def ingest(self, event: dict[str, Any]) -> dict[str, Any]: ...
-
-
-@runtime_checkable
 class DomainModule(Protocol):
     """The top-level protocol every domain module must implement.
 
@@ -79,7 +70,5 @@ class DomainModule(Protocol):
     def evaluator(self) -> DomainEvaluator: ...
 
     def discovery_analyzers(self) -> list[DiscoveryAnalyzer]: ...
-
-    def connectors(self) -> list[Connector]: ...
 
     def templates_path(self) -> Path: ...

@@ -47,7 +47,7 @@ cd packages/rule-client && uv run pytest
 
 ## Test Structure
 
-The project has **746 test functions** across five locations (unit + integration + safety + e2e + SDK). Test count grew significantly through Phase 7 (subject polymorphism, classification RLS) and the RR-001–040 improvements (domain modules, safety, operability, eval harness).
+The project has **821 test functions** across five locations (unit + integration + safety + e2e + SDK). Test count grew significantly through Phase 7 (subject polymorphism, classification RLS) and the RR-001–040 improvements (domain modules, safety, operability, eval harness).
 
 ### Unit Tests (`apps/server/tests/unit/`)
 
@@ -73,7 +73,6 @@ Pure logic tests with no external services. Fast (sub-second per file).
 | `test_departments.py` | 12 | Department/Capacity domain types, DepartmentService resolvers (owner, approvers, audience, effective capacity) |
 | `test_subjects.py` | 20 | SubjectKind enum, EvaluationSubject, CodeDiffAdapter, EventAdapter, ClauseSetAdapter, TransactionAdapter, Subject Registry |
 | `test_compliance.py` | 11 | Classification ordering, PII redaction/restore, field detection, shadow store, approval policies, read access log |
-| `test_connector_hub.py` | 12 | Connector status values, health checks, config, registry (register, tenant isolation, unregister, list), connector protocols |
 | `test_fact_store.py` | 16 | Fact domain, status values, schema, resolution, provider registry, cache, FactStore resolve/health/caching |
 | `test_operability.py` | 12 | Metrics collector, cost tracker (record, budget, breakdown), LLM fallback, circuit breaker status, leader election, health service |
 | `test_plugins.py` | 13 | Core isolation, plugin protocols, plugin registry, engineering/HR/legal/finance/marketing plugin verification |

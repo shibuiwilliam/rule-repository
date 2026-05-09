@@ -6,7 +6,6 @@ const ADMIN_NAV: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: "\ud83d\udcca" },
   { label: "Tenants", href: "/admin/tenants", icon: "\ud83c\udfe2" },
   { label: "Users", href: "/admin/users", icon: "\ud83d\udc64" },
-  { label: "Connectors", href: "/admin/connectors", icon: "\ud83d\udd0c" },
   { label: "Settings", href: "/admin/settings", icon: "\u2699\ufe0f" },
   { label: "Billing", href: "/admin/billing", icon: "\ud83d\udcb3" },
 ];

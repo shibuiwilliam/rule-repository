@@ -13,7 +13,7 @@ Started: 2026-05-08
 
 - Stream A: Contract Clause Engine — ADR accepted, parser, comparator, clause aggregator, prompt templates, API endpoint, unit tests
 - Stream B: Event Engine Temporal Modes — ADR accepted, domain types, sequence/calendar modes, prompt templates, API endpoint, unit tests
-- Stream C (partial): Document Discovery — DocumentSource/IncrementalSource protocols, contract corpus analyzer, SharePoint connector, Google Drive connector, contract DOCX source upgraded
+- Stream C (partial): Document Discovery — DocumentSource/IncrementalSource protocols, contract corpus analyzer, contract DOCX source upgraded
 - Stream D (partial): Domain-Aware UX — route groups for legal/hr/finance/marketing with layouts, contract review page, event review page
 
 ---
@@ -74,9 +74,6 @@ Expands discovery beyond code artifacts. Implements the `DocumentSource` and `In
 | C3 | Upgrade `contract_docx.py` to full implementation (python-docx clause extraction) | M | 884fe95 | DONE |
 | C4 | `contract_corpus.py` — cluster historical contracts, extract de facto standard clauses | L | 884fe95 | DONE |
 | C5 | `regulation_feed.py` — e-Gov API / FSA notices with `derives_from` Neo4j linkage | L | | PENDING |
-| C6 | SharePoint connector (`services/discovery/connectors/sharepoint.py`) | M | 884fe95 | DONE |
-| C7 | Google Drive connector (`services/discovery/connectors/google_drive.py`) | M | 884fe95 | DONE |
-| C8 | Upgrade Confluence and Notion connectors from stubs to working implementations | M | | PENDING |
 | C9 | `IncrementalSource` polling worker in `workers/` for regulation feeds | M | | PENDING |
 | C10 | Unit tests with mocked external services | M | 884fe95 | DONE |
 
@@ -84,7 +81,6 @@ Expands discovery beyond code artifacts. Implements the `DocumentSource` and `In
 - A policy PDF can be uploaded and produces candidate rules with correct modality, scope, and source_refs.
 - A DOCX contract can be parsed into clauses suitable for the Contract Clause Engine.
 - The regulation feed detects amendments and generates `needs_review` alerts for downstream rules.
-- `IncrementalSource.changes_since()` works for at least one connector.
 - All existing tests pass.
 
 ---
@@ -118,7 +114,7 @@ Frontend surfaces for non-engineering departments.
 ```
 A1 (ADR) ──→ A2-A3 (parser/comparator) ──→ A4-A6 (aggregator/modes) ──→ A7-A8 (API/tests)
 B1 (ADR) ──→ B2 (types) ──→ B3-B4 (modes) ──→ B5-B7 (API/adapters/tests)
-C1 (protocols) ──→ C2-C3 (upgrade existing) ──→ C4-C5 (new analyzers) ──→ C6-C8 (connectors) ──→ C9-C10 (worker/tests)
+C1 (protocols) ──→ C2-C3 (upgrade existing) ──→ C4-C5 (new analyzers) ──→ C9-C10 (worker/tests)
 D1 (routes) ──→ D2-D3 (review pages) ──→ D4-D6 (dashboard/wizard/search) ──→ D7 (lint)
 ```
 

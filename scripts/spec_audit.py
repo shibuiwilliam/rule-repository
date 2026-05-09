@@ -222,10 +222,6 @@ def build_feature_checks() -> list[FeatureCheck]:
     add("Linter config analyzer", "Discovery", "IMPLEMENTED")
     add("Code patterns analyzer", "Discovery", "IMPLEMENTED")
     add("Policy document analyzer", "Discovery", "IMPLEMENTED")
-    add("Confluence connector", "Discovery", "IMPLEMENTED")
-    add("Notion connector", "Discovery", "IMPLEMENTED")
-    add("e-Gov connector", "Discovery", "IMPLEMENTED")
-    add("EUR-Lex connector", "Discovery", "IMPLEMENTED")
 
     # --- Feedback ---
     add("Correction feedback API", "Feedback", "IMPLEMENTED")
@@ -527,15 +523,6 @@ def verify_feature(fc: FeatureCheck) -> None:
             _check_file(fc, f"{disc}/analyzers/code_patterns.py")
         elif "Policy" in name:
             _check_file(fc, f"{disc}/analyzers/policy_document.py")
-        elif "Confluence" in name:
-            _check_file(fc, f"{disc}/connectors/confluence.py")
-        elif "Notion" in name:
-            _check_file(fc, f"{disc}/connectors/notion.py")
-        elif "e-Gov" in name:
-            _check_file(fc, f"{disc}/connectors/egov.py")
-        elif "EUR-Lex" in name:
-            _check_file(fc, f"{disc}/connectors/eurlex.py")
-
     # -- Feedback --
     elif cat == "Feedback":
         fb = "apps/server/src/rulerepo_server/services/feedback"
@@ -738,7 +725,7 @@ def verify_feature(fc: FeatureCheck) -> None:
 
     # -- Observability --
     elif cat == "Observability":
-        if "OpenTelemetry" in name:
+        if "Structured logging" in name or "Logging" in name:
             _check_file(fc, "apps/server/src/rulerepo_server/core/logging.py")
         elif "Cost ledger" in name:
             models = "apps/server/src/rulerepo_server/adapters/postgres/models.py"

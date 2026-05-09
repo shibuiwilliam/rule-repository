@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any
 
 from rulerepo_server.services.domains._protocol import (
-    Connector,
     ContextAssembler,
     DiscoveryAnalyzer,
     DomainEvaluator,
@@ -69,9 +68,6 @@ class LegalModule:
         from rulerepo_server.services.domains.legal.discovery.contract_analyzer import ContractAnalyzer
 
         return [ContractAnalyzer()]
-
-    def connectors(self) -> list[Connector]:
-        return []
 
     def templates_path(self) -> Path:
         return Path(__file__).parent / "templates"

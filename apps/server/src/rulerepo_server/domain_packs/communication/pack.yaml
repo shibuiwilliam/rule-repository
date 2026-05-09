@@ -7,5 +7,4 @@ required_adapters: []
 default_scopes: [communications/email, communications/chat, communications/customer]
 ui_routes: [/compliance/communications]
 seed_rules_path: rules/
-required_connectors: [slack, email]
 persona: compliance

@@ -36,7 +36,7 @@ Phase 8 builds on the Phase 7 foundation. Substantially complete:
 |---|---|---|
 | **A: Contract Clause Engine** | DONE | Parser, comparator, clause aggregator, 4 evaluation modes, API endpoint, ADR 0004 |
 | **B: Event Engine Temporal Modes** | DONE (except HR adapter stubs) | Single/sequence/calendar modes, domain types, prompt templates, API endpoint, ADR 0005 |
-| **C: Document Discovery** | PARTIAL | DocumentSource/IncrementalSource protocols, contract corpus analyzer, SharePoint/Google Drive connectors. Remaining: regulation_pdf upgrade, regulation_feed, Confluence/Notion upgrade, polling worker |
+| **C: Document Discovery** | PARTIAL | DocumentSource/IncrementalSource protocols, contract corpus analyzer. Remaining: regulation_pdf upgrade, regulation_feed, polling worker |
 | **D: Domain-Aware UX** | PARTIAL | Route groups and layouts for legal/hr/finance/marketing, contract review page, event review page. Remaining: department-aware dashboard, no-code wizard, intent-first search |
 
 ---
@@ -143,13 +143,12 @@ Phase 8 builds on the Subject Polymorphism foundation to deliver end-to-end doma
 **Completed:**
 - **Contract Clause Engine** — ADR 0004 accepted. `adapters/contract_parser.py`, `adapters/contract_compare.py`, `services/evaluation/clause_aggregator.py`, prompt templates, `POST /api/v1/evaluate/contract` with 4 review types. Unit tests pass.
 - **Event Engine Temporal Modes** — ADR 0005 accepted. `domain/event_sequence.py` with `EventWindow`, `CalendarContext`, `SequenceContext`. Three modes (single/sequence/calendar). `POST /api/v1/evaluate/event`. Unit tests pass.
-- **Document Discovery** (partial) — `DocumentSource`/`IncrementalSource` protocols, contract corpus analyzer, SharePoint and Google Drive connectors, contract DOCX source upgraded.
+- **Document Discovery** (partial) — `DocumentSource`/`IncrementalSource` protocols, contract corpus analyzer, contract DOCX source upgraded.
 - **Domain-Aware UX** (partial) — Route groups and layouts for legal, hr, finance, marketing. Contract review page (`/contracts/review/[id]`), event review page (`/events/[id]`).
 
 **Remaining:**
 - HR system adapter stubs (Workday, SmartHR, freee HR)
 - Regulation PDF source upgrade, regulation feed with e-Gov/FSA
-- Confluence and Notion connector upgrades
 - Incremental polling worker for regulation feeds
 - Department-aware home dashboard, no-code rule wizard, intent-first search
 - `pnpm lint` and `pnpm typecheck` verification

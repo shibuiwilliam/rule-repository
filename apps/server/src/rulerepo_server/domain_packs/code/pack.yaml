@@ -16,9 +16,6 @@ default_scopes:
   - engineering/testing
 required_adapters:
   - code
-required_connectors: []
-recommended_connectors:
-  - github
 ui_routes:
   - path: /dashboard
     label: Engineering Dashboard

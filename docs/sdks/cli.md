@@ -230,6 +230,30 @@ rulerepo audit verify --server-url http://localhost:8000
 
 ---
 
+## rulerepo-check-action
+
+Evaluates human actions (overtime registration, leave requests, etc.) against applicable rules using the Human Action surface.
+
+### Usage
+
+```bash
+rulerepo-check-action --action register_overtime --actor user:E001 --json '{"hours":50}' --scope hr/attendance
+```
+
+---
+
+## rulerepo-review-contract
+
+Evaluates contracts against organizational clause rules using the Contract surface.
+
+### Usage
+
+```bash
+rulerepo-review-contract --file ./contracts/draft.docx --scope legal/contract/nda --format json
+```
+
+---
+
 ## Environment
 
 All commands read `RULEREPO_SERVER_URL` from the environment if `--server-url` is not provided. `rulerepo-hook` also reads `RULEREPO_AGENT_ID` for agent identity tracking.

@@ -23,6 +23,5 @@ Domain types are defined in `domain/event_sequence.py`. The HR plugin's `FormEva
 ## Consequences
 
 - Event evaluation requires the Fact Store to resolve employee state and historical data
-- HRIS connectors must provide both current events and historical aggregates
 - Calendar mode evaluations are more expensive (larger context) but catch patterns that single-mode misses
 - The temporal mode is transparent to the orchestrator -- the HR plugin handles mode selection internally

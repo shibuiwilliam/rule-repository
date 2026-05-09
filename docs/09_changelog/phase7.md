@@ -20,8 +20,7 @@
 - **7b1 — Plugin Architecture**: Created `plugins/` directory with `DomainPlugin` protocol, `_registry.py`, and `plugins/engineering/` with code_change_evaluator, extractors, prompts. Core confirmed free of plugin imports.
 - **7a — Multi-Tenancy**: `Tenant`, `Organization`, `Principal` domain types. `tenant_id` added to Rule. OIDC/SAML SSO foundation. SCIM 2.0 endpoints. ABAC policy engine. SoD enforcement. Per-tenant settings.
 - **7c — Fact Store**: `services/fact_store/` with `FactProvider` protocol, `FactStore` orchestrator, initial providers (EmployeeAttributes, OFACSanctions, InternalMasterData). Wired into evaluation pipeline.
-- **7b2 — HR Vertical**: `plugins/hr/` with form_evaluator, extractors, prompts, golden dataset (100 cases). HRIS connector protocol.
+- **7b2 — HR Vertical**: `plugins/hr/` with form_evaluator, extractors, prompts, golden dataset (100 cases).
 - **7g — Persona UX**: Persona routing layer, all portals scaffolded (Legal, HR, Compliance, Security, Engineering, Admin). Persona switcher component.
-- **7f — Connector Hub**: `EventSource`/`Sink` protocols, three reference connectors (SmartHR HRIS, Salesforce CRM, freee ERP). Per-tenant config. Health dashboard endpoint.
 - **7d — Compliance/Privacy**: Enhanced PII redaction, encrypted shadow store, right-to-erasure API, regional routing, CMEK integration, approval policy DSL.
-- **7h — Operability**: OpenTelemetry instrumentation, enhanced /metrics, per-tenant cost tracking, worker leader election, LLM fallback strategy.
+- **7h — Operability**: Structured logging, per-tenant cost tracking, worker leader election, LLM fallback strategy.

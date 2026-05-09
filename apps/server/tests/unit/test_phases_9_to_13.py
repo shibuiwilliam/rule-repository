@@ -6,7 +6,6 @@ Covers:
 - Norm Lineage walker
 - Domain Pack loader
 - HR and Communication pack structure
-- Connector ABC
 - Japanese sample rules existence
 - MCP tool signatures
 """
@@ -17,6 +16,10 @@ from pathlib import Path
 
 import pytest
 
+# Resolve the server source root regardless of CWD
+_SERVER_ROOT = Path(__file__).resolve().parents[2]  # apps/server/
+_SRC = _SERVER_ROOT / "src" / "rulerepo_server"
+
 # ---------------------------------------------------------------------------
 # Phase 9: Contract Pack
 # ---------------------------------------------------------------------------
@@ -26,17 +29,17 @@ class TestContractPack:
     """Verify the Contract Domain Pack structure."""
 
     def test_pack_yaml_exists(self) -> None:
-        pack_yaml = Path("src/rulerepo_server/domain_packs/contract/pack.yaml")
+        pack_yaml = _SRC / Path("domain_packs/contract/pack.yaml")
         assert pack_yaml.exists(), "Contract pack.yaml must exist"
 
     def test_pack_has_rules(self) -> None:
-        rules_dir = Path("src/rulerepo_server/domain_packs/contract/rules")
+        rules_dir = _SRC / Path("domain_packs/contract/rules")
         if rules_dir.exists():
             yaml_files = list(rules_dir.glob("*.yaml"))
             assert len(yaml_files) >= 1, "Contract pack must have rule files"
 
     def test_pack_has_samples(self) -> None:
-        samples_dir = Path("src/rulerepo_server/domain_packs/contract/samples")
+        samples_dir = _SRC / Path("domain_packs/contract/samples")
         if samples_dir.exists():
             sample_files = list(samples_dir.iterdir())
             assert len(sample_files) >= 1, "Contract pack must have sample files"
@@ -185,7 +188,7 @@ class TestHRPack:
     """Verify the HR Domain Pack structure."""
 
     def test_pack_yaml_exists(self) -> None:
-        pack_yaml = Path("src/rulerepo_server/domain_packs/hr_attendance/pack.yaml")
+        pack_yaml = _SRC / Path("domain_packs/hr_attendance/pack.yaml")
         assert pack_yaml.exists(), "HR pack.yaml must exist"
 
 
@@ -193,28 +196,8 @@ class TestCommunicationPack:
     """Verify the Communication Domain Pack structure."""
 
     def test_pack_yaml_exists(self) -> None:
-        pack_yaml = Path("src/rulerepo_server/domain_packs/communication/pack.yaml")
+        pack_yaml = _SRC / Path("domain_packs/communication/pack.yaml")
         assert pack_yaml.exists(), "Communication pack.yaml must exist"
-
-
-# ---------------------------------------------------------------------------
-# Phase 12: Connector Layer
-# ---------------------------------------------------------------------------
-
-
-class TestConnectorABC:
-    """Tests for the SubjectConnector ABC."""
-
-    def test_connector_abc_import(self) -> None:
-        from rulerepo_server.adapters.connectors.base import SubjectConnector
-
-        assert SubjectConnector is not None
-
-    def test_connector_is_abstract(self) -> None:
-        from rulerepo_server.adapters.connectors.base import SubjectConnector
-
-        with pytest.raises(TypeError):
-            SubjectConnector()  # type: ignore[abstract]
 
 
 # ---------------------------------------------------------------------------

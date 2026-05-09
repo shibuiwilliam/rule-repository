@@ -7,5 +7,4 @@ required_adapters: [contract_clause_extractor]
 default_scopes: [legal/contract/nda, legal/contract/msa, legal/contract/sow]
 ui_routes: [/legal/contracts, /legal/clauses, /legal/redlines, /legal/lineage]
 seed_rules_path: rules/
-required_connectors: []
 persona: legal

@@ -1,6 +1,6 @@
 # Testing
 
-The project has **746 tests** across backend, frontend, and SDK packages.
+The project has **821 tests** across backend, frontend, and SDK packages.
 
 ## Commands
 
@@ -55,7 +55,7 @@ Pure logic tests with no external dependencies. These test domain models, utilit
 - Located in `tests/unit/` within each package
 - No database, no Elasticsearch, no Neo4j, no network calls
 - Fast: should complete in seconds
-- Covers: domain models, evaluation pipeline stages, diff parsing, context assembly, verdict aggregation, conflict aggregation, PII sanitization, health scoring, gateway normalization, discovery analyzers, playground, context delivery formatting, ABAC, classification/RLS, departments, subjects, compliance, connector hub, fact store, operability, plugins, eval harness, contract parser/comparator, clause aggregator, event sequences, document discovery, conflict scanner, cost tracker, LLM providers
+- Covers: domain models, evaluation pipeline stages, diff parsing, context assembly, verdict aggregation, conflict aggregation, PII sanitization, health scoring, gateway normalization, discovery analyzers, playground, context delivery formatting, ABAC, classification/RLS, departments, subjects, compliance, fact store, operability, plugins, eval harness, contract parser/comparator, clause aggregator, event sequences, document discovery, conflict scanner, cost tracker, LLM providers
 
 ### Integration Tests
 

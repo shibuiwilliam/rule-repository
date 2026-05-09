@@ -15,9 +15,8 @@ All Phase 7 workstreams (7a–7h) — implementation in progress.
 - 7b1 — Plugin Architecture: DomainPlugin protocol, registries, 5 domain plugins (engineering, hr, legal, finance, marketing)
 - 7a — Multi-Tenancy: Tenant/Organization/Principal domains, ABAC engine, SoD enforcement, SCIM 2.0, tenant API
 - 7c — Fact Store: FactProvider protocol, 4 providers, cache, resolution API
-- 7b2 — HR Vertical: form evaluator, handbook extractor, HRIS connector, attendance compliance, MCP tools, 100-case golden dataset
+- 7b2 — HR Vertical: form evaluator, handbook extractor, attendance compliance, MCP tools, 100-case golden dataset
 - 7g — Persona UX: 7 persona portals (Engineering, HR, Legal, Compliance, Security, Admin, Finance/Marketing), PersonaSwitcher
-- 7f — Connector Hub: EventSource/Sink protocols, 3 reference connectors (SmartHR, Salesforce, freee)
 - 7d — Compliance/Privacy: PII redaction, shadow store, erasure service, CMEK, approval policy DSL, read-access logging
 - 7h — Operability: metrics, cost tracking, leader election, LLM fallback, health service
 

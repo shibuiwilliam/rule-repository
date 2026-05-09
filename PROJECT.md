@@ -59,7 +59,7 @@ The Rule Repository is the only system that simultaneously:
 - Detect conflicts, redundancies, and dead rules across the corpus.
 - Track norm lineage from law down to operational rule, and propagate upstream changes downstream.
 - Make rule provenance, rationale, and revision history first-class.
-- Provide ergonomic SDKs and connectors so business systems and AI agents can integrate easily.
+- Provide ergonomic SDKs so business systems and AI agents can integrate easily.
 - Offer **persona-specific consoles** for Legal, HR, Finance, Compliance, Sales, Engineering, and Admin roles.
 - Ship by **Domain Pack**: a reusable bundle of rules, adapters, prompts, UI, and samples for one business domain.
 
@@ -101,22 +101,20 @@ The system is composed of three top-level components and a set of pluggable exte
              │                                    │
    ┌─────────┼────────────────────────────────────┼─────────────────┐
    │         │                                    │                 │
-┌──▼───┐ ┌───▼──┐ ┌───────────┐ ┌──────────┐ ┌───▼──────┐ ┌────────▼────┐
-│ Rule │ │Agent │ │    MCP    │ │   CLI    │ │ Surface  │ │  External   │
-│ SDK  │ │ SDK  │ │  Server   │ │  Tools   │ │Connector │ │ Business    │
-│      │ │      │ │ (subject- │ │(per      │ │  Layer   │ │ Systems     │
-│      │ │      │ │  agnostic │ │ surface) │ │ (GH,Slack│ │ (HRIS, ERP, │
-│      │ │      │ │  tools)   │ │          │ │ Email,SF,│ │  Salesforce,│
-│      │ │      │ │           │ │          │ │ HRIS,SAP,│ │  DocuSign,  │
-│      │ │      │ │           │ │          │ │ DocuSign)│ │  Outlook)   │
-└──────┘ └──────┘ └───────────┘ └──────────┘ └──────────┘ └─────────────┘
+┌──▼───┐ ┌───▼──┐ ┌───────────┐ ┌──────────┐
+│ Rule │ │Agent │ │    MCP    │ │   CLI    │
+│ SDK  │ │ SDK  │ │  Server   │ │  Tools   │
+│      │ │      │ │ (subject- │ │(per      │
+│      │ │      │ │  agnostic │ │ surface) │
+│      │ │      │ │  tools)   │ │          │
+│      │ │      │ │           │ │          │
+└──────┘ └──────┘ └───────────┘ └──────────┘
 ```
 
 ### 4.1 The Three Top-Level Components
 
 - **Rule Management Server** (single FastAPI process): the system of record. Owns the canonical rule corpus, evaluation engine, search, intelligence, governance, and audit log.
 - **Rule Client SDK / Agentic Rule Client SDK / CLI / MCP Server**: the consumer-facing libraries and binaries. Surface-agnostic: a contract-review agent and a coding agent both use the same MCP server with different tools.
-- **Surface Connectors**: a layer of adapters that ingests events from external business systems (Salesforce, Workday, SAP, DocuSign, Slack, email, GitHub, etc.), normalizes them into Subjects, and feeds them to the evaluation pipeline.
 
 ### 4.2 Two Orthogonal Hierarchies
 
@@ -277,10 +275,9 @@ src/rulerepo_server/
 │   ├── snapshots/          # Versioned, environment-deployable rule sets
 │   ├── proposals/          # Multi-approver governance workflow
 │   └── agent_governance/   # Trust, mastery, personalized rules — for any Actor
-├── domain_packs/           # Vertical bundles (see §6.4)
+├── domain_packs/           # Vertical bundles (see §6.3)
 ├── adapters/
 │   ├── postgres / elasticsearch / neo4j / gemini / files
-│   └── connectors/         # GitHub / Slack / Email / Salesforce / Workday / SAP / DocuSign / Kintone / Teams / generic_webhook
 ├── mcp/                    # MCP server (subject-agnostic tools)
 ├── gateway/                # Webhook-driven enforcement
 ├── integrations/           # GitHub App, CI formatters
@@ -293,7 +290,7 @@ src/rulerepo_server/
 - **Multi-format extraction pipeline**: ingests PDFs, docx, markdown, txt, regulatory XML, and contract templates. Specialized parsers for legal/regulatory document structure (chapter / article / paragraph / item / appendix). Bilingual pairing for parallel-language documents. Redline differ for revision capture.
 - **Search APIs**: Full-text, Vector, Category, Hybrid (BM25 + kNN), Context (subject → applicable rules), Impact (rule change → affected subjects).
 - **Intent API**: classifies natural-language queries (`lookup_rule`, `check_compliance`, `find_conflicts`, `explain_rule`, `simulate_change`, `lookup_norm_lineage`) and routes to the appropriate backend.
-- **Subject-Aware Evaluation Engine** (§6.5): given a Subject and the rule corpus, returns `ALLOW` / `DENY` / `NEEDS_CONFIRMATION` with reason and structured remediations.
+- **Subject-Aware Evaluation Engine** (§6.4): given a Subject and the rule corpus, returns `ALLOW` / `DENY` / `NEEDS_CONFIRMATION` with reason and structured remediations.
 - **Audit log**: append-only, hash-chained record of all evaluations including model identity, prompt version, inputs, outputs, surface, locale, and actor. Retention is **surface-aware** (see §10.2).
 - **Governance**: role-based access (Owner / Approver / Reader) per rule category, revision approval workflow, effective-date scheduling, multi-approver proposals.
 
@@ -319,26 +316,7 @@ Built-in adapters at v1:
 | `message` | email / Slack / transcript | `Message(channel, sender, recipients, content, locale)` |
 | `generic` | free-form text + facts | `GenericSubject(text, facts)` |
 
-### 6.3 Connectors
-
-Connectors live under `adapters/connectors/` and integrate with external business systems:
-
-| Connector | Source events |
-|---|---|
-| `github` | Pull requests, issues, comments → `code` subjects (existing) |
-| `slack` | Channel messages, DM threads → `message` subjects |
-| `email` | IMAP / Microsoft Graph / Gmail API → `message` subjects |
-| `salesforce` | Opportunity, quote, contract → `contract` / `human_action` subjects |
-| `workday` | Worker events, time-tracking → `human_action` subjects |
-| `sap` | Journal entries, invoices → `transaction` subjects |
-| `docusign` | Envelope status, signed contracts → `contract` subjects |
-| `kintone` | Workflow events → `human_action` subjects |
-| `teams` | Channel messages, meeting transcripts → `message` subjects |
-| `generic_webhook` | Anything POSTing JSON → `generic` subjects |
-
-Each connector implements `SubjectConnector` ABC and supports the three integration modes from §6.7: pre-flight, post-hoc, sidecar.
-
-### 6.4 Domain Packs
+### 6.3 Domain Packs
 
 A **Domain Pack** is a vertical bundle for one business domain. Packs live under `domain_packs/`:
 
@@ -348,12 +326,10 @@ domain_packs/
 ├── contract/               # Legal / contract management
 ├── hr_attendance/          # HR, attendance, labor compliance
 ├── expense/                # Expense reports, travel, entertainment
-├── procurement/            # Purchase orders, vendor management
-├── communication/          # Email / Slack / customer correspondence
-├── compliance/             # Bribery, anti-social, FCPA, AML
-├── governance/             # Board, disclosure, insider trading
-└── marketing/              # Ad copy, landing-page compliance, claim substantiation
+└── communication/          # Email / Slack / customer correspondence
 ```
+
+Future packs (not yet implemented): procurement, compliance, governance, marketing.
 
 Each pack contains:
 
@@ -364,7 +340,6 @@ domain_packs/<pack>/
 ├── adapters/               # symlinks or imports of the surface adapters this pack uses
 ├── ui/                     # frontend components and pages for the pack's persona
 ├── prompts/                # surface-specific evaluation hints
-├── connectors/             # business-system connectors recommended by this pack
 └── samples/                # anonymized seed data
 ```
 
@@ -383,8 +358,6 @@ default_scopes:
 ui_routes: [/domain/contract]
 seed_rules_path: rules/
 persona: legal
-required_connectors: []
-optional_connectors: [docusign, salesforce]
 ```
 
 **Why Domain Packs:**
@@ -393,7 +366,7 @@ optional_connectors: [docusign, salesforce]
 - New domains are added by adding a pack, not modifying the core.
 - Marketing gains shippable units: "Contract Pack 1.0 is now available."
 
-### 6.5 Subject-Aware Evaluation Engine
+### 6.4 Subject-Aware Evaluation Engine
 
 The evaluation engine is surface-agnostic. It accepts a `Subject` and a candidate rule set, and returns per-rule verdicts.
 
@@ -408,7 +381,7 @@ The evaluation engine is surface-agnostic. It accepts a `Subject` and a candidat
 
 **Code-aware features** (one set of surface-specific behaviors): file-path-to-scope matching, diff-aware function/line targeting, code remediations as actionable fix suggestions. These live exclusively in `surfaces/code/`.
 
-### 6.6 Rule Client (Python SDK)
+### 6.5 Rule Client (Python SDK)
 
 A thin, ergonomic wrapper over the server APIs.
 
@@ -431,7 +404,7 @@ await client.rules.update(rule.id, statement="...", revision_note="...")
 lineage = await client.norm_lineage.upstream("rule_abc123")
 ```
 
-### 6.7 Agentic Rule Client (Python SDK)
+### 6.6 Agentic Rule Client (Python SDK)
 
 A higher-level client that wraps `RuleClient` and adds agent capabilities for systems that need to **enforce** rules, not merely query them.
 
@@ -465,7 +438,6 @@ if result.verdict == "DENY":
 
 **Capabilities:**
 
-- **Automatic context gathering** via Connectors.
 - **Two-stage evaluation**: metadata + embedding pre-filter, then LLM judgment on the narrowed set.
 - **Surface dispatch**: chooses the right Surface Adapter from the input.
 - **Caching**: hash-keyed cache, automatically invalidated on rule revision.
@@ -473,7 +445,7 @@ if result.verdict == "DENY":
 - **Repair suggestions**: structured `Remediation` objects for surfaces where an automated fix is meaningful (code, transaction, action).
 - **Three integration modes**: `preflight`, `posthoc`, `sidecar`.
 
-### 6.8 Agent Context Delivery (MCP + Smart Rule Selection)
+### 6.7 Agent Context Delivery (MCP + Smart Rule Selection)
 
 Exposes the Rule Repository to AI agents via the Model Context Protocol (MCP). Tools are **subject-agnostic**:
 
@@ -498,7 +470,7 @@ Exposes the Rule Repository to AI agents via the Model Context Protocol (MCP). T
 
 The legacy `get_rules_for_context(files=...)` remains as a backwards-compatible alias for the code surface.
 
-### 6.9 Surface-Specific Workflow Integrations
+### 6.8 Surface-Specific Workflow Integrations
 
 Integration into the places where work actually happens. Each surface has its own integrations:
 
@@ -511,7 +483,7 @@ Integration into the places where work actually happens. Each surface has its ow
 
 Each integration ultimately routes through the Subject-Aware Evaluation Engine; the integration is responsible only for normalizing its input.
 
-### 6.10 Rule Intelligence & Observability
+### 6.9 Rule Intelligence & Observability
 
 Analytics, health scoring, and automated improvement recommendations.
 
@@ -521,16 +493,16 @@ Analytics, health scoring, and automated improvement recommendations.
 - **Recommender**: Automated suggestions — retire dormant rules, clarify ambiguous ones, escalate persistent violations, strengthen SHOULD→MUST.
 - **Norm Lineage Tracker**: Detects upstream amendments (regulatory changes) and lists affected downstream rules with proposed updates.
 
-### 6.11 Persona-Specific Operator Consoles
+### 6.10 Persona-Specific Operator Consoles
 
 The frontend is reorganized so each persona sees a console aligned with its workflow.
 
 ```
 apps/frontend/app/
-├── (admin)/                 # Rule administrators (intelligence, health, full corpus)
-├── (engineering)/           # Engineering operations (PR/CI integration, code rules, agent hooks)
+├── (admin)/                 # Rule administrators (tenants, users)
+├── (dashboard)/             # Main operator console (rules, search, intelligence, agents, etc.)
 ├── (legal)/                 # Legal counsel
-│   ├── contracts/           # Contracts under review
+│   ├── contracts/review/    # Contracts under review
 │   ├── clauses/             # Clause search and conflict detection
 │   ├── lineage/             # Norm Lineage Viewer
 │   └── redlines/            # Revision diffs
@@ -542,12 +514,16 @@ apps/frontend/app/
 ├── (finance)/               # Finance, accounting, audit
 │   ├── transactions/        # Transaction-vs-rule audit
 │   ├── expenses/            # Expense-report compliance
-│   └── tax/                 # Tax-related rule applicability
-└── (compliance)/            # Compliance officers, executive
-    ├── overview/            # Cross-organization compliance state
-    ├── audits/              # Audit trail browser
-    ├── regulatory/          # Regulatory-change response status
-    └── incidents/           # Cross-domain incident view
+│   ├── controls/            # Financial controls
+│   └── audit/               # Finance audit view
+├── (compliance)/            # Compliance officers, executive
+│   ├── bundles/             # Compliance bundle status
+│   ├── audit-packets/       # Audit packet management
+│   ├── exceptions/          # Exception tracking
+│   └── regulatory/          # Regulatory-change response status
+├── (marketing)/             # Marketing compliance
+│   └── creatives/review/    # Creative compliance review
+└── (security)/              # Security operations
 ```
 
 **Hero metric per persona** (set in §11):
@@ -558,7 +534,7 @@ apps/frontend/app/
 - Finance: this month's transaction violations, expense-rejection rate, tax-rule-change impact
 - Compliance: regulatory-amendment-to-internal-rule lead time, regulations with active internal mappings, open critical alerts
 
-### 6.12 Norm Lineage Tracker
+### 6.11 Norm Lineage Tracker
 
 A first-class subsystem that:
 
@@ -568,7 +544,7 @@ A first-class subsystem that:
 - Displays the lineage as a navigable tree in the `/legal/lineage/` and `/compliance/regulatory/` pages.
 - Computes the "regulatory-change response time" KPI.
 
-### 6.13 Multi-Language Support
+### 6.12 Multi-Language Support
 
 - `Rule.locale` defines the canonical language.
 - `Rule.statement_translations` holds parallel-language versions (e.g., EN/JA contracts).
@@ -576,7 +552,7 @@ A first-class subsystem that:
 - A periodic worker (`verify_translation_drift`) uses the LLM to compare translations and flags semantic drift for human review.
 - Per-pack default locale is configurable; Japanese is supported as a first-class locale alongside English.
 
-### 6.14 Extraction Pipeline
+### 6.13 Extraction Pipeline
 
 The extraction pipeline ingests source documents (contracts, regulations, policy PDFs, employee handbooks, marketing checklists, code documentation) and proposes candidate rules through a multi-stage process:
 
@@ -590,7 +566,7 @@ The extraction pipeline ingests source documents (contracts, regulations, policy
 8. **Relationship suggestion**: propose `refines`, `derives_from`, `conflicts_with`, `succeeds` candidates against the existing corpus.
 9. **Human review**: every candidate goes through approve / edit / dismiss.
 
-### 6.15 Automatic Rule Discovery
+### 6.14 Automatic Rule Discovery
 
 Bootstraps rules that already exist implicitly in an organization's artifacts. Source analyzers cover:
 
@@ -606,7 +582,7 @@ Bootstraps rules that already exist implicitly in an organization's artifacts. S
 
 Patterns detected independently from multiple sources receive higher confidence. Gemini refines patterns into structured rule candidates. Humans approve.
 
-### 6.16 Correction Feedback Loop
+### 6.15 Correction Feedback Loop
 
 Captures human corrections of AI-generated work — initially code, generalized to any surface — and converts them into rule improvements.
 
@@ -616,11 +592,11 @@ Captures human corrections of AI-generated work — initially code, generalized 
 - **One-click approval**: approved drafts start with `maturity_level = experimental` (shadow mode).
 - **Effectiveness tracking**: precision, prevention rate, and adoption feed the auto-promotion / auto-demotion workers.
 
-### 6.17 Rule Enforcement Gateway
+### 6.16 Rule Enforcement Gateway
 
-Event-driven, zero-code rule enforcement via webhooks. Receives events at `/api/v1/gateway/ingest/{source}`, normalizes them via the Connector layer into Subjects, matches enforcement policies, and triggers evaluations. Default normalizers cover GitHub, Slack, Email, Salesforce, Workday, SAP, DocuSign, Kintone, Teams, and a generic webhook normalizer.
+Event-driven, zero-code rule enforcement via webhooks. Receives events at `/api/v1/gateway/ingest/{source}`, normalizes them into Subjects, matches enforcement policies, and triggers evaluations.
 
-### 6.18 Other Components (Continued)
+### 6.17 Other Components (Continued)
 
 The remaining components from the prior architecture are preserved and operate identically across surfaces:
 
@@ -692,7 +668,7 @@ The expense reporting system submits new claims to the Rule Repository in `posth
 
 ### 8.4 Communication Compliance
 
-Slack and email connectors send messages to the Rule Repository in `sidecar` mode. The Communication Pack holds rules for harassment, customer-data confidentiality, regulated-substance discussion, and product-claim accuracy. Flagged messages are escalated to the compliance console without blocking the sender's normal workflow.
+Slack and email messages are sent to the Rule Repository in `sidecar` mode. The Communication Pack holds rules for harassment, customer-data confidentiality, regulated-substance discussion, and product-claim accuracy. Flagged messages are escalated to the compliance console without blocking the sender's normal workflow.
 
 ### 8.5 Procurement and Vendor Management
 
@@ -809,89 +785,32 @@ Batched Evaluation, Evaluation Persistence, Outcome-Oriented Dashboard, Correcti
 
 Collaborative Governance Workflow (Proposals), Autonomous Agent Governance.
 
-### Phase 7 — Stop the Bleeding [PRIORITY]
+### Phase 7 — Stop the Bleeding [COMPLETE]
 
-Goal: prevent further drift while planning the structural fix.
+Repositioned the project as a cross-organizational normative platform. README rewrite, cross-org sample data, Contract Pack v0.1 and HR Pack v0.1 seed data.
 
-- **Freeze new feature work** on Agent Governance, Federation, Snapshots additions. In-flight Phase 5–6 sub-features may complete; new ones do not start.
-- **Rewrite README** to lead with cross-organizational mission. Code becomes one example, not the cover story.
-- **Update PROJECT.md §6** to position Code-Aware Evaluation as the Code Surface Adapter, not the differentiator.
-- **Set GitHub About**: "Cross-organizational normative management for laws, contracts, policies, and operations."
-- **Add Topics**: `governance`, `compliance`, `regtech`, `legal-tech`, `policy-management`, `rule-engine`, `semantic-governance`, `llm-as-judge`. Remove or relegate code-only topics.
-- **Add Contract Pack v0.1 seed** (3 NDA-derived rules, 3 MSA-derived rules) and **HR Pack v0.1 seed** (5 Labor-Standards-Act-derived rules). Make `make seed` install these alongside (not after) code samples.
+### Phase 8 — Surface Abstraction [COMPLETE]
 
-**Value delivered**: "The project is once again recognizable as a cross-organizational normative platform."
+Introduced `Subject`, `Surface`, `Actor` domain types. Reorganized the evaluation core with 7 surface adapters (code, contract, human_action, transaction, document, message, generic). Surface-specific prompt hints. `POST /api/v1/evaluate` accepts `surface` parameter. `applies_to_surfaces`, `norm_tier`, `norm_authority`, `locale`, `statement_translations`, `tech_scope`, `org_scope` added to the Rule model. Migrations 030-031.
 
-### Phase 8 — Surface Abstraction
+### Phase 9 — Contract Pack [COMPLETE]
 
-Goal: introduce the `Subject` / `Surface` model and reorganize the evaluation core.
+Shipped the Contract Pack end-to-end: surface adapter (`surfaces/contract/`), ingestion tools (`clause_normalizer.py`, `redline_differ.py`, `bilingual_pairer.py`), 30+ NDA/MSA/SOW template clauses, `(legal)` persona pages (contracts, clauses, redlines, lineage), CLI tool (`rulerepo-review-contract`).
 
-- Define `Surface`, `Subject`, `Actor` in `domain/evaluation.py`.
-- Move `diff_parser.py` and the code-specific portions of `context_assembler.py` into `services/evaluation/surfaces/code/`.
-- Author `evaluate_subject.txt` (universal prompt) with surface-specific hint files.
-- Add `POST /api/v1/evaluate/{surface}` endpoint; keep `POST /api/v1/evaluate` as backwards-compatible code path.
-- Add `applies_to_surfaces` to the Rule model (migration); backfill existing rules to `[Surface.CODE]`.
-- Split `scope` into `tech_scope` and `org_scope` (migration with heuristic split + manual review).
-- Replace `agent_id` with `Actor` reference (migration with backwards-compatible alias).
+### Phase 10 — Norm Lineage and Multi-Language [COMPLETE]
 
-**Value delivered**: "The evaluation engine is surface-agnostic. New domains are now an additive change, not a core refactor."
+Norm Lineage walker (`services/norm_lineage/walker.py`) with upstream/downstream traversal. Amendment propagation worker. Norm Lineage Viewer component. API endpoints (`GET /lineage/{rule_id}/upstream|downstream`). Locale and `statement_translations` on Rule. Bilingual drift checker worker (`verify_translation_drift`). Japanese sample rules (労働基準法, 個人情報保護法, 会社法, 税法).
 
-### Phase 9 — First Non-Code Domain Pack (Contract)
+### Phase 11 — HR and Communication Packs [COMPLETE]
 
-Goal: ship the cross-organizational mission with concrete proof.
+HR Attendance Pack (`domain_packs/hr_attendance/`): human_action surface, leave/overtime/compliance rules, `(hr)` persona pages with attendance, leave, lifecycle, policies, violations views. Communication Pack (`domain_packs/communication/`): message surface, communication compliance rules. Expense Pack (`domain_packs/expense/`): transaction surface, expense/invoice/budget rules, `(finance)` persona pages. CLI tool (`rulerepo-check-action`).
 
-- Build **Contract Pack** end-to-end:
-  - Surface adapter: `surfaces/contract/`
-  - Ingestion: `docx_clause_extractor.py`, `redline_differ.py`, `clause_normalizer.py`
-  - Rules: 30+ template clauses (NDA, MSA, SOW)
-  - UI: `(legal)/contracts`, `(legal)/clauses`, `(legal)/redlines`
-  - Sample data: 3 anonymized contracts across NDA / MSA / SOW
-- Add `(legal)` persona pages.
-- Run a real legal-team pilot. Publish results.
-
-**Value delivered**: "Legal teams have a working contract-review tool."
-
-### Phase 10 — Norm Lineage and Multi-Language
-
-Goal: support regulatory tracking and bilingual operations.
-
-- Add `norm_tier` and `norm_authority` columns. Build the Norm Lineage Viewer.
-- Implement upstream-amendment propagation: when a `LAW` rule's `effective_period.valid_until` is updated, all transitive `derives_from` descendants are flagged.
-- Add `locale` and `statement_translations` to the Rule model.
-- Implement the bilingual drift checker (worker).
-- Add Japanese sample rules sourced from 労働基準法 / 個人情報保護法 / 会社法.
-
-**Value delivered**: "Regulatory changes are tracked. Bilingual operations are supported."
-
-### Phase 11 — Second and Third Domain Packs
-
-Goal: prove the Domain Pack architecture is general.
-
-- **HR Pack**: HRIS connector (Workday at minimum), `human_action` adapter, 36-agreement tracking, overtime-violation alerting, `(hr)` persona pages.
-- **Communication Pack**: Slack and email connectors, customer-correspondence compliance, harassment / data-leak scanning.
-- **Finance Pack** (alongside or after): expense audit, transaction adapter, `(finance)` persona pages.
-
-**Value delivered**: "Three domain packs in production. The architecture is proven."
-
-### Phase 12 — Connector Layer Maturation
-
-Goal: integrate with the business systems where work actually happens.
-
-- Implement Salesforce, Workday, SAP, DocuSign, Kintone, Teams connectors per pilot demand.
-- Standardize the `SubjectConnector` ABC and document the contract.
-- Add `(compliance)` persona console with cross-domain views.
-
-**Value delivered**: "The Rule Repository works inside the SaaS landscape, not just GitHub."
-
-### Phase 13 — Self-Improving Cross-Organization Governance
-
-Goal: organizations co-improve through anonymized aggregate insights.
+### Phase 12 — Future
 
 - Anonymized cross-organization effectiveness metrics (opt-in).
-- Pack-level continuous improvement: highest-effectiveness pack version becomes the public canonical.
-- Federated correction feedback (opt-in): corrections from one organization improve the upstream pack for all subscribers.
-
-**Value delivered**: "Organizations using the Rule Repository improve faster together than alone."
+- Pack-level continuous improvement.
+- Federated correction feedback.
+- Additional domain packs: procurement, compliance, governance, marketing.
 
 ---
 
@@ -949,7 +868,6 @@ Goal: organizations co-improve through anonymized aggregate insights.
 - **Federation** — organizational hierarchy axis (org → team → project).
 - **Domain Pack** — a vertical bundle of rules, adapters, prompts, UI, and samples for one business domain.
 - **Surface Adapter** — a pluggable module that translates a surface's input format into Subjects and provides surface-specific hints.
-- **Connector** — an adapter to an external business system that emits events as Subjects.
 - **Meta-rule** — a rule whose subject is other rules.
 - **LLM-as-Judge** — the architectural pattern of using an LLM to evaluate compliance with a natural-language rule.
 - **Preflight / Posthoc / Sidecar** — three modes of integration: before-action, after-action, parallel-observation.
@@ -960,15 +878,16 @@ Goal: organizations co-improve through anonymized aggregate insights.
 
 ## 15. Open Questions
 
-These will be resolved during Phase 7–9:
-
-- What is the canonical schema for `org_scope`? Free-form tags vs. structured department/role tuples.
-- How are upstream-norm-amendment signals delivered? Manual UI entry only, or optional integrations with official sources?
 - What is the SLO for `preflight` evaluations by surface? This drives model selection and caching strategy per surface.
 - Should the audit log be exposed to tenants in raw form, or only as derived reports?
-- What is the multi-tenant isolation model? Single-tenant first, or multi-tenant from day one?
-- How are deprecated rules archived without losing the ability to re-evaluate historical events?
 - For bilingual rules, when EN and JA say slightly different things, which is canonical? Is the canonical locale always the rule's `locale` field, or can per-jurisdiction overrides apply?
+
+**Resolved:**
+
+- `org_scope` uses free-form tags (implemented in Phase 8).
+- Upstream-norm-amendment signals are delivered via manual entry plus the `propagate_norm_amendment` worker (Phase 10).
+- Multi-tenant isolation uses tenant-based RLS coexisting with classification-based RLS (implemented).
+- Deprecated rules are retired via `effective_period.valid_until`; past evaluations remain in the audit log (implemented).
 
 ---
 

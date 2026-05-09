@@ -2,18 +2,18 @@
 
 ## System Overview
 
-The Rule Repository is a monorepo with 12 services orchestrated via Docker Compose:
+The Rule Repository is a monorepo with 10 services orchestrated via Docker Compose (Tier 3):
 
 | Component | Tech | Port | Purpose |
 |---|---|---|---|
-| Backend API | Python 3.13 + FastAPI | 8000 | REST, Evaluate, Intent, Gateway, Intelligence, Discovery, Feedback, Federation, Playground, Alerts, Snapshots, Departments, Classification, Audit, Compliance, Facts, Risks, Regulatory, Attestation, Connectors, SCIM, Tenants APIs (28+ routers) |
+| Backend API | Python 3.13 + FastAPI | 8000 | 34 registered API routers covering rules, evaluation, search, discovery, governance, compliance, and more |
 | MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 12+ tools) |
-| Frontend | TypeScript + Next.js 15 | 3000 | Compliance dashboard + 30+ operator pages, persona-aware, English/Japanese i18n |
-| PostgreSQL | 17-alpine | 5432 | System of record (rules, revisions, audit log, evaluations, departments, classifications, 35+ ORM models) with Row-Level Security |
+| Frontend | TypeScript + Next.js 15 | 3000 | Operator console with 50+ pages, 9 persona portals, English/Japanese i18n |
+| PostgreSQL | 17-alpine | 5432 | System of record (35+ ORM models, 31 migrations) with Row-Level Security |
 | Elasticsearch | 8.17 | 9200 | Full-text + vector search with document-level security |
 | Neo4j | 5-community | 7474/7687 | Rule relationship graph |
 | Redis | 7-alpine | 6379 | Job queue for arq background worker |
-| arq worker | Python 3.13 + arq | -- | Background cron jobs (health scores, recommendations, correction stats, rule promotion, verdict drift, conflict scanning, policy review cycle, weekly digest) + alert generation |
+| arq worker | Python 3.13 + arq | -- | 7 scheduled cron jobs + on-demand tasks |
 | es-setup | curlimages/curl | -- | One-shot: creates ES index templates on startup |
 | neo4j-setup | neo4j:5-community | -- | One-shot: applies Cypher constraints on startup |
 
@@ -25,7 +25,7 @@ The Rule Repository is a monorepo with 12 services orchestrated via Docker Compo
 src/rulerepo_server/
 ├── main.py                         # FastAPI app factory, router registration
 ├── api/
-│   └── v1/                         # 28+ API routers
+│   └── v1/                         # 34 registered API routers
 │       ├── rules.py                #   CRUD, retire, revisions, relationships, graph
 │       ├── search.py               #   fulltext, vector, hybrid, category, context
 │       ├── evaluation.py           #   evaluate, quick, applicable-rules, get by ID
@@ -51,7 +51,6 @@ src/rulerepo_server/
 │       ├── ask.py                  #   conversational assistant (RR-005)
 │       ├── attestation.py          #   attestation campaigns (RR-014)
 │       ├── compliance.py           #   compliance workflows (RR-011,015)
-│       ├── connectors.py           #   connector registry (RR-018)
 │       ├── cost.py                 #   LLM cost tracking (RR-027)
 │       ├── facts.py                #   fact store queries (RR-003)
 │       ├── operability.py          #   health, DR endpoints (RR-028)
@@ -60,7 +59,8 @@ src/rulerepo_server/
 │       ├── scim.py                 #   SCIM 2.0 protocol (RR-007)
 │       ├── tenants.py              #   tenant management (RR-007)
 │       ├── translations.py         #   polyglot translation management (RR-020)
-│       └── upcoming_changes.py     #   scheduled rule changes (RR-036)
+│       ├── upcoming_changes.py     #   scheduled rule changes (RR-036)
+│       └── lineage.py             #   norm lineage upstream/downstream
 ├── core/
 │   ├── config.py                   # Settings (Pydantic BaseSettings)
 │   ├── logging.py                  # structlog JSON logger
@@ -69,7 +69,6 @@ src/rulerepo_server/
 │   ├── llm.py                      # LLM model config (model IDs, thinking levels)
 │   ├── auth.py                     # Authentication & authorization (API key, roles)
 │   ├── middleware.py               # RequestIdMiddleware
-│   ├── telemetry.py                # OpenTelemetry instrumentation
 │   ├── db_context.py               # with_user_context() for RLS session setup
 │   ├── pii/                        # PII redaction
 │   │   ├── redactor.py             #   PII masking in logs and outputs
@@ -138,11 +137,25 @@ src/rulerepo_server/
 │   │   │   ├── communication/
 │   │   │   ├── document_diff/
 │   │   │   └── documentation/
-│   │   └── prompts/                #   Evaluation prompt templates
+│   │   ├── prompts/                #   Evaluation prompt templates
+│   │   └── surfaces/              #   Surface abstraction (Phase 10+)
+│   │       ├── base.py             #     SurfaceAdapter ABC, EvaluationSubjectPayload
+│   │       ├── code/               #     Code surface (diffs, file changes)
+│   │       ├── contract/           #     Contract surface (clauses, NDAs)
+│   │       ├── document/           #     Document surface (policies, handbooks)
+│   │       ├── generic/            #     Generic surface (free-form facts)
+│   │       ├── human_action/       #     Human action surface (overtime, leave)
+│   │       ├── message/            #     Message surface (email, Slack, Teams)
+│   │       └── transaction/        #     Transaction surface (expenses, invoices)
+│   ├── norm_lineage/               # Norm derivation chain traversal
+│   │   └── walker.py               #   upstream/downstream DERIVES_FROM walks
 │   ├── extraction/                 # Document ingestion + rule extraction
 │   │   ├── pipeline.py             #   Main extraction orchestrator
 │   │   ├── legal_pipeline.py       #   Legal document-specific pipeline
 │   │   ├── pdf_sanitizer.py        #   PDF content cleaning
+│   │   ├── clause_normalizer.py    #   Normalize clause text
+│   │   ├── redline_differ.py       #   Contract version diffing
+│   │   ├── bilingual_pairer.py     #   Match translated rule pairs
 │   │   └── contract/               #   Contract-specific extraction
 │   │       ├── clause_classifier.py
 │   │       ├── clause_segmenter.py
@@ -169,13 +182,6 @@ src/rulerepo_server/
 │   │   │   ├── code_patterns.py
 │   │   │   ├── linter_config.py
 │   │   │   └── policy_document.py
-│   │   ├── connectors/             #   External source connectors
-│   │   │   ├── confluence.py
-│   │   │   ├── notion.py
-│   │   │   ├── google_drive.py
-│   │   │   ├── sharepoint.py
-│   │   │   ├── egov.py
-│   │   │   └── eurlex.py
 │   │   └── sources/                #   Specialized source handlers
 │   │       ├── contract_docx.py
 │   │       ├── policy_handbook.py
@@ -292,13 +298,21 @@ src/rulerepo_server/
 │       ├── signature.py
 │       └── review_formatter.py
 ├── workers/
-│   ├── settings.py                 # arq WorkerSettings: 9+ cron jobs
+│   ├── settings.py                 # arq WorkerSettings: 7 cron jobs + on-demand tasks
 │   ├── tasks.py                    # On-demand async tasks
 │   ├── policy_review_cycle.py      # Policy review alerting
 │   ├── conflict_scanner.py         # Background conflict detection
 │   ├── verdict_drift.py            # Verdict drift monitoring
 │   ├── polyglot_validator.py       # Multi-language validation
-│   └── archival.py                 # Rule archival and retention
+│   ├── archival.py                 # Rule archival and retention
+│   ├── norm_lineage_propagation.py # Propagate norm changes downstream
+│   └── translation_drift.py       # Detect translation locale drift
+├── domain_packs/                   # Bundled rule packs per domain
+│   ├── code/                       #   Engineering rules pack
+│   ├── contract/                   #   Legal contract rules pack
+│   ├── hr_attendance/              #   HR attendance/leave pack
+│   ├── expense/                    #   Finance expense/invoice pack
+│   └── communication/              #   Communications policy pack
 └── schemas/                        # Pydantic request/response models
     ├── rule.py, common.py, search.py, evaluation.py, extraction.py
     ├── intent.py, intelligence.py, discovery.py, feedback.py
@@ -468,7 +482,7 @@ GitHub/Slack --> Gateway normalizer --> PolicyEngine match --> EvaluationService
 
 ### Rule Discovery
 ```
-File contents --> DiscoveryService.start_scan --> Analyzers (claude_md, linter_config, code_patterns, policy_document, connectors) --> PatternDetector (dedup+score) --> CandidateGenerator --> DiscoveryCandidateModel (pending) --> approve/dismiss
+File contents --> DiscoveryService.start_scan --> Analyzers (claude_md, linter_config, code_patterns, policy_document) --> PatternDetector (dedup+score) --> CandidateGenerator --> DiscoveryCandidateModel (pending) --> approve/dismiss
 ```
 
 ### Correction Feedback
@@ -551,7 +565,7 @@ Docker Compose files:
 
 ## Alembic Migrations
 
-26 migrations in `apps/server/alembic/versions/` (001-026, skipping 020):
+31 migrations in `apps/server/alembic/versions/` (001-031, skipping 020):
 
 | Migration | Description |
 |---|---|
@@ -580,6 +594,11 @@ Docker Compose files:
 | `024_add_tenant_cost_polyglot` | Multi-tenancy, cost tracking, and polyglot validation fields |
 | `025_add_regulatory_severity` | Regulatory severity field for compliance-domain rules |
 | `026_add_subject_jurisdiction_fields` | Subject type and jurisdiction fields (Phase 7) |
+| `027_rename_subject_kinds` | Rename SubjectType to SubjectKind alignment |
+| `028_add_departments_capacities` | Departments, capacity assignments, rule ownerships |
+| `029_add_classification_column` | Classification column on rules, evaluations, audit_log |
+| `030_add_surface_aware_rule_fields` | Surface-aware fields on rules (norm_tier, norm_authority, etc.) |
+| `031_add_surface_aware_evaluation_fields` | Surface-aware fields on evaluations |
 
 ---
 
