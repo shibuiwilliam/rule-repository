@@ -1,7 +1,7 @@
 """EvaluationService — orchestrates the full evaluation pipeline.
 
-Per CLAUDE_ENHANCE.md §1.4: Context Assembly → Rule Selection → Evaluation → Aggregation.
-All LLM calls are audited. Results are cached.
+Supports both the legacy code-centric API and the new surface-aware API.
+See CLAUDE.md §14.2.3.
 """
 
 from __future__ import annotations
@@ -28,9 +28,13 @@ logger = get_logger(__name__)
 
 
 class EvaluationService:
-    """Orchestrates the Code-Aware Evaluation Engine pipeline.
+    """Orchestrates the Subject-Aware Evaluation Engine pipeline.
 
-    Pipeline: assemble context → select rules → evaluate each rule → aggregate verdicts.
+    Supports two entry points:
+    - ``evaluate()``: legacy code-centric API (backwards compatible)
+    - ``evaluate_subject()``: new surface-aware API (Phase 8+)
+
+    Pipeline: parse subject → select rules → evaluate each rule → aggregate verdicts.
     """
 
     def __init__(
@@ -282,3 +286,226 @@ class EvaluationService:
             modality_filter=["MUST", "MUST_NOT", "SHOULD", "MAY", "INFO"],
             scope=scope,
         )
+
+    # ------------------------------------------------------------------
+    # Surface-aware evaluation (Phase 8+)
+    # ------------------------------------------------------------------
+
+    async def evaluate_subject(
+        self,
+        *,
+        surface: str,
+        subject_payload: dict[str, Any],
+        mode: str = "preflight",
+        max_rules: int = 20,
+        severity_min: str = "MEDIUM",
+        scope: str | None = None,
+    ) -> EvaluationResult:
+        """Evaluate a subject against applicable rules using the surface adapter.
+
+        This is the new surface-aware entry point. It dispatches to the
+        appropriate surface adapter for parsing, then runs the universal
+        evaluation pipeline.
+
+        Args:
+            surface: Surface name (e.g., "code", "contract", "human_action").
+            subject_payload: Surface-specific payload dict.
+            mode: "preflight", "posthoc", or "sidecar".
+            max_rules: Maximum rules to evaluate.
+            severity_min: Minimum rule severity to include.
+            scope: Optional scope override (if not provided, adapter resolves it).
+
+        Returns:
+            EvaluationResult with overall verdict and per-rule breakdowns.
+        """
+        from rulerepo_server.services.evaluation.surfaces import get_surface_adapter
+
+        start_time = time.time()
+
+        # 1. Resolve surface adapter and parse payload
+        adapter = get_surface_adapter(surface)
+        subject = await adapter.parse(subject_payload)
+
+        # Resolve scope from adapter if not explicitly provided
+        resolved_scope = scope or (adapter.resolve_scopes(subject_payload) or [None])[0]
+
+        # 2. Build an EvaluationContext from the parsed subject
+        # This bridges the surface-aware API to the existing pipeline
+        context = assemble_context(
+            diff=subject.payload.get("diff"),
+            files=None,
+            facts={**subject.facts, **subject.payload},
+            intent=subject.description,
+            scope=resolved_scope,
+            actor=subject.actor.identifier if subject.actor else None,
+        )
+
+        # 3. Select applicable rules
+        modality_filter = ["MUST", "MUST_NOT"]
+        if mode == "posthoc":
+            modality_filter = ["MUST", "MUST_NOT", "SHOULD"]
+        elif mode == "sidecar":
+            modality_filter = ["MUST", "MUST_NOT", "SHOULD", "MAY"]
+
+        # Map surface to subject_type for rule selector filtering
+        surface_to_subject_type: dict[str, str] = {
+            "code": "code_diff",
+            "contract": "clause_set",
+            "human_action": "event",
+            "transaction": "transaction",
+            "document": "document",
+            "message": "creative",  # closest existing SubjectKind
+            "generic": None,
+        }
+        subject_type = surface_to_subject_type.get(surface)
+
+        rules = await select_rules(
+            self._session,
+            context,
+            max_rules=max_rules,
+            severity_min=severity_min,
+            modality_filter=modality_filter,
+            scope=resolved_scope,
+            subject_type=subject_type,
+        )
+
+        logger.info(
+            "surface_evaluation_rules_selected",
+            surface=surface,
+            rules_count=len(rules),
+            mode=mode,
+            subject_id=subject.identifier,
+        )
+
+        # 4. Early return if no rules or no LLM
+        if not rules:
+            return aggregate_verdicts([], [], 0)
+        if not self._gemini_client:
+            logger.warning("evaluation_no_llm_client", surface=surface)
+            return aggregate_verdicts([], [], 0)
+
+        # 5. Resolve graph relationships
+        rule_id_list = [r["id"] for r in rules]
+        try:
+            from rulerepo_server.core.feature_flags import get_feature_flags
+
+            flags = get_feature_flags()
+            if flags.neo4j_enabled:
+                from rulerepo_server.adapters.neo4j.client import get_neo4j_driver
+                from rulerepo_server.adapters.neo4j.graph_repo import Neo4jGraphRepository
+
+                graph_repo = Neo4jGraphRepository(get_neo4j_driver())
+            else:
+                from rulerepo_server.adapters.graph.postgres_adjacency import PostgresGraphRepository
+
+                graph_repo = PostgresGraphRepository(self._session)
+            plan = await resolve_evaluation_plan(rule_id_list, graph_repo)
+        except Exception as exc:
+            logger.warning("graph_resolution_skipped", error=str(exc))
+            from rulerepo_server.services.evaluation.graph_resolver import EvaluationPlan
+
+            plan = EvaluationPlan(ordered_rules=rule_id_list)
+
+        # 6. Evaluate rules
+        cache_repo = None
+        try:
+            from rulerepo_server.adapters.postgres.cache_repo import LLMCacheRepository
+
+            cache_repo = LLMCacheRepository(self._session)
+        except Exception:
+            pass
+
+        batch_results = await evaluate_batch(
+            rules,
+            context,
+            self._gemini_client,
+            cache_repo=cache_repo,
+            evaluation_plan=plan,
+        )
+
+        verdicts = []
+        model_ids: list[str] = []
+        total_rule_latency = 0
+        for verdict, model_id, latency_ms in batch_results:
+            verdicts.append(verdict)
+            model_ids.append(model_id)
+            total_rule_latency += latency_ms
+
+        # 7. Aggregate
+        total_latency = int((time.time() - start_time) * 1000)
+        if plan.overrides or plan.conflicts or plan.skip_if_denied:
+            rule_dict_map = {r["id"]: r for r in rules}
+            overall_verdict, conflict_resolutions = aggregate_with_conflicts(verdicts, plan, rule_dict_map)
+            eval_result = aggregate_verdicts(verdicts, model_ids, total_latency)
+            eval_result.overall_verdict = overall_verdict
+            eval_result.conflict_resolutions = [
+                {
+                    "rule_a_id": cr.rule_a_id,
+                    "rule_b_id": cr.rule_b_id,
+                    "relationship": cr.relationship,
+                    "winner_id": cr.winner_id,
+                    "reason": cr.reason,
+                    "discarded_verdict": cr.discarded_verdict,
+                }
+                for cr in conflict_resolutions
+            ]
+        else:
+            eval_result = aggregate_verdicts(verdicts, model_ids, total_latency)
+
+        # 8. Persist evaluation records with surface metadata
+        try:
+            from rulerepo_server.adapters.postgres.models import (
+                DEFAULT_PROJECT_ID,
+                EvaluationRecordModel,
+            )
+
+            eval_scope = resolved_scope or ""
+            latency_per_rule = [total_rule_latency // max(len(verdicts), 1)] * len(verdicts)
+            for i, (v, mid) in enumerate(zip(verdicts, model_ids, strict=False)):
+                record = EvaluationRecordModel(
+                    project_id=DEFAULT_PROJECT_ID,
+                    rule_id=v.rule_id,
+                    verdict=v.verdict.value,
+                    confidence=v.confidence,
+                    latency_ms=latency_per_rule[i] if i < len(latency_per_rule) else 0,
+                    scope=eval_scope,
+                    input_type=surface,
+                    model_id=mid,
+                    cached=False,
+                )
+                self._session.add(record)
+            await self._session.flush()
+        except Exception as exc:
+            logger.warning("evaluation_persistence_failed", error=str(exc))
+
+        # 9. Audit log with surface metadata
+        actor_str = subject.actor.identifier if subject.actor else "system"
+        await self._audit_repo.append(
+            action="evaluate",
+            actor=actor_str,
+            resource_type="evaluation",
+            resource_id=eval_result.evaluation_id,
+            details={
+                "overall_verdict": eval_result.overall_verdict.value,
+                "rules_evaluated": eval_result.rules_evaluated,
+                "rules_violated": eval_result.rules_violated,
+                "mode": mode,
+                "surface": surface,
+                "subject_id": subject.identifier,
+                "locale": subject.locale,
+                "model_ids": list(set(model_ids)),
+                "latency_ms": total_latency,
+            },
+        )
+
+        logger.info(
+            "surface_evaluation_complete",
+            evaluation_id=eval_result.evaluation_id,
+            surface=surface,
+            verdict=eval_result.overall_verdict.value,
+            rules_evaluated=eval_result.rules_evaluated,
+            violations=eval_result.rules_violated,
+            latency_ms=total_latency,
+        )
+
+        return eval_result

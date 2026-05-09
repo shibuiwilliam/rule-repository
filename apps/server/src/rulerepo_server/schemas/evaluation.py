@@ -124,6 +124,29 @@ class EvaluateRequest(BaseModel):
         )
 
 
+class SubjectEvaluateRequest(BaseModel):
+    """Surface-aware evaluation request (Phase 8+).
+
+    Accepts a subject payload specific to the surface type specified
+    in the URL path. See CLAUDE.md §14.2.3.
+    """
+
+    subject: dict[str, Any] = Field(
+        ...,
+        description="Surface-specific subject payload.",
+    )
+    mode: str = Field(
+        default="preflight",
+        description="Evaluation mode: preflight | posthoc | sidecar",
+    )
+    max_rules: int = Field(default=20, ge=1, le=100)
+    severity_min: str = Field(default="MEDIUM")
+    scope: str | None = Field(
+        default=None,
+        description="Rule scope filter. If omitted, the surface adapter resolves it.",
+    )
+
+
 class QuickEvaluateRequest(BaseModel):
     """Simplified request for non-code evaluations."""
 

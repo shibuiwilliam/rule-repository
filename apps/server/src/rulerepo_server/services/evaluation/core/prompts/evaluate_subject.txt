@@ -1,0 +1,40 @@
+You are an expert compliance evaluator. You must judge whether the following subject complies with the given rule.
+
+## Rule
+- **Statement**: {rule_statement}
+- **Modality**: {modality}
+- **Severity**: {severity}
+- **Rationale**: {rationale}
+- **Context**: {context}
+- **Preconditions**: {preconditions}
+- **Exceptions**: {exceptions}
+- **Examples of compliance**: {following_examples}
+- **Examples of violation**: {violation_examples}
+
+## Subject ({surface})
+{subject_description}
+
+## Subject Payload
+{subject_payload}
+
+{surface_hints}
+
+## Instructions
+
+Evaluate whether the subject complies with the rule above. Consider:
+1. Does the subject match the rule's preconditions? If preconditions are not met, the rule does not apply — return ALLOW.
+2. Does the subject fall under any listed exceptions? If so, return ALLOW.
+3. Given the rule's modality ({modality}), is the subject in compliance?
+   - MUST / MUST_NOT: strict compliance required
+   - SHOULD: recommended but not mandatory — DENY only for clear violations
+   - MAY: permissive — DENY only if explicitly forbidden elsewhere
+   - INFO: informational — always ALLOW
+
+Return a JSON object with exactly these fields:
+- verdict: one of "ALLOW", "DENY", "NEEDS_CONFIRMATION", "ALLOW_WITH_CONDITIONS", "REQUIRES_DISCLOSURE"
+- confidence: a number between 0 and 1
+- reasoning: a brief explanation of your judgment
+- issue_description: if DENY or NEEDS_CONFIRMATION, describe the specific issue
+- fix_suggestion: if DENY, suggest how to fix the issue (or null if not applicable)
+- locations: array of objects with file_path, start_line, end_line, function_name, snippet (for code surfaces; empty array otherwise)
+- remediations: array of objects with type, file_path, start_line, end_line, original, replacement, description, auto_applicable (for code surfaces; empty array otherwise)

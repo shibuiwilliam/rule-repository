@@ -1,7 +1,7 @@
-"""Domain models for the Code-Aware Evaluation Engine.
+"""Domain models for the Subject-Aware Evaluation Engine.
 
 Pure domain objects with no external dependencies.
-Per CLAUDE_ENHANCE.md §1.3: these live in domain/ and depend on nothing else.
+Per CLAUDE.md §14.2: Subject, Surface, and Actor are the core abstractions.
 """
 
 from __future__ import annotations
@@ -9,7 +9,41 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
+
+
+class Surface(StrEnum):
+    """The kind of thing being evaluated — one of several first-class surfaces.
+
+    Each surface has a corresponding adapter under services/evaluation/surfaces/.
+    See PROJECT.md §5.2 and CLAUDE.md §14.2.1.
+    """
+
+    CODE = "code"
+    CONTRACT = "contract"
+    HUMAN_ACTION = "human_action"
+    TRANSACTION = "transaction"
+    DOCUMENT = "document"
+    MESSAGE = "message"
+    GENERIC = "generic"
+
+
+@dataclass(frozen=True)
+class Actor:
+    """Who is acting or being evaluated — human, system, or AI agent.
+
+    Replaces the legacy ``agent_id`` string field with a structured model
+    that works for all actor kinds. See CLAUDE.md §14.2.1.
+
+    Attributes:
+        kind: The actor category.
+        identifier: Stable identifier (e.g., ``user:E001``, ``agent:claude-code``).
+        attributes: Freeform metadata (trust level, department, etc.).
+    """
+
+    kind: Literal["human", "system", "agent"]
+    identifier: str
+    attributes: dict[str, Any] = field(default_factory=dict)
 
 
 class Verdict(StrEnum):

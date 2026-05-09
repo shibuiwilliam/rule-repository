@@ -95,6 +95,22 @@ class RegulatorySeverity(str, enum.Enum):
     CRIMINAL = "CRIMINAL"
 
 
+class NormTier(str, enum.Enum):
+    """Position of a rule in the norm-lineage hierarchy.
+
+    Drives amendment propagation: when a LAW or REGULATION is amended,
+    all transitive downstream rules are flagged for review.
+    See PROJECT.md §5.3 and CLAUDE.md §14.2.1.
+    """
+
+    LAW = "LAW"
+    REGULATION = "REGULATION"
+    GUIDELINE = "GUIDELINE"
+    CORPORATE_POLICY = "CORPORATE_POLICY"
+    DEPARTMENT_RULE = "DEPARTMENT_RULE"
+    OPERATIONAL_RULE = "OPERATIONAL_RULE"
+
+
 class RelationshipType(str, enum.Enum):
     """Types of relationships between rules (PROJECT.md §5.2)."""
 
@@ -185,6 +201,15 @@ class Rule:
     legal_force: str = "policy"
     review_cadence: str | None = None
     governance: Governance = field(default_factory=lambda: Governance(owner="system"))
+
+    # Phase 8 — Surface-aware fields (CLAUDE.md §14.2.1)
+    applies_to_surfaces: list[str] = field(default_factory=lambda: ["generic"])
+    norm_tier: NormTier = NormTier.OPERATIONAL_RULE
+    norm_authority: str | None = None
+    locale: str = "en"
+    statement_translations: dict[str, str] = field(default_factory=dict)
+    tech_scope: list[str] = field(default_factory=list)
+    org_scope: list[str] = field(default_factory=list)
 
     # Derived
     embedding: list[float] = field(default_factory=list, repr=False)

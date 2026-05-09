@@ -641,3 +641,111 @@ def register_tools(mcp: FastMCP) -> None:
             )
             await session.commit()
             return result
+
+    # ------------------------------------------------------------------
+    # Surface-aware tools (Phase 8+)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def evaluate_subject(
+        surface: str,
+        subject_payload: str,
+        mode: str = "preflight",
+        scope: str | None = None,
+    ) -> dict[str, Any]:
+        """Evaluate a subject against applicable rules for any surface.
+
+        This is the surface-aware evaluation tool. Use it for contract
+        reviews, HR event checks, transaction audits, message compliance,
+        or any non-code evaluation.
+
+        Args:
+            surface: Surface type — one of: code, contract, human_action,
+                transaction, document, message, generic.
+            subject_payload: JSON string with surface-specific fields.
+                For code: {"diff": "..."}
+                For contract: {"clause_text": "...", "clause_type": "indemnity", "parties": ["A", "B"]}
+                For human_action: {"action": "register_overtime", "actor_id": "E001", "facts": {"hours": 50}}
+                For transaction: {"transaction_type": "expense", "amount": 5000, "description": "..."}
+                For document: {"content": "...", "document_type": "policy", "title": "..."}
+                For message: {"content": "...", "channel": "slack", "sender": "..."}
+                For generic: {"content": "...", "description": "..."}
+            mode: Evaluation mode — preflight (default), posthoc, or sidecar.
+            scope: Optional rule scope filter.
+        """
+        import json as json_mod
+
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.gemini.client import get_gemini_client
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.evaluation.service import EvaluationService
+
+        payload = json_mod.loads(subject_payload) if isinstance(subject_payload, str) else subject_payload
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            gemini = None
+            try:
+                gemini = get_gemini_client()
+            except Exception:
+                pass
+
+            svc = EvaluationService(session, gemini)
+            result = await svc.evaluate_subject(
+                surface=surface,
+                subject_payload=payload,
+                mode=mode,
+                scope=scope,
+            )
+            await session.commit()
+
+        return {
+            "surface": surface,
+            "overall_verdict": result.overall_verdict.value,
+            "rules_evaluated": result.rules_evaluated,
+            "rules_violated": result.rules_violated,
+            "violations": [
+                {
+                    "rule_id": v.rule_id,
+                    "rule_statement": v.rule_statement,
+                    "issue": v.issue_description,
+                    "fix": v.fix_suggestion,
+                }
+                for v in result.violations
+            ],
+            "warnings": [
+                {
+                    "rule_id": w.rule_id,
+                    "issue": w.issue_description,
+                }
+                for w in result.warnings
+            ],
+            "fix_summary": result.fix_summary,
+        }
+
+    @mcp.tool()
+    async def list_available_surfaces() -> list[dict[str, Any]]:
+        """List all registered evaluation surfaces and their capabilities.
+
+        Returns information about each surface including its name,
+        default audit retention, and a description.
+        """
+        from rulerepo_server.services.evaluation.surfaces import (
+            get_surface_adapter,
+            list_surfaces,
+        )
+
+        result = []
+        for surface in list_surfaces():
+            adapter = get_surface_adapter(surface)
+            result.append(
+                {
+                    "surface": surface.value,
+                    "adapter": type(adapter).__name__,
+                    "default_retention_days": adapter.default_audit_retention_days,
+                    "prompt_hints_available": bool(adapter.get_prompt_hints()),
+                }
+            )
+        return result

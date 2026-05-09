@@ -1,13 +1,13 @@
-"""REST API routes for the Code-Aware Evaluation Engine.
+"""REST API routes for the Subject-Aware Evaluation Engine.
 
-Per CLAUDE_ENHANCE.md §1.5:
-- POST /evaluate — full evaluation
+Endpoints:
+- POST /evaluate — legacy code-centric evaluation (backwards compatible)
+- POST /evaluate/{surface} — surface-aware evaluation (Phase 8+)
 - POST /evaluate/quick — simplified non-code evaluation
-- GET /evaluate/{id} — retrieve past evaluation
 - POST /evaluate/applicable-rules — rules that apply without evaluation
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rulerepo_server.adapters.gemini.client import get_gemini_client
@@ -20,6 +20,7 @@ from rulerepo_server.schemas.evaluation import (
     EvaluateResponse,
     QuickEvaluateRequest,
     RuleVerdictResponse,
+    SubjectEvaluateRequest,
 )
 from rulerepo_server.services.evaluation.service import EvaluationService
 
@@ -153,3 +154,33 @@ async def get_applicable_rules(
         repository=request.repository,
         scope=request.scope,
     )
+
+
+@router.post("/{surface}", response_model=EvaluateResponse)
+async def evaluate_subject(
+    request: SubjectEvaluateRequest,
+    surface: str = Path(
+        ...,
+        description="Surface type: code, contract, human_action, transaction, document, message, generic",
+    ),
+    service: EvaluationService = Depends(_get_evaluation_service),
+) -> EvaluateResponse:
+    """Evaluate a subject against applicable rules for the given surface.
+
+    This is the surface-aware evaluation endpoint (Phase 8+). Each surface
+    accepts a different payload format — see the surface adapter documentation.
+
+    Examples:
+    - ``POST /evaluate/code`` with ``{"subject": {"diff": "..."}}``
+    - ``POST /evaluate/contract`` with ``{"subject": {"clause_text": "...", "clause_type": "indemnity"}}``
+    - ``POST /evaluate/human_action`` with ``{"subject": {"action": "register_overtime", "facts": {"hours": 50}}}``
+    """
+    result = await service.evaluate_subject(
+        surface=surface,
+        subject_payload=request.subject,
+        mode=request.mode,
+        max_rules=request.max_rules,
+        severity_min=request.severity_min,
+        scope=request.scope,
+    )
+    return _result_to_response(result)

@@ -157,6 +157,15 @@ class RuleModel(Base):
         default=lambda: {"path": "", "dimensions": {}},
     )
 
+    # Phase 8: Surface-aware fields
+    applies_to_surfaces: Mapped[list] = mapped_column(JSONB, nullable=False, default=lambda: ["generic"])
+    norm_tier: Mapped[str] = mapped_column(String(30), nullable=False, default="OPERATIONAL_RULE")
+    norm_authority: Mapped[str | None] = mapped_column(Text, nullable=True)
+    locale: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
+    statement_translations: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    tech_scope: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    org_scope: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+
     # Embedding stored as float array (for pgvector compatibility later)
     embedding: Mapped[list | None] = mapped_column(ARRAY(Float), nullable=True)
 
@@ -496,6 +505,12 @@ class EvaluationRecordModel(Base):
 
     # Subject type — records what kind of entity was evaluated
     subject_type: Mapped[str | None] = mapped_column(String(30), nullable=True)
+
+    # Phase 8: Surface-aware fields
+    surface: Mapped[str] = mapped_column(String(30), nullable=False, default="code")
+    actor_kind: Mapped[str] = mapped_column(String(20), nullable=False, default="system")
+    actor_identifier: Mapped[str | None] = mapped_column(Text, nullable=True)
+    locale: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
 
     # Cost ledger — token counts and estimated cost per evaluation
     input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
