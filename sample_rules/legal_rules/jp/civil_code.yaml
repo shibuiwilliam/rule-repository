@@ -1,0 +1,30 @@
+rules:
+  - statement: "契約の解除は、相手方に対する意思表示によってする（民法540条）"
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract]
+    tags: [civil-code, termination, contract-law]
+    rationale: "Civil Code Article 540 requires termination by declaration of intent to the counterparty"
+    applicable_subject_types: [clause_set]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "詐欺又は強迫による意思表示は、取り消すことができる（民法96条）"
+    modality: MUST
+    severity: CRITICAL
+    scope: [legal/contract]
+    tags: [civil-code, fraud, duress, voidable]
+    rationale: "Civil Code Article 96 — declarations of intent by fraud or duress are voidable"
+    applicable_subject_types: [clause_set]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "債務不履行による損害賠償は、通常生ずべき損害の範囲に限る（民法416条）"
+    modality: MUST
+    severity: HIGH
+    scope: [legal/contract]
+    tags: [civil-code, damages, liability]
+    rationale: "Civil Code Article 416 — damages for non-performance are limited to ordinary losses"
+    applicable_subject_types: [clause_set]
+    jurisdiction: JP
+    legal_force: statutory

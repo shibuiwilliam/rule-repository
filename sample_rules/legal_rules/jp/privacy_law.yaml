@@ -1,0 +1,30 @@
+rules:
+  - statement: "個人情報取扱事業者は、あらかじめ本人の同意を得ないで、個人データを第三者に提供してはならない（個人情報保護法27条）"
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope: [legal/privacy, communications]
+    tags: [privacy, personal-data, third-party, appi]
+    rationale: "Act on Protection of Personal Information Article 27 — prior consent required for third-party disclosure"
+    applicable_subject_types: [clause_set, creative]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "個人情報取扱事業者は、利用目的をできる限り特定しなければならない（個人情報保護法17条）"
+    modality: MUST
+    severity: HIGH
+    scope: [legal/privacy]
+    tags: [privacy, purpose-limitation, appi]
+    rationale: "APPI Article 17 — purpose of use must be specified as concretely as possible"
+    applicable_subject_types: [clause_set, document]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "個人情報取扱事業者は、個人データの漏えい等が生じたときは、個人情報保護委員会に報告しなければならない（個人情報保護法26条）"
+    modality: MUST
+    severity: CRITICAL
+    scope: [legal/privacy, compliance]
+    tags: [privacy, breach-notification, appi]
+    rationale: "APPI Article 26 — mandatory breach notification to the PPC"
+    applicable_subject_types: [event]
+    jurisdiction: JP
+    legal_force: statutory

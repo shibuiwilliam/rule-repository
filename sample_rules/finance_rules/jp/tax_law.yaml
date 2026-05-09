@@ -1,0 +1,30 @@
+rules:
+  - statement: "消費税の課税事業者は、課税期間ごとに確定申告書を提出しなければならない（消費税法45条）"
+    modality: MUST
+    severity: HIGH
+    scope: [finance/tax]
+    tags: [consumption-tax, filing, article-45]
+    rationale: "Consumption Tax Act Article 45 — mandatory tax return filing per taxable period"
+    applicable_subject_types: [transaction]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "法人は、各事業年度の所得に対する法人税を納める義務がある（法人税法5条）"
+    modality: MUST
+    severity: CRITICAL
+    scope: [finance/tax]
+    tags: [corporate-tax, obligation, article-5]
+    rationale: "Corporate Tax Act Article 5 — obligation to pay corporate tax on each fiscal year's income"
+    applicable_subject_types: [transaction]
+    jurisdiction: JP
+    legal_force: statutory
+
+  - statement: "交際費等の額のうち、飲食費の50%相当額を超える部分は損金の額に算入しない（租税特別措置法61条の4）"
+    modality: MUST_NOT
+    severity: MEDIUM
+    scope: [finance/expense]
+    tags: [corporate-tax, entertainment-expense, deduction-limit]
+    rationale: "Special Taxation Measures Act — entertainment expense deduction limits"
+    applicable_subject_types: [transaction]
+    jurisdiction: JP
+    legal_force: statutory

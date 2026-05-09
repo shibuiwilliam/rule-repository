@@ -22,6 +22,7 @@ from rulerepo_server.api.v1.federation import router as federation_router
 from rulerepo_server.api.v1.feedback import router as feedback_router
 from rulerepo_server.api.v1.intelligence import router as intelligence_router
 from rulerepo_server.api.v1.intent import router as intent_router
+from rulerepo_server.api.v1.lineage import router as lineage_router
 from rulerepo_server.api.v1.onboarding import router as onboarding_router
 from rulerepo_server.api.v1.operability import router as operability_router
 from rulerepo_server.api.v1.playground import router as playground_router
@@ -73,6 +74,7 @@ v1_router.include_router(regulatory_router)
 v1_router.include_router(snapshots_router)
 v1_router.include_router(translations_router)
 v1_router.include_router(upcoming_changes_router)
+v1_router.include_router(lineage_router)
 
 
 @v1_router.get("/health", tags=["health"])

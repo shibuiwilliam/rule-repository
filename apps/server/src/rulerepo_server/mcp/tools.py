@@ -749,3 +749,246 @@ def register_tools(mcp: FastMCP) -> None:
                 }
             )
         return result
+
+    # ------------------------------------------------------------------
+    # Norm Lineage tools (Phase 10)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def lookup_norm_lineage(
+        rule_id: str,
+        direction: str = "upstream",
+        max_depth: int = 20,
+    ) -> dict[str, Any]:
+        """Look up the norm lineage chain for a rule.
+
+        Walks the DERIVES_FROM relationship chain to find upstream
+        authorities (laws, regulations) or downstream derivatives.
+
+        Args:
+            rule_id: ID of the rule to query.
+            direction: "upstream" (toward laws) or "downstream" (toward operational rules).
+            max_depth: Maximum chain depth to traverse.
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.norm_lineage.walker import NormLineageWalker
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            walker = NormLineageWalker(session)
+            if direction == "downstream":
+                chain = await walker.downstream(rule_id, max_depth=max_depth)
+            else:
+                chain = await walker.upstream(rule_id, max_depth=max_depth)
+
+        return {
+            "rule_id": rule_id,
+            "direction": direction,
+            "chain": [
+                {
+                    "rule_id": n.rule_id,
+                    "statement": n.statement,
+                    "norm_tier": n.norm_tier,
+                    "norm_authority": n.norm_authority,
+                    "depth": n.depth,
+                }
+                for n in chain.nodes
+            ],
+        }
+
+    # ------------------------------------------------------------------
+    # Contract tools (Phase 9)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def find_clause_conflicts(
+        contract_text: str,
+        scope: str = "legal/contract",
+    ) -> dict[str, Any]:
+        """Find policy conflicts in contract clauses.
+
+        Evaluates the contract text against applicable rules on the
+        Contract surface and returns any conflicts found.
+
+        Args:
+            contract_text: The contract text or clause to check.
+            scope: Rule scope filter (default: legal/contract).
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.gemini.client import get_gemini_client
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.evaluation.service import EvaluationService
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            gemini = None
+            try:
+                gemini = get_gemini_client()
+            except Exception:
+                pass
+
+            svc = EvaluationService(session, gemini)
+            result = await svc.evaluate_subject(
+                surface="contract",
+                subject_payload={
+                    "clause_text": contract_text,
+                    "clause_type": "general",
+                },
+                mode="preflight",
+                scope=scope,
+            )
+            await session.commit()
+
+        return {
+            "conflicts_found": result.rules_violated,
+            "conflicts": [
+                {
+                    "rule_id": v.rule_id,
+                    "rule_statement": v.rule_statement,
+                    "issue": v.issue_description,
+                    "fix": v.fix_suggestion,
+                }
+                for v in result.violations
+            ],
+            "warnings": [
+                {
+                    "rule_id": w.rule_id,
+                    "issue": w.issue_description,
+                }
+                for w in result.warnings
+            ],
+        }
+
+    # ------------------------------------------------------------------
+    # Human action tools (Phase 11)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def check_action(
+        actor: str,
+        action: str,
+        payload: str,
+    ) -> dict[str, Any]:
+        """Check if a human action complies with applicable rules.
+
+        Evaluates actions like overtime registration, leave requests,
+        expense claims, etc. against HR and organizational rules.
+
+        Args:
+            actor: Actor identifier (e.g., "user:E001").
+            action: Action type (e.g., "register_overtime", "submit_leave_request").
+            payload: JSON string with action-specific facts.
+        """
+        import json as json_mod
+
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.gemini.client import get_gemini_client
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.evaluation.service import EvaluationService
+
+        facts = json_mod.loads(payload) if isinstance(payload, str) else payload
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            gemini = None
+            try:
+                gemini = get_gemini_client()
+            except Exception:
+                pass
+
+            svc = EvaluationService(session, gemini)
+            result = await svc.evaluate_subject(
+                surface="human_action",
+                subject_payload={
+                    "action": action,
+                    "actor_id": actor,
+                    "facts": facts,
+                },
+                mode="preflight",
+            )
+            await session.commit()
+
+        return {
+            "actor": actor,
+            "action": action,
+            "overall_verdict": result.overall_verdict.value,
+            "rules_evaluated": result.rules_evaluated,
+            "violations": [
+                {
+                    "rule_id": v.rule_id,
+                    "issue": v.issue_description,
+                    "fix": v.fix_suggestion,
+                }
+                for v in result.violations
+            ],
+        }
+
+    # ------------------------------------------------------------------
+    # Communication review tool (Phase 11)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def review_communication(
+        channel: str,
+        content: str,
+        sender: str = "",
+        recipients: str = "",
+    ) -> dict[str, Any]:
+        """Review a communication for compliance with messaging rules.
+
+        Checks email, Slack, or Teams messages against communication
+        policies (harassment, confidentiality, data leakage, etc.).
+
+        Args:
+            channel: Communication channel (email, slack, teams).
+            content: The message content to review.
+            sender: Sender identifier.
+            recipients: Comma-separated recipient list.
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.gemini.client import get_gemini_client
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.evaluation.service import EvaluationService
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            gemini = None
+            try:
+                gemini = get_gemini_client()
+            except Exception:
+                pass
+
+            svc = EvaluationService(session, gemini)
+            result = await svc.evaluate_subject(
+                surface="message",
+                subject_payload={
+                    "content": content,
+                    "channel": channel,
+                    "sender": sender,
+                    "recipients": [r.strip() for r in recipients.split(",") if r.strip()],
+                },
+                mode="sidecar",
+            )
+            await session.commit()
+
+        return {
+            "channel": channel,
+            "overall_verdict": result.overall_verdict.value,
+            "rules_evaluated": result.rules_evaluated,
+            "violations": [
+                {
+                    "rule_id": v.rule_id,
+                    "issue": v.issue_description,
+                }
+                for v in result.violations
+            ],
+        }
