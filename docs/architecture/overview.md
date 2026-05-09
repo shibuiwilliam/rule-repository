@@ -216,8 +216,8 @@ Plugins are registered via `plugins/_registry.py` and extend the base protocol i
 
 Two specialized evaluation engines were added in Phase 8:
 
-- **Contract Clause Engine** (`POST /api/v1/evaluate/contract`): parses contracts (DOCX/PDF/text) via `adapters/contract_parser.py`, compares clauses via `adapters/contract_compare.py`, aggregates clause-level verdicts via `services/evaluation/clause_aggregator.py`. Supports self-conformance, cross-contract, regulatory compliance, and risk scoring modes. See [ADR 004](../../development/adr/0004-contract-clause-engine.md).
-- **Event Engine** (`POST /api/v1/evaluate/event`): evaluates business events (overtime, leave, attendance) with three temporal modes -- single, sequence (monthly), and calendar (annual). Domain types in `domain/event_sequence.py`. See [ADR 005](../../development/adr/0005-event-engine-temporal-modes.md).
+- **Contract Clause Engine** (`POST /api/v1/evaluate/contract`): parses contracts (DOCX/PDF/text) via `adapters/contract_parser.py`, compares clauses via `adapters/contract_compare.py`, aggregates clause-level verdicts via `services/evaluation/clause_aggregator.py`. Supports self-conformance, cross-contract, regulatory compliance, and risk scoring modes. See [ADR 004](../adr/004-contract-clause-engine.md).
+- **Event Engine** (`POST /api/v1/evaluate/event`): evaluates business events (overtime, leave, attendance) with three temporal modes -- single, sequence (monthly), and calendar (annual). Domain types in `domain/event_sequence.py`. See [ADR 005](../adr/005-event-engine-temporal-modes.md).
 
 ## Domain Module Architecture
 
