@@ -2,7 +2,7 @@
 
 ## Deployable Components
 
-The Rule Repository consists of eleven services (plus setup containers and observability), all orchestrated locally via Docker Compose. The backend exposes 22 API routers backed by 20+ service directories. Rules are scoped to projects and departments for multi-team, cross-organizational governance.
+The Rule Repository consists of ten services (plus setup containers), all orchestrated locally via Docker Compose. The backend exposes 28+ API routers backed by 30+ service directories. Rules are scoped to projects and departments for multi-team, cross-organizational governance.
 
 | Component | Technology | Port | Role |
 |---|---|---|---|
@@ -243,6 +243,66 @@ The system supports three deployment tiers:
 - **Tier 3** (Full stack): Postgres + Elasticsearch + Neo4j + Redis. Production default.
 
 Feature flags: `ELASTICSEARCH_ENABLED`, `NEO4J_ENABLED`, `REDIS_ENABLED`.
+
+## Surface Abstraction
+
+The evaluation pipeline uses a **Surface** abstraction (`services/evaluation/surfaces/`) that normalizes different input types into a common evaluation interface. Each surface provides a `SurfaceAdapter` with domain-specific prompt hints and subject construction.
+
+| Surface | Adapter | Evaluates |
+|---|---|---|
+| `code` | `CodeSurfaceAdapter` | Code diffs, file changes |
+| `contract` | `ContractSurfaceAdapter` | Contract clauses, NDA terms |
+| `document` | `DocumentSurfaceAdapter` | Policy documents, handbooks |
+| `human_action` | `HumanActionSurfaceAdapter` | Overtime registrations, leave requests |
+| `message` | `MessageSurfaceAdapter` | Emails, Slack/Teams messages |
+| `transaction` | `TransactionSurfaceAdapter` | Expenses, invoices, purchase orders |
+| `generic` | `GenericSurfaceAdapter` | Free-form fact-based evaluation |
+
+The `EvaluationService` resolves the surface adapter from `EvaluateRequest.surface`, constructs the appropriate subject, and routes through the standard evaluation pipeline.
+
+## Domain Packs
+
+Domain Packs (`domain_packs/`) bundle rules, sample inputs, compliance prompts, connector requirements, and UI routes into deployable packages:
+
+| Pack | Surfaces | Persona | Key Rules |
+|---|---|---|---|
+| `code` | code | engineering | Engineering standards, code review |
+| `contract` | contract, document | legal | NDA, MSA, SOW clause rules |
+| `hr_attendance` | human_action | hr | Leave, overtime, compliance |
+| `expense` | transaction | finance | Invoice, budget, vendor rules |
+| `communication` | message | communications | Email, Slack, Teams policies |
+
+Each pack includes `pack.yaml` (metadata, scopes, required connectors, UI routes), `rules/` (YAML rule definitions), `samples/` (test inputs), and `prompts/` (domain-specific compliance prompts).
+
+## Connectors
+
+10 connector adapters under `adapters/connectors/` implement the `SubjectConnector` protocol for integrating external systems:
+
+| Connector | System | Surfaces |
+|---|---|---|
+| `docusign` | DocuSign | contract |
+| `email` | Email | message |
+| `github` | GitHub | code |
+| `kintone` | Kintone | human_action |
+| `salesforce` | Salesforce | transaction |
+| `sap` | SAP | transaction |
+| `slack` | Slack | message |
+| `teams` | Microsoft Teams | message |
+| `webhook_generic` | Any webhook | generic |
+| `workday` | Workday | human_action |
+
+Each connector implements: `normalize()` (convert external events to `EvaluationSubjectPayload`), `push()` (send verdicts back), `validate_connection()`, and `list_event_types()`.
+
+## Norm Lineage
+
+The norm lineage service (`services/norm_lineage/walker.py`) traces rule derivation chains through `DERIVES_FROM` relationships:
+
+- **Upstream**: walks from an operational rule up to its source law/regulation
+- **Downstream**: walks from a law/regulation down to all derived operational rules
+
+API: `GET /api/v1/lineage/{rule_id}/upstream` and `GET /api/v1/lineage/{rule_id}/downstream`.
+
+A background worker (`workers/norm_lineage_propagation.py`) propagates changes when upstream norms are amended.
 
 ## Pluggable LLM Providers
 

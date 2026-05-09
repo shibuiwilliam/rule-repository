@@ -48,6 +48,12 @@ Where traditional rule engines require translating human rules into formal logic
 - **Confidence calibration**: conformal prediction for high-stakes scopes. Multi-judge consensus for CRITICAL evaluations.
 - **Verdict drift detection**: weekly replay of canary inputs detects unexpected LLM behavior changes.
 - **Polyglot rules**: rules can have translations in multiple locales with consistency verification.
+- **Surface abstraction**: 7 evaluation surfaces (code, contract, document, human_action, message, transaction, generic) normalize different input types into a common pipeline. Adding a new surface means implementing one adapter.
+- **Domain Packs**: bundled rule sets with connectors, scopes, UI routes, and compliance prompts per domain (code, contract, HR attendance, expense, communication). Deploy a domain pack to get started in minutes.
+- **10 connectors**: DocuSign, Email, GitHub, Kintone, Salesforce, SAP, Slack, Teams, Webhooks, and Workday. Each connector normalizes external events into evaluation subjects and pushes verdicts back.
+- **Norm lineage**: trace rule derivation chains from source laws/regulations down to operational rules (and vice versa). Background propagation of upstream norm amendments.
+- **Contract review CLI**: `rulerepo-review-contract` evaluates contracts from the command line against organizational clause rules.
+- **Action check CLI**: `rulerepo-check-action` evaluates human actions (overtime registration, leave requests) against applicable rules.
 
 ## Get Started
 

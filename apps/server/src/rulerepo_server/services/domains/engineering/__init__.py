@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any
 
 from rulerepo_server.services.domains._protocol import (
-    Connector,
     ContextAssembler,
     DiscoveryAnalyzer,
     DomainEvaluator,
@@ -115,9 +114,6 @@ class EngineeringModule:
         return _EngineeringEvaluator()
 
     def discovery_analyzers(self) -> list[DiscoveryAnalyzer]:
-        return []
-
-    def connectors(self) -> list[Connector]:
         return []
 
     def templates_path(self) -> Path:

@@ -24,4 +24,4 @@
 - **7g — Persona UX**: Persona routing layer, all portals scaffolded (Legal, HR, Compliance, Security, Engineering, Admin). Persona switcher component.
 - **7f — Connector Hub**: `EventSource`/`Sink` protocols, three reference connectors (SmartHR HRIS, Salesforce CRM, freee ERP). Per-tenant config. Health dashboard endpoint.
 - **7d — Compliance/Privacy**: Enhanced PII redaction, encrypted shadow store, right-to-erasure API, regional routing, CMEK integration, approval policy DSL.
-- **7h — Operability**: OpenTelemetry instrumentation, enhanced /metrics, per-tenant cost tracking, worker leader election, LLM fallback strategy.
+- **7h — Operability**: Structured logging, per-tenant cost tracking, worker leader election, LLM fallback strategy.

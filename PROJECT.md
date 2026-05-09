@@ -59,7 +59,7 @@ The Rule Repository is the only system that simultaneously:
 - Detect conflicts, redundancies, and dead rules across the corpus.
 - Track norm lineage from law down to operational rule, and propagate upstream changes downstream.
 - Make rule provenance, rationale, and revision history first-class.
-- Provide ergonomic SDKs and connectors so business systems and AI agents can integrate easily.
+- Provide ergonomic SDKs so business systems and AI agents can integrate easily.
 - Offer **persona-specific consoles** for Legal, HR, Finance, Compliance, Sales, Engineering, and Admin roles.
 - Ship by **Domain Pack**: a reusable bundle of rules, adapters, prompts, UI, and samples for one business domain.
 
@@ -101,22 +101,20 @@ The system is composed of three top-level components and a set of pluggable exte
              │                                    │
    ┌─────────┼────────────────────────────────────┼─────────────────┐
    │         │                                    │                 │
-┌──▼───┐ ┌───▼──┐ ┌───────────┐ ┌──────────┐ ┌───▼──────┐ ┌────────▼────┐
-│ Rule │ │Agent │ │    MCP    │ │   CLI    │ │ Surface  │ │  External   │
-│ SDK  │ │ SDK  │ │  Server   │ │  Tools   │ │Connector │ │ Business    │
-│      │ │      │ │ (subject- │ │(per      │ │  Layer   │ │ Systems     │
-│      │ │      │ │  agnostic │ │ surface) │ │ (GH,Slack│ │ (HRIS, ERP, │
-│      │ │      │ │  tools)   │ │          │ │ Email,SF,│ │  Salesforce,│
-│      │ │      │ │           │ │          │ │ HRIS,SAP,│ │  DocuSign,  │
-│      │ │      │ │           │ │          │ │ DocuSign)│ │  Outlook)   │
-└──────┘ └──────┘ └───────────┘ └──────────┘ └──────────┘ └─────────────┘
+┌──▼───┐ ┌───▼──┐ ┌───────────┐ ┌──────────┐
+│ Rule │ │Agent │ │    MCP    │ │   CLI    │
+│ SDK  │ │ SDK  │ │  Server   │ │  Tools   │
+│      │ │      │ │ (subject- │ │(per      │
+│      │ │      │ │  agnostic │ │ surface) │
+│      │ │      │ │  tools)   │ │          │
+│      │ │      │ │           │ │          │
+└──────┘ └──────┘ └───────────┘ └──────────┘
 ```
 
 ### 4.1 The Three Top-Level Components
 
 - **Rule Management Server** (single FastAPI process): the system of record. Owns the canonical rule corpus, evaluation engine, search, intelligence, governance, and audit log.
 - **Rule Client SDK / Agentic Rule Client SDK / CLI / MCP Server**: the consumer-facing libraries and binaries. Surface-agnostic: a contract-review agent and a coding agent both use the same MCP server with different tools.
-- **Surface Connectors**: a layer of adapters that ingests events from external business systems (Salesforce, Workday, SAP, DocuSign, Slack, email, GitHub, etc.), normalizes them into Subjects, and feeds them to the evaluation pipeline.
 
 ### 4.2 Two Orthogonal Hierarchies
 
@@ -280,7 +278,6 @@ src/rulerepo_server/
 ├── domain_packs/           # Vertical bundles (see §6.4)
 ├── adapters/
 │   ├── postgres / elasticsearch / neo4j / gemini / files
-│   └── connectors/         # GitHub / Slack / Email / Salesforce / Workday / SAP / DocuSign / Kintone / Teams / generic_webhook
 ├── mcp/                    # MCP server (subject-agnostic tools)
 ├── gateway/                # Webhook-driven enforcement
 ├── integrations/           # GitHub App, CI formatters
@@ -319,26 +316,7 @@ Built-in adapters at v1:
 | `message` | email / Slack / transcript | `Message(channel, sender, recipients, content, locale)` |
 | `generic` | free-form text + facts | `GenericSubject(text, facts)` |
 
-### 6.3 Connectors
-
-Connectors live under `adapters/connectors/` and integrate with external business systems:
-
-| Connector | Source events |
-|---|---|
-| `github` | Pull requests, issues, comments → `code` subjects (existing) |
-| `slack` | Channel messages, DM threads → `message` subjects |
-| `email` | IMAP / Microsoft Graph / Gmail API → `message` subjects |
-| `salesforce` | Opportunity, quote, contract → `contract` / `human_action` subjects |
-| `workday` | Worker events, time-tracking → `human_action` subjects |
-| `sap` | Journal entries, invoices → `transaction` subjects |
-| `docusign` | Envelope status, signed contracts → `contract` subjects |
-| `kintone` | Workflow events → `human_action` subjects |
-| `teams` | Channel messages, meeting transcripts → `message` subjects |
-| `generic_webhook` | Anything POSTing JSON → `generic` subjects |
-
-Each connector implements `SubjectConnector` ABC and supports the three integration modes from §6.7: pre-flight, post-hoc, sidecar.
-
-### 6.4 Domain Packs
+### 6.3 Domain Packs
 
 A **Domain Pack** is a vertical bundle for one business domain. Packs live under `domain_packs/`:
 
@@ -393,7 +371,7 @@ optional_connectors: [docusign, salesforce]
 - New domains are added by adding a pack, not modifying the core.
 - Marketing gains shippable units: "Contract Pack 1.0 is now available."
 
-### 6.5 Subject-Aware Evaluation Engine
+### 6.4 Subject-Aware Evaluation Engine
 
 The evaluation engine is surface-agnostic. It accepts a `Subject` and a candidate rule set, and returns per-rule verdicts.
 
@@ -408,7 +386,7 @@ The evaluation engine is surface-agnostic. It accepts a `Subject` and a candidat
 
 **Code-aware features** (one set of surface-specific behaviors): file-path-to-scope matching, diff-aware function/line targeting, code remediations as actionable fix suggestions. These live exclusively in `surfaces/code/`.
 
-### 6.6 Rule Client (Python SDK)
+### 6.5 Rule Client (Python SDK)
 
 A thin, ergonomic wrapper over the server APIs.
 
@@ -431,7 +409,7 @@ await client.rules.update(rule.id, statement="...", revision_note="...")
 lineage = await client.norm_lineage.upstream("rule_abc123")
 ```
 
-### 6.7 Agentic Rule Client (Python SDK)
+### 6.6 Agentic Rule Client (Python SDK)
 
 A higher-level client that wraps `RuleClient` and adds agent capabilities for systems that need to **enforce** rules, not merely query them.
 
@@ -473,7 +451,7 @@ if result.verdict == "DENY":
 - **Repair suggestions**: structured `Remediation` objects for surfaces where an automated fix is meaningful (code, transaction, action).
 - **Three integration modes**: `preflight`, `posthoc`, `sidecar`.
 
-### 6.8 Agent Context Delivery (MCP + Smart Rule Selection)
+### 6.7 Agent Context Delivery (MCP + Smart Rule Selection)
 
 Exposes the Rule Repository to AI agents via the Model Context Protocol (MCP). Tools are **subject-agnostic**:
 
@@ -498,7 +476,7 @@ Exposes the Rule Repository to AI agents via the Model Context Protocol (MCP). T
 
 The legacy `get_rules_for_context(files=...)` remains as a backwards-compatible alias for the code surface.
 
-### 6.9 Surface-Specific Workflow Integrations
+### 6.8 Surface-Specific Workflow Integrations
 
 Integration into the places where work actually happens. Each surface has its own integrations:
 
@@ -511,7 +489,7 @@ Integration into the places where work actually happens. Each surface has its ow
 
 Each integration ultimately routes through the Subject-Aware Evaluation Engine; the integration is responsible only for normalizing its input.
 
-### 6.10 Rule Intelligence & Observability
+### 6.9 Rule Intelligence & Observability
 
 Analytics, health scoring, and automated improvement recommendations.
 

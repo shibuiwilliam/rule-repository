@@ -1,7 +1,6 @@
 """Tests for Phase 8 document discovery components.
 
-Covers DocumentSource/IncrementalSource protocols, contract corpus analyzer,
-and connector protocols.
+Covers contract corpus analyzer and extraction utilities.
 """
 
 from __future__ import annotations
@@ -14,60 +13,9 @@ from rulerepo_server.services.discovery.analyzers.contract_corpus import (
     _find_representative,
     _select_contract_files,
 )
-from rulerepo_server.services.discovery.connectors.base import (
-    ChangeEvent,
-    DocumentMeta,
-    SourceQuery,
-)
 from rulerepo_server.services.discovery.sources.contract_docx import (
     extract_from_docx,
 )
-
-# ---------------------------------------------------------------------------
-# Protocol types
-# ---------------------------------------------------------------------------
-
-
-class TestSourceQuery:
-    def test_defaults(self) -> None:
-        q = SourceQuery()
-        assert q.folder_id == ""
-        assert q.max_results == 100
-        assert q.modified_after is None
-
-    def test_with_params(self) -> None:
-        q = SourceQuery(
-            folder_id="folder-123",
-            query="policy",
-            mime_types=["application/pdf"],
-            max_results=50,
-        )
-        assert q.folder_id == "folder-123"
-        assert q.mime_types == ["application/pdf"]
-
-
-class TestDocumentMeta:
-    def test_basic(self) -> None:
-        meta = DocumentMeta(
-            id="doc-1",
-            title="HR Policy",
-            mime_type="application/pdf",
-            source="sharepoint",
-        )
-        assert meta.id == "doc-1"
-        assert meta.source == "sharepoint"
-
-
-class TestChangeEvent:
-    def test_basic(self) -> None:
-        event = ChangeEvent(
-            document_id="doc-1",
-            change_type="updated",
-            cursor="cursor-abc",
-        )
-        assert event.change_type == "updated"
-        assert event.cursor == "cursor-abc"
-
 
 # ---------------------------------------------------------------------------
 # Contract corpus analyzer

@@ -127,7 +127,7 @@ export default function HrDashboardPage() {
           className="rounded-xl border bg-white p-4 transition-colors hover:border-indigo-300 hover:bg-indigo-50"
         >
           <p className="text-sm font-medium text-gray-900">HRIS Sync Status</p>
-          <p className="mt-1 text-xs text-gray-500">Check Workday, SmartHR, and freee HR connectors</p>
+          <p className="mt-1 text-xs text-gray-500">Check HRIS sync status</p>
         </Link>
       </div>
     </div>

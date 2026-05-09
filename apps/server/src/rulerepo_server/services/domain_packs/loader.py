@@ -34,7 +34,6 @@ class PackManifest:
     default_scopes: list[str] = field(default_factory=list)
     ui_routes: list[str] = field(default_factory=list)
     seed_rules_path: str = "rules/"
-    required_connectors: list[str] = field(default_factory=list)
     persona: str = "admin"
     pack_dir: Path = field(default_factory=lambda: Path("."))
 
@@ -51,7 +50,6 @@ class PackManifest:
             default_scopes=data.get("default_scopes", []),
             ui_routes=data.get("ui_routes", []),
             seed_rules_path=data.get("seed_rules_path", "rules/"),
-            required_connectors=data.get("required_connectors", []),
             persona=data.get("persona", "admin"),
             pack_dir=pack_dir,
         )

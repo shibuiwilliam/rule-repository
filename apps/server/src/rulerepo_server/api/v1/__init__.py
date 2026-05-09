@@ -9,7 +9,6 @@ from rulerepo_server.api.v1.ask import router as ask_router
 from rulerepo_server.api.v1.attestation import router as attestation_router
 from rulerepo_server.api.v1.audit import router as audit_router
 from rulerepo_server.api.v1.compliance import router as compliance_router
-from rulerepo_server.api.v1.connectors import router as connectors_router
 from rulerepo_server.api.v1.contract import router as contract_router
 from rulerepo_server.api.v1.cost import router as cost_router
 from rulerepo_server.api.v1.departments import router as departments_router
@@ -47,7 +46,6 @@ v1_router.include_router(attestation_router)
 v1_router.include_router(ask_router)
 v1_router.include_router(audit_router)
 v1_router.include_router(compliance_router)
-v1_router.include_router(connectors_router)
 v1_router.include_router(cost_router)
 v1_router.include_router(departments_router)
 v1_router.include_router(rules_router)

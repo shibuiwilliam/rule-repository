@@ -82,7 +82,7 @@ export const PERSONAS: PersonaOption[] = [
   {
     id: "admin",
     label: "Admin",
-    description: "Tenants, users, connectors, system settings",
+    description: "Tenants, users, system settings",
     icon: "\ud83d\udd27",
     rootPath: "/admin",
     color: "bg-gray-50 text-gray-700 border-gray-200",

@@ -60,7 +60,8 @@ src/rulerepo_server/
 │       ├── scim.py                 #   SCIM 2.0 protocol (RR-007)
 │       ├── tenants.py              #   tenant management (RR-007)
 │       ├── translations.py         #   polyglot translation management (RR-020)
-│       └── upcoming_changes.py     #   scheduled rule changes (RR-036)
+│       ├── upcoming_changes.py     #   scheduled rule changes (RR-036)
+│       └── lineage.py             #   norm lineage upstream/downstream
 ├── core/
 │   ├── config.py                   # Settings (Pydantic BaseSettings)
 │   ├── logging.py                  # structlog JSON logger
@@ -69,7 +70,6 @@ src/rulerepo_server/
 │   ├── llm.py                      # LLM model config (model IDs, thinking levels)
 │   ├── auth.py                     # Authentication & authorization (API key, roles)
 │   ├── middleware.py               # RequestIdMiddleware
-│   ├── telemetry.py                # OpenTelemetry instrumentation
 │   ├── db_context.py               # with_user_context() for RLS session setup
 │   ├── pii/                        # PII redaction
 │   │   ├── redactor.py             #   PII masking in logs and outputs
@@ -138,11 +138,25 @@ src/rulerepo_server/
 │   │   │   ├── communication/
 │   │   │   ├── document_diff/
 │   │   │   └── documentation/
-│   │   └── prompts/                #   Evaluation prompt templates
+│   │   ├── prompts/                #   Evaluation prompt templates
+│   │   └── surfaces/              #   Surface abstraction (Phase 10+)
+│   │       ├── base.py             #     SurfaceAdapter ABC, EvaluationSubjectPayload
+│   │       ├── code/               #     Code surface (diffs, file changes)
+│   │       ├── contract/           #     Contract surface (clauses, NDAs)
+│   │       ├── document/           #     Document surface (policies, handbooks)
+│   │       ├── generic/            #     Generic surface (free-form facts)
+│   │       ├── human_action/       #     Human action surface (overtime, leave)
+│   │       ├── message/            #     Message surface (email, Slack, Teams)
+│   │       └── transaction/        #     Transaction surface (expenses, invoices)
+│   ├── norm_lineage/               # Norm derivation chain traversal
+│   │   └── walker.py               #   upstream/downstream DERIVES_FROM walks
 │   ├── extraction/                 # Document ingestion + rule extraction
 │   │   ├── pipeline.py             #   Main extraction orchestrator
 │   │   ├── legal_pipeline.py       #   Legal document-specific pipeline
 │   │   ├── pdf_sanitizer.py        #   PDF content cleaning
+│   │   ├── clause_normalizer.py    #   Normalize clause text
+│   │   ├── redline_differ.py       #   Contract version diffing
+│   │   ├── bilingual_pairer.py     #   Match translated rule pairs
 │   │   └── contract/               #   Contract-specific extraction
 │   │       ├── clause_classifier.py
 │   │       ├── clause_segmenter.py
@@ -269,7 +283,19 @@ src/rulerepo_server/
 │   │   └── postgres_fts.py         #   ES fallback using Postgres full-text search
 │   ├── files/                      # Local file storage for uploads
 │   ├── contract_parser.py          # Contract parsing and structure extraction
-│   └── contract_compare.py         # Contract diff and comparison
+│   ├── contract_compare.py         # Contract diff and comparison
+│   └── connectors/                 # External system connectors (10 adapters)
+│       ├── base.py                 #   SubjectConnector ABC
+│       ├── docusign/               #   DocuSign (contract)
+│       ├── email/                  #   Email (message)
+│       ├── github/                 #   GitHub (code)
+│       ├── kintone/                #   Kintone (human_action)
+│       ├── salesforce/             #   Salesforce (transaction)
+│       ├── sap/                    #   SAP (transaction)
+│       ├── slack/                  #   Slack (message)
+│       ├── teams/                  #   Microsoft Teams (message)
+│       ├── webhook_generic/        #   Generic webhook (generic)
+│       └── workday/                #   Workday (human_action)
 ├── mcp/
 │   ├── server.py                   # FastMCP app factory
 │   ├── tools.py                    # 12+ MCP tools (clearance-filtered)
@@ -298,7 +324,15 @@ src/rulerepo_server/
 │   ├── conflict_scanner.py         # Background conflict detection
 │   ├── verdict_drift.py            # Verdict drift monitoring
 │   ├── polyglot_validator.py       # Multi-language validation
-│   └── archival.py                 # Rule archival and retention
+│   ├── archival.py                 # Rule archival and retention
+│   ├── norm_lineage_propagation.py # Propagate norm changes downstream
+│   └── translation_drift.py       # Detect translation locale drift
+├── domain_packs/                   # Bundled rule packs per domain
+│   ├── code/                       #   Engineering rules pack
+│   ├── contract/                   #   Legal contract rules pack
+│   ├── hr_attendance/              #   HR attendance/leave pack
+│   ├── expense/                    #   Finance expense/invoice pack
+│   └── communication/              #   Communications policy pack
 └── schemas/                        # Pydantic request/response models
     ├── rule.py, common.py, search.py, evaluation.py, extraction.py
     ├── intent.py, intelligence.py, discovery.py, feedback.py

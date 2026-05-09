@@ -102,19 +102,7 @@ rule-repository/
 │   │   │   │   ├── elasticsearch/
 │   │   │   │   ├── neo4j/
 │   │   │   │   ├── gemini/
-│   │   │   │   ├── files/
-│   │   │   │   └── connectors/
-│   │   │   │       ├── base.py            # SubjectConnector ABC
-│   │   │   │       ├── github/
-│   │   │   │       ├── slack/
-│   │   │   │       ├── email/
-│   │   │   │       ├── salesforce/
-│   │   │   │       ├── workday/
-│   │   │   │       ├── sap/
-│   │   │   │       ├── docusign/
-│   │   │   │       ├── kintone/
-│   │   │   │       ├── teams/
-│   │   │   │       └── webhook_generic/
+│   │   │   │   └── files/
 │   │   │   ├── mcp/                       # subject-agnostic tools, resources, prompts
 │   │   │   ├── gateway/
 │   │   │   ├── integrations/
@@ -336,7 +324,6 @@ Domain Packs (under `domain_packs/`) are **declarative** wherever possible. A pa
 - Rule templates in `rules/`.
 - Surface adapter references (it does not own the adapter; surfaces live in `services/evaluation/surfaces/`).
 - Pack-specific evaluation prompt hints in `prompts/`.
-- Connector recommendations (the connector itself lives in `adapters/connectors/`).
 - Sample seed data in `samples/`.
 - Frontend route placeholders (the actual components live in `apps/frontend/app/(persona)/`).
 
@@ -531,26 +518,6 @@ LINEAGE_AMENDMENT_WEBHOOK_URL=                 # external system can post amendm
 DEFAULT_LOCALE=en
 SUPPORTED_LOCALES=en,ja
 
-# Connectors (per integration; only set those used)
-SLACK_BOT_TOKEN=
-SLACK_SIGNING_SECRET=
-EMAIL_IMAP_HOST=
-EMAIL_IMAP_USER=
-EMAIL_IMAP_PASSWORD=
-SALESFORCE_CLIENT_ID=
-SALESFORCE_CLIENT_SECRET=
-WORKDAY_TENANT_URL=
-WORKDAY_USERNAME=
-WORKDAY_PASSWORD=
-SAP_BASE_URL=
-SAP_CLIENT_ID=
-DOCUSIGN_INTEGRATION_KEY=
-KINTONE_BASE_URL=
-KINTONE_API_TOKEN=
-TEAMS_TENANT_ID=
-TEAMS_CLIENT_ID=
-TEAMS_CLIENT_SECRET=
-
 # Agent Governance
 AGENT_TRUST_PROMOTION_ENABLED=true
 AGENT_MASTERY_THRESHOLD=0.95
@@ -598,7 +565,6 @@ These are non-negotiable. Violating them breaks the system, the architecture, or
 24. **A new surface must include**: a `Subject` dataclass, a `SurfaceAdapter`, a prompt hints file, a PII sanitizer, and a default audit retention. All in `services/evaluation/surfaces/<name>/`. Add to `Surface` enum. Do not modify the universal prompt in `core/`.
 25. **A new Domain Pack must include**: a `pack.yaml`, a `rules/` directory with at least 5 seed rules, a persona assignment, a `samples/` directory, and frontend route placeholders under the persona route group. Add to `ENABLED_PACKS` in `.env.example`.
 26. **A pack does not own its surface.** The Code Pack uses the Code Surface; the Contract Pack uses the Contract Surface. Multiple packs can share a surface.
-27. **A pack does not own its connector.** Connectors live in `adapters/connectors/`. Packs *recommend* connectors via `pack.yaml`.
 
 ### 13.4 Locale and norm-lineage discipline
 
@@ -744,7 +710,6 @@ Goal: prove Domain Pack architecture is general.
 - Pack at `domain_packs/hr_attendance/`:
   - 36-agreement tracking rules, overtime limit rules, leave-policy rules, child-care/elder-care rules.
   - Sample HRIS events.
-- Connector `adapters/connectors/workday/` (initial; ADP and others later).
 - Frontend pages under `(hr)/`.
 - CLI: `rulerepo-check-action --action register_overtime --actor user:E001 --json '{...}'`.
 - MCP tool: `check_action(actor, action, payload)`.
@@ -758,21 +723,9 @@ Goal: prove Domain Pack architecture is general.
   - `pii.py` — email and customer-ID redaction.
 - Pack at `domain_packs/communication/`:
   - Harassment, customer-data confidentiality, regulated-substance discussion, product-claim accuracy rules.
-- Connectors `adapters/connectors/slack/` and `adapters/connectors/email/`.
 - MCP tool: `review_communication(channel, content)`.
 
-### 14.7 Phase 12: Connector Layer Maturation
-
-Goal: standardize the connector contract; integrate with major business systems.
-
-- `SubjectConnector` ABC in `adapters/connectors/base.py`:
-  - `async def normalize(event: dict) -> Subject`
-  - `async def push(subject: Subject) -> EvaluationResult` (preflight/posthoc/sidecar mode controlled at the gateway level)
-- Implement Salesforce, SAP, DocuSign, Kintone, Teams connectors per pilot demand.
-- Integration tests use mock servers (e.g., `responses`-style fixtures).
-- `(compliance)` persona console aggregates cross-domain views.
-
-### 14.8 Practical patterns
+### 14.7 Practical patterns
 
 - **Surface registration**: each surface registers its `SurfaceAdapter` via a registry in `services/evaluation/surfaces/__init__.py`. The evaluation core consults the registry; never hardcoded surface lists.
 - **Pack discovery**: at startup, `services/domain_packs/loader.py` scans `domain_packs/` for `pack.yaml`, validates, and registers. `ENABLED_PACKS` controls which load.

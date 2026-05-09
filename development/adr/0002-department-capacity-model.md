@@ -50,7 +50,6 @@ Three new tables:
 
 - **Proposals**: route to `resolve_approvers()` instead of reading `governance.approvers`.
 - **Intelligence digests**: group by department, send to each department's reviewers.
-- **Marketplace**: publishing requires `Capacity.OWNER` for the rule's owning department.
 - **Audit**: read access uses `Capacity.AUDITOR` plus classification clearance.
 - **Notifications**: fan-out uses `resolve_audience()`.
 

@@ -53,3 +53,56 @@
 - D5: No-code rule editor wizard
 - D6: Intent-first search on home page
 - D7: `pnpm lint` and `pnpm typecheck` verification
+
+---
+
+## Phases 8–13 Expansion (2026-05-09)
+
+### Surface Abstraction
+
+Introduced `services/evaluation/surfaces/` with 7 surface implementations (code, contract, document, generic, human_action, message, transaction). Each surface provides a `SurfaceAdapter` with domain-specific prompt hints. The `EvaluationService` resolves surfaces from `EvaluateRequest.surface`.
+
+### Domain Packs
+
+Added `domain_packs/` with 5 bundled packs: code, contract, hr_attendance, expense, communication. Each includes `pack.yaml` (metadata, scopes, connectors, UI routes), `rules/`, `samples/`, and `prompts/`.
+
+### Connectors
+
+Added `adapters/connectors/` with 10 external system adapters: DocuSign, Email, GitHub, Kintone, Salesforce, SAP, Slack, Teams, Webhook (generic), Workday. All implement `SubjectConnector` protocol with `normalize()`, `push()`, `validate_connection()`.
+
+### Norm Lineage
+
+Added `services/norm_lineage/walker.py` for upstream/downstream norm derivation chain traversal. API at `GET /api/v1/lineage/{rule_id}/upstream|downstream`. Worker `norm_lineage_propagation.py` propagates upstream amendments.
+
+### New Frontend Pages
+
+- `/compliance/audit-packets`, `/compliance/exceptions`, `/compliance/regulatory`
+- `/finance/expenses`, `/finance/controls`, `/finance/audit`
+- `/hr/lifecycle`, `/hr/policies`, `/hr/violations`
+- `/legal/lineage`, `/legal/redlines`
+- `NormLineageViewer` and `LocaleSwitcher` components
+
+### New CLI Tools
+
+- `rulerepo-check-action` — evaluate human actions against applicable rules
+- `rulerepo-review-contract` — evaluate contracts against clause rules
+
+### New Workers
+
+- `norm_lineage_propagation.py` — propagate norm changes downstream
+- `translation_drift.py` — detect translation locale drift
+
+### Removals (over-engineering cleanup)
+
+- Marketplace subsystem removed (rules now ship as domain packs)
+- Prometheus metrics collection removed
+- Jaeger distributed tracing removed
+- OpenTelemetry instrumentation removed
+- `core/metrics.py` and `core/telemetry.py` deleted
+
+### Japan-Specific Rules
+
+Added sample rules under `sample_rules/`:
+- `hr_rules/jp/labor_standards.yaml`, `childcare_leave.yaml`
+- `legal_rules/jp/civil_code.yaml`, `privacy_law.yaml`
+- `finance_rules/jp/tax_law.yaml`

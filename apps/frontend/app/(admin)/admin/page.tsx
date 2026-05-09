@@ -99,10 +99,6 @@ export default function AdminDashboardPage() {
           <p className="text-sm font-medium text-gray-900">Configure SSO</p>
           <p className="mt-1 text-xs text-gray-500">Set up SAML/OIDC identity provider</p>
         </Link>
-        <Link href="/admin/connectors" className="rounded-xl border bg-white p-4 transition-colors hover:border-gray-300 hover:bg-gray-50">
-          <p className="text-sm font-medium text-gray-900">Manage Connectors</p>
-          <p className="mt-1 text-xs text-gray-500">Configure HRIS, ERP, and document source integrations</p>
-        </Link>
       </div>
     </div>
   );

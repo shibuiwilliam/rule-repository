@@ -134,7 +134,7 @@ The drift originates from one design decision (Evaluation Core = Code-Aware) and
 | P4 | No clause-level redline UI for legal review | Contract review, the highest-value cross-org use case, has no native UI |
 | P5 | No employee-event timeline for HR review | Cannot inspect a single employee's compliance history across rules |
 | P6 | No transaction-audit UI for finance review | Expense-vs-regulation checks have no consolidated view |
-| P7 | "Marketplace" and "Agents" sit prominently in the sidebar | These are advanced features for a system whose primary domain is not yet broad — they over-promise relative to the cross-org coverage |
+| P7 | ~~"Marketplace" and "Agents" sit prominently in the sidebar~~ | **Resolved.** Marketplace removed. Sidebar now shows persona-specific navigation. |
 
 ### 3.4 Ingestion Pipeline Bias
 
@@ -159,11 +159,11 @@ The drift originates from one design decision (Evaluation Core = Code-Aware) and
 
 ### 3.6 Feature Complexity Overshoot
 
-The repository implements Marketplace, Autonomous Agent Governance, Federation, Snapshots, Proposals, and Effectiveness Visibility — a remarkable breadth. But:
+The repository implements Autonomous Agent Governance, Federation, Snapshots, Proposals, and Effectiveness Visibility — a remarkable breadth. (Marketplace has been removed as over-engineering.) But:
 
 | ID | Issue | Impact |
 |---|---|---|
-| F1 | Marketplace is a **horizontal mechanism** for sharing rule packages | Without vertical depth in 3+ business domains, it can only ship "code rule packages" — it ratifies the drift instead of correcting it |
+| F1 | ~~Marketplace is a horizontal mechanism for sharing rule packages~~ | **Resolved.** Marketplace removed; rules now ship as Domain Packs. |
 | F2 | Agent Governance trust levels and personalized rules are advanced AI-agent features | The non-AI evaluation path (human reviewer, business system) does not benefit, and these features lock the project further into the AI-agent persona |
 | F3 | Phase 5 has 10 sub-phases (5a–5j) refining the existing code path | Sequencing has prioritized depth in code over breadth across domains |
 | F4 | 23 frontend pages, 18 API routers, 35 ORM models, 22 migrations, 13 service areas | High change cost; refactor must be surgical, not a rewrite |
@@ -403,7 +403,7 @@ persona: legal
 - Code Pack becomes "one of many", correcting the structural drift.
 - New domains are added by adding a pack, not by modifying the core.
 - Marketing gains shippable units: "Contract Pack 1.0 is now available."
-- The existing Marketplace mechanism becomes meaningful: it can distribute Domain Packs across organizations, not just code rule lists.
+- Domain Packs are the distribution unit, replacing the former Marketplace approach.
 
 ### 5.5 Expand the Ingestion Pipeline
 
@@ -583,7 +583,7 @@ The refactor is large but does not require a rewrite. The plan below preserves b
 
 Goal: prevent further drift while planning the structural fix.
 
-- **Freeze new feature work** on Marketplace, Agent Governance, Snapshots, Federation. Phase 5 sub-features in flight may complete; new ones do not start.
+- **Freeze new feature work** on Agent Governance, Snapshots, Federation. Marketplace has been removed. Phase 5 sub-features in flight may complete; new ones do not start.
 - **Rewrite README** to lead with the cross-organizational mission. Move the "Code-Aware Evaluation Engine" out of the cover story.
 - **Update `PROJECT.md` §6.4** to remove "core differentiator" framing; reposition Code-Aware Evaluation as one Surface Adapter among several planned ones.
 - **Set the GitHub About** field: "Cross-organizational normative management for laws, contracts, policies, and operations."
@@ -697,7 +697,7 @@ These are not the root cause but are worth fixing as the surrounding structure c
 | X4 | Sample data is English-only | Add Japanese sample rules sourced from 労働基準法 / 個人情報保護法 / 会社法 |
 | X5 | Audit retention is uniform | Make retention surface-aware per §5.12 |
 | X6 | PII sanitization is uniform | Make sanitization surface-aware per §5.13 |
-| X7 | Marketplace shipping before vertical depth | Defer Marketplace cross-organization features until 3+ Domain Packs exist (Phase 13) |
+| X7 | ~~Marketplace shipping before vertical depth~~ | **Resolved.** Marketplace removed; rules ship as Domain Packs. |
 | X8 | Agent Governance is AI-agent specific | After Phase 11, generalize trust/mastery to apply to humans and business systems too |
 | X9 | Phase 5 sub-phases (5a–5j) are deeply code-internal | Pause new 5x sub-phases until non-code packs are in production |
 
@@ -728,7 +728,7 @@ The repositioning in §7 will surprise users who installed the project as a codi
 
 ### 9.3 Sequencing Discipline
 
-The largest risk is sequencing discipline. The current trajectory adds features inside the code path (Phase 5j infrastructure tiers, more Marketplace polish, more Agent Governance refinements). Each of these adds depth that has to be carried forward when the abstraction shifts in Phase 8. The recommended discipline:
+The largest risk is sequencing discipline. The current trajectory adds features inside the code path (Phase 5j infrastructure tiers, more Agent Governance refinements). Each of these adds depth that has to be carried forward when the abstraction shifts in Phase 8. The recommended discipline:
 
 - **Phase 7 freeze on non-essential code-path additions.** Hard freeze.
 - **Phase 8 starts before Phase 5j or Phase 6c additions.**
@@ -759,7 +759,7 @@ The plan retains roughly 80% of the current implementation. The Code Pack remain
 
 The sequencing matters: **Phase 7 (positioning, sample data) and Phase 8 (Surface abstraction) should run in parallel and start immediately**. Phase 9 (Contract Pack) is the first concrete proof that the project has reverted to its stated mission.
 
-If sequencing is held, the project recovers its identity within one quarter, ships the first non-code pack within two quarters, and reaches three production domain packs within three quarters. At that point the Marketplace and Agent Governance investments — currently premature — become genuinely valuable, and the project occupies the cross-organizational normative-management space it was always meant to fill.
+If sequencing is held, the project recovers its identity within one quarter, ships the first non-code pack within two quarters, and reaches three production domain packs within three quarters. At that point the Agent Governance investment — currently premature — becomes genuinely valuable, and the project occupies the cross-organizational normative-management space it was always meant to fill.
 
 ---
 
