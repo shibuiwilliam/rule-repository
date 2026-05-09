@@ -263,14 +263,6 @@ See [Federation API](federation.md) for detailed request/response documentation.
 | GET | `/api/v1/compliance/status` | Get compliance status for a scope. |
 | POST | `/api/v1/compliance/erasure` | Submit a data erasure request (GDPR). |
 
-## Connectors
-
-| Method | Path | Description |
-|---|---|---|
-| POST | `/api/v1/connectors` | Register a connector. |
-| GET | `/api/v1/connectors` | List connectors for the current tenant. |
-| GET | `/api/v1/connectors/{type}/health` | Check connector health. |
-
 ## Cost
 
 | Method | Path | Description |

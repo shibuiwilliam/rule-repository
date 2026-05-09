@@ -79,7 +79,7 @@ The `sample_rules/` distribution: 11 coding-rule documents, 7 corporate-policy d
 
 ### 2.5 Integrations are GitHub-Centric
 
-The single fully-implemented external integration is the GitHub App / webhook. There is no Slack message integration, no email scanner, no HRIS connector, no ERP connector, no DocuSign or contract-management connector, and no generic business-system connector pattern beyond a webhook gateway. The repository's "enforcement everywhere" reduces to "enforcement in GitHub".
+The single fully-implemented external integration is the GitHub App / webhook. The integration surface is narrow and GitHub-centric, with no path for non-code business systems. The repository's "enforcement everywhere" reduces to "enforcement in GitHub".
 
 ### 2.6 Dashboard Mental Model Assumes Daily PR Volume
 
@@ -205,7 +205,6 @@ Ship by domain, not by feature. A *Domain Pack* is a unit that bundles:
 - Surface-specific evaluation prompts
 - Persona-specific UI components
 - Sample / seed data
-- Connector hooks to relevant business systems
 
 The first non-code Domain Pack (Contract or HR) is the primary public proof that the project is cross-organizational. Code becomes one pack among many.
 
@@ -394,7 +393,6 @@ required_adapters: [docx_clause_extractor]
 default_scopes: [legal/contract/nda, legal/contract/msa, legal/contract/sow]
 ui_routes: [/domain/contract]
 seed_rules_path: rules/
-required_connectors: []   # optional integrations: docusign, salesforce-cpq, etc.
 persona: legal
 ```
 
@@ -491,35 +489,14 @@ Add new tools that fit non-code workflows:
 
 The existing code tools remain available; they become surface-specialized variants of `evaluate_subject` and `get_applicable_rules`.
 
-### 5.8 Connector Layer for Business Systems
-
-New `adapters/connectors/`:
-
-```
-adapters/connectors/
-├── base.py                     # SubjectConnector ABC
-├── github/                     # existing
-├── slack/                      # NEW
-├── email/                      # NEW (IMAP / Microsoft Graph)
-├── salesforce/                 # NEW
-├── workday/                    # NEW
-├── sap/                        # NEW
-├── docusign/                   # NEW
-├── kintone/                    # NEW (Japanese workflow systems)
-├── teams/                      # NEW (Microsoft Teams)
-└── webhook_generic/            # existing gateway path, repositioned as "lowest common denominator"
-```
-
-Each connector normalizes its source's events into `Subject` instances and pushes them to the evaluation pipeline (in `preflight`, `posthoc`, or `sidecar` mode, per `PROJECT.md`).
-
-### 5.9 Multi-Language Support
+### 5.8 Multi-Language Support
 
 - Add `locale` to `Rule` (default `en`).
 - Add `statement_translations: dict[str, str]` (locale → translated statement) for rules that have authoritative parallel-language versions (typically contracts).
 - Evaluation prompts pick the rule statement matching the subject's locale; if no translation exists, fall back to the canonical statement and flag a `cross_locale_evaluation` warning in the audit log.
 - A periodic worker re-checks parallel-language rules for semantic drift using the LLM as a comparison judge.
 
-### 5.10 Decouple Scope into Two Axes
+### 5.9 Decouple Scope into Two Axes
 
 `scope` is overloaded today. Split it:
 
@@ -533,7 +510,7 @@ Both are optional; either or both may be empty. The rule selector consults both 
 
 Migration: existing single-namespace `scope` values are split heuristically by prefix (`engineering/*` → `tech_scope`, everything else → `org_scope`), with a manual review pass.
 
-### 5.11 Upgrade `agent_id` to `Actor`
+### 5.10 Upgrade `agent_id` to `Actor`
 
 The Phase 5i `agent_id` field is replaced (with backwards compatibility) by the `Actor` reference defined in §5.2:
 
@@ -545,7 +522,7 @@ class EvaluationRecord:
 
 Existing analytics that aggregate by `agent_id` are preserved by indexing on `actor.identifier` when `actor.kind == "agent"`.
 
-### 5.12 Surface-Aware Audit Retention
+### 5.11 Surface-Aware Audit Retention
 
 Audit-log retention becomes a function of `Subject.surface`:
 
@@ -561,7 +538,7 @@ Audit-log retention becomes a function of `Subject.surface`:
 
 These are configurable per deployment and overridable per scope.
 
-### 5.13 Surface-Aware PII Sanitization
+### 5.12 Surface-Aware PII Sanitization
 
 The `core/PII` module currently applies a single sanitizer to all inputs. Make it `Surface`-aware:
 
@@ -624,16 +601,9 @@ Goal: support regulatory tracking and bilingual operations.
 
 Goal: prove the Domain Pack architecture is general.
 
-- **HR/Attendance Pack**: HRIS connector, attendance-event subject adapter, 36-agreement tracking, overtime-violation alerting.
-- **Communication Pack**: Slack and email connectors, customer-correspondence compliance, harassment / data-leak scanning.
+- **HR/Attendance Pack**: attendance-event subject adapter, 36-agreement tracking, overtime-violation alerting.
+- **Communication Pack**: customer-correspondence compliance, harassment / data-leak scanning.
 - Add `(hr)` and `(finance)` persona pages.
-
-### Phase 12 — Connector Layer Maturation (ongoing)
-
-Goal: integrate with the business systems where work actually happens.
-
-- Implement Slack, Salesforce, Workday, SAP, DocuSign, Kintone connectors per demand.
-- Standardize the `SubjectConnector` ABC and document the contract.
 
 ---
 
@@ -691,12 +661,12 @@ These are not the root cause but are worth fixing as the surrounding structure c
 
 | ID | Issue | Recommended fix |
 |---|---|---|
-| X1 | `scope` is overloaded | Split into `tech_scope` and `org_scope` per §5.10 |
-| X2 | `agent_id` bakes in "agent = AI" | Replace with `Actor` per §5.11 |
+| X1 | `scope` is overloaded | Split into `tech_scope` and `org_scope` per §5.9 |
+| X2 | `agent_id` bakes in "agent = AI" | Replace with `Actor` per §5.10 |
 | X3 | Federation and norm-lineage are visually conflated | Build separate UI trees; explicitly label them as "Organizational Hierarchy" and "Norm Lineage" |
 | X4 | Sample data is English-only | Add Japanese sample rules sourced from 労働基準法 / 個人情報保護法 / 会社法 |
-| X5 | Audit retention is uniform | Make retention surface-aware per §5.12 |
-| X6 | PII sanitization is uniform | Make sanitization surface-aware per §5.13 |
+| X5 | Audit retention is uniform | Make retention surface-aware per §5.11 |
+| X6 | PII sanitization is uniform | Make sanitization surface-aware per §5.12 |
 | X7 | ~~Marketplace shipping before vertical depth~~ | **Resolved.** Marketplace removed; rules ship as Domain Packs. |
 | X8 | Agent Governance is AI-agent specific | After Phase 11, generalize trust/mastery to apply to humans and business systems too |
 | X9 | Phase 5 sub-phases (5a–5j) are deeply code-internal | Pause new 5x sub-phases until non-code packs are in production |

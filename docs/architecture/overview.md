@@ -2,18 +2,18 @@
 
 ## Deployable Components
 
-The Rule Repository consists of ten services (plus setup containers), all orchestrated locally via Docker Compose. The backend exposes 28+ API routers backed by 30+ service directories. Rules are scoped to projects and departments for multi-team, cross-organizational governance.
+The Rule Repository consists of ten services (plus setup containers), all orchestrated locally via Docker Compose. The backend exposes 34 registered API routers backed by 30+ service directories. Rules are scoped to projects and departments for multi-team, cross-organizational governance.
 
 | Component | Technology | Port | Role |
 |---|---|---|---|
-| **Backend API** | Python 3.13 / FastAPI | 8000 | System of record. REST, Evaluate, Intent, Gateway, and Integration APIs (22 routers). |
+| **Backend API** | Python 3.13 / FastAPI | 8000 | System of record. 34 registered API routers covering rules, evaluation, search, discovery, governance, compliance, and more. |
 | **MCP Server** | Python / FastMCP | 8001 | Exposes rule search, evaluation, governance, and context delivery to AI agents via the Model Context Protocol (12+ tools). |
 | **Frontend** | TypeScript / Next.js 15 / Tailwind | 3000 | Operator console with 30+ pages for browsing, searching, uploading documents, reviewing evaluations, governance proposals, agent management, department-specific surfaces, and more. Persona-aware navigation with English/Japanese i18n. |
 | **PostgreSQL** | PostgreSQL 17 | 5432 | Relational store with Row-Level Security for classification-based access control. Stores rules, revisions, relationships, documents, audit log, policies, evaluations, proposals, agent profiles, snapshots, federations, departments, capacities, and cache. |
 | **Elasticsearch** | Elasticsearch 8.17 | 9200 | Full-text (BM25) and vector (768-dim cosine) search index for rules and documents, with document-level security filtering. |
 | **Neo4j** | Neo4j 5 Community | 7474 / 7687 | Directed graph of rule relationships (REFINES, OVERRIDES, CONFLICTS_WITH, DEPENDS_ON, DERIVES_FROM, SUCCEEDS, LOCALIZES). |
 | **Redis** | Redis 7 Alpine | 6379 | Job queue and result backend for background workers. |
-| **arq-worker** | Python 3.13 / arq | -- | Background worker running 9+ scheduled cron jobs (health scoring, recommendations, rule promotion, correction clustering, verdict drift, weekly digest, conflict scanning, policy review cycle, archival). |
+| **arq-worker** | Python 3.13 / arq | -- | Background worker running 7 cron jobs (health scoring, recommendations, translation drift, rule promotion, corrections, stats, weekly digest) plus on-demand tasks. |
 
 ## Data Store Roles
 
@@ -262,7 +262,7 @@ The `EvaluationService` resolves the surface adapter from `EvaluateRequest.surfa
 
 ## Domain Packs
 
-Domain Packs (`domain_packs/`) bundle rules, sample inputs, compliance prompts, connector requirements, and UI routes into deployable packages:
+Domain Packs (`domain_packs/`) bundle rules, sample inputs, compliance prompts, and UI routes into deployable packages:
 
 | Pack | Surfaces | Persona | Key Rules |
 |---|---|---|---|
@@ -272,26 +272,7 @@ Domain Packs (`domain_packs/`) bundle rules, sample inputs, compliance prompts, 
 | `expense` | transaction | finance | Invoice, budget, vendor rules |
 | `communication` | message | communications | Email, Slack, Teams policies |
 
-Each pack includes `pack.yaml` (metadata, scopes, required connectors, UI routes), `rules/` (YAML rule definitions), `samples/` (test inputs), and `prompts/` (domain-specific compliance prompts).
-
-## Connectors
-
-10 connector adapters under `adapters/connectors/` implement the `SubjectConnector` protocol for integrating external systems:
-
-| Connector | System | Surfaces |
-|---|---|---|
-| `docusign` | DocuSign | contract |
-| `email` | Email | message |
-| `github` | GitHub | code |
-| `kintone` | Kintone | human_action |
-| `salesforce` | Salesforce | transaction |
-| `sap` | SAP | transaction |
-| `slack` | Slack | message |
-| `teams` | Microsoft Teams | message |
-| `webhook_generic` | Any webhook | generic |
-| `workday` | Workday | human_action |
-
-Each connector implements: `normalize()` (convert external events to `EvaluationSubjectPayload`), `push()` (send verdicts back), `validate_connection()`, and `list_event_types()`.
+Each pack includes `pack.yaml` (metadata, scopes, UI routes), `rules/` (YAML rule definitions), `samples/` (test inputs), and `prompts/` (domain-specific compliance prompts).
 
 ## Norm Lineage
 

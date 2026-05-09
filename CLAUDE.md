@@ -92,11 +92,7 @@ rule-repository/
 │   │   │   │   ├── contract/
 │   │   │   │   ├── hr_attendance/
 │   │   │   │   ├── expense/
-│   │   │   │   ├── procurement/
-│   │   │   │   ├── communication/
-│   │   │   │   ├── compliance/
-│   │   │   │   ├── governance/
-│   │   │   │   └── marketing/
+│   │   │   │   └── communication/
 │   │   │   ├── adapters/
 │   │   │   │   ├── postgres/
 │   │   │   │   ├── elasticsearch/
@@ -113,11 +109,13 @@ rule-repository/
 │   └── frontend/                          # Next.js 15 + TS + Tailwind (pnpm)
 │       └── app/
 │           ├── (admin)/                   # rule administrators
-│           ├── (engineering)/             # engineering operations
+│           ├── (dashboard)/              # main operator console (rules, search, intelligence, agents, etc.)
 │           ├── (legal)/                   # legal counsel
 │           ├── (hr)/                      # HR managers
 │           ├── (finance)/                 # finance, accounting, audit
 │           ├── (compliance)/              # compliance, executive
+│           ├── (marketing)/              # marketing compliance
+│           ├── (security)/               # security operations
 │           └── components/
 ├── packages/
 │   ├── rule-client/                       # Python SDK
@@ -222,10 +220,9 @@ rulerepo-ingest --source claude-md --file ./CLAUDE.md --scope engineering/python
 rulerepo-export --project backend-api --output rules.yaml
 rulerepo-context generate --server $RULEREPO_SERVER_URL --project p1 --max-rules 30
 
-# New surface-aware verbs (Phase 9+)
+# Surface-aware verbs
 rulerepo-review-contract --file ./contracts/draft.docx
 rulerepo-check-action --action register_overtime --actor user:E001 --json '{"hours":50}'
-rulerepo-review-message --channel slack --file ./logs/channel-export.txt
 ```
 
 ### MCP Server
@@ -275,7 +272,7 @@ make precommit.install           # install git hooks
 
 ### Persona separation in the frontend
 
-Each persona route group (`(legal)`, `(hr)`, `(finance)`, `(compliance)`, `(engineering)`, `(admin)`) has its own layout and color accent. **Do not import components across persona groups** unless the component is in `app/components/shared/`. This separation is what keeps each persona's console focused.
+Each persona route group (`(legal)`, `(hr)`, `(finance)`, `(compliance)`, `(dashboard)`, `(admin)`, `(marketing)`, `(security)`) has its own layout and color accent. **Do not import components across persona groups** unless the component is in `app/components/shared/`. This separation is what keeps each persona's console focused.
 
 ### Commits / branches
 
@@ -339,12 +336,14 @@ The frontend is the operator console — but **per persona**. Each persona route
 
 | Route group | Persona | Hero metric |
 |---|---|---|
-| `(admin)` | Rule administrators | Rule corpus health, total rule count, recent governance actions |
-| `(engineering)` | Engineering operations | Compliance rate + 7-day trend (Code Surface) |
+| `(admin)` | Rule administrators | Tenant and user management |
+| `(dashboard)` | Main operator console | Compliance rate, rules, search, intelligence, agents, proposals, playground |
 | `(legal)` | Legal counsel | Open contract reviews, unresolved conflicts, recent upstream-law amendments |
 | `(hr)` | HR managers | This month's violations, 36-agreement headroom, regulation-affected employees |
-| `(finance)` | Finance / audit | This month's transaction violations, expense-rejection rate, tax-rule-change impact |
-| `(compliance)` | Compliance / executive | Regulatory-amendment-to-internal-rule lead time, regulations with active mappings, open critical alerts |
+| `(finance)` | Finance / audit | This month's transaction violations, expense-rejection rate |
+| `(compliance)` | Compliance / executive | Regulatory-amendment-to-internal-rule lead time, open critical alerts |
+| `(marketing)` | Marketing compliance | Creative compliance review |
+| `(security)` | Security operations | Security policy status |
 
 ### 8.2 Shared components
 
@@ -576,15 +575,11 @@ These are non-negotiable. Violating them breaks the system, the architecture, or
 
 ## 14. Phase 7+ Implementation Guidance
 
-These are architecture decisions and patterns for Phase 7 and beyond. Read before implementing any improvement.
+These are architecture decisions and patterns for Phase 7 and beyond. Phases 7–11 are complete; Phase 12 is future work. The patterns below remain the authoritative guide for extending the system.
 
-### 14.1 Phase 7: Stop the Bleeding
+### 14.1 Phase 7: Stop the Bleeding [COMPLETE]
 
-Goal: prevent further drift, restore positioning.
-
-- **README rewrite**: lead with cross-organizational mission. Code is one example among many.
-- **GitHub About + Topics**: set as documented in IMPROVEMENT.md §7.3–§7.4.
-- **PROJECT.md update**: §6.4 "Code-Aware Evaluation Engine" repositioned as the Code Surface Adapter, not "the core differentiator".
+Repositioned the project as a cross-organizational normative platform. README rewrite, cross-org sample data, Contract Pack v0.1 and HR Pack v0.1 seed data.
 - **Sample data parity**: add Contract Pack v0.1 and HR Pack v0.1 seed data. `make seed` installs all three (Code, Contract, HR) in equal weight.
 - **Topics order**: in the README "What You Can Do" section, put non-code workflows first.
 - **Test that `make seed` produces a reasonable cross-org first impression**.

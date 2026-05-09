@@ -109,7 +109,7 @@ Redis serves as the job queue and result backend for the arq background worker. 
 | Command | `arq rulerepo_server.workers.WorkerSettings` |
 | Depends on | `redis` (healthy), `server` (healthy) |
 
-Runs 9+ scheduled background jobs: health scoring, recommendations, rule promotion, correction clustering, verdict drift, weekly digest, conflict scanning, policy review cycle, and archival. Shares the same Docker image as the backend server but uses the arq entrypoint.
+Runs 7 scheduled cron jobs (health scoring, recommendations, translation drift, rule promotion, correction clustering, correction stats, weekly digest) plus on-demand tasks. Shares the same Docker image as the backend server but uses the arq entrypoint.
 
 ## Volumes
 

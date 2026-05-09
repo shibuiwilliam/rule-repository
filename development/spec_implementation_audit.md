@@ -8,11 +8,11 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| IMPLEMENTED | 169 | 98.8% |
+| IMPLEMENTED | 165 | 98.8% |
 | PARTIAL | 2 | 1.2% |
 | PLANNED | 0 | 0.0% |
 | MISSING | 0 | 0.0% |
-| **Total** | **171** | |
+| **Total** | **167** | |
 
 ## Detailed Breakdown
 
@@ -74,10 +74,6 @@
 | Linter config analyzer | IMPLEMENTED | IMPLEMENTED | Y | apps/server/src/rulerepo_server/services/discovery/analyzers/linter_config.py |
 | Code patterns analyzer | IMPLEMENTED | IMPLEMENTED | Y | apps/server/src/rulerepo_server/services/discovery/analyzers/code_patterns.py |
 | Policy document analyzer | IMPLEMENTED | IMPLEMENTED | Y | apps/server/src/rulerepo_server/services/discovery/analyzers/policy_document.py |
-| Confluence connector | IMPLEMENTED | IMPLEMENTED | Y | apps/server/src/rulerepo_server/services/discovery/connectors/confluence.py |
-| Notion connector | IMPLEMENTED | IMPLEMENTED | Y | apps/server/src/rulerepo_server/services/discovery/connectors/notion.py |
-| e-Gov connector | IMPLEMENTED | IMPLEMENTED | Y | apps/server/src/rulerepo_server/services/discovery/connectors/egov.py |
-| EUR-Lex connector | IMPLEMENTED | IMPLEMENTED | Y | apps/server/src/rulerepo_server/services/discovery/connectors/eurlex.py |
 
 ### Evaluation
 

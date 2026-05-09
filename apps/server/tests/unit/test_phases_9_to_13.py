@@ -6,7 +6,6 @@ Covers:
 - Norm Lineage walker
 - Domain Pack loader
 - HR and Communication pack structure
-- Connector ABC
 - Japanese sample rules existence
 - MCP tool signatures
 """

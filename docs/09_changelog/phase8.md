@@ -27,10 +27,8 @@
 
 ### Stream C — Document Discovery (Partial)
 
-- **`services/discovery/connectors/base.py`**: `DocumentSource` and `IncrementalSource` protocols for multi-source discovery.
+- **`services/discovery/sources/base.py`**: `DocumentSource` and `IncrementalSource` protocols for multi-source discovery.
 - **`services/discovery/analyzers/contract_corpus.py`**: Clusters historical contracts by semantic similarity, extracts de facto standard clauses, drafts candidate rules.
-- **`services/discovery/connectors/sharepoint.py`**: SharePoint document source connector.
-- **`services/discovery/connectors/google_drive.py`**: Google Drive document source connector.
 - **`services/discovery/sources/contract_docx.py`**: Upgraded to full `DocumentSource` implementation with clause extraction.
 - **Unit tests**: `test_document_discovery.py`.
 
@@ -47,7 +45,6 @@
 - B6: HR system adapter stubs (Workday, SmartHR, freee HR)
 - C2: Regulation PDF source upgrade
 - C5: Regulation feed (e-Gov API / FSA notices) with `derives_from` linkage
-- C8: Confluence and Notion connector upgrades
 - C9: Incremental polling worker for regulation feeds
 - D4: Department-aware home dashboard
 - D5: No-code rule editor wizard
@@ -64,11 +61,7 @@ Introduced `services/evaluation/surfaces/` with 7 surface implementations (code,
 
 ### Domain Packs
 
-Added `domain_packs/` with 5 bundled packs: code, contract, hr_attendance, expense, communication. Each includes `pack.yaml` (metadata, scopes, connectors, UI routes), `rules/`, `samples/`, and `prompts/`.
-
-### Connectors
-
-Added `adapters/connectors/` with 10 external system adapters: DocuSign, Email, GitHub, Kintone, Salesforce, SAP, Slack, Teams, Webhook (generic), Workday. All implement `SubjectConnector` protocol with `normalize()`, `push()`, `validate_connection()`.
+Added `domain_packs/` with 5 bundled packs: code, contract, hr_attendance, expense, communication. Each includes `pack.yaml` (metadata, scopes, UI routes), `rules/`, `samples/`, and `prompts/`.
 
 ### Norm Lineage
 
