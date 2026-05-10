@@ -304,9 +304,9 @@ def build_feature_checks() -> list[FeatureCheck]:
     add("Elasticsearch routing by tenant", "Multi-tenancy", "IMPLEMENTED")
     add("Neo4j multi-database per tenant", "Multi-tenancy", "IMPLEMENTED")
 
-    # --- Observability ---
-    add("Structured logging (structlog)", "Observability", "IMPLEMENTED")
-    add("Cost ledger (token counts on evaluations)", "Observability", "IMPLEMENTED")
+    # --- Local Analytics ---
+    add("Structured logging (structlog)", "Local Analytics", "IMPLEMENTED")
+    add("Cost ledger (token counts on evaluations)", "Local Analytics", "IMPLEMENTED")
 
     # --- LLM Provider ---
     add("LLMProvider Protocol (adapters/llm/base.py)", "LLM", "IMPLEMENTED")
@@ -723,8 +723,8 @@ def verify_feature(fc: FeatureCheck) -> None:
             else:
                 fc.actual_status = STATUS_PLANNED
 
-    # -- Observability --
-    elif cat == "Observability":
+    # -- Local Analytics --
+    elif cat == "Local Analytics":
         if "Structured logging" in name or "Logging" in name:
             _check_file(fc, "apps/server/src/rulerepo_server/core/logging.py")
         elif "Cost ledger" in name:

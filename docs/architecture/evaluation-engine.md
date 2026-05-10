@@ -1,6 +1,6 @@
 # Evaluation Engine
 
-The Code-Aware Evaluation Engine is the core product capability. It accepts code changes, file metadata, or free-form facts as input, maps them to relevant rules in the corpus, and returns structured verdicts with actionable remediation.
+The Subject-Polymorphic Evaluation Engine is the core product capability. It accepts code changes, contract clauses, HR events, financial transactions, communications, or free-form facts as input, maps them to relevant rules in the corpus, and returns structured verdicts with actionable remediation. Eight subject kinds and seven evaluation surfaces allow the same pipeline to handle any domain.
 
 ## Pipeline
 

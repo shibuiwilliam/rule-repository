@@ -215,12 +215,18 @@ def create_app() -> FastAPI:
 
     # --- Register API routers ---
     from rulerepo_server.api.v1 import v1_router
+    from rulerepo_server.core.feature_flags import get_feature_flags
     from rulerepo_server.gateway.router import router as gateway_router
-    from rulerepo_server.integrations.github.router import router as github_router
 
     app.include_router(v1_router)
     app.include_router(gateway_router, prefix="/api/v1")
-    app.include_router(github_router, prefix="/api/v1")
+
+    # GitHub App webhook — only registered when enabled
+    flags = get_feature_flags()
+    if flags.github_app_enabled:
+        from rulerepo_server.integrations.github.router import router as github_router
+
+        app.include_router(github_router, prefix="/api/v1")
 
     return app
 

@@ -1,0 +1,93 @@
+version: 1
+template:
+  name: contract-clause-standard
+  description: Standard contract clause review rules covering NDA, MSA, and SOW templates
+  tags: [contract, legal, clause-review]
+  owning_department: legal
+  applicable_subject_kinds: [clause_set, document]
+
+rules:
+  - statement: "Liability clauses must include a cap on total liability not exceeding the total contract value"
+    modality: MUST
+    severity: HIGH
+    classification: CONFIDENTIAL
+    scope: [legal/contract/liability]
+    tags: [contract, liability, cap]
+    rationale: "Unlimited liability exposure creates unacceptable financial risk"
+    violation_examples:
+      - "The Contractor shall be liable for all damages without limitation"
+    subject_kinds: [clause_set, document]
+
+  - statement: "Governing law and jurisdiction must be explicitly specified in every contract"
+    modality: MUST
+    severity: HIGH
+    classification: INTERNAL
+    scope: [legal/contract/jurisdiction]
+    tags: [contract, jurisdiction, governing-law]
+    rationale: "Ambiguous jurisdiction leads to costly and unpredictable dispute resolution"
+    violation_examples:
+      - "Any disputes shall be resolved in accordance with applicable law"
+
+  - statement: "Non-disclosure obligations must have a defined term not exceeding 5 years"
+    modality: MUST
+    severity: MEDIUM
+    classification: CONFIDENTIAL
+    scope: [legal/contract/nda]
+    tags: [contract, nda, confidentiality]
+    rationale: "Perpetual NDA obligations are unenforceable in many jurisdictions and create ongoing compliance burden"
+
+  - statement: "Termination clauses must specify a minimum notice period of 30 days"
+    modality: MUST
+    severity: MEDIUM
+    classification: INTERNAL
+    scope: [legal/contract/termination]
+    tags: [contract, termination, notice]
+    rationale: "Insufficient notice period prevents orderly transition"
+
+  - statement: "Indemnification clauses must be mutual unless justified by the nature of the engagement"
+    modality: SHOULD
+    severity: MEDIUM
+    classification: INTERNAL
+    scope: [legal/contract/indemnification]
+    tags: [contract, indemnification]
+    rationale: "One-sided indemnification creates disproportionate risk"
+
+  - statement: "Intellectual property ownership must be explicitly assigned or licensed in the contract"
+    modality: MUST
+    severity: HIGH
+    classification: CONFIDENTIAL
+    scope: [legal/contract/ip]
+    tags: [contract, ip, ownership]
+    rationale: "Ambiguous IP ownership leads to disputes over work product"
+
+  - statement: "Force majeure clauses must include pandemics, natural disasters, and government actions"
+    modality: SHOULD
+    severity: MEDIUM
+    classification: INTERNAL
+    scope: [legal/contract/force-majeure]
+    tags: [contract, force-majeure]
+    rationale: "Incomplete force majeure clauses leave gaps during unforeseen events"
+
+  - statement: "Payment terms must not exceed 60 days from invoice date"
+    modality: MUST
+    severity: HIGH
+    classification: INTERNAL
+    scope: [legal/contract/payment, finance/accounts-payable]
+    tags: [contract, payment, subcontract-act]
+    rationale: "Subcontract Act (下請法) requires payment within 60 days"
+
+  - statement: "Non-compete clauses must be limited in geographic scope and duration (maximum 2 years)"
+    modality: SHOULD
+    severity: MEDIUM
+    classification: INTERNAL
+    scope: [legal/contract/non-compete]
+    tags: [contract, non-compete, employment]
+    rationale: "Overly broad non-compete clauses may be unenforceable"
+
+  - statement: "Data processing addendum must be attached when the contract involves processing personal data"
+    modality: MUST
+    severity: HIGH
+    classification: CONFIDENTIAL
+    scope: [legal/contract/data-processing, compliance/privacy]
+    tags: [contract, privacy, dpa, appi]
+    rationale: "APPI and GDPR require documented data processing agreements"

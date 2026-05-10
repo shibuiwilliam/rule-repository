@@ -6,6 +6,7 @@
   "nav": {
     "manage": "Manage",
     "observe": "Observe",
+    "use": "Use",
     "enforce": "Enforce",
     "settings": "Settings"
   },
@@ -22,6 +23,7 @@
     "snapshots": "Snapshots",
     "tutor": "Tutor",
     "intelligence": "Intelligence",
+    "compliance": "Compliance Cockpit",
     "feedback": "Feedback",
     "notifications": "Notifications",
     "agents": "Agents",
@@ -30,7 +32,9 @@
     "gateway": "Gateway",
     "integrations": "Integrations",
     "projects": "Projects",
-    "onboarding": "Get Started"
+    "onboarding": "Get Started",
+    "assistant": "Assistant",
+    "departments": "Departments"
   },
   "persona": {
     "label": "Persona",

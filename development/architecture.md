@@ -6,10 +6,10 @@ The Rule Repository is a monorepo with 10 services orchestrated via Docker Compo
 
 | Component | Tech | Port | Purpose |
 |---|---|---|---|
-| Backend API | Python 3.13 + FastAPI | 8000 | 34 registered API routers covering rules, evaluation, search, discovery, governance, compliance, and more |
-| MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 12+ tools) |
-| Frontend | TypeScript + Next.js 15 | 3000 | Operator console with 50+ pages, 9 persona portals, English/Japanese i18n |
-| PostgreSQL | 17-alpine | 5432 | System of record (35+ ORM models, 31 migrations) with Row-Level Security |
+| Backend API | Python 3.13 + FastAPI | 8000 | 39 API routers covering rules, evaluation, search, discovery, governance, compliance, and more |
+| MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 18 tools) |
+| Frontend | TypeScript + Next.js 15 | 3000 | Operator console with 58 pages across 8 persona route groups, English/Japanese i18n |
+| PostgreSQL | 17-alpine | 5432 | System of record (36 ORM models, 30 migrations) with Row-Level Security |
 | Elasticsearch | 8.17 | 9200 | Full-text + vector search with document-level security |
 | Neo4j | 5-community | 7474/7687 | Rule relationship graph |
 | Redis | 7-alpine | 6379 | Job queue for arq background worker |
@@ -25,7 +25,7 @@ The Rule Repository is a monorepo with 10 services orchestrated via Docker Compo
 src/rulerepo_server/
 ├── main.py                         # FastAPI app factory, router registration
 ├── api/
-│   └── v1/                         # 34 registered API routers
+│   └── v1/                         # 39 API routers
 │       ├── rules.py                #   CRUD, retire, revisions, relationships, graph
 │       ├── search.py               #   fulltext, vector, hybrid, category, context
 │       ├── evaluation.py           #   evaluate, quick, applicable-rules, get by ID
@@ -60,7 +60,11 @@ src/rulerepo_server/
 │       ├── tenants.py              #   tenant management (RR-007)
 │       ├── translations.py         #   polyglot translation management (RR-020)
 │       ├── upcoming_changes.py     #   scheduled rule changes (RR-036)
-│       └── lineage.py             #   norm lineage upstream/downstream
+│       ├── lineage.py              #   norm lineage upstream/downstream
+│       ├── assistant.py            #   conversational assistant (Phase 7g)
+│       ├── cockpit.py              #   compliance cockpit dashboard (Phase 7h)
+│       ├── events_ingest.py        #   universal business event ingestion (Phase 7e)
+│       └── onboarding.py           #   guided onboarding wizard
 ├── core/
 │   ├── config.py                   # Settings (Pydantic BaseSettings)
 │   ├── logging.py                  # structlog JSON logger
@@ -76,20 +80,24 @@ src/rulerepo_server/
 │   └── tenancy/                    # Multi-tenant context
 │       ├── context.py              #   TenantContext using contextvars
 │       └── middleware.py            #   Request-scoped tenancy middleware
-├── domain/                         # Pure domain models (no deps on project)
+├── domain/                         # Pure domain models (25 files, no deps on project)
 │   ├── rule.py                     # Rule, RuleRelationship, RuleRevision, EffectivePeriod
 │   ├── subject.py                  # SubjectKind enum (8 kinds), Subject protocol
 │   ├── department.py               # Department, DepartmentType, Capacity, RuleOwnership
 │   ├── classification.py           # Classification enum (PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED)
-│   ├── evaluation.py               # EvaluationContext, FileChange, RuleVerdict, Remediation
+│   ├── evaluation.py               # EvaluationContext, FileChange, RuleVerdict, Surface enum
 │   ├── verdict.py                  # Verdict enum and helpers
+│   ├── remediation.py              # RemediationKind enum, polymorphic Remediation
 │   ├── audit.py                    # AuditEntry, hash chaining
+│   ├── business_event.py           # BusinessEvent, ActorRef, event-type-to-scope mapping
 │   ├── contract.py                 # Contract domain model
-│   ├── event_sequence.py           # Event sequence for workflows
+│   ├── event_sequence.py           # Event sequence for temporal evaluation modes
+│   ├── tenant.py                   # Tenant, Organization, Principal, Role (multi-tenancy)
 │   ├── proposal.py                 # Proposal, ProposalStatus, ProposalVote
 │   ├── agent.py                    # AgentProfile, TrustLevel, AgentSession
 │   ├── revision.py                 # Revision tracking
 │   ├── federation.py               # Federation domain objects
+│   ├── abac.py                     # Attribute-Based Access Control
 │   ├── applies_to.py               # AppliesTo model (artifact_type, triggering_events)
 │   ├── evaluable.py                # Evaluable abstraction for non-diff artifacts
 │   ├── attestation.py              # Attestation campaigns
@@ -565,7 +573,7 @@ Docker Compose files:
 
 ## Alembic Migrations
 
-31 migrations in `apps/server/alembic/versions/` (001-031, skipping 020):
+30 migrations in `apps/server/alembic/versions/`:
 
 | Migration | Description |
 |---|---|
@@ -647,7 +655,7 @@ The FastAPI application applies three middleware layers (outermost first):
 
 ## Frontend Pages
 
-The Next.js frontend has 30+ pages (including nested routes and domain-specific surfaces):
+The Next.js frontend has 58 pages across 8 persona route groups (including nested routes and domain-specific surfaces):
 
 | Route | Purpose |
 |---|---|

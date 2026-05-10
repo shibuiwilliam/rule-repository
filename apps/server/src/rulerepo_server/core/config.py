@@ -88,6 +88,21 @@ class Settings(BaseSettings):
     # Weekly digest
     digest_webhook_url: str = ""
 
+    # --- Cross-Organizational direction (Phase 7) ---
+    cross_org_features_enabled: bool = True
+    department_rbac_enabled: bool = True
+    assistant_enabled: bool = True
+    compliance_cockpit_enabled: bool = True
+    polyglot_verification_enabled: bool = True
+
+    # --- Opt-in features (default OFF) ---
+    multi_agent_sessions_enabled: bool = False
+    github_app_enabled: bool = False
+
+    # --- Alert / Digest delivery mode ---
+    alert_output_mode: str = "local"  # "local" | "webhook" | "both"
+    digest_output_mode: str = "local"  # "local" | "webhook" | "both"
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -126,7 +126,7 @@ Streams A and B can proceed in parallel. Stream C is independent. Stream D depen
 
 - [x] Stream A (Contract Clause Engine) passes Definition of Done
 - [x] Stream B (Event Engine) passes Definition of Done (except B6: HR system adapter stubs)
-- [ ] Stream C (Document Discovery) — remaining: regulation_pdf upgrade (C2), regulation_feed (C5), Confluence/Notion upgrade (C8), incremental polling worker (C9)
+- [ ] Stream C (Document Discovery) — remaining: regulation_pdf upgrade (C2), regulation_feed (C5), incremental polling worker (C9)
 - [ ] Stream D (Domain-Aware UX) — remaining: department-aware dashboard (D4), no-code wizard (D5), intent-first search (D6), lint/typecheck (D7)
 - [ ] `make check` passes (ruff + mypy + pytest + pnpm lint + pnpm typecheck)
 - [ ] `make up` brings up the full stack

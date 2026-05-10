@@ -191,6 +191,10 @@ test.e2e.evaluation: ## Run E2E evaluation tests only (stack must be running)
 test.e2e.workflow: ## Run E2E full workflow test only (stack must be running)
 	RULEREPO_LIVE_LLM=1 RULEREPO_SERVER_URL=http://localhost:8000 uv run python -m pytest apps/server/tests/e2e/test_full_workflow.py -v --tb=short
 
+.PHONY: crossorg.acceptance
+crossorg.acceptance: ## Run the 4 cross-organizational acceptance tests (Phase 7)
+	cd $(SERVER_DIR) && uv run python -m pytest tests/acceptance/cross_org/ -v --tb=short
+
 # ===========================================================================
 #  Database
 # ===========================================================================

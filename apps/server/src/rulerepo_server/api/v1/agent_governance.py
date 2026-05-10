@@ -191,8 +191,16 @@ async def list_negotiations(
 
 
 # ---------------------------------------------------------------------------
-# Governance Sessions
+# Governance Sessions (frozen — gated behind MULTI_AGENT_SESSIONS_ENABLED)
 # ---------------------------------------------------------------------------
+
+
+def _require_multi_agent_sessions() -> None:
+    """Raise 404 if multi-agent sessions are disabled."""
+    from rulerepo_server.core.feature_flags import get_feature_flags
+
+    if not get_feature_flags().multi_agent_sessions_enabled:
+        raise HTTPException(status_code=404, detail="Multi-agent sessions are disabled")
 
 
 @router.post("/session", response_model=SessionResponse, status_code=201)
@@ -201,6 +209,7 @@ async def create_session(
     svc: AgentGovernanceService = Depends(_get_service),
 ) -> SessionResponse:
     """Create a multi-agent governance session."""
+    _require_multi_agent_sessions()
     try:
         result = await svc.create_session(
             agent_id=body.agent_id,
@@ -219,6 +228,7 @@ async def join_session(
     svc: AgentGovernanceService = Depends(_get_service),
 ) -> SessionResponse:
     """Join an existing governance session."""
+    _require_multi_agent_sessions()
     try:
         result = await svc.join_session(session_id=session_id, agent_id=body.agent_id)
         return SessionResponse(**result)
@@ -232,6 +242,7 @@ async def get_session(
     svc: AgentGovernanceService = Depends(_get_service),
 ) -> SessionResponse:
     """Get session details."""
+    _require_multi_agent_sessions()
     try:
         result = await svc.get_session(session_id)
         return SessionResponse(**result)
@@ -246,6 +257,7 @@ async def publish_verdict(
     svc: AgentGovernanceService = Depends(_get_service),
 ) -> SessionResponse:
     """Publish a verdict to the shared session."""
+    _require_multi_agent_sessions()
     try:
         result = await svc.publish_verdict(
             session_id=session_id,
@@ -264,6 +276,7 @@ async def close_session(
     svc: AgentGovernanceService = Depends(_get_service),
 ) -> SessionResponse:
     """Close a governance session."""
+    _require_multi_agent_sessions()
     try:
         result = await svc.close_session(session_id)
         return SessionResponse(**result)

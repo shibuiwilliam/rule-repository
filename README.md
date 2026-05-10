@@ -16,11 +16,13 @@ A legal counsel reviewing an NDA, an HR manager checking overtime compliance, a 
 - [Surfaces and Domain Packs](#surfaces-and-domain-packs)
 - [Architecture](#architecture)
 - [Deployment Tiers](#deployment-tiers)
+- [Business Event Ingestion](#business-event-ingestion)
 - [MCP Server](#mcp-server)
 - [CLI Tools](#cli-tools)
 - [Frontend](#frontend)
 - [Evaluation Engine](#evaluation-engine)
 - [Norm Lineage](#norm-lineage)
+- [Rule Extraction](#rule-extraction)
 - [Rule Templates](#rule-templates)
 - [Compliance and Privacy](#compliance-and-privacy)
 - [Eval Harness](#eval-harness)
@@ -50,13 +52,13 @@ After about a minute:
 
 | Service | URL | Purpose |
 |---|---|---|
-| Backend API | http://localhost:8000 | FastAPI server (36 API routers) |
+| Backend API | http://localhost:8000 | FastAPI server (37 API routers + gateway) |
 | Swagger UI | http://localhost:8000/docs | Interactive API explorer |
-| Frontend | http://localhost:3000 | Persona-specific consoles (55 pages) |
+| Frontend | http://localhost:3000 | Persona-specific consoles (58 pages, 9 route groups) |
 | PostgreSQL | localhost:5432 | Source of truth with Row-Level Security |
 | Elasticsearch | localhost:9200 | Full-text + vector hybrid search |
 | Neo4j | localhost:7474 | Rule relationship graph + norm lineage |
-| Redis | localhost:6379 | Background job queue (arq) |
+| Redis | localhost:6379 | Background job queue (arq, 9 cron jobs) |
 | MCP Server | localhost:8001 | AI agent tool integration (18 tools) |
 
 ### Start with Postgres only (Tier 1)
@@ -76,6 +78,22 @@ Tier 1 uses Postgres FTS for search, adjacency tables for graph queries, and in-
 curl -X POST http://localhost:8000/api/v1/search/fulltext \
   -H "Content-Type: application/json" \
   -d '{"query": "overtime limit"}'
+
+# Ingest a business event for evaluation
+curl -X POST http://localhost:8000/api/v1/events/ingest \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event_type": "finance.expense.submitted",
+    "actor": {"type": "employee", "id": "E001", "department": "sales"},
+    "subject": {
+      "type": "transaction",
+      "payload": {"amount_jpy": 50000, "category": "entertainment"},
+      "context_facts": {"remaining_budget_jpy": 100000}
+    },
+    "occurred_at": "2026-04-01T10:00:00+09:00",
+    "correlation_id": "expense-12345",
+    "mode": "preflight"
+  }'
 
 # Review a contract clause against legal rules
 curl -X POST http://localhost:8000/api/v1/evaluate/contract \
@@ -119,6 +137,11 @@ curl -X POST http://localhost:8000/api/v1/evaluate \
   -d '{"diff": "- pass\n+ password = os.environ[\"SECRET\"]", "scope": "engineering/python"}'
 
 # Ask a question in natural language
+curl -X POST http://localhost:8000/api/v1/assistant/turn \
+  -H "Content-Type: application/json" \
+  -d '{"user_message": "Can I expense JPY 30,000 for a client dinner?", "language": "ja"}'
+
+# Ask a simpler question
 curl -X POST http://localhost:8000/api/v1/ask \
   -H "Content-Type: application/json" \
   -d '{"question": "What are the overtime limits for employees?"}'
@@ -139,26 +162,28 @@ The Rule Repository stores rules as natural-language statements and evaluates an
 
 - **Legal**: Review contract clauses against NDA/MSA templates, detect missing protections, track regulatory changes
 - **HR / Labor**: Check overtime against 36-agreement caps, validate leave requests, monitor attendance compliance
-- **Finance**: Screen expense claims, enforce approval thresholds, validate tax deduction eligibility
+- **Finance**: Screen expense claims, enforce approval thresholds, validate procurement rules
 - **Communications**: Flag harassment, detect confidential data in chat channels, ensure product-claim accuracy
 - **Engineering**: Enforce coding standards, catch security issues (OWASP), validate API design
 - **IT Security**: Review IaC plans, check access control, verify encryption requirements
 - **Sales**: Validate advertising claims, enforce discount authority, check quote accuracy
-- **Governance**: Verify disclosure completeness, track board minute compliance, monitor ESG reporting
+- **Compliance**: Track regulatory amendments, monitor department violation trends, manage action queues
 
-Each rule carries structured metadata: modality (MUST / MUST_NOT / SHOULD / MAY / INFO), severity (LOW through CRITICAL), scope, effective period, norm tier, locale, rationale, and examples of both compliance and violation.
+Each rule carries structured metadata: modality (MUST / MUST_NOT / SHOULD / MAY / INFO), severity (LOW through CRITICAL), scope, department ownership, effective period, locale, rationale, and examples of both compliance and violation.
 
 ---
 
 ## How It Works
 
-1. **Store rules in natural language.** Import them from PDFs, Word documents, markdown files, or create them directly. Each rule keeps its original wording, source reference, and full revision history.
+1. **Store rules in natural language.** Import them from PDFs, Word documents, Excel tables, email archives, meeting minutes, employee handbooks, or create them directly. Each rule keeps its original wording, source reference, department ownership, and full revision history.
 
-2. **Evaluate anything against those rules.** Send a *Subject* -- a code diff, a contract clause, an HR event, a financial transaction, a chat message, or any text -- and the system selects the relevant rules, sends them to an LLM alongside the subject, and returns per-rule verdicts.
+2. **Evaluate anything against those rules.** Send a *Subject* -- a code diff, a contract clause, an HR event, a financial transaction, a chat message, or any text -- and the system selects the relevant rules, sends them to an LLM alongside the subject, and returns per-rule verdicts with typed Remediations (`code_edit`, `text_rewrite`, `field_change`, `approval_add`, `process_reroute`, `clarification`, or `block`).
 
-3. **Track norm lineage.** Rules don't exist in isolation. A department overtime policy *derives from* the Labor Standards Act. When the law changes, every downstream rule is automatically flagged for review.
+3. **Ingest business events.** External systems push events (expense submissions, attendance registrations, contract drafts) to a single endpoint. The system resolves scope from the event type and evaluates automatically.
 
-4. **Act on the results.** Integrate via REST API, MCP tools for AI agents, or CLI commands in CI/CD. Each persona (Legal, HR, Finance, Engineering, Compliance) has a dedicated console.
+4. **Track norm lineage.** Rules don't exist in isolation. A department overtime policy *derives from* the Labor Standards Act. When the law changes, every downstream rule is automatically flagged for review.
+
+5. **Act on the results.** Integrate via REST API, MCP tools for AI agents, CLI commands in CI/CD, or the Conversational Assistant for end users. Each persona (Legal, HR, Finance, Engineering, Compliance) has a dedicated console.
 
 ---
 
@@ -211,18 +236,18 @@ A **Domain Pack** bundles rules, prompt hints, samples, and frontend route decla
 │  │ Intelligence      │  │ prompt hints, PII config           │  │
 │  │ Proposals + Gov.  │  ├────────────────────────────────────┤  │
 │  │ Fact Store        │  │ Domain Packs (5)                   │  │
-│  │ Risk Register     │  │                                    │  │
-│  │ Attestation       │  │ Code  Contract  HR Attendance      │  │
+│  │ Department RBAC   │  │                                    │  │
+│  │ Risk + Attestation│  │ Code  Contract  HR Attendance      │  │
 │  │ Multi-tenant      │  │ Communication  Expense             │  │
 │  └──────────────────┘  └────────────────────────────────────┘  │
 │                                                                 │
 │  ┌──────────────────┐  ┌────────────────────────────────────┐  │
 │  │ LLM Abstraction  │  │ Integration Layer                  │  │
 │  │                   │  │                                    │  │
-│  │ Primary/fallback  │  │ 36 REST API routers                │  │
+│  │ Primary/fallback  │  │ 37 REST API routers                │  │
 │  │ Gemini, Anthropic │  │ MCP Server (18 tools)              │  │
-│  │ OpenAI, self-host │  │ Gateway (webhooks)                 │  │
-│  └──────────────────┘  │ GitHub integration                  │  │
+│  │ OpenAI, self-host │  │ Business Event Ingestion           │  │
+│  └──────────────────┘  │ Gateway + GitHub (opt-in)           │  │
 │                         └────────────────────────────────────┘  │
 │                                                                 │
 │  PostgreSQL 17     Elasticsearch 8     Neo4j 5     Redis 7     │
@@ -235,8 +260,9 @@ A **Domain Pack** bundles rules, prompt hints, samples, and frontend route decla
 - **Postgres is the source of truth.** Elasticsearch and Neo4j are derived projections. If they disagree, Postgres wins and projections are rebuilt.
 - **The evaluation core is surface-agnostic.** No surface-specific code lives in `services/evaluation/core/`. An import-boundary test enforces this.
 - **All LLM calls go through a single router** with primary/fallback chains and per-scope provider overrides. No business logic calls a provider directly.
+- **Department RBAC is non-bypassable.** Every endpoint that returns or mutates rules applies department visibility filtering.
 - **Multi-tenant by construction.** Every entity carries `tenant_id`. Postgres Row-Level Security enforces isolation at the data layer.
-- **Norm Lineage and Organizational Federation are orthogonal.** A rule sits on two independent axes: its norm tier (Law to Operational Rule) and its organizational owner (Org to Team to Project). They are modeled, queried, and rendered separately.
+- **Norm Lineage and Organizational Federation are orthogonal.** A rule sits on two independent axes: its norm tier (Law to Operational Rule) and its organizational owner (Org to Team to Project).
 
 ---
 
@@ -253,6 +279,23 @@ A **Domain Pack** bundles rules, prompt hints, samples, and frontend route decla
 | **Best for** | Pilots, local dev | Standard production | Full capability |
 
 The server detects available services at startup and adapts automatically. Application code uses the same interfaces regardless of tier.
+
+---
+
+## Business Event Ingestion
+
+External business systems integrate by pushing events to a single endpoint. The Rule Repository resolves scope from the event type, selects applicable rules, evaluates the subject, and returns verdicts synchronously.
+
+```
+POST /api/v1/events/ingest
+```
+
+Supported event types include `finance.expense.submitted`, `hr.attendance.registered`, `legal.contract.draft_created`, `sales.email.drafted`, and any custom `{department}.{action}.{noun}` pattern.
+
+Three modes:
+- **preflight** -- blocks until evaluation completes; use when the calling system needs a go/no-go decision before proceeding
+- **posthoc** -- evaluates and persists the audit record; the calling system has already acted
+- **sidecar** -- observes without affecting the calling flow
 
 ---
 
@@ -305,25 +348,31 @@ rulerepo review-contract --file ./contracts/draft.docx --output redline.html
 # Check an HR action against labor regulations
 rulerepo check-action --action register_overtime --actor user:E001 --json '{"hours":50}'
 
-# Pre-commit hook for AI agents
-rulerepo hook preflight --file src/api/handler.py --agent-id claude-code
+# Pre-commit hook for AI agents (with context from the agent's prompt)
+rulerepo hook preflight --file src/api/handler.py --prompt "Adding authentication"
+
+# Install hooks into Claude Code settings
+rulerepo hook install --server-url http://localhost:8000
 
 # Ingest rules from a document
 rulerepo ingest --source pdf --file ./policy.pdf --scope hr/attendance/jp
 
 # Export rules to YAML
 rulerepo export --project backend-api --output rules.yaml
+
+# Zero-config project setup
+rulerepo init --name my-project
 ```
 
 ---
 
 ## Frontend
 
-A Next.js 15 + React 19 + Tailwind CSS frontend with 55 pages organized into persona-specific consoles. Each persona sees a dashboard aligned to their workflow, not a generic engineering view.
+A Next.js 15 + React 19 + Tailwind CSS frontend with 58 pages organized into 9 persona-specific route groups. Each persona sees a dashboard aligned to their workflow, not a generic engineering view.
 
 | Console | Route | Key pages |
 |---|---|---|
-| **Engineering** | `/dashboard` | Rules, search, proposals, playground, agents, intelligence, audit |
+| **Main Dashboard** | `/dashboard` | Rules, search, proposals, playground, agents, intelligence, audit |
 | **Legal** | `/legal` | Contract review, clause library, redlines, norm lineage |
 | **HR** | `/hr` | Violations, attendance, leave, lifecycle, policies |
 | **Finance** | `/finance` | Transactions, expense policies, audit reports, controls |
@@ -332,7 +381,9 @@ A Next.js 15 + React 19 + Tailwind CSS frontend with 55 pages organized into per
 | **Marketing** | `/marketing` | Creative review |
 | **Admin** | `/admin` | Tenant management, user provisioning |
 
-Additional portals: `/ask` (conversational rule assistant), `/onboarding` (3-step wizard: select domain, choose templates, scan sources).
+Additional pages in the main dashboard: `/assistant` (conversational rule assistant with chat UI and inline citations), `/compliance` (compliance cockpit with department violation trends), `/departments` (department and membership management), `/onboarding` (3-step wizard: select domain, choose templates, scan sources).
+
+The sidebar is organized into sections: **Observe** (dashboard, intelligence, compliance cockpit, feedback, notifications, agents, audit), **Manage** (rules, discover, documents, proposals, snapshots, departments), **Use** (assistant, ask, search, playground), **Enforce** (review, gateway, federations), and **Settings** (projects, onboarding, integrations).
 
 The frontend supports English and Japanese via `next-intl`, with a locale switcher in every console.
 
@@ -344,15 +395,16 @@ The evaluation pipeline works the same regardless of the surface:
 
 1. **Surface adapter** -- transforms domain-specific input (diff, contract clause, HR event, etc.) into a uniform Subject
 2. **Rule selection** -- multi-stage filter pipeline: scope, subject type, artifact type, dimensions, severity, relevance scoring
-3. **Fact resolution** -- the Fact Store resolves external facts (employee grade, 36-agreement status, contract value)
-4. **LLM evaluation** -- the selected rules and the subject are sent to the LLM with surface-specific prompt hints. Cross-locale fallback selects translated rule statements when available, with structured logging when it falls back to the canonical locale
+3. **Fact resolution** -- the Fact Store resolves external facts (employee grade, 36-agreement status, contract value). Context Providers (`StaticFileProvider`, `HttpProvider`) can supply missing facts automatically
+4. **LLM evaluation** -- the selected rules and the subject are sent to the LLM with surface-specific prompt hints. Cross-locale fallback selects translated rule statements when available
 5. **Verdict aggregation** -- per-rule verdicts are aggregated into ALLOW / DENY / NEEDS_CONFIRMATION / ALLOW_WITH_CONDITIONS / REQUIRES_DISCLOSURE
-6. **Audit persistence** -- model ID, prompt version, inputs, outputs, latency, surface, actor, and locale are logged to the append-only, hash-chained audit log
+6. **Remediation** -- typed remediation proposals: `code_edit` (line-level patches), `text_rewrite` (document span replacement), `field_change` (transaction field correction), `approval_add` (escalate to approver), `process_reroute` (redirect workflow), `clarification` (request missing information), `block` (requires human judgment)
+7. **Audit persistence** -- model ID, prompt version, inputs, outputs, latency, surface, actor, and locale are logged to the append-only, hash-chained audit log
 
 Additional features:
 - **Multi-judge consensus** for CRITICAL-severity rules (a second LLM provider confirms)
 - **Confidence calibration** via conformal prediction
-- **Verdict drift detection** alerts when the same rule + input produces different verdicts over time
+- **Verdict drift detection** alerts when the same rule + input produces different verdicts over time (daily cron, 30-day windows, 20pp threshold)
 - **Prompt injection defense** wraps user content in delimiters and screens for known injection patterns
 - **Cost guardrails** with per-tenant monthly budget, 80% warning, and 100% hard cap
 
@@ -371,25 +423,51 @@ Rules are linked via `DERIVES_FROM` relationships. Walking the chain answers que
 - **Upstream walk**: from an operational rule back to its source law
 - **Downstream walk**: from a law to all derived internal rules
 - **Amendment propagation**: when a LAW or REGULATION rule changes, a background worker flags every transitive downstream rule with `pending_norm_change_review`
-- **Bilingual drift detection**: a daily worker compares EN/JA rule translations and flags semantic drift above threshold
+- **Polyglot drift detection**: a weekly worker compares EN/JA rule translations and flags semantic drift above threshold (0.85 equivalence score)
 
-The norm lineage is **orthogonal** to the organizational federation (Org / Team / Project). A single rule can simultaneously derive from the Labor Standards Act (norm axis) and be owned by the HR department (org axis). The two hierarchies are queried separately and rendered in separate UI components.
+The norm lineage is **orthogonal** to the organizational federation (Org / Team / Project). A single rule can simultaneously derive from the Labor Standards Act (norm axis) and be owned by the HR department (org axis).
+
+---
+
+## Rule Extraction
+
+Six domain-specific extractors bootstrap rules from existing organizational documents:
+
+| Extractor | Input | What it produces |
+|---|---|---|
+| **Contract** | PDF/DOCX contracts | Clause-level rules with Article-Section-Clause hierarchy |
+| **Regulation** | Regulation documents | Normative statements with 条/項/号 (or English) structure, automatic `derives_from` edges |
+| **Handbook** | Employee handbooks, manuals | Section-heading-organized rules from normative paragraphs |
+| **Minutes** | Meeting minutes | Decisions and action items only (discussion text ignored) |
+| **Tabular** | Excel/CSV tables | One rule per row (e.g., expense limit tables, approval matrices) |
+| **Email Archive** | `.eml` file directories | De-facto communication patterns (disclaimers, signatures, conventions) |
+
+All extractors implement the `Extractor` protocol and produce `CandidateRule` objects that go through human review before becoming active rules.
+
+```bash
+# Extract rules from a regulation PDF
+rulerepo ingest --source regulation_doc --file ./policies/employee_handbook.pdf --scope hr/attendance
+
+# Extract from an expense limits spreadsheet
+rulerepo ingest --source spreadsheet --file ./policies/expense_limits.xlsx
+```
 
 ---
 
 ## Rule Templates
 
-27 ready-to-use templates covering 270+ rules across 7 domains:
+30 ready-to-use templates covering 300+ rules across 8 domains:
 
 | Domain | Templates | Example topics |
 |---|---|---|
-| Engineering | 6 | Python/FastAPI, TypeScript/React, OWASP security, API design, testing, documentation |
-| Legal | 5 | NDA review, contract clauses, IP protection, regulatory compliance |
+| Engineering | 5 | Python/FastAPI, TypeScript/React, OWASP security, API design, testing |
+| Legal | 4 | NDA review, contract clauses, IP protection, regulatory compliance |
 | HR | 5 | Attendance (JP), leave management, evaluation fairness, harassment prevention, overtime |
 | Finance | 5 | Expense policy, journal entries, invoice compliance, purchase orders, revenue recognition |
-| Compliance | 3 | Anti-corruption, data privacy (JP), advertising regulations |
-| IT Security | 2 | Access control, IaC/Terraform |
-| Governance | 1 | Self-governance meta-rules |
+| Compliance | 2 | Anti-corruption, data privacy (JP) |
+| IT Security | 3 | Access control, IaC/Terraform, OWASP |
+| Communication | 1 | Internal communication standards |
+| Cross-domain | 5 | Contract clause standard, procurement rules, documentation, advertising, meta-rules |
 
 Load templates with `make seed` or through the onboarding wizard at `/onboarding`.
 
@@ -401,12 +479,13 @@ Japanese-language rules are included for labor law (Labor Standards Act), privac
 
 ## Compliance and Privacy
 
-- **PII scrubbing**: Each surface declares its PII-sensitive fields. The evaluation pipeline redacts them before they reach the LLM. Redacted values are stored encrypted for authorized restoration.
-- **Surface-aware retention**: Audit records are retained per surface (e.g., 1 year for code evaluations, 10 years for contract evaluations). Per-scope overrides are supported.
-- **Prompt injection defense**: All LLM-bound user content is wrapped in stable delimiters and screened against known injection patterns. Detected injections force a `NEEDS_CONFIRMATION` verdict.
-- **Audit trail**: Append-only, hash-chained audit log in Postgres. Each entry links to the previous via SHA-256. WORM storage mirroring available when configured.
-- **Attestation campaigns**: Create campaigns requiring users to acknowledge specific rules, with completion tracking and reminders.
+- **Department RBAC**: 10 department types (Legal, HR, Finance, Sales, Marketing, IT, Operations, R&D, Executive, Custom) with 4 capacity levels (Owner, Reviewer, Auditor, Subscriber). Every endpoint enforces department visibility.
+- **PII scrubbing**: Each surface declares its PII-sensitive fields. The evaluation pipeline redacts them before they reach the LLM.
+- **Surface-aware retention**: Audit records are retained per surface (e.g., 1 year for code evaluations, 10 years for contract evaluations).
+- **Prompt injection defense**: All LLM-bound user content is wrapped in stable delimiters and screened against known injection patterns.
+- **Audit trail**: Append-only, hash-chained audit log in Postgres. Each entry links to the previous via SHA-256.
 - **Classification levels**: PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED -- enforced via Postgres Row-Level Security.
+- **Compliance Cockpit**: Department violation trends, per-policy fire/deny rates, regulatory propagation view, and an action queue for compliance officers.
 
 ---
 
@@ -434,6 +513,7 @@ make up                       # start full stack (Tier 3)
 make up.tier1                 # start with Postgres only
 make seed                     # load sample rules + templates
 make check                    # format + lint + test (run before committing)
+make crossorg.acceptance      # run the 4 cross-organizational acceptance tests
 make eval                     # run eval harness
 make dev.server               # FastAPI with hot-reload
 make dev.frontend             # Next.js with hot-reload
@@ -461,31 +541,35 @@ rule-repository/
 ├── apps/
 │   ├── server/                        # FastAPI backend
 │   │   ├── src/rulerepo_server/
-│   │   │   ├── api/v1/                # 36 REST API routers
-│   │   │   ├── domain/                # Pure domain models (Rule, Surface, Actor, NormTier)
+│   │   │   ├── api/v1/                # 37 REST API routers
+│   │   │   ├── domain/                # Pure domain models (Rule, Subject, Department, Remediation)
 │   │   │   ├── services/
 │   │   │   │   ├── evaluation/        # Surface-agnostic evaluation engine
 │   │   │   │   │   ├── core/          # Universal pipeline (no surface imports)
 │   │   │   │   │   └── surfaces/      # 7 per-surface adapters
-│   │   │   │   ├── domains/           # 8 domain modules
+│   │   │   │   ├── extraction/        # Document ingestion + 6 domain extractors
 │   │   │   │   ├── intelligence/      # Health scoring, drift detection, analytics
 │   │   │   │   ├── norm_lineage/      # Upstream/downstream lineage walker
-│   │   │   │   ├── extraction/        # Document ingestion, bilingual pairing, redline diff
+│   │   │   │   ├── assistant/         # Conversational rule assistant
+│   │   │   │   ├── compliance/        # Compliance cockpit
+│   │   │   │   ├── departments/       # Department RBAC + authorization
+│   │   │   │   ├── events/            # Business event ingestion
+│   │   │   │   ├── polyglot/          # Multilingual rule verification
+│   │   │   │   ├── context/           # Context provider abstraction
 │   │   │   │   ├── discovery/         # Rule discovery from documents and code
 │   │   │   │   ├── feedback/          # Correction-to-rule flywheel
-│   │   │   │   └── ...               # 25+ more service modules
+│   │   │   │   └── ...               # 20+ more service modules
 │   │   │   ├── domain_packs/          # Code, Contract, HR, Communication, Expense
 │   │   │   ├── adapters/              # Postgres, ES, Neo4j, Gemini, LLM router
 │   │   │   ├── mcp/                   # MCP server (18 tools)
-│   │   │   └── workers/               # 9 background job workers
-│   │   ├── eval_harness/              # 90 golden test cases
-│   │   └── tests/                     # 65 test files
-│   └── frontend/                      # Next.js 15 (55 pages, 12 components)
+│   │   │   └── workers/               # 9 background cron jobs
+│   │   └── tests/                     # 69 test files (765+ tests)
+│   └── frontend/                      # Next.js 15 (58 pages, 9 route groups)
 ├── packages/
 │   ├── rule-client/                   # Python SDK
 │   ├── agentic-client/                # Python agentic SDK
-│   └── cli/                           # CLI tools (8 commands)
-├── sample_rules/                      # Sample rules + 27 templates (270+ rules)
+│   └── cli/                           # CLI tools (12 commands)
+├── sample_rules/                      # 30 templates (300+ rules)
 ├── infra/                             # Docker, Postgres init, ES templates
 ├── scripts/                           # Seeding, graph reconciliation, audit verification
 ├── PROJECT.md                         # Vision, domain model, roadmap
@@ -506,7 +590,7 @@ async with RuleClient("http://localhost:8000") as client:
 |---|---|---|
 | `rule-client` | `packages/rule-client/` | Python SDK for rule CRUD and search |
 | `agentic-client` | `packages/agentic-client/` | Python SDK wrapping evaluation for AI agents |
-| `cli` | `packages/cli/` | CLI tools (check, hook, ingest, export, review-contract, check-action) |
+| `cli` | `packages/cli/` | CLI tools (check, hook, ingest, export, review-contract, check-action, init, doctor, context, audit) |
 
 ---
 

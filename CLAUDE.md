@@ -2,7 +2,7 @@
 
 > Operational guide for Claude Code when working on the **Rule Repository** project.
 > For the project vision, domain model, and roadmap, see **PROJECT.md**.
-> For the diagnosis of the historical drift and the rationale for Phase 7+, see **IMPROVEMENT.md**.
+> For the analysis and rationale of Phase 7, see **IMPROVEMENT.md**.
 
 This file is the working contract between you (Claude Code) and the project. Read it before making changes. When in doubt, follow the rules in this file over your prior conventions.
 
@@ -10,28 +10,31 @@ This file is the working contract between you (Claude Code) and the project. Rea
 
 ## 1. Project at a Glance
 
-The Rule Repository is an **organization-wide normative management platform**. It manages laws, contracts, internal policies, HR regulations, financial procedures, sales playbooks, communication standards, documentation conventions, and engineering rules in their original natural language. Every team — Legal, HR, Finance, Sales, Compliance, IT, executive, and engineering — uses it through APIs, AI agents, and persona-specific consoles.
+The Rule Repository is a **Cross-Organizational Rule Platform**. It stores natural-language rules (laws, contracts, internal policies, financial rules, sales communication standards, engineering rules, documentation conventions) and makes them searchable, evaluable, and enforceable through LLM-assisted services and SDKs across departments (Legal, HR, Finance, Sales, Engineering, IT, General Affairs, Compliance, Executive). See `PROJECT.md` for the full design.
 
-**Code is one Surface among many.** The project's current implementation is the most mature on the Code Surface, but the architecture treats Contract, Human Action, Transaction, Document, and Message Surfaces as equal first-class citizens. Phase 7–9 work is restoring this balance. Read PROJECT.md §4 and IMPROVEMENT.md §4 before designing anything that touches the evaluation core, the discovery pipeline, the MCP tools, or the frontend dashboard structure.
+**This repository is a monorepo** containing the backend server, frontend, Python client SDKs, and local dev infrastructure. The deliverable is a fully working local stack via **Docker Compose**.
 
-**This repository is a monorepo** containing the backend server, frontend, Python client SDKs, CLI tools, MCP server, infrastructure, and Domain Packs. The full local stack comes up via **Docker Compose**.
+**Current state**: Phase 7 (Cross-Organizational Subject Expansion) is **complete**. All sub-phases 7a–7l are implemented and the four acceptance scenarios pass. Phases 1–6 are in maintenance.
+
+**Out of scope under the current direction**: multi-agent governance sessions. This feature exists in code but is disabled by default.
 
 ---
 
 ## 2. Tech Stack (authoritative)
 
 | Layer | Technology | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Backend | **Python 3.13** + FastAPI | Library management with **uv** |
-| Frontend | **TypeScript**, **React 19**, **Next.js 15**, **Tailwind CSS** | Library management with **pnpm** |
+| Frontend | **TypeScript**, **React**, **Next.js**, **Tailwind CSS** | Library management with **pnpm** |
 | Python clients | **Python 3.13** (Rule Client, Agentic Rule Client) | Library management with **uv** |
 | LLM | **Gemini 3 Flash** (`gemini-3-flash-preview`) and **Gemini 3.1 Pro** (`gemini-3.1-pro-preview`) | via `google-genai` SDK |
-| Document parsing / OCR | **Gemini Files API** + document understanding | PDF, docx, markdown, txt, regulatory XML |
-| Relational DB | **PostgreSQL 17** | rules, revisions, audit log |
-| Search | **Elasticsearch 8.17** | full-text + dense vector hybrid search |
-| Graph DB | **Neo4j 5** | rule relationships including the Norm Lineage spine |
-| Job Queue | **arq** + **Redis 7** | Background tasks (health, recommendations, correction analysis, lineage propagation, drift checking) |
-| MCP | FastMCP (mcp >= 1.9), 12+ tools | subject-agnostic |
+| Document parsing / OCR | **Gemini Files API** + document understanding | PDF, text, markdown |
+| Spreadsheet parsing | **openpyxl** | for the new tabular extractor |
+| Email parsing | **email** stdlib + **mail-parser** | for the new email_archive extractor |
+| Relational DB | **PostgreSQL** | rules, revisions, audit log, memberships |
+| Search | **Elasticsearch** | full-text + hybrid search |
+| Graph DB | **Neo4j** | rule relationships |
+| Job Queue | **arq** + **Redis** | background tasks (health scoring, recommendations, correction analysis, polyglot verification) |
 | Local orchestration | **Docker Compose** | dev + integration tests |
 
 Do **not** introduce additional frameworks or services without updating this file and PROJECT.md first.
@@ -43,111 +46,129 @@ Do **not** introduce additional frameworks or services without updating this fil
 ```
 rule-repository/
 ├── apps/
-│   ├── server/                            # FastAPI backend (Python 3.13, uv)
+│   ├── server/                     # FastAPI backend (Python 3.13, uv)
 │   │   ├── pyproject.toml
 │   │   ├── src/rulerepo_server/
-│   │   │   ├── main.py                    # FastAPI app factory
-│   │   │   ├── api/v1/                    # REST routers
-│   │   │   ├── core/                      # config, logging, errors, auth, middleware
-│   │   │   │   └── pii/                   # surface-aware PII sanitization
-│   │   │   ├── domain/                    # Rule, Subject, Surface, Actor, Verdict (pure)
+│   │   │   ├── api/v1/             # REST API routers
+│   │   │   ├── core/               # config, logging, errors, auth, middleware, PII, deps
+│   │   │   ├── domain/             # Rule, Evaluation, Verdict, Subject, BusinessEvent, Department (pure)
 │   │   │   ├── services/
-│   │   │   │   ├── evaluation/            # Subject-Aware Evaluation Engine
-│   │   │   │   │   ├── service.py         # surface-agnostic orchestrator
-│   │   │   │   │   ├── core/              # universal evaluator + prompts
+│   │   │   │   ├── evaluation/     # Subject Evaluation Engine
+│   │   │   │   │   ├── service.py          # orchestrator (subject dispatch)
+│   │   │   │   │   ├── rule_selector.py    # subject-agnostic rule selection
+│   │   │   │   │   ├── batch_evaluator.py  # subject-agnostic batched LLM call
+│   │   │   │   │   ├── verdict_aggregator.py # subject-agnostic
+│   │   │   │   │   ├── conflict_aggregator.py
+│   │   │   │   │   ├── graph_resolver.py
+│   │   │   │   │   ├── impact_preview.py
+│   │   │   │   │   ├── code/               # Code evaluation path
 │   │   │   │   │   │   ├── evaluator.py
-│   │   │   │   │   │   ├── batch_evaluator.py
-│   │   │   │   │   │   ├── rule_selector.py
-│   │   │   │   │   │   ├── graph_resolver.py
-│   │   │   │   │   │   ├── conflict_aggregator.py
-│   │   │   │   │   │   ├── verdict_aggregator.py
-│   │   │   │   │   │   ├── impact_preview.py
+│   │   │   │   │   │   ├── diff_parser.py
+│   │   │   │   │   │   ├── context_assembler.py
 │   │   │   │   │   │   └── prompts/
-│   │   │   │   │   │       ├── evaluate_subject.txt
-│   │   │   │   │   │       └── evaluate_subject_batch.txt
-│   │   │   │   │   └── surfaces/          # per-surface adapters
-│   │   │   │   │       ├── base.py        # Surface ABC, SurfaceAdapter ABC
-│   │   │   │   │       ├── code/          # CodeChange subject + diff parser
-│   │   │   │   │       ├── contract/      # ContractClause subject + clause splitter
-│   │   │   │   │       ├── human_action/  # HumanAction subject + event normalizer
-│   │   │   │   │       ├── transaction/   # BusinessTransaction subject
-│   │   │   │   │       ├── document/      # DocumentRegion subject
-│   │   │   │   │       ├── message/       # Message subject
-│   │   │   │   │       └── generic/       # GenericSubject (free-form)
-│   │   │   │   ├── extraction/            # multi-format ingestion pipeline
+│   │   │   │   │   ├── document/           # NEW: Document evaluation path (Phase 7b)
+│   │   │   │   │   │   ├── evaluator.py
+│   │   │   │   │   │   ├── span_finder.py
+│   │   │   │   │   │   ├── context_assembler.py
+│   │   │   │   │   │   └── prompts/        # contract_clause.txt, email.txt, minutes.txt, ...
+│   │   │   │   │   ├── transaction/        # NEW: Transaction evaluation path (Phase 7c)
+│   │   │   │   │   │   ├── evaluator.py
+│   │   │   │   │   │   ├── field_locator.py
+│   │   │   │   │   │   └── prompts/
+│   │   │   │   │   ├── text/               # NEW: Communication evaluation
+│   │   │   │   │   ├── workflow/           # NEW: Workflow step evaluation
+│   │   │   │   │   └── agent/              # Agent-action evaluation (existing, kept)
+│   │   │   │   ├── extraction/             # Document ingestion pipeline
+│   │   │   │   │   ├── pipeline.py
+│   │   │   │   │   └── extractors/
+│   │   │   │   │       ├── generic.py      # existing
+│   │   │   │   │       ├── claude_md.py    # existing (moved)
+│   │   │   │   │       ├── linter_config.py
+│   │   │   │   │       ├── code_patterns.py
+│   │   │   │   │       ├── contract.py     # NEW
+│   │   │   │   │       ├── regulation.py   # NEW
+│   │   │   │   │       ├── handbook.py     # NEW
+│   │   │   │   │       ├── minutes.py      # NEW
+│   │   │   │   │       ├── tabular.py      # NEW
+│   │   │   │   │       └── email_archive.py # NEW
+│   │   │   │   ├── intelligence/           # health, analytics, recommendations
+│   │   │   │   ├── compliance/             # NEW: Compliance Cockpit (Phase 7h)
+│   │   │   │   │   └── cockpit.py
+│   │   │   │   ├── context_delivery/       # smart rule selection + formatting for agents
+│   │   │   │   ├── context/                # NEW: Context Provider abstraction (Phase 7k)
+│   │   │   │   │   └── providers.py
+│   │   │   │   ├── discovery/              # automatic rule discovery
+│   │   │   │   ├── feedback/               # correction feedback loop
+│   │   │   │   ├── federation/             # cross-project rule federation
+│   │   │   │   ├── department/             # NEW: Department RBAC (Phase 7d)
+│   │   │   │   │   ├── authz.py
+│   │   │   │   │   └── membership.py
+│   │   │   │   ├── events/                 # NEW: Business Event ingestion (Phase 7e)
+│   │   │   │   │   ├── ingest.py
+│   │   │   │   │   └── scope_resolver.py
+│   │   │   │   ├── assistant/              # NEW: Conversational Assistant (Phase 7g)
+│   │   │   │   │   └── orchestrator.py
+│   │   │   │   ├── playground/             # rule sandbox + test cases
+│   │   │   │   ├── snapshots/              # rule set versioning
+│   │   │   │   ├── polyglot/               # NEW: Polyglot rule verification (Phase 7i)
+│   │   │   │   │   └── verifier.py
 │   │   │   │   ├── search.py
-│   │   │   │   ├── intent.py
-│   │   │   │   ├── intelligence/          # health, analytics, recommendations, persona dashboards
-│   │   │   │   ├── discovery/
-│   │   │   │   │   └── analyzers/         # claude_md, linter_config, code_patterns, policy_pdf, handbook_md, contract_template, regulation_xml, sales_playbook, ad_compliance_doc
-│   │   │   │   ├── feedback/              # correction-to-rule flywheel (multi-surface)
-│   │   │   │   ├── federation/            # organizational hierarchy
-│   │   │   │   ├── norm_lineage/          # legal/regulatory hierarchy + propagation
-│   │   │   │   ├── playground/
-│   │   │   │   ├── snapshots/
-│   │   │   │   ├── proposals/
-│   │   │   │   └── agent_governance/      # generalized to any Actor
-│   │   │   ├── domain_packs/              # vertical bundles
-│   │   │   │   ├── code/
-│   │   │   │   ├── contract/
-│   │   │   │   ├── hr_attendance/
-│   │   │   │   ├── expense/
-│   │   │   │   └── communication/
-│   │   │   ├── adapters/
-│   │   │   │   ├── postgres/
-│   │   │   │   ├── elasticsearch/
-│   │   │   │   ├── neo4j/
-│   │   │   │   ├── gemini/
-│   │   │   │   └── files/
-│   │   │   ├── mcp/                       # subject-agnostic tools, resources, prompts
-│   │   │   ├── gateway/
-│   │   │   ├── integrations/
-│   │   │   ├── schemas/
-│   │   │   └── workers/                   # arq cron jobs (incl. norm lineage propagation, drift checking)
-│   │   ├── alembic/
+│   │   │   │   ├── rule_service.py
+│   │   │   │   └── intent.py
+│   │   │   ├── adapters/                   # postgres, elasticsearch, neo4j, gemini, files
+│   │   │   ├── mcp/                        # MCP server (tools, resources, prompts)
+│   │   │   ├── gateway/                    # generic webhook gateway (engineering opt-in)
+│   │   │   ├── integrations/               # GitHub App (opt-in), CI formatters
+│   │   │   ├── schemas/                    # Pydantic request/response models
+│   │   │   └── workers/                    # background jobs (arq)
+│   │   ├── alembic/                        # database migrations
 │   │   └── tests/
-│   └── frontend/                          # Next.js 15 + TS + Tailwind (pnpm)
-│       └── app/
-│           ├── (admin)/                   # rule administrators
-│           ├── (dashboard)/              # main operator console (rules, search, intelligence, agents, etc.)
-│           ├── (legal)/                   # legal counsel
-│           ├── (hr)/                      # HR managers
-│           ├── (finance)/                 # finance, accounting, audit
-│           ├── (compliance)/              # compliance, executive
-│           ├── (marketing)/              # marketing compliance
-│           ├── (security)/               # security operations
-│           └── components/
+│   └── frontend/                           # Next.js + TS + Tailwind (pnpm)
+│       ├── package.json
+│       └── app/(dashboard)/
+│           ├── (existing pages)
+│           ├── assistant/                  # NEW: Conversational Assistant (Phase 7g)
+│           ├── compliance/                 # NEW: Compliance Cockpit (Phase 7h)
+│           └── departments/                # NEW: Department admin (Phase 7d)
 ├── packages/
-│   ├── rule-client/                       # Python SDK
-│   ├── agentic-client/                    # Python agentic SDK
-│   └── cli/                               # rulerepo-* CLI tools
+│   ├── rule-client/                        # Python SDK
+│   ├── agentic-client/                     # Python SDK
+│   └── cli/                                # rulerepo-check, rulerepo-hook, rulerepo-ingest, rulerepo-context
 ├── infra/
 │   ├── docker/
 │   ├── postgres/
 │   ├── elasticsearch/
 │   └── neo4j/
-├── sample_rules/
-│   ├── coding_rules/
-│   ├── company_rules/
-│   ├── sales_team_rules/
-│   ├── legal_rules/                       # NEW (Phase 7)
-│   ├── hr_rules/                          # NEW (Phase 7)
-│   ├── finance_rules/                     # NEW (later phases)
-│   └── templates/                         # YAML rule templates per pack
 ├── scripts/
-├── development/                           # technical docs
-├── docs/                                  # mkdocs site
+│   └── seed_data.py                        # extended with department & business-domain templates
+├── sample_rules/
+│   ├── coding_rules/                       # existing engineering samples
+│   ├── company_rules/                      # existing
+│   ├── sales_team_rules/                   # existing
+│   └── templates/
+│       ├── python-fastapi.yaml             # existing
+│       ├── typescript-react.yaml           # existing
+│       ├── security-owasp.yaml             # existing
+│       ├── api-design.yaml                 # existing
+│       ├── testing-standards.yaml          # existing
+│       ├── hr-attendance-jp.yaml           # NEW (Phase 7l)
+│       ├── expense-policy-jp.yaml          # NEW (Phase 7l)
+│       ├── contract-clause-standard.yaml   # NEW (Phase 7l)
+│       ├── bribery-prevention.yaml         # NEW (Phase 7l)
+│       ├── privacy-protection-jp.yaml      # NEW (Phase 7l)
+│       ├── internal-communication.yaml     # NEW (Phase 7l)
+│       ├── documentation-standard.yaml     # NEW (Phase 7l)
+│       └── procurement-rules.yaml          # NEW (Phase 7l)
 ├── docker-compose.yml
-├── Makefile
-├── pyproject.toml                         # uv workspace root
+├── pyproject.toml
 ├── pnpm-workspace.yaml
 ├── .env.example
-├── PROJECT.md
-├── IMPROVEMENT.md
-└── CLAUDE.md                              # this file
+├── PROJECT.md                              # vision and specification
+├── CLAUDE.md                               # this file
+└── IMPROVEMENT.md                          # Phase 7 rationale
 ```
 
-When adding a new package, place it under `apps/` (deployable apps) or `packages/` (libraries). When adding a new surface, follow §13. When adding a new domain pack, follow §14. Update `pyproject.toml` (uv workspace) or `pnpm-workspace.yaml` accordingly.
+When adding a new package, place it under `apps/` or `packages/`. Update `pyproject.toml` (uv workspace) or `pnpm-workspace.yaml` accordingly.
 
 ---
 
@@ -157,26 +178,22 @@ The whole stack must come up with one command. If your changes break this, fix i
 
 ```bash
 cp .env.example .env            # then fill in GEMINI_API_KEY
-make up                         # or: docker compose up --build -d
+docker compose up --build       # brings up: server, frontend, postgres, elasticsearch, neo4j, redis, mcp, arq-worker
 ```
 
-After about a minute:
+Expected services after `up`:
 
 | Service | URL | Purpose |
-|---|---|---|
-| Backend API | http://localhost:8000 | REST + Intent + Evaluate + Gateway + Lineage APIs |
+| --- | --- | --- |
+| Backend API | http://localhost:8000 | REST + Intent + Evaluate (code/document/transaction) + Events + Assistant |
 | API docs (OpenAPI) | http://localhost:8000/docs | FastAPI Swagger UI |
-| Frontend | http://localhost:3000 | Persona-specific consoles |
-| MCP Server | http://localhost:8001 | Subject-agnostic MCP tools |
+| Frontend | http://localhost:3000 | Operator console + Assistant + Compliance Cockpit |
 | PostgreSQL | localhost:5432 | `ruledb` |
 | Elasticsearch | http://localhost:9200 | search index |
-| Neo4j Browser | http://localhost:7474 | rule graph + norm lineage |
-| Redis | localhost:6379 | Job queue |
+| Neo4j Browser | http://localhost:7474 | rule graph |
+| MCP Server | http://localhost:8001 | Streamable-HTTP MCP for agents |
+| Redis | localhost:6379 | Job queue (arq) |
 | arq-worker | — | Background task processor |
-
-The frontend talks to the backend over `NEXT_PUBLIC_API_BASE_URL`. The Python clients talk to the backend over `RULEREPO_SERVER_URL`.
-
-`make seed` loads sample data. After Phase 7, the seed includes Code, Contract, and HR pack samples in equal weight.
 
 ---
 
@@ -186,12 +203,12 @@ The frontend talks to the backend over `NEXT_PUBLIC_API_BASE_URL`. The Python cl
 
 ```bash
 cd apps/server
-uv sync                         # install deps
-uv run uvicorn rulerepo_server.main:app --reload    # run dev server
-uv run pytest                   # run tests
-uv run ruff check .             # lint
-uv run ruff format .            # format
-uv run mypy src                 # type check
+uv sync
+uv run uvicorn rulerepo_server.main:app --reload
+uv run pytest
+uv run ruff check .
+uv run ruff format .
+uv run mypy src
 ```
 
 ### Frontend (apps/frontend)
@@ -199,49 +216,48 @@ uv run mypy src                 # type check
 ```bash
 cd apps/frontend
 pnpm install
-pnpm dev                        # Next.js dev server
-pnpm build && pnpm start        # production build
-pnpm lint                       # ESLint
-pnpm test                       # Vitest / React Testing Library
-pnpm typecheck                  # tsc --noEmit
+pnpm dev
+pnpm build && pnpm start
+pnpm lint
+pnpm test
+pnpm typecheck
 ```
 
-### Python SDKs and CLI (packages/)
+### Python SDKs
 
 ```bash
 cd packages/rule-client
-uv sync && uv run pytest && uv build
+uv sync
+uv run pytest
+uv build
+```
 
-# CLI tools
-rulerepo-check --diff "$(git diff origin/main...HEAD)" --format github-actions   # CI on Code Surface
-rulerepo-hook preflight --file src/api/handler.py --agent-id claude-code         # agent hook (Code)
-rulerepo-hook posthoc --file src/api/handler.py
+### CLI Tools
+
+```bash
+rulerepo-check --diff "$(git diff origin/main...HEAD)" --format github-actions   # CI (engineering)
+rulerepo-hook preflight --file src/api/handler.py     # agent hook: before edit
+rulerepo-hook posthoc --file src/api/handler.py       # agent hook: after edit
 rulerepo-ingest --source claude-md --file ./CLAUDE.md --scope engineering/python
-rulerepo-export --project backend-api --output rules.yaml
-rulerepo-context generate --server $RULEREPO_SERVER_URL --project p1 --max-rules 30
-
-# Surface-aware verbs
-rulerepo-review-contract --file ./contracts/draft.docx
-rulerepo-check-action --action register_overtime --actor user:E001 --json '{"hours":50}'
+rulerepo-context update --file CLAUDE.md
 ```
 
 ### MCP Server
 
 ```bash
-uv run rulerepo-mcp                       # stdio (local, for Claude Code)
-MCP_TRANSPORT=streamable-http uv run rulerepo-mcp   # HTTP (remote agents)
+uv run rulerepo-mcp                                   # stdio (local)
+MCP_TRANSPORT=streamable-http uv run rulerepo-mcp     # HTTP (remote agents)
 ```
 
-### Whole repo (from root)
+### Whole repo
 
 ```bash
-make up                          # start full stack
-make down                        # stop
-make reset                       # wipe volumes and rebuild
-make seed                        # load sample data
-make test                        # run all tests
-make check                       # format + lint + test (run before committing)
-make precommit.install           # install git hooks
+docker compose up --build
+docker compose down -v
+docker compose logs -f server
+uv run python -m pytest
+make seed                       # seed sample rules including new business-domain templates
+make crossorg.acceptance        # NEW: run the four cross-organizational acceptance tests
 ```
 
 ---
@@ -249,36 +265,29 @@ make precommit.install           # install git hooks
 ## 6. Coding Conventions
 
 ### Python (server + clients)
-
-- **Python 3.13**. Built-in generics (`list[str]`, `dict[str, int]`); `match` where it improves clarity.
-- **Type hints are mandatory** on all public functions. mypy must pass on `src/`.
+- **Python 3.13**. Modern syntax: built-in generics, `match` where clarity helps.
+- **Type hints mandatory** on all public functions. mypy must pass on `src/`.
 - **Formatter and linter**: `ruff` (both linting and formatting). No `black`, no `isort`.
 - **Naming**: snake_case for functions/vars, PascalCase for classes, SCREAMING_SNAKE_CASE for constants.
 - **Docstrings**: Google style. Required on all public APIs.
 - **Errors**: project-specific exception hierarchy under `rulerepo_server.errors` / `rulerepo.errors`. Never raise bare `Exception`.
-- **Logging**: `structlog` with JSON output. Never `print()` outside of one-off scripts.
-- **Pydantic v2** for all data validation at API boundaries.
-- **Tests**: `pytest` + `pytest-asyncio`.
+- **Logging**: `structlog` with JSON output. Never `print()` outside one-off scripts.
+- **Pydantic** for all data validation at API boundaries. Pydantic v2 idioms.
+- **Tests**: `pytest` + `pytest-asyncio`. Unit tests on pure logic, integration tests against the docker-compose stack.
 
 ### TypeScript (frontend)
-
 - **Strict TS**: `"strict": true`. No `any` without justification.
-- **App Router** (Next.js 14+ idioms). Server Components by default; Client Components only when needed.
-- **Tailwind**: prefer utility classes; centralize design tokens in `tailwind.config.ts`.
-- **State**: prefer Server Components and URL state. For client state, `zustand`. For server-state caching, `@tanstack/react-query`.
-- **Components**: PascalCase files, one component per file unless tightly coupled.
-- **API calls**: generated TypeScript client from the backend's OpenAPI spec. Do not hand-write types that already exist in the API contract.
-- **Linting**: ESLint + Prettier.
-
-### Persona separation in the frontend
-
-Each persona route group (`(legal)`, `(hr)`, `(finance)`, `(compliance)`, `(dashboard)`, `(admin)`, `(marketing)`, `(security)`) has its own layout and color accent. **Do not import components across persona groups** unless the component is in `app/components/shared/`. This separation is what keeps each persona's console focused.
+- **App Router** (Next.js 14+ idioms). Server Components by default, Client Components only when needed.
+- **Tailwind**: prefer utility classes. Centralize design tokens in `tailwind.config.ts`.
+- **State**: Server Components and URL state preferred. `zustand` for client state, `@tanstack/react-query` for server-state caching.
+- **Components**: PascalCase files. One component per file unless tightly coupled.
+- **API calls**: generated TypeScript client from OpenAPI spec.
+- **Linting**: ESLint + Prettier. `pnpm lint` must pass.
 
 ### Commits / branches
-
 - Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`.
+- For Phase 7 work, prefix the body with `[phase-7x]` referencing the sub-phase (e.g., `[phase-7b]` for document evaluation).
 - Branch from `main`. Open PRs even for solo work.
-- For Phase 7+ refactor work, use prefixed branches: `phase7/...`, `phase8/...`, `phase9/...`.
 
 ---
 
@@ -286,76 +295,45 @@ Each persona route group (`(legal)`, `(hr)`, `(finance)`, `(compliance)`, `(dash
 
 The server is a single FastAPI application that exposes:
 
-- **REST API** at `/api/v1/...` for CRUD on rules, documents, evaluations, projects, federations, norm lineage.
-- **Evaluate API** at `/api/v1/evaluate` (backwards-compatible Code Surface) and `/api/v1/evaluate/{surface}` (subject-aware).
-- **Intent API** at `/api/v1/intent` for natural-language query routing.
-- **Gateway API** at `/api/v1/gateway/...` for webhook-driven enforcement.
-- **Intelligence API** at `/api/v1/intelligence/...` for health, analytics, recommendations, digests, persona dashboards.
-- **Discovery API** at `/api/v1/discover/...` for automatic rule discovery.
-- **Feedback API** at `/api/v1/feedback/...` for correction feedback loop.
-- **Federation API** at `/api/v1/federations/...` for organizational hierarchy.
-- **Norm Lineage API** at `/api/v1/lineage/...` for upstream/downstream walks and amendment propagation.
-- **Proposals / Agent Governance / Playground / Snapshots / Alerts** APIs as documented in PROJECT.md.
-- **Integrations** at `/api/v1/integrations/...` for external system webhooks.
+- **REST API** at `/api/v1/...` for CRUD on rules, documents, evaluations.
+- **Evaluate APIs**:
+  - `/api/v1/evaluate` — polymorphic, accepts a Subject (or legacy diff/files for backward compatibility).
+  - `/api/v1/evaluate/document` — convenience endpoint for `DOCUMENT_DRAFT` subjects.
+  - `/api/v1/evaluate/transaction` — convenience endpoint for `TRANSACTION` subjects.
+- **Events API** at `/api/v1/events/ingest` — universal business event ingestion.
+- **Intent API** at `/api/v1/intent` — natural language query routing.
+- **Assistant API** at `/api/v1/assistant/...` — conversational assistant orchestrator.
+- **Compliance API** at `/api/v1/compliance/...` — Cockpit data.
+- **Department API** at `/api/v1/departments/...` — membership management.
+- **Existing routers** (rules, search, intelligence, discovery, feedback, federation, integrations, playground, alerts, snapshots, proposals, agent-governance) preserved.
+- **Frozen routers** (multi-agent sessions) return 404 unless feature flag enabled.
 - **MCP Server** on a separate port (8001).
 
-### 7.1 Layering rule
+**Layering rule**: `api → services → domain/adapters`. `domain` depends on nothing else in the project.
 
-`api` depends on `services`, `services` depends on `domain` and `adapters`. `domain` depends on nothing else in the project. **Do not import upward.**
+**Subject dispatch pattern**: `services/evaluation/service.py` is the orchestrator. It receives an `EvaluationSubject`, runs subject-agnostic Rule Selection, then dispatches to the matching subject path under `services/evaluation/{code,document,transaction,text,workflow,agent}/`. Each path has its own evaluator and prompt templates but shares the rule selector, batch evaluator, and verdict aggregator.
 
-### 7.2 Surface separation
-
-- `services/evaluation/core/` is **surface-agnostic**. It must compile and pass tests with no `surfaces/` imports beyond the registry/factory layer.
-- `services/evaluation/surfaces/{surface}/` contains **everything surface-specific** for that surface: subject dataclass, adapter (input parsing), prompt hints, PII sanitizer, audit retention defaults.
-- New surface-specific behavior **never goes into `core/`**.
-
-### 7.3 Async
-
-The API layer is fully async. DB calls use `asyncpg` (or `sqlalchemy[asyncio]`); Elasticsearch via the async client; Neo4j via the official async driver; Gemini via `google-genai`.
-
-### 7.4 Domain Packs
-
-Domain Packs (under `domain_packs/`) are **declarative** wherever possible. A pack contributes:
-
-- A `pack.yaml` describing the pack.
-- Rule templates in `rules/`.
-- Surface adapter references (it does not own the adapter; surfaces live in `services/evaluation/surfaces/`).
-- Pack-specific evaluation prompt hints in `prompts/`.
-- Sample seed data in `samples/`.
-- Frontend route placeholders (the actual components live in `apps/frontend/app/(persona)/`).
-
-A pack is loaded at startup. Packs declare their persona, default scopes, and required surfaces. Pack loading is governed by `services/domain_packs/loader.py`.
+**Async**: API layer is fully async. DB via `asyncpg` / `sqlalchemy[asyncio]`, Elasticsearch via async client, Neo4j via official async driver, Gemini via `google-genai`.
 
 ---
 
 ## 8. Frontend Notes
 
-The frontend is the operator console — but **per persona**. Each persona route group is a self-contained console with its own hero metric, layout, and navigation.
+The frontend serves two audiences:
 
-### 8.1 Persona route groups
+- **Operators** (existing): browse and search rules, upload documents, run extraction, review candidates, view the relationship graph, inspect evaluations and audit logs, manage governance.
+- **End users (new)**: the `/assistant` route is an end-user chat surface; the `/compliance` route is the Compliance Cockpit for Compliance/Legal/Exec.
 
-| Route group | Persona | Hero metric |
-|---|---|---|
-| `(admin)` | Rule administrators | Tenant and user management |
-| `(dashboard)` | Main operator console | Compliance rate, rules, search, intelligence, agents, proposals, playground |
-| `(legal)` | Legal counsel | Open contract reviews, unresolved conflicts, recent upstream-law amendments |
-| `(hr)` | HR managers | This month's violations, 36-agreement headroom, regulation-affected employees |
-| `(finance)` | Finance / audit | This month's transaction violations, expense-rejection rate |
-| `(compliance)` | Compliance / executive | Regulatory-amendment-to-internal-rule lead time, open critical alerts |
-| `(marketing)` | Marketing compliance | Creative compliance review |
-| `(security)` | Security operations | Security policy status |
+Use the Next.js App Router. Co-locate route segments under `app/(dashboard)/...`. Server Components for data fetching, Client Components for interactivity.
 
-### 8.2 Shared components
+The graph view (Neo4j-backed) renders using `react-flow` or `cytoscape` — pick one early and stick with it.
 
-Components shared across personas live in `apps/frontend/components/shared/`. Examples: `RuleCard`, `Badge`, `Pagination`, `RuleGraph`, `NormLineageViewer`, `EvaluationResultPanel`. **Persona-specific components stay inside their persona group.**
+The sidebar is reorganized for Cross-Organizational use:
 
-### 8.3 The graph view
-
-Norm lineage and rule relationship graphs render with the same library (pick `react-flow` or `cytoscape` and stick with it). The Norm Lineage Viewer is its own component (`components/shared/NormLineageViewer.tsx`).
-
-### 8.4 The home page
-
-The home page picks the dashboard based on the user's role. Admins can switch between personas. Default for unauthenticated dev is `(admin)`.
+- **Manage**: Rules, Discover, Documents, Proposals, Snapshots, Departments
+- **Observe**: Compliance Cockpit, Intelligence, Agents (single-agent view), Notifications, Alerts
+- **Use**: Assistant, Search, Playground
+- **Hidden by default** (feature-flagged): multi-agent Sessions, GitHub App settings
 
 ---
 
@@ -364,104 +342,101 @@ The home page picks the dashboard based on the user's role. Admins can switch be
 The LLM layer is the heart of this system. Get this right.
 
 ### 9.1 SDK
-
-- **Use `google-genai`** (the new unified SDK). Do **not** use the deprecated `google-generativeai`.
+- **Use `google-genai`** (the unified SDK). Do **not** use the deprecated `google-generativeai`.
 - Install via uv: `uv add google-genai httpx`.
 
 ### 9.2 Models
 
 | Use case | Model ID | Why |
-|---|---|---|
-| High-throughput, routine tasks (search ranking, simple extraction, classification) | `gemini-3-flash-preview` | fast, cheap |
-| High-stakes judgment (rule extraction QC, conflict detection, evaluation of HIGH/CRITICAL rules, norm-lineage drift detection) | `gemini-3.1-pro-preview` | strongest reasoning |
+| --- | --- | --- |
+| High-throughput, routine tasks (search ranking, simple extraction, classification, document spans) | `gemini-3-flash-preview` | fast, cheap |
+| High-stakes judgment (rule extraction QC, conflict detection, evaluation of CRITICAL rules, contract risk analysis) | `gemini-3.1-pro-preview` | strongest reasoning |
 
-Centralize model selection in one config module (`core/llm.py`). Never hardcode model IDs in business logic — always read from config.
+Centralize model selection in `core/llm.py`. Never hardcode model IDs in business logic.
 
 ### 9.3 Mandatory rules when calling Gemini
-
 - **Do NOT change `temperature`** away from the default (1.0). Lower temperatures degrade Gemini 3 reasoning quality and can cause loops.
-- Use **`thinking_level`** (not the legacy `thinking_budget`). Valid values: `minimal`, `low`, `medium`, `high`. Default to `low` for high-throughput tasks, `high` for judgment tasks.
+- Use **`thinking_level`** (not the legacy `thinking_budget`). Default: `low` for high-throughput, `high` for judgment.
 - For function calling, **thought signatures must be cycled through** every turn. The `google-genai` SDK and standard chat history handle this automatically — do not strip signatures from history.
 - For PDFs in document processing, set `media_resolution: "media_resolution_medium"` (560 tokens/page).
-- Use **structured output** (`response_mime_type="application/json"` + `response_json_schema`) for any call that must return data the system parses.
+- Use **structured output** (`response_mime_type="application/json"` + `response_json_schema`) for any call that must return data the system parses. Do not regex out fields from free-form LLM text.
 
-### 9.4 Document ingestion (PDF, docx, text, markdown, regulatory XML)
-
-- **PDFs**: Files API for documents > a few pages; inline `Part.from_bytes(...)` for small/one-shot.
-- **docx**: parse to text via `python-docx` for structure; pass text to Gemini for normative-sentence detection.
-- **text and markdown**: pass as plain text. Gemini's "document understanding" only renders PDFs meaningfully; for `.md`/`.txt`, treat as text-only.
-- **Regulatory XML** (e.g., 法令標準データ形式): use the XML parser in `extraction/structural_parser.py`; pass structured text to Gemini.
-- The extraction pipeline (`services/extraction/`) wraps these calls. Do not bypass it from random parts of the codebase.
+### 9.4 Document ingestion (PDF, text, markdown, DOCX, XLSX, EML)
+- **PDFs**: upload via the **Files API** for documents > a few pages. Files API is free, files persist 48 hours, max 50 MB / 1000 pages.
+- **DOCX**: convert to PDF or extract text with `python-docx` then send as text. Prefer PDF if visual structure matters.
+- **XLSX**: never sent to Gemini directly. The `tabular` extractor uses `openpyxl` to materialize each row, then passes structured rows to Gemini.
+- **EML**: extract headers + body with stdlib `email`, then process the body as text.
+- Each PDF page is roughly 258 tokens for image content; extracted native text is included free.
+- The extraction pipeline wraps these calls; do not bypass it.
 
 ### 9.5 Cost and latency discipline
-
-- Cache LLM responses by `hash(inputs + model + prompt_version + locale)` in Postgres. Invalidate on rule revision.
+- Cache LLM responses by `hash(inputs + model + prompt_version)` in Postgres. Invalidate on rule revision.
 - Use `gemini-3.1-flash-lite-preview` only if explicitly approved.
-- Long-context calls (large rule corpus + large doc) should use **context caching** for repeated reuse.
-- **Batched evaluation** (single LLM call for all selected rules) is the default; per-rule fallback is automatic.
+- Long-context calls (rule corpus + large doc) use **context caching**.
+- Document evaluation prompts are typically larger than code prompts. Keep document evaluation prompts under 30 K characters; if exceeded, split into multiple calls.
 
-### 9.6 Determinism, locale, and audit
+### 9.6 Determinism and audit
+- Every LLM call that produces a verdict, a candidate rule, or a relationship suggestion **must** log: model ID, prompt version (a content hash), inputs, outputs, latency, timestamp, **subject type**.
+- Prompts live in `services/<area>/prompts/` as standalone files, versioned in git. No inline strings.
 
-- Every LLM call that produces a verdict, a candidate rule, or a relationship suggestion **must** log: `model_id`, `prompt_version`, `inputs`, `outputs`, `latency`, `timestamp`, `surface`, `locale`, `actor`. Goes to the audit log.
-- Prompts live in `services/<area>/prompts/` (or `surfaces/<surface>/prompts/`) as standalone files, versioned in git. **No inline prompt strings scattered across the codebase.**
-- For bilingual rules, evaluate against the rule statement in the matching `subject.locale` when available; otherwise use the canonical statement and log a `cross_locale_evaluation` warning.
-
-### 9.7 Surface-specific prompt hints
-
-Each surface has its own hint file in `surfaces/<surface>/prompts/`. The universal prompt `evaluate_subject.txt` injects the appropriate hint based on `subject.surface`. **Do not duplicate the universal prompt per surface.**
+### 9.7 Subject-specific prompt patterns
+- Code path: present diff + applicable rules; ask for line-level Remediations.
+- Document path: present full document text + applicable rules; ask for span-level Remediations with `offset_start`/`offset_end` byte offsets into the original text. Verify offsets server-side; reject if they don't align.
+- Transaction path: present transaction as JSON + applicable rules; ask for `field_change`/`approval_add`/`process_reroute` Remediations referring to specific JSON paths.
+- Communication path: similar to document path but with shorter context windows and tighter latency budget.
+- Always include the rule's `context`, `rationale`, `preconditions`, `following_examples`, `violation_examples` in the prompt when available.
 
 ---
 
 ## 10. Data Layer
 
 ### 10.1 PostgreSQL (system of record)
-
-- Stores rules, revisions, source documents, evaluations, audit log, federations, norm lineage edges (mirrored from Neo4j for transactional consistency).
+- Stores rules, revisions, source documents, evaluations, audit log, departments, memberships.
 - Migrations: `alembic`. One head per branch; rebase migrations before merging.
-- The audit log table is **append-only**. Enforced by Postgres trigger that rejects updates/deletes. Hash chain links each row to its predecessor.
-- **Surface-aware retention**: a daily worker (`prune_audit_log`) deletes rows older than the retention configured for their surface (see PROJECT.md §10.2). Configurable per scope.
+- Phase 7 migrations (proposed numbering, append after the existing latest):
+  - `add_subject_type_columns.sql`: add `applicable_subject_types` to `rules`.
+  - `add_department_to_rules.sql`: add `department` column with default `'public'`.
+  - `add_polyglot_columns.sql`: add `primary_language`, `translations`, `equivalence_verified_at`.
+  - `add_kind_and_confidence_required.sql`: add `kind` and `confidence_required`.
+  - `create_memberships_table.sql`: `(user_id, department, role)`.
+  - `create_business_events_table.sql`: stores accepted business events for replay/audit.
+  - `add_subject_type_to_evaluations.sql`: track which subject type each evaluation was run against.
+  - `create_polyglot_drift_alerts.sql`: per-translation drift records.
+- The audit log table is **append-only**. Postgres trigger rejects updates/deletes. Hash chain column.
 
 ### 10.2 Elasticsearch (search)
-
-- Index `rules` with: `statement`, `statement_translations`, `tags`, `tech_scope`, `org_scope`, `modality`, `severity`, `effective_period`, `applies_to_surfaces`, `norm_tier`, `locale`, `embedding`.
+- Index `rules` with: `statement` (analyzed), `tags`, `scope`, `modality`, `effective_period`, `embedding`, **`department`**, **`kind`**, **`primary_language`**, **`applicable_subject_types`**.
 - BM25 + kNN hybrid scoring. Rerank top-k with the LLM only when "smart" search is requested.
-- Re-index on rule revision. Do not run partial updates that risk drift.
+- Re-index on rule revision; no partial updates that risk drift.
 
-### 10.3 Neo4j (relationship graph + norm lineage)
-
-- Node label: `Rule`. Node `id` matches the Postgres rule ID.
-- Relationships: `REFINES`, `OVERRIDES`, `CONFLICTS_WITH`, `DEPENDS_ON`, `DERIVES_FROM`, `SUCCEEDS`, `TRANSLATES`. Direction documented in PROJECT.md §5.3.
-- Postgres is the source of truth for rule existence; Neo4j is a derived projection. If they disagree, Postgres wins and Neo4j is rebuilt by `scripts/reconcile_graph.py`.
-- The `DERIVES_FROM` chain is the Norm Lineage spine. The `norm_lineage` service walks it for upstream/downstream queries.
-
-### 10.4 Surface-aware schema additions (Phase 8)
-
-- `rules.applies_to_surfaces` (text[]): surfaces the rule applies to.
-- `rules.tech_scope` (text[]) and `rules.org_scope` (text[]): split from the legacy `scope`.
-- `rules.norm_tier` (enum): LAW / REGULATION / GUIDELINE / CORPORATE_POLICY / DEPARTMENT_RULE / OPERATIONAL_RULE.
-- `rules.norm_authority` (text): citation of upstream authority.
-- `rules.locale` (text, default `en`).
-- `rules.statement_translations` (jsonb): locale → translated statement.
-- `evaluations.surface` (text), `evaluations.actor_kind` (text), `evaluations.actor_identifier` (text), `evaluations.locale` (text).
-- `evaluations.agent_id` is retained as a backwards-compatible view onto `actor_identifier` when `actor_kind = 'agent'`.
+### 10.3 Neo4j (relationship graph)
+- One node label: `Rule`. Node `id` matches the Postgres rule ID.
+- Relationships: `REFINES`, `OVERRIDES`, `CONFLICTS_WITH`, `DEPENDS_ON`, `DERIVES_FROM`, `SUCCEEDS`, **`CROSS_REFERENCES`** (new in Phase 7 — for cross-departmental rule references).
+- Postgres is the source of truth; Neo4j is a derived projection. If they disagree, Postgres wins and Neo4j is rebuilt via `scripts/reconcile_graph.py`.
 
 ---
 
 ## 11. Testing
 
 - **Unit tests**: pure logic in `domain/`. No external services. Fast.
-- **Integration tests**: spin up docker-compose services in CI. Use `testcontainers-python` if running in CI without compose.
-- **LLM tests**: never call the real Gemini API in unit tests. Use a mock client. For integration, gate behind an env flag (`RULEREPO_LIVE_LLM=1`).
-- **Surface tests**: each surface has its own integration suite under `tests/surfaces/<surface>/` covering the adapter, the universal prompt with that surface's hints, and the audit log retention policy.
-- **Pack tests**: each Domain Pack has a smoke test under `tests/domain_packs/<pack>/` that loads the pack, imports its rule templates, and runs sample evaluations end-to-end.
-- **Frontend tests**: Vitest + React Testing Library for components; Playwright for end-to-end. Persona route groups have separate test files.
-- **Eval harness**: a separate test suite that validates LLM-driven features (rule extraction quality, conflict detection precision/recall, norm-lineage drift accuracy) against curated fixtures. Runs nightly, not on every PR.
+- **Integration tests**: spin up docker-compose services in CI. `testcontainers-python` if running in CI without compose.
+- **LLM tests**: never call the real Gemini API in unit tests. Mock client. For integration, gate behind env flag (`RULEREPO_LIVE_LLM=1`).
+- **Frontend tests**: Vitest + React Testing Library; Playwright for end-to-end if added.
+- **Eval harness**: validates LLM-driven features against curated fixtures. Runs nightly.
+- **Cross-Organizational acceptance suite** (NEW): four scenarios in `tests/acceptance/cross_org/`:
+  1. `test_expense_roundtrip.py` — extract → approve → evaluate transaction → expect DENY + `field_change`
+  2. `test_contract_review.py` — evaluate document → expect dangerous-clause detection + `text_rewrite` Remediations
+  3. `test_hr_attendance.py` — evaluate transaction → expect overtime DENY + repair suggestion
+  4. `test_sales_email.py` — evaluate document → expect privacy/pharmaceutical/consumer-protection flags
+
+  These run on every PR. Failure blocks merge.
+- **Subject-type test coverage**: each subject path under `services/evaluation/<path>/` has its own tests directory. Document/transaction tests use canned text/JSON fixtures, not live API calls.
 
 ---
 
 ## 12. Environment Variables
 
-All env vars live in `.env.example`. Never commit `.env`.
+All env vars live in `.env.example`. Never commit `.env`. Required for local dev:
 
 ```
 # Core
@@ -486,41 +461,28 @@ MCP_PORT=8001
 # Redis / Background Workers
 REDIS_URL=redis://redis:6379/0
 
-# GitHub Integration
+# Cross-Organizational direction (Phase 7)
+CROSS_ORG_FEATURES_ENABLED=true
+DEPARTMENT_RBAC_ENABLED=true
+ASSISTANT_ENABLED=true
+COMPLIANCE_COCKPIT_ENABLED=true
+POLYGLOT_VERIFICATION_ENABLED=true
+
+# Opt-in features (default OFF)
+MULTI_AGENT_SESSIONS_ENABLED=false
+GITHUB_APP_ENABLED=false
+
+# GitHub Integration (only used when GITHUB_APP_ENABLED=true)
 GITHUB_APP_ID=
 GITHUB_APP_PRIVATE_KEY=
 GITHUB_WEBHOOK_SECRET=
 GITHUB_TOKEN=
 
-# Alerts and digests
+# Alerts (local file output by default; webhook delivery is opt-in)
+ALERT_OUTPUT_MODE=local            # "local" | "webhook" | "both"
 ALERT_WEBHOOK_URL=
+DIGEST_OUTPUT_MODE=local
 DIGEST_WEBHOOK_URL=
-NOTIFICATION_WEBHOOK_URL=
-NOTIFICATION_WEBHOOK_TYPE=
-
-# Domain Pack loading
-ENABLED_PACKS=code,contract,hr_attendance      # comma-separated; controls which packs load at startup
-DEFAULT_PERSONA=admin                          # for unauthenticated dev
-
-# Surface-aware retention overrides (optional)
-AUDIT_RETENTION_DAYS_CODE=365
-AUDIT_RETENTION_DAYS_CONTRACT=3650
-AUDIT_RETENTION_DAYS_HUMAN_ACTION=2555
-AUDIT_RETENTION_DAYS_TRANSACTION=3650
-AUDIT_RETENTION_DAYS_DOCUMENT=3650
-AUDIT_RETENTION_DAYS_MESSAGE=1095
-
-# Norm Lineage
-LINEAGE_AMENDMENT_WEBHOOK_URL=                 # external system can post amendment signals here
-
-# Multi-locale
-DEFAULT_LOCALE=en
-SUPPORTED_LOCALES=en,ja
-
-# Agent Governance
-AGENT_TRUST_PROMOTION_ENABLED=true
-AGENT_MASTERY_THRESHOLD=0.95
-AGENT_PATTERN_MIN_EVIDENCE=10
 ```
 
 When you add a new env var, update `.env.example` in the same change.
@@ -529,208 +491,443 @@ When you add a new env var, update `.env.example` in the same change.
 
 ## 13. Important Rules for Claude Code
 
-These are non-negotiable. Violating them breaks the system, the architecture, or wastes review time.
+These are non-negotiable. Violating them breaks the system or wastes review time.
 
-### 13.1 Universal rules
-
-1. **Read PROJECT.md and IMPROVEMENT.md before designing anything new.** Domain decisions belong there, not here. The Phase 7+ direction is a course correction, not optional.
-2. **Run linters, formatters, and type checkers before claiming a task is done.** `ruff`, `mypy`, `pnpm lint`, `pnpm typecheck`. CI will reject otherwise.
-3. **Never commit secrets.** Use `.env` and `.env.example`.
-4. **Never tweak Gemini `temperature`.** Default 1.0 stays.
-5. **Never use deprecated Gemini params.** Use `thinking_level`, not `thinking_budget`. Use `google-genai`, not `google-generativeai`.
-6. **Never bypass the extraction pipeline** to call Gemini directly from random services.
-7. **Never write to the audit log table from application code.** Only the evaluation/extraction services write, and only through the audit-log adapter that enforces hash chaining.
-8. **Never make Postgres and Neo4j disagree silently.** If you write to one, write to the other through the same service. If you can only write to one, queue the other change.
-9. **Never delete rules.** Use `effective_period.valid_until` to retire them. Past evaluations must remain re-explainable.
-10. **Keep `make up` working.** If your change breaks the local stack, fix it before merging.
-11. **Update PROJECT.md and CLAUDE.md** when introducing a new dependency, service, surface, pack, or architectural decision. Code without doc updates does not ship.
-12. **Prefer fewer dependencies.** Every added library is a long-term cost. Justify additions in the PR description.
-13. **Write structured logs, not `print`.** Logs are operational data.
-14. **Tests for LLM-driven features must mock the LLM** unless the test is explicitly an eval test.
-15. **When unsure, ask.** Open an issue or a draft PR with the question. Do not guess on domain semantics — wrong rules are worse than no rules.
-
-### 13.2 Phase 7+ refactor discipline (until non-code packs are in production)
-
-16. **Do not add new code-only features.** Phase 5–6 sub-features in flight may complete; new ones do not start. Bug fixes and refactors are fine.
-17. **Do not add code-specific concerns to `services/evaluation/core/`.** All code-specific behavior lives in `services/evaluation/surfaces/code/`. If you find yourself writing `if surface == "code"` inside `core/`, stop and reconsider.
-18. **Do not add a new endpoint that takes `diff` or `file_paths` as the primary input.** New evaluation endpoints take a `Subject` payload. Existing code-specific endpoints remain for backwards compatibility.
-19. **Do not add MCP tools whose signatures assume code.** New tools accept `subject_ref` / `subject_payload` / `surface`. Code-specific tools remain as backwards-compatible aliases.
-20. **Do not extend the engineering dashboard with new metrics.** New metrics go on the relevant persona console (legal, HR, finance, compliance).
-21. **Do not add new sample data or templates that are code-only.** Every PR that adds samples must add at least one non-code sample alongside.
-22. **Do not extend Agent Governance with AI-agent-only assumptions.** Agent Governance is being generalized to any `Actor` (human, system, agent). New features must work for all `Actor.kind` values.
-
-### 13.3 Surface and Pack discipline
-
-24. **A new surface must include**: a `Subject` dataclass, a `SurfaceAdapter`, a prompt hints file, a PII sanitizer, and a default audit retention. All in `services/evaluation/surfaces/<name>/`. Add to `Surface` enum. Do not modify the universal prompt in `core/`.
-25. **A new Domain Pack must include**: a `pack.yaml`, a `rules/` directory with at least 5 seed rules, a persona assignment, a `samples/` directory, and frontend route placeholders under the persona route group. Add to `ENABLED_PACKS` in `.env.example`.
-26. **A pack does not own its surface.** The Code Pack uses the Code Surface; the Contract Pack uses the Contract Surface. Multiple packs can share a surface.
-
-### 13.4 Locale and norm-lineage discipline
-
-28. **Never lose the canonical locale.** Translations are explicit; the `Rule.locale` field is authoritative. When evaluating with a non-canonical locale, log the warning.
-29. **Never collapse Norm Lineage into Federation in the UI.** They are two trees, two pages, two query backends. If they appear together in a single component, the component is wrong.
-30. **Never silently change a `norm_tier`.** Norm tier changes are governance events; they require a Proposal and approval.
+1. **Read PROJECT.md before designing anything new.** Domain decisions belong there, not here.
+2. **Read IMPROVEMENT.md before working on Phase 7.** It contains the rationale and acceptance criteria.
+3. **Run linters, formatters, and type checkers before claiming a task is done.** `ruff`, `mypy`, `pnpm lint`, `pnpm typecheck`. CI will reject otherwise.
+4. **Never commit secrets.** No API keys, no DB passwords, nothing in code. Use `.env` and `.env.example`.
+5. **Never tweak Gemini `temperature`.** Default 1.0 stays.
+6. **Never use deprecated Gemini params.** Use `thinking_level`, not `thinking_budget`. Use `google-genai`, not `google-generativeai`.
+7. **Never bypass the extraction pipeline** to call Gemini directly from random services. There is one place that talks to Gemini for ingestion.
+8. **Never write to the audit log table from application code.** Only the evaluation/extraction services write, and only through the audit-log adapter that enforces hash chaining.
+9. **Never make Postgres and Neo4j disagree silently.** If you write to one, write to the other through the same service. If you can only write to one, queue the other change.
+10. **Never delete rules.** Use `effective_period.valid_until` to retire them. Past evaluations must remain re-explainable.
+11. **Keep `docker compose up --build` working.** If your change breaks the local stack, fix it before merging.
+12. **Update PROJECT.md, CLAUDE.md, and IMPROVEMENT.md** when introducing a new dependency, service, or architectural decision.
+13. **Prefer fewer dependencies.** Every added library is a long-term cost. Justify additions in the PR description.
+14. **Write structured logs, not `print`.** Logs are operational data.
+15. **Tests for LLM-driven features must mock the LLM** unless the test is explicitly an eval test.
+16. **Cross-Organizational acceptance tests must pass on every PR.** Do not merge with red.
+17. **Do not extend frozen components.** Multi-agent sessions — leave at current state. If a need arises, raise it in PROJECT.md first.
+18. **Subject Type abstraction is load-bearing.** Do not add subject-type-specific logic to subject-agnostic modules (`rule_selector.py`, `batch_evaluator.py`, `verdict_aggregator.py`). If you find yourself wanting to, refactor into the appropriate subject path.
+19. **Department RBAC is non-bypassable.** Every API endpoint that returns or mutates rules must apply department visibility. Do not add a new endpoint without an authorization check.
+20. **Polymorphic Remediation kinds must be exhaustively handled.** When new code consumes Remediations, use exhaustive `match` on `RemediationKind`. Adding a new kind requires updating all consumers.
+21. **When unsure, ask.** Open an issue or a draft PR with the question. Do not guess on domain semantics — wrong rules are worse than no rules.
 
 ---
 
-## 14. Phase 7+ Implementation Guidance
+## 14. Phase 7 Implementation Guidance
 
-These are architecture decisions and patterns for Phase 7 and beyond. Phases 7–11 are complete; Phase 12 is future work. The patterns below remain the authoritative guide for extending the system.
+These are architecture decisions and patterns for Phase 7 (Cross-Organizational Subject Expansion). Read before implementing any improvement.
 
-### 14.1 Phase 7: Stop the Bleeding [COMPLETE]
+### 14.1 Subject Type Abstraction (Phase 7a)
 
-Repositioned the project as a cross-organizational normative platform. README rewrite, cross-org sample data, Contract Pack v0.1 and HR Pack v0.1 seed data.
-- **Sample data parity**: add Contract Pack v0.1 and HR Pack v0.1 seed data. `make seed` installs all three (Code, Contract, HR) in equal weight.
-- **Topics order**: in the README "What You Can Do" section, put non-code workflows first.
-- **Test that `make seed` produces a reasonable cross-org first impression**.
+#### Domain
+- Add `domain/subject.py` defining `SubjectType` enum, `EvaluationSubject` dataclass, plus per-type payload classes (`CodeChangeSubject`, `DocumentDraftSubject`, `TransactionSubject`, `CommunicationSubject`, `WorkflowStepSubject`, `DataRecordSubject`, `AgentActionSubject`).
+- Add `domain/remediation.py` defining `RemediationKind` enum and `Remediation` polymorphic class with kind-specific payloads.
+- `EvaluationContext` (existing) is updated to carry an `EvaluationSubject` rather than diff/files directly.
 
-### 14.2 Phase 8: Surface Abstraction (the structural fix)
+#### Service
+- `services/evaluation/service.py` orchestrator:
+  ```python
+  async def evaluate(self, ctx: EvaluationContext) -> EvaluationResult:
+      rules = await self.rule_selector.select(ctx)
+      evaluator = self._dispatch(ctx.subject.type)
+      verdicts = await evaluator.evaluate(ctx, rules)
+      return self.verdict_aggregator.aggregate(verdicts, rules)
 
-Goal: introduce `Subject`, `Surface`, `Actor`. Reorganize the evaluation core. Split `scope`. Replace `agent_id`.
+  def _dispatch(self, subject_type: SubjectType) -> SubjectEvaluator:
+      return self._evaluators[subject_type]
+  ```
+- Evaluators implement a `SubjectEvaluator` Protocol with a single async method.
+- The shared `rule_selector.py`, `batch_evaluator.py`, `verdict_aggregator.py` accept the subject as opaque context — they never branch on `subject.type`.
 
-#### 14.2.1 Domain types
+#### Migration / Backward compatibility
+- `POST /api/v1/evaluate` accepts the legacy diff/files payload; the API layer wraps it in a `CodeChangeSubject` before dispatch.
+- All existing engineering tests must continue to pass without modification.
 
-In `domain/evaluation.py`:
+#### Acceptance
+- All Phase 1–5 tests pass (regression).
+- New unit tests verify dispatch correctness for each subject type.
+- The four cross-organizational acceptance scenarios begin passing as their respective subject paths come online.
 
+### 14.2 Code Evaluation Path (refactored, Phase 7a continuation)
+
+- Move existing code-side evaluation files under `services/evaluation/code/`:
+  - `evaluator.py` (was `evaluation_core.py` — slimmed down to code-only logic)
+  - `diff_parser.py`
+  - `context_assembler.py`
+  - `prompts/evaluate_code_change.txt`, `prompts/evaluate_batch.txt`, `prompts/evaluate_facts.txt`
+- The new code evaluator implements the `SubjectEvaluator` Protocol.
+- No behavioral change. Logic is preserved bit-for-bit.
+
+### 14.3 Document Evaluation Path (Phase 7b)
+
+#### Service
+- `services/evaluation/document/evaluator.py` — implements `SubjectEvaluator`.
+- `services/evaluation/document/span_finder.py` — given a Remediation candidate from the LLM and the original document, validates `(offset_start, offset_end)` align to a real span in the original text; rejects misaligned outputs and retries.
+- `services/evaluation/document/context_assembler.py` — packages document text + metadata for the prompt.
+- `services/evaluation/document/prompts/`:
+  - `contract_clause.txt`, `email.txt`, `minutes.txt`, `proposal.txt`, `press_release.txt`, `report.txt`, `generic_document.txt`.
+
+#### API
+- `POST /api/v1/evaluate/document` schema:
+  ```python
+  class EvaluateDocumentRequest(BaseModel):
+      document_type: Literal["contract_clause", "email", "minutes", "proposal", "press_release", "report", "other"]
+      content: str
+      language: str = "ja"
+      scope: list[str] = []
+      department_filter: list[Department] = []
+      context_facts: dict = {}
+      mode: Literal["preflight", "posthoc", "sidecar"] = "posthoc"
+  ```
+- Returns per-rule verdicts plus aggregated `text_rewrite` Remediations.
+
+#### Frontend
+- Playground page gains a "Document" subject tab with a text editor, document type selector, language selector, and result panel that renders `text_rewrite` Remediations with span highlights.
+
+#### Acceptance
+- `tests/acceptance/cross_org/test_contract_review.py` passes.
+- `tests/acceptance/cross_org/test_sales_email.py` passes.
+
+### 14.4 Transaction Evaluation Path (Phase 7c)
+
+#### Service
+- `services/evaluation/transaction/evaluator.py` — implements `SubjectEvaluator`.
+- `services/evaluation/transaction/field_locator.py` — given a Remediation referring to a JSON path, validates the path exists and is mutable.
+- `services/evaluation/transaction/prompts/`:
+  - `expense.txt`, `purchase_order.txt`, `attendance.txt`, `payroll.txt`, `data_record.txt`, `generic_transaction.txt`.
+
+#### API
+- `POST /api/v1/evaluate/transaction` schema:
+  ```python
+  class EvaluateTransactionRequest(BaseModel):
+      transaction_type: Literal["expense", "purchase_order", "attendance", "payroll", "data_record", "other"]
+      payload: dict        # the transaction record
+      language: str = "ja"
+      scope: list[str] = []
+      department_filter: list[Department] = []
+      context_facts: dict = {}
+      mode: Literal["preflight", "posthoc", "sidecar"] = "preflight"
+  ```
+- Returns verdicts with `field_change`, `approval_add`, `process_reroute` Remediations.
+
+#### Acceptance
+- `tests/acceptance/cross_org/test_expense_roundtrip.py` passes.
+- `tests/acceptance/cross_org/test_hr_attendance.py` passes.
+
+### 14.5 Communication Evaluation Path (Phase 7c continuation)
+
+A lighter-weight cousin of Document Evaluation, optimized for short text inputs (Slack messages, single-paragraph emails, social posts).
+
+- `services/evaluation/text/evaluator.py` — uses Flash with `thinking_level=low` for low latency.
+- Shares prompts with the document path where applicable.
+
+### 14.6 Polymorphic Remediation (Phase 7a continuation)
+
+#### Domain
 ```python
-class Surface(StrEnum):
-    CODE = "code"
-    CONTRACT = "contract"
-    HUMAN_ACTION = "human_action"
-    TRANSACTION = "transaction"
-    DOCUMENT = "document"
-    MESSAGE = "message"
-    GENERIC = "generic"
+class RemediationKind(StrEnum):
+    CODE_EDIT = "code_edit"
+    TEXT_REWRITE = "text_rewrite"
+    FIELD_CHANGE = "field_change"
+    APPROVAL_ADD = "approval_add"
+    PROCESS_REROUTE = "process_reroute"
+    CLARIFICATION = "clarification"
+    BLOCK = "block"
 
 @dataclass(frozen=True)
-class Actor:
-    kind: Literal["human", "system", "agent"]
-    identifier: str
-    attributes: dict[str, Any] = field(default_factory=dict)
-
-@dataclass(frozen=True)
-class Subject:
-    surface: Surface
-    identifier: str
-    payload: dict[str, Any]
-    facts: dict[str, Any]
-    actor: Actor | None
-    timestamp: datetime
-    locale: str = "en"
+class Remediation:
+    kind: RemediationKind
+    auto_applicable: bool
+    description: str
+    payload: dict       # kind-specific structure
 ```
 
-In `domain/rule.py`, add to `Rule`:
+Kind-specific payload shapes are validated at construction.
+
+#### Schemas
+- `RemediationResponse` Pydantic model carries `kind` and a `payload` dict.
+- Frontend renders each kind with a kind-appropriate component.
+
+#### Auto-application
+- `auto_applicable=true` only allowed for: `code_edit` (high confidence + SHOULD), `text_rewrite` (high confidence + clear span), `field_change` (single mutable field). Other kinds always require human review.
+
+### 14.7 Department-Aware RBAC (Phase 7d)
+
+#### Domain
+- `domain/department.py`: `Department` enum, `DepartmentRole` enum, `Membership` dataclass.
+
+#### Persistence
+- `memberships` table: `(user_id, department, role)`.
+- `rules.department` column with default `'public'` for legacy rules.
+
+#### Service
+- `services/department/authz.py`:
+  ```python
+  async def can_view(user: User, rule: Rule) -> bool: ...
+  async def can_edit(user: User, rule: Rule) -> bool: ...
+  async def can_approve(user: User, rule: Rule) -> bool: ...
+  async def visible_departments(user: User) -> set[Department]: ...
+  ```
+- `services/department/membership.py`: CRUD for memberships.
+
+#### Middleware
+- `core/middleware/auth_context.py` injects `request.state.user_departments` and `request.state.user_roles` from the auth header (or test stub).
+
+#### Authorization in routers
+- All listing endpoints add a `WHERE rule.department IN <user's visible departments>` filter.
+- All edit endpoints check `can_edit` before mutation.
+- All approval endpoints check `can_approve`.
+- Evaluation endpoints filter rules by visible departments (callers see only what they're allowed to see).
+
+#### API
+- `GET /api/v1/departments/memberships?user_id=...`
+- `POST /api/v1/departments/memberships`
+- `DELETE /api/v1/departments/memberships/{id}`
+- `GET /api/v1/departments` — list all departments
+
+#### Frontend
+- Sidebar displays a department filter chip.
+- Each rule card shows a department badge.
+- `/departments` admin page (visible to admins) for managing memberships.
+- Default department for new rules: the most specific department the creator owns (or `public` if none).
+
+#### Acceptance
+- New tests verify a Legal user cannot edit an HR rule, cannot see Engineering-private rules, etc.
+
+### 14.8 Universal Business Event Schema (Phase 7e)
+
+#### Domain
+- `domain/business_event.py`: `BusinessEvent` dataclass.
+- `domain/event_type_registry.py`: maps `event_type` strings to scope sets.
+
+#### Service
+- `services/events/scope_resolver.py`: resolves `event_type` to a scope set. Convention: `{department}.{action}.{noun}` (e.g., `finance.expense.submitted` → scope `["finance/expense", "compliance/anti-bribery"]`).
+- `services/events/ingest.py`: receives `BusinessEvent`, dispatches to the appropriate evaluation path, returns synchronous verdict (preflight/posthoc) or 202 (sidecar).
+
+#### API
+- `POST /api/v1/events/ingest`:
+  ```json
+  {
+    "event_type": "finance.expense.submitted",
+    "actor": {"type": "employee", "id": "E001", "department": "sales"},
+    "subject": {
+      "type": "transaction",
+      "payload": {"amount_jpy": 30000, "category": "entertainment", "counterparty": "Acme Corp"},
+      "metadata": {"language": "ja"},
+      "context_facts": {"actor_role": "manager", "remaining_budget_jpy": 500000}
+    },
+    "occurred_at": "2026-04-01T10:00:00+09:00",
+    "correlation_id": "expense-12345",
+    "mode": "preflight"
+  }
+  ```
+
+#### Persistence
+- `business_events` table for replay/audit (separate from `evaluations` table to keep audit chain clean).
+
+#### Acceptance
+- `tests/acceptance/cross_org/test_expense_roundtrip.py` exercises this end-to-end.
+
+### 14.9 Conversational Rule Assistant (Phase 7g)
+
+#### Service
+- `services/assistant/orchestrator.py`:
+  - Receives a user turn.
+  - Calls Intent API to classify (`compliance_question`, `pre_send_check`, `tutorial_request`, etc.).
+  - For compliance questions: searches relevant rules, evaluates the question against them, calls Why API for rationale.
+  - For pre-send checks: invokes Document Evaluation.
+  - For tutorial requests: runs the Tutor flow (department-filtered rule walkthrough).
+  - Streams response with rule citations as inline references.
+
+#### API
+- `POST /api/v1/assistant/turn`:
+  ```json
+  {
+    "session_id": "...",
+    "user_message": "Can I expense JPY 30,000 for entertaining a client?",
+    "language": "ja"
+  }
+  ```
+- Returns a streamed response with `text` chunks and `citation` events referencing rule IDs.
+
+#### Frontend
+- `/assistant` page: chat UI with inline rule citations (clickable, opens rule detail in a side panel).
+- Department-aware: respects user's department memberships.
+- Multilingual: respects `language` from user preference.
+
+#### Acceptance
+- E2E tests: a Sales user asks an expense question and receives an answer citing the right rules; an Engineer asks the same question and gets the same answer (because expense rules are public to all).
+
+### 14.10 Compliance Cockpit (Phase 7h)
+
+#### Service
+- `services/compliance/cockpit.py`:
+  - `get_department_violation_trends(window_days)` — deny-rate sparklines per department.
+  - `get_per_policy_metrics(policy_filter)` — fire/deny rates per logical policy group.
+  - `get_regulatory_propagation()` — for each `derives_from`-upstream rule that changed in the last N days, list affected downstream rules.
+  - `get_action_queue()` — unapproved proposals + low-effectiveness rules + dormant rules.
+  - `get_audit_summary(window_days)` — counts of evaluations, denials, manual overrides.
+
+#### API
+- `GET /api/v1/compliance/dashboard?window_days=30`
+- `GET /api/v1/compliance/propagation`
+- `GET /api/v1/compliance/action-queue`
+
+#### Frontend
+- `/compliance` page with the panels described in PROJECT.md §6.10.
+- Visible to users with the `compliance` department membership at any role; gated by middleware.
+
+### 14.11 Domain-Specific Extractors (Phase 7f)
+
+Each extractor implements the `Extractor` Protocol:
 
 ```python
-applies_to_surfaces: list[Surface] = [Surface.GENERIC]
-norm_tier: NormTier = NormTier.OPERATIONAL_RULE
-norm_authority: str | None = None
-locale: str = "en"
-statement_translations: dict[str, str] = field(default_factory=dict)
-tech_scope: list[str] = field(default_factory=list)
-org_scope: list[str] = field(default_factory=list)
+class Extractor(Protocol):
+    source_types: list[str]
+    async def extract(self, source: SourceFile) -> list[CandidateRule]: ...
 ```
 
-`scope` is retained as a deprecated read-only property that concatenates `tech_scope` and `org_scope`.
+#### Contract Extractor (`services/extraction/extractors/contract.py`)
+- Input: PDF or DOCX contract.
+- Uses Gemini Files API for PDFs.
+- Detects clause hierarchy (Article–Section–Clause or 第N条–第M項–第L号).
+- Outputs `source_refs.path` like `clause:3.2.1`.
+- Extracts parties, governing law, effective period as separate metadata.
+- Default `applicable_subject_types`: `["document_draft"]`. Default `department`: `legal`.
 
-#### 14.2.2 Evaluation core re-layout
+#### Regulation Extractor (`services/extraction/extractors/regulation.py`)
+- Input: regulation PDFs/DOCXs (employment regs, expense policies, anti-bribery policies).
+- Detects 条/項/号 structure (or English equivalent).
+- Auto-creates `derives_from` edges when a downstream rule clearly references an upstream one.
+- Default `department`: derived from filename or user input.
 
-Move `services/evaluation/diff_parser.py` and the diff-handling parts of `services/evaluation/context_assembler.py` into `services/evaluation/surfaces/code/adapter.py`. The remaining surface-agnostic logic stays in `services/evaluation/core/`. Authoring `evaluate_subject.txt` (universal) and `evaluate_subject_batch.txt` (universal batch) replaces the four legacy prompt files; the legacy prompts are kept as `surfaces/code/prompts/` hints for backwards compatibility.
+#### Handbook Extractor (`services/extraction/extractors/handbook.py`)
+- Input: employee handbooks, operational manuals.
+- More forgiving structure; uses section headings.
 
-#### 14.2.3 New API endpoint
+#### Minutes Extractor (`services/extraction/extractors/minutes.py`)
+- Input: meeting minutes.
+- Extracts only decisions and action items as rule candidates; ignores discussion.
 
-```
-POST /api/v1/evaluate/{surface}
-Body: { subject: SubjectPayload, mode: preflight|posthoc|sidecar, options?: ... }
-```
+#### Tabular Extractor (`services/extraction/extractors/tabular.py`)
+- Input: XLSX or CSV.
+- Each row becomes one rule with statement composed from header + row values.
+- Uses `openpyxl` for XLSX.
 
-`POST /api/v1/evaluate` (no path param) remains as a backwards-compatible alias that constructs a Code Surface subject from `diff` / `file_paths` in the body.
+#### Email Archive Extractor (`services/extraction/extractors/email_archive.py`)
+- Input: directory of `.eml` files.
+- Discovers patterns: common phrasings, signature conventions, recurring disclaimers.
+- Output is `INFO`-modality candidates by default — these become "templates", not "musts".
 
-#### 14.2.4 Migration
+#### Discovery API extension
+- `POST /api/v1/discover/scan` accepts a `sources: [{type, path, ...}]` list.
+- `type` values: `contract_pdf`, `regulation_doc`, `handbook`, `minutes`, `spreadsheet`, `email_archive`, `claude_md`, `linter_config`, `code_pattern`, `github_repo` (existing).
 
-- Migration 023: add `applies_to_surfaces`, `norm_tier`, `norm_authority`, `locale`, `statement_translations`, `tech_scope`, `org_scope` to `rules`. Backfill `applies_to_surfaces = [code]` for existing rules. Backfill `tech_scope` and `org_scope` from legacy `scope` by prefix heuristic.
-- Migration 024: add `surface`, `actor_kind`, `actor_identifier`, `locale` to `evaluations`. Backfill `surface = code`, `actor_kind = agent` where `agent_id IS NOT NULL`, otherwise `actor_kind = system`.
+### 14.12 Polyglot Rules (Phase 7i)
 
-### 14.3 Phase 9: Contract Pack
+#### Domain
+- `Rule.primary_language: str = "en"`
+- `Rule.translations: dict[str, str] = {}` — language code → translated statement
+- `Rule.equivalence_verified_at: datetime | None`
 
-Goal: ship the first non-code pack end-to-end.
+#### Service
+- `services/polyglot/verifier.py`:
+  - `async def verify_equivalence(rule_id: int, languages: list[str])` — calls Gemini to verify each translation matches the primary statement.
+  - Returns per-language equivalence score and any drift findings.
 
-- Surface adapter under `services/evaluation/surfaces/contract/`:
-  - `subject.py` — `ContractClause` dataclass (text, position, clause_type, parties, locale).
-  - `adapter.py` — splits a contract document into clauses; integrates `bilingual_pairer` for EN/JA pairs.
-  - `prompts/contract_hints.txt` — surface hints injected into `evaluate_subject.txt`.
-  - `pii.py` — natural-person-name redaction defaults.
-- Domain Pack at `domain_packs/contract/`:
-  - `pack.yaml` (persona: legal, surfaces: [contract, document]).
-  - `rules/` with 30+ NDA / MSA / SOW template clauses.
-  - `samples/` with 3 anonymized contracts.
-- Frontend pages under `apps/frontend/app/(legal)/`:
-  - `contracts/` — list of contracts under review.
-  - `clauses/` — clause search and conflict detection.
-  - `redlines/` — revision diffs (uses `redline_differ.py`).
-  - `lineage/` — Norm Lineage Viewer (shared component).
-- CLI: `rulerepo-review-contract --file ./draft.docx`.
-- MCP tools: `find_clause_conflicts(contract_text)`.
+#### Worker
+- `workers/settings.py` adds `verify_polyglot_drift` cron (Sunday 6am):
+  - For each rule with translations, re-verify; if any has drift, create a proposal of type `amend` to reconcile.
 
-### 14.4 Phase 10: Norm Lineage
+#### Evaluation
+- When the subject's language differs from the rule's primary language and a matching translation exists, use the translation in the prompt; otherwise use the primary with a `language_mismatch_warning` flag in the verdict.
 
-Goal: make norm-tier hierarchy first-class with upstream-amendment propagation.
+### 14.13 Non-Code Test Cases (Phase 7j)
 
-- Norm Lineage walker in `services/norm_lineage/walker.py`. Two methods: `upstream(rule_id)` returns the chain to the highest-tier norm; `downstream(rule_id)` returns all descendants.
-- Amendment propagation worker in `workers/tasks.py`: `propagate_norm_amendment` runs on `effective_period` updates of LAW / REGULATION rules and flags downstream rules with status `pending_norm_change_review`.
-- Norm Lineage Viewer at `apps/frontend/components/shared/NormLineageViewer.tsx`. Used by `(legal)/lineage/` and `(compliance)/regulatory/` pages.
-- API endpoints: `GET /api/v1/lineage/{rule_id}/upstream`, `GET /api/v1/lineage/{rule_id}/downstream`.
-- MCP tool: `lookup_norm_lineage(rule_id)`.
+- Generalize `TestCase.subject_type` field.
+- `services/playground/test_generator_code.py` (existing, renamed).
+- `services/playground/test_generator_document.py` (NEW).
+- `services/playground/test_generator_transaction.py` (NEW).
+- Generators produce subject-specific compliant and non-compliant samples.
+- Test runner is subject-aware: invokes the matching evaluator path.
 
-### 14.5 Phase 10: Multi-Language
+### 14.14 Context Provider Abstraction (Phase 7k)
 
-Goal: support bilingual rules and Japanese-first operations.
+#### Service
+- `services/context/providers.py`:
+  ```python
+  class ContextProvider(Protocol):
+      async def fetch(self, subject: EvaluationSubject) -> dict: ...
 
-- Translation worker in `workers/tasks.py`: `verify_translation_drift` runs daily, compares `statement_translations` pairs with the LLM, flags drift > threshold.
-- Evaluation engine selects rule statement matching `subject.locale` when available; otherwise uses canonical and logs `cross_locale_evaluation` warning.
-- Sample rules in `sample_rules/legal_rules/jp/` (Japanese contract clauses) and `sample_rules/hr_rules/jp/` (Japanese labor-law-derived rules).
-- Frontend: locale switcher in the persona consoles; `LANG` cookie; default from `DEFAULT_LOCALE`.
+  class StaticFileProvider(ContextProvider):
+      def __init__(self, file_path: Path, key_field: str): ...
 
-### 14.6 Phase 11: HR and Communication Packs
+  class HttpProvider(ContextProvider):
+      def __init__(self, base_url: str, auth_token: str | None = None): ...
+  ```
 
-Goal: prove Domain Pack architecture is general.
+- Configuration via YAML at `config/context_providers.yaml`:
+  ```yaml
+  providers:
+    employees:
+      type: static_file
+      file: /etc/rulerepo/employees.json
+      key_field: employee_id
+    facts_api:
+      type: http
+      base_url: http://internal-facts.example.com
+      scopes: ["finance/*", "hr/*"]
+  ```
 
-#### 14.6.1 HR Pack
+- The Subject Evaluation Engine consults configured providers when `context_facts` is missing required keys.
 
-- Surface adapter `services/evaluation/surfaces/human_action/`:
-  - `subject.py` — `HumanAction` dataclass.
-  - `adapter.py` — translates HRIS events into `HumanAction` subjects.
-  - `prompts/action_hints.txt`.
-  - `pii.py` — employee-name redaction by default.
-- Pack at `domain_packs/hr_attendance/`:
-  - 36-agreement tracking rules, overtime limit rules, leave-policy rules, child-care/elder-care rules.
-  - Sample HRIS events.
-- Frontend pages under `(hr)/`.
-- CLI: `rulerepo-check-action --action register_overtime --actor user:E001 --json '{...}'`.
-- MCP tool: `check_action(actor, action, payload)`.
+### 14.15 Sample Templates (Phase 7l)
 
-#### 14.6.2 Communication Pack
+- 8 new YAML templates listed in §3 file-tree, in `sample_rules/templates/`.
+- Each template:
+  - Has a `version: 1` header.
+  - Includes `template: {name, description, tags, owning_department, applicable_subject_types}`.
+  - Lists rules with full metadata (`statement / modality / severity / scope / tags / rationale / context / preconditions / exceptions / following_examples / violation_examples`).
+- Templates are reviewed by the relevant department before publication.
+- `make seed` imports them by default.
+- Import endpoint: `POST /api/v1/rules/import` accepts these templates as-is.
 
-- Surface adapter `services/evaluation/surfaces/message/`:
-  - `subject.py` — `Message` dataclass.
-  - `adapter.py` — normalizes Slack / email / Teams messages.
-  - `prompts/message_hints.txt`.
-  - `pii.py` — email and customer-ID redaction.
-- Pack at `domain_packs/communication/`:
-  - Harassment, customer-data confidentiality, regulated-substance discussion, product-claim accuracy rules.
-- MCP tool: `review_communication(channel, content)`.
+### 14.16 Frozen Components — DO NOT EXTEND
 
-### 14.7 Practical patterns
+These features exist in code but are disabled via feature flags. **Do not extend them, do not write new tests for them, do not surface them in the UI.** If a need arises, raise it in PROJECT.md first and obtain explicit approval.
 
-- **Surface registration**: each surface registers its `SurfaceAdapter` via a registry in `services/evaluation/surfaces/__init__.py`. The evaluation core consults the registry; never hardcoded surface lists.
-- **Pack discovery**: at startup, `services/domain_packs/loader.py` scans `domain_packs/` for `pack.yaml`, validates, and registers. `ENABLED_PACKS` controls which load.
-- **Persona route registration**: each pack's `pack.yaml` declares its `persona`; the frontend consults a generated manifest to know which routes to surface in the sidebar.
-- **Audit retention**: a daily worker (`prune_audit_log`) reads per-surface retention from env or settings and deletes expired rows. Per-scope overrides are respected.
-- **Locale fallback**: `Subject.locale` → `Rule.statement_translations` → `Rule.locale`. Always log when fallback occurs.
+| Component | Flag | What's frozen |
+|---|---|---|
+| Multi-Agent Sessions | `MULTI_AGENT_SESSIONS_ENABLED=false` | `GovernanceSessionModel`, session API endpoints, multi-agent UI |
+| GitHub App | `GITHUB_APP_ENABLED=false` | `integrations/github/webhook.py`, `/api/v1/integrations/github/...` endpoints |
+| External Slack/GitHub gateway normalizers | not registered | Only `gateway/normalizers/generic.py` is registered by default |
+| External webhook notifications | `ALERT_OUTPUT_MODE=local`, `DIGEST_OUTPUT_MODE=local` | Outbound webhooks; default is local file + frontend inbox |
+
+The `AgentProfile`, personalized rules, trust levels, and exception requests **are kept** (single-agent governance is in scope).
+
+The CLI tools (`rulerepo-check`, `rulerepo-hook`, `rulerepo-ingest`, `rulerepo-context`) **are kept** (engineering integration is still in scope).
 
 ---
 
-## 15. References
+## 15. Migration Notes for Existing Phase 5/6 Implementations
+
+Some Phase 5 and 6 implementation details require small adjustments under Phase 7:
+
+- **Structured Auto-Remediation (§14.5 in old CLAUDE.md)** evolves into Polymorphic Remediation (§14.6 here). Existing `Remediation` instances become `kind=code_edit` Remediations.
+- **Agent Performance Tracking** continues working; the `agent_id` field on evaluations is unaffected.
+- **Correction-to-Rule Flywheel** continues but expands: clusters of corrections from non-code subjects also feed the auto-drafter.
+- **Effectiveness Visibility** continues; effectiveness is now subject-type-aware (a rule's effectiveness can vary by subject type).
+- **Evaluation Result Persistence** continues; the `evaluations` table gets a new `subject_type` column.
+- **Outcome-Oriented Dashboard** continues; the home dashboard surfaces metrics across all subject types but does not need restructuring.
+- **Active Rule Injection** (Phase 5e) continues to work for code; analogous patterns for documents and transactions are TBD.
+
+---
+
+## 16. References
 
 - Gemini 3 developer guide: https://ai.google.dev/gemini-api/docs/gemini-3
 - Gemini document processing: https://ai.google.dev/gemini-api/docs/document-processing
@@ -742,12 +939,8 @@ Goal: prove Domain Pack architecture is general.
 - Next.js App Router: https://nextjs.org/docs/app
 - Neo4j Python driver: https://neo4j.com/docs/api/python-driver/current/
 - Elasticsearch Python client: https://elasticsearch-py.readthedocs.io/
-- arq: https://arq-docs.helpmanual.io/
-- FastMCP: https://github.com/jlowin/fastmcp
-- 法令標準データ形式 (Japanese regulation XML standard): https://www.digital.go.jp/
+- openpyxl: https://openpyxl.readthedocs.io/
 
 ---
 
-*This file is a contract. If you (Claude Code) find a conflict between this file and the user's request, surface the conflict and ask. Do not silently override.*
-
-*This file supersedes any prior CLAUDE.md guidance that treats Code as the privileged surface. Phase 7+ rules take precedence over historical Phase 5–6 patterns where they conflict.*
+*This file is a contract. If you (Claude Code) find a conflict between this file and the user's request, surface the conflict and ask. Do not silently override. The Cross-Organizational direction is the canonical project direction; features outside it are frozen by design.*

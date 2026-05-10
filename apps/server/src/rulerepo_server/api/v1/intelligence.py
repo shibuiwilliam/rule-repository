@@ -1,4 +1,4 @@
-"""REST API routes for Rule Intelligence & Observability."""
+"""REST API routes for Rule Intelligence & Analytics."""
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession

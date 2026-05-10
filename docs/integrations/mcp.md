@@ -11,7 +11,7 @@ The Rule Repository exposes a Model Context Protocol (MCP) server that allows AI
 
 ## Tools
 
-The MCP server provides 12 tools organized into three categories: search and context, evaluation and compliance, and governance.
+The MCP server provides 18 tools organized into four categories: search and context, evaluation and compliance, governance, and cross-organizational.
 
 ### Search and Context
 
@@ -110,6 +110,44 @@ Challenge a verdict the agent disagrees with. Creates an audit trail and may tri
 Request a formal exception to a rule for a specific context. If similar exceptions are requested frequently, the system may auto-draft a rule amendment proposal.
 
 **Parameters:** `rule_id` (string), `context` (string), `justification` (string)
+
+### Cross-Organizational
+
+#### `evaluate_subject`
+
+Evaluate any subject kind (code diff, contract clauses, HR event, transaction, etc.) against applicable rules using the polymorphic evaluation pipeline.
+
+**Parameters:** `subject_kind` (string), `payload` (object), `facts` (object, optional), `mode` (string, optional)
+
+#### `list_available_surfaces`
+
+List all registered evaluation surfaces with their descriptions and supported subject kinds.
+
+**Parameters:** none
+
+#### `lookup_norm_lineage`
+
+Trace a rule's derivation chain upstream to its source law/regulation, or downstream to all derived operational rules.
+
+**Parameters:** `rule_id` (string), `direction` (string — `upstream` or `downstream`), `max_depth` (integer, optional)
+
+#### `find_clause_conflicts`
+
+Analyze a contract for clause-level conflicts against organizational standard clause rules.
+
+**Parameters:** `contract_text` (string), `contract_type` (string, optional)
+
+#### `check_action`
+
+Evaluate a human action (overtime registration, leave request, expense submission) against applicable rules.
+
+**Parameters:** `actor` (string), `action` (string), `payload` (object)
+
+#### `review_communication`
+
+Review an outbound communication (email, Slack message) for compliance with communication policies.
+
+**Parameters:** `channel` (string), `content` (string), `recipient_type` (string, optional)
 
 ---
 

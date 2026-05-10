@@ -2,14 +2,14 @@
 
 ## Deployable Components
 
-The Rule Repository consists of ten services (plus setup containers), all orchestrated locally via Docker Compose. The backend exposes 34 registered API routers backed by 30+ service directories. Rules are scoped to projects and departments for multi-team, cross-organizational governance.
+The Rule Repository consists of ten services (plus setup containers), all orchestrated locally via Docker Compose. The backend exposes 39 API routers backed by 30+ service directories. Rules are scoped to projects and departments for multi-team, cross-organizational governance.
 
 | Component | Technology | Port | Role |
 |---|---|---|---|
-| **Backend API** | Python 3.13 / FastAPI | 8000 | System of record. 34 registered API routers covering rules, evaluation, search, discovery, governance, compliance, and more. |
-| **MCP Server** | Python / FastMCP | 8001 | Exposes rule search, evaluation, governance, and context delivery to AI agents via the Model Context Protocol (12+ tools). |
-| **Frontend** | TypeScript / Next.js 15 / Tailwind | 3000 | Operator console with 30+ pages for browsing, searching, uploading documents, reviewing evaluations, governance proposals, agent management, department-specific surfaces, and more. Persona-aware navigation with English/Japanese i18n. |
-| **PostgreSQL** | PostgreSQL 17 | 5432 | Relational store with Row-Level Security for classification-based access control. Stores rules, revisions, relationships, documents, audit log, policies, evaluations, proposals, agent profiles, snapshots, federations, departments, capacities, and cache. |
+| **Backend API** | Python 3.13 / FastAPI | 8000 | System of record. 39 API routers covering rules, evaluation, search, discovery, governance, compliance, and more. |
+| **MCP Server** | Python / FastMCP | 8001 | Exposes rule search, evaluation, governance, and context delivery to AI agents via the Model Context Protocol (18 tools). |
+| **Frontend** | TypeScript / Next.js 15 / Tailwind | 3000 | Operator console with 58 pages across 8 persona route groups for browsing, searching, uploading documents, reviewing evaluations, governance proposals, agent management, department-specific surfaces, and more. Persona-aware navigation with English/Japanese i18n. |
+| **PostgreSQL** | PostgreSQL 17 | 5432 | Relational store (36 ORM models, 30 migrations) with Row-Level Security for classification-based access control. Stores rules, revisions, relationships, documents, audit log, policies, evaluations, proposals, agent profiles, snapshots, federations, departments, capacities, and cache. |
 | **Elasticsearch** | Elasticsearch 8.17 | 9200 | Full-text (BM25) and vector (768-dim cosine) search index for rules and documents, with document-level security filtering. |
 | **Neo4j** | Neo4j 5 Community | 7474 / 7687 | Directed graph of rule relationships (REFINES, OVERRIDES, CONFLICTS_WITH, DEPENDS_ON, DERIVES_FROM, SUCCEEDS, LOCALIZES). |
 | **Redis** | Redis 7 Alpine | 6379 | Job queue and result backend for background workers. |
@@ -124,7 +124,7 @@ See [Batched Evaluation](batch-evaluation.md) for the detailed architecture.
 
 1. Client submits project artifacts to `POST /api/v1/discover/scan` -- or uses **one-click GitHub import** via `POST /api/v1/discover/import` with a repository URL.
 2. For GitHub import: the importer fetches CLAUDE.md, pyproject.toml, eslint config, tsconfig, and other key files via the GitHub Contents API.
-3. Source analyzers (CLAUDE.md, linter config, code patterns, policy documents, Confluence, Notion, Google Drive, SharePoint, e-Gov, EUR-Lex) extract candidate rules; the pattern detector deduplicates and scores them.
+3. Source analyzers (CLAUDE.md, linter config, code patterns, policy documents) extract candidate rules; the pattern detector deduplicates and scores them.
 4. Gemini refines candidates into well-formed rule statements with suggested metadata.
 5. Candidates enter a human review queue for approval or dismissal.
 

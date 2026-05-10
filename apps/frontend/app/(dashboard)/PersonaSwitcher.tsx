@@ -18,14 +18,14 @@ const PERSONA_LABELS: Record<Persona, string> = {
 
 /** Which sidebar sections each persona sees. */
 export const PERSONA_SECTIONS: Record<Persona, string[]> = {
-  all: ["manage", "observe", "enforce", "settings"],
-  compliance: ["manage", "observe", "enforce", "settings"],
-  legal: ["manage", "observe", "settings"],
-  hr: ["manage", "observe", "settings"],
-  finance: ["manage", "observe", "settings"],
-  engineering: ["manage", "observe", "enforce", "settings"],
-  sales: ["manage", "observe", "settings"],
-  executive: ["observe", "settings"],
+  all: ["observe", "manage", "use", "enforce", "settings"],
+  compliance: ["observe", "manage", "use", "enforce", "settings"],
+  legal: ["observe", "manage", "use", "settings"],
+  hr: ["observe", "manage", "use", "settings"],
+  finance: ["observe", "manage", "use", "settings"],
+  engineering: ["observe", "manage", "use", "enforce", "settings"],
+  sales: ["observe", "manage", "use", "settings"],
+  executive: ["observe", "use", "settings"],
 };
 
 // --- Context for sharing persona across components ---

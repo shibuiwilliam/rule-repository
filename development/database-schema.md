@@ -1,7 +1,7 @@
 # Database Schema & ER Diagram
 
 > PostgreSQL 17 -- source of truth for the Rule Repository.
-> 35+ tables across 31 Alembic migrations (001-031, skipping 020).
+> 36 ORM models across 30 Alembic migrations (001-031, skipping 020).
 > Row-Level Security enabled on `rules`, `documents`, `evaluations`, `audit_log` for classification-based access control.
 > Phase 7 additions: `subject_kinds`, `jurisdiction`, `classification`, `sensitivity`, department/capacity fields.
 
@@ -190,7 +190,7 @@ erDiagram
     }
 
     %% ============================================================
-    %% INTELLIGENCE & OBSERVABILITY
+    %% INTELLIGENCE & ANALYTICS
     %% ============================================================
 
     rule_health_scores {
@@ -414,7 +414,7 @@ erDiagram
 | **rule_federations** | Hierarchical nodes (organization → team → project) | `parent_id → rule_federations.id` (self-referential tree) |
 | **rule_federation_memberships** | Links rules to federation levels with optional override | `rule_id → rules.id`, `federation_id → rule_federations.id`, `override_parent_rule_id → rules.id` |
 
-### Intelligence & Observability (4 tables)
+### Intelligence & Analytics (4 tables)
 
 | Table | Purpose | Key Relationships |
 |---|---|---|

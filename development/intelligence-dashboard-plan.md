@@ -7,7 +7,7 @@
 
 ## 1. Problem Statement
 
-The Intelligence Dashboard (`/intelligence`) is the primary observability surface for the Rule Repository. It is currently at ~40% completion — the backend provides rich analytics, health scoring, cache statistics, and top violation data, but the frontend renders only a skeleton with 4 summary cards, a truncated health table (3 of 6 dimensions), and a basic recommendation list.
+The Intelligence Dashboard (`/intelligence`) is the primary analytics surface for the Rule Repository. It is currently at ~40% completion — the backend provides rich analytics, health scoring, cache statistics, and top violation data, but the frontend renders only a skeleton with 4 summary cards, a truncated health table (3 of 6 dimensions), and a basic recommendation list.
 
 Every other dashboard page (Discover, Feedback, Snapshots, Playground, etc.) is at 95-100% completion. The Intelligence page is the clear outlier and does not match the production quality of the rest of the application.
 

@@ -1,0 +1,106 @@
+version: 1
+template:
+  name: procurement-rules
+  description: Procurement and purchasing rules covering order authority, competitive bidding, and supplier requirements
+  tags: [procurement, finance, compliance]
+  owning_department: finance
+  applicable_subject_kinds: [transaction, event]
+
+rules:
+  - statement: "Purchase orders exceeding JPY 500,000 require competitive bidding with at least 3 vendors"
+    modality: MUST
+    severity: HIGH
+    classification: INTERNAL
+    scope: [finance/procurement/bidding]
+    tags: [procurement, bidding, threshold]
+    rationale: "Competitive bidding ensures fair pricing and prevents favoritism"
+    violation_examples:
+      - "Single vendor selected for JPY 2M purchase without RFQ process"
+
+  - statement: "Sole-source procurement must be documented with written justification and approved by a director-level manager"
+    modality: MUST
+    severity: HIGH
+    classification: INTERNAL
+    scope: [finance/procurement/sole-source]
+    tags: [procurement, sole-source, approval]
+    rationale: "Undocumented sole-source purchases create audit and compliance risk"
+
+  - statement: "All purchase orders must reference an approved budget line item"
+    modality: MUST
+    severity: MEDIUM
+    classification: INTERNAL
+    scope: [finance/procurement/budget]
+    tags: [procurement, budget, control]
+    rationale: "Unbudgeted purchases undermine financial planning and governance"
+
+  - statement: "Suppliers handling personal data must have a data processing agreement on file"
+    modality: MUST
+    severity: HIGH
+    classification: CONFIDENTIAL
+    scope: [finance/procurement/vendor, compliance/privacy]
+    tags: [procurement, privacy, dpa, vendor]
+    rationale: "APPI requires documented data processing agreements with processors"
+
+  - statement: "Purchase orders under JPY 50,000 may be approved by the department manager without additional review"
+    modality: MAY
+    severity: LOW
+    classification: INTERNAL
+    scope: [finance/procurement/approval]
+    tags: [procurement, approval, small-purchase]
+    rationale: "Streamlined process for low-value purchases reduces administrative burden"
+
+  - statement: "Vendor invoices must be matched against the purchase order and goods receipt before payment"
+    modality: MUST
+    severity: HIGH
+    classification: INTERNAL
+    scope: [finance/procurement/payment, finance/accounts-payable]
+    tags: [procurement, three-way-match, payment]
+    rationale: "Three-way matching prevents payment for undelivered or unauthorized goods"
+
+  - statement: "Contracts with vendors must be renewed before expiration; auto-renewal without review is not permitted"
+    modality: MUST
+    severity: MEDIUM
+    classification: INTERNAL
+    scope: [finance/procurement/renewal]
+    tags: [procurement, contract, renewal]
+    rationale: "Auto-renewal without review may lock the organization into unfavorable terms"
+
+  - statement: "Purchases from vendors on the sanctions list are prohibited"
+    modality: MUST_NOT
+    severity: CRITICAL
+    classification: RESTRICTED
+    scope: [finance/procurement/sanctions, compliance/anti-bribery]
+    tags: [procurement, sanctions, compliance]
+    rationale: "Transactions with sanctioned entities violate international trade laws"
+
+  - statement: "Emergency purchases exceeding normal approval thresholds must be ratified within 5 business days"
+    modality: MUST
+    severity: MEDIUM
+    classification: INTERNAL
+    scope: [finance/procurement/emergency]
+    tags: [procurement, emergency, ratification]
+    rationale: "Emergency exceptions must be regularized to maintain audit trail integrity"
+
+  - statement: "Vendor performance must be reviewed annually for contracts exceeding JPY 1,000,000 per year"
+    modality: SHOULD
+    severity: MEDIUM
+    classification: INTERNAL
+    scope: [finance/procurement/vendor-management]
+    tags: [procurement, vendor, performance-review]
+    rationale: "Regular vendor assessment ensures continued value and service quality"
+
+  - statement: "Gifts or entertainment from vendors must be reported and are limited to JPY 10,000 per occasion"
+    modality: MUST
+    severity: HIGH
+    classification: INTERNAL
+    scope: [finance/procurement/gifts, compliance/anti-bribery]
+    tags: [procurement, gifts, anti-bribery]
+    rationale: "Unreported vendor gifts create conflicts of interest and bribery risk"
+
+  - statement: "Procurement decisions must not be made by individuals with a personal relationship to the vendor"
+    modality: MUST_NOT
+    severity: HIGH
+    classification: INTERNAL
+    scope: [finance/procurement/conflict-of-interest]
+    tags: [procurement, conflict-of-interest, ethics]
+    rationale: "Conflicts of interest undermine fair procurement and expose the organization to fraud"

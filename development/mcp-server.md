@@ -71,7 +71,7 @@ If the Rule Repository stack is running via Docker Compose, adjust the connectio
 
 ## Tools
 
-All 12 tools are registered in `mcp/tools.py` via the `register_tools()` function.
+All 18 tools are registered in `mcp/tools.py` via the `register_tools()` function.
 
 ### search_rules
 
@@ -337,6 +337,86 @@ request_exception(
 **Returns**: Dict with exception request ID, status, and expiration if approved.
 
 **When to use**: When an agent needs a temporary exemption from a rule for a justified reason (e.g., emergency fix, migration in progress).
+
+### evaluate_subject
+
+Evaluate any subject kind against applicable rules using the polymorphic evaluation pipeline. This is the cross-organizational generalization of `evaluate_compliance`.
+
+```
+evaluate_subject(
+    subject_kind: str,              # SubjectKind (code_diff, clause_set, event, transaction, etc.)
+    payload: dict,                  # Subject-specific payload
+    facts: dict | None = None,      # Additional context facts
+    mode: str = "posthoc",          # preflight, posthoc, or sidecar
+) -> dict
+```
+
+**Delegates to**: `EvaluationService.evaluate()` with subject dispatch.
+
+### list_available_surfaces
+
+List all registered evaluation surfaces with their descriptions and supported subject kinds.
+
+```
+list_available_surfaces() -> list[dict]
+```
+
+**Returns**: List of surface descriptors with name, description, and supported subject kinds.
+
+### lookup_norm_lineage
+
+Trace a rule's derivation chain upstream to its source law/regulation, or downstream to all derived operational rules.
+
+```
+lookup_norm_lineage(
+    rule_id: str,                   # Rule ID to trace
+    direction: str = "upstream",    # "upstream" or "downstream"
+    max_depth: int = 20,            # Maximum traversal depth
+) -> dict
+```
+
+**Delegates to**: `NormLineageWalker.upstream()` or `.downstream()`.
+
+### find_clause_conflicts
+
+Analyze a contract text for clause-level conflicts against organizational standard clause rules.
+
+```
+find_clause_conflicts(
+    contract_text: str,             # Contract text to analyze
+    contract_type: str | None = None,  # NDA, MSA, SOW, etc.
+) -> dict
+```
+
+**Delegates to**: Contract clause evaluation pipeline.
+
+### check_action
+
+Evaluate a human action (overtime registration, leave request, expense submission) against applicable rules.
+
+```
+check_action(
+    actor: str,                     # Actor identifier (e.g., "user:E001")
+    action: str,                    # Action type (e.g., "register_overtime")
+    payload: dict,                  # Action-specific payload
+) -> dict
+```
+
+**Delegates to**: `EvaluationService.evaluate()` with `EVENT` subject kind.
+
+### review_communication
+
+Review an outbound communication for compliance with communication policies.
+
+```
+review_communication(
+    channel: str,                   # Channel type (email, slack, teams)
+    content: str,                   # Message content
+    recipient_type: str | None = None,  # internal, external, customer
+) -> dict
+```
+
+**Delegates to**: `EvaluationService.evaluate()` with `MESSAGE` surface.
 
 ---
 

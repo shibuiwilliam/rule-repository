@@ -31,6 +31,21 @@ class FeatureFlags:
         self.redis_enabled: bool = getattr(settings, "redis_enabled", False)
         self.mcp_enabled: bool = getattr(settings, "mcp_enabled", False)
 
+        # Cross-Organizational direction (Phase 7)
+        self.cross_org_features_enabled: bool = getattr(settings, "cross_org_features_enabled", True)
+        self.department_rbac_enabled: bool = getattr(settings, "department_rbac_enabled", True)
+        self.assistant_enabled: bool = getattr(settings, "assistant_enabled", True)
+        self.compliance_cockpit_enabled: bool = getattr(settings, "compliance_cockpit_enabled", True)
+        self.polyglot_verification_enabled: bool = getattr(settings, "polyglot_verification_enabled", True)
+
+        # Opt-in features (default OFF)
+        self.multi_agent_sessions_enabled: bool = getattr(settings, "multi_agent_sessions_enabled", False)
+        self.github_app_enabled: bool = getattr(settings, "github_app_enabled", False)
+
+        # Alert / Digest delivery mode
+        self.alert_output_mode: str = getattr(settings, "alert_output_mode", "local")
+        self.digest_output_mode: str = getattr(settings, "digest_output_mode", "local")
+
     @property
     def tier(self) -> int:
         """Return the effective deployment tier (1, 2, or 3)."""

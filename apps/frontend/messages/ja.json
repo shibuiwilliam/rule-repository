@@ -6,6 +6,7 @@
   "nav": {
     "manage": "管理",
     "observe": "監視",
+    "use": "利用",
     "enforce": "施行",
     "settings": "設定"
   },
@@ -22,6 +23,7 @@
     "snapshots": "スナップショット",
     "tutor": "チューター",
     "intelligence": "インテリジェンス",
+    "compliance": "コンプライアンスコックピット",
     "feedback": "フィードバック",
     "notifications": "通知",
     "agents": "エージェント",
@@ -30,7 +32,9 @@
     "gateway": "ゲートウェイ",
     "integrations": "連携",
     "projects": "プロジェクト",
-    "onboarding": "はじめに"
+    "onboarding": "はじめに",
+    "assistant": "アシスタント",
+    "departments": "部門管理"
   },
   "persona": {
     "label": "ペルソナ",

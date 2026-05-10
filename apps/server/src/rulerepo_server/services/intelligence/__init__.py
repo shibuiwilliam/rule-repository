@@ -1,1 +1,1 @@
-"""Rule Intelligence & Observability — analytics, health scoring, and recommendations."""
+"""Rule Intelligence & Analytics — health scoring, recommendations, and effectiveness."""

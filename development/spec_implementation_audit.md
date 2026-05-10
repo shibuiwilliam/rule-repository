@@ -221,7 +221,7 @@
 | Elasticsearch routing by tenant | IMPLEMENTED | IMPLEMENTED | Y | tenant_id: Optional tenant ID for routing tenant isolation.; kwargs["routing"] = f"tenant_{tenant_id}" |
 | Neo4j multi-database per tenant | IMPLEMENTED | IMPLEMENTED | Y | Supports multi-database tenant isolation via Neo4j 5 multi-database.; When tenant_database is set, all operations target that database. |
 
-### Observability
+### Local Analytics
 
 | Feature | Declared | Actual | Match | Evidence |
 |---------|----------|--------|-------|----------|

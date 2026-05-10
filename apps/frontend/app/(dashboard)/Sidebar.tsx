@@ -8,27 +8,34 @@ import { PersonaSwitcher as PortalSwitcher } from "@/components/PersonaSwitcher"
 import { ProjectSelector } from "./ProjectSelector";
 
 const NAV_ITEMS = [
+  // Observe
   { href: "/dashboard", key: "dashboard", section: "observe" },
-  { href: "/ask", key: "ask", section: "manage" },
-  { href: "/rules", key: "rules", section: "manage" },
-  { href: "/proposals", key: "proposals", section: "manage" },
-  { href: "/search", key: "search", section: "manage" },
-  { href: "/documents", key: "documents", section: "manage" },
-  { href: "/discover", key: "discover", section: "manage" },
-  { href: "/federations", key: "federations", section: "manage" },
-  { href: "/playground", key: "playground", section: "manage" },
-  { href: "/snapshots", key: "snapshots", section: "manage" },
-  { href: "/tutor", key: "tutor", section: "manage" },
   { href: "/intelligence", key: "intelligence", section: "observe" },
+  { href: "/compliance", key: "compliance", section: "observe" },
   { href: "/feedback", key: "feedback", section: "observe" },
   { href: "/notifications", key: "notifications", section: "observe" },
   { href: "/agents", key: "agents", section: "observe" },
   { href: "/audit", key: "audit", section: "observe" },
+  // Manage
+  { href: "/rules", key: "rules", section: "manage" },
+  { href: "/discover", key: "discover", section: "manage" },
+  { href: "/documents", key: "documents", section: "manage" },
+  { href: "/proposals", key: "proposals", section: "manage" },
+  { href: "/snapshots", key: "snapshots", section: "manage" },
+  { href: "/departments", key: "departments", section: "manage" },
+  // Use
+  { href: "/assistant", key: "assistant", section: "use" },
+  { href: "/ask", key: "ask", section: "use" },
+  { href: "/search", key: "search", section: "use" },
+  { href: "/playground", key: "playground", section: "use" },
+  // Enforce
   { href: "/review", key: "review", section: "enforce" },
   { href: "/gateway", key: "gateway", section: "enforce" },
-  { href: "/integrations", key: "integrations", section: "enforce" },
+  { href: "/federations", key: "federations", section: "enforce" },
+  // Settings
   { href: "/projects", key: "projects", section: "settings" },
   { href: "/onboarding", key: "onboarding", section: "settings" },
+  { href: "/integrations", key: "integrations", section: "settings" },
 ];
 
 export function Sidebar() {

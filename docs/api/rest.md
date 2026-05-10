@@ -336,9 +336,35 @@ See [Federation API](federation.md) for detailed request/response documentation.
 |---|---|---|
 | POST | `/api/v1/ask` | Ask a natural-language question about rules. Returns LLM-powered explanation. |
 
+## Conversational Assistant
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/assistant/turn` | Submit a conversational turn. The assistant classifies intent, searches rules, and generates a contextual answer with citations. |
+
 ## Norm Lineage
 
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/v1/lineage/{rule_id}/upstream` | Trace rule derivation chain upstream to source law/regulation (max_depth=20). |
 | GET | `/api/v1/lineage/{rule_id}/downstream` | Trace rule derivation chain downstream to all derived operational rules (max_depth=20). |
+
+## Compliance Cockpit
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v1/cockpit/dashboard` | Department-level compliance dashboard (violation trends, policy fire/deny rates, regulatory propagation). |
+| GET | `/api/v1/cockpit/action-queue` | Action queue: unapproved proposals, low-effectiveness rules, dormant rules. |
+
+## Events Ingestion
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/events/ingest` | Universal business event ingestion. Resolves scope from event_type, selects rules, dispatches to the correct subject evaluator. |
+
+## Onboarding
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v1/onboarding/status` | Get onboarding progress for the current project. |
+| POST | `/api/v1/onboarding/complete-step` | Mark an onboarding step as complete. |

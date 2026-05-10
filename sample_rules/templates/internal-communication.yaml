@@ -1,0 +1,92 @@
+version: 1
+template:
+  name: internal-communication
+  description: Rules for internal and external communications including email, Slack, and public statements
+  tags: [communication, compliance, confidentiality]
+  owning_department: compliance
+  applicable_subject_kinds: [creative, document]
+
+rules:
+  - statement: "Outbound communications must not disclose non-public financial information"
+    modality: MUST_NOT
+    severity: CRITICAL
+    classification: RESTRICTED
+    scope: [compliance/communication/financial]
+    tags: [communication, financial, insider-trading]
+    rationale: "Premature disclosure of financial results violates securities regulations"
+    violation_examples:
+      - "Our Q3 revenue exceeded expectations at JPY 5.2B"
+
+  - statement: "Customer names and deal details must not be shared outside the organization without written consent"
+    modality: MUST_NOT
+    severity: HIGH
+    classification: CONFIDENTIAL
+    scope: [compliance/communication/confidentiality]
+    tags: [communication, confidentiality, customer-data]
+    rationale: "Customer confidentiality is a contractual and trust obligation"
+
+  - statement: "Product claims in external communications must be factual and verifiable"
+    modality: MUST
+    severity: HIGH
+    classification: INTERNAL
+    scope: [sales/communication, marketing/compliance]
+    tags: [communication, claims, accuracy]
+    rationale: "Unverifiable claims violate consumer protection regulations"
+    violation_examples:
+      - "Our product is the best in the market and guarantees 100% satisfaction"
+
+  - statement: "Email signatures must include the sender's full name, title, and department"
+    modality: SHOULD
+    severity: LOW
+    classification: PUBLIC
+    scope: [communication/email/format]
+    tags: [communication, email, signature]
+    rationale: "Consistent signatures support professional communication standards"
+
+  - statement: "Internal announcements affecting employee terms must be reviewed by HR before distribution"
+    modality: MUST
+    severity: HIGH
+    classification: INTERNAL
+    scope: [hr/communication, communication/internal]
+    tags: [communication, internal, hr-review]
+    rationale: "Inaccurate announcements about benefits or policies create legal liability"
+
+  - statement: "Meeting minutes must document all decisions, action items, and responsible parties"
+    modality: MUST
+    severity: MEDIUM
+    classification: INTERNAL
+    scope: [communication/minutes]
+    tags: [communication, minutes, documentation]
+    rationale: "Incomplete minutes lead to disputes about what was agreed"
+
+  - statement: "Press releases must be approved by the Communications team and Legal before publication"
+    modality: MUST
+    severity: HIGH
+    classification: INTERNAL
+    scope: [communication/external/press]
+    tags: [communication, press-release, approval]
+    rationale: "Unauthorized press releases expose the organization to reputational and legal risk"
+
+  - statement: "Social media posts on behalf of the company must follow the social media policy"
+    modality: MUST
+    severity: MEDIUM
+    classification: INTERNAL
+    scope: [communication/social-media]
+    tags: [communication, social-media, policy]
+    rationale: "Informal social media posts can create binding commitments or PR crises"
+
+  - statement: "Confidential classification labels must be included in email subjects when sharing restricted content"
+    modality: MUST
+    severity: HIGH
+    classification: INTERNAL
+    scope: [compliance/communication/classification]
+    tags: [communication, classification, email]
+    rationale: "Classification labels enable DLP systems to enforce data handling policies"
+
+  - statement: "Communications containing personal data must be sent through encrypted channels only"
+    modality: MUST
+    severity: HIGH
+    classification: CONFIDENTIAL
+    scope: [compliance/privacy, communication/security]
+    tags: [communication, encryption, privacy]
+    rationale: "APPI requires appropriate security measures for personal data transmission"

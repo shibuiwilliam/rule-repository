@@ -13,7 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from rulerepo_server.core.config import get_settings
 from rulerepo_server.core.logging import get_logger
 from rulerepo_server.workers.norm_lineage_propagation import propagate_norm_amendment
+from rulerepo_server.workers.polyglot_validator import validate_polyglot_equivalence
 from rulerepo_server.workers.translation_drift import verify_translation_drift
+from rulerepo_server.workers.verdict_drift import detect_verdict_drift
 
 logger = get_logger(__name__)
 
@@ -439,6 +441,8 @@ class WorkerSettings:
         cron(cluster_corrections, hour=5, minute=0),
         cron(compute_correction_stats, minute=0),
         cron(send_weekly_digest, weekday=0, hour=9, minute=0),  # Monday 9am
+        cron(detect_verdict_drift, hour=4, minute=30),  # daily (Phase 5i)
+        cron(validate_polyglot_equivalence, weekday=6, hour=6, minute=0),  # Sunday 6am (Phase 7i)
     ]
 
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)

@@ -1,4 +1,4 @@
-"""Pydantic schemas for the Intelligence & Observability API."""
+"""Pydantic schemas for the Intelligence & Analytics API."""
 
 from __future__ import annotations
 
