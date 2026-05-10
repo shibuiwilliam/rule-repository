@@ -1164,6 +1164,68 @@ export async function askQuestion(question: string, opts?: { scope?: string; dom
 }
 
 // ---------------------------------------------------------------------------
+// Department Dashboards
+// ---------------------------------------------------------------------------
+
+export interface DepartmentDashboard {
+  total_rules: number;
+  rules_pending_review: number;
+  evaluations_30d: number;
+  violations_30d: number;
+  compliance_rate: number;
+  verdict_distribution: Record<string, number>;
+  violation_trend: Array<{ date: string; count: number }>;
+  recent_evaluations: Array<{
+    id: string;
+    subject_type: string;
+    verdict: string;
+    rule_count: number;
+    created_at: string;
+    summary: string;
+  }>;
+  top_violated_rules: Array<{ rule_id: string; statement: string; violation_count: number }>;
+}
+
+export async function getDepartmentDashboard(department: string, windowDays = 30): Promise<DepartmentDashboard> {
+  const params = new URLSearchParams({ department, window_days: String(windowDays) });
+  return apiFetch(`/api/v1/compliance/dashboard?${params}`);
+}
+
+export interface DepartmentEvaluation {
+  id: string;
+  subject_type: string;
+  verdict: string;
+  confidence: number;
+  rule_id: string;
+  rule_statement: string;
+  issue_description: string;
+  fix_suggestion: string | null;
+  summary: string | null;
+  created_at: string;
+  details: Record<string, unknown>;
+}
+
+export async function getDepartmentEvaluations(
+  department: string,
+  verdict?: string,
+  page = 1,
+  pageSize = 20,
+): Promise<{ items: DepartmentEvaluation[]; total: number }> {
+  const params = new URLSearchParams({ department, page: String(page), page_size: String(pageSize) });
+  if (verdict) params.set("verdict", verdict);
+  return apiFetch(`/api/v1/compliance/evaluations?${params}`);
+}
+
+export async function getDepartmentRules(
+  department: string,
+  page = 1,
+  pageSize = 20,
+): Promise<RuleList> {
+  const params = new URLSearchParams({ department, page: String(page), page_size: String(pageSize) });
+  return apiFetch(`/api/v1/rules?${params}`);
+}
+
+// ---------------------------------------------------------------------------
 // Onboarding (RR-004)
 // ---------------------------------------------------------------------------
 

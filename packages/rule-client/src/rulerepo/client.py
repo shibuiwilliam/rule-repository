@@ -4,14 +4,20 @@ from __future__ import annotations
 
 import httpx
 
+from rulerepo.resources.communications import CommunicationsResource
+from rulerepo.resources.contracts import ContractsResource
 from rulerepo.resources.documents import DocumentsResource
 from rulerepo.resources.intent import IntentResource
 from rulerepo.resources.rules import RulesResource
 from rulerepo.resources.search import SearchResource
+from rulerepo.resources.transactions import TransactionsResource
 
 
 class RuleClient:
     """Async client for the Rule Repository API.
+
+    Provides access to rules, search, documents, and domain-specific
+    resources for contracts, transactions, and communications.
 
     Usage::
 
@@ -20,7 +26,8 @@ class RuleClient:
         async with RuleClient("http://localhost:8000") as client:
             rules = await client.rules.list()
             result = await client.search.hybrid("overtime monthly limit")
-            intent = await client.intent.ask("What are the rules for refunding orders?")
+            contract_rules = await client.contracts.list_rules(contract_type="nda")
+            tx_rules = await client.transactions.list_rules(transaction_type="expense")
 
     Args:
         server_url: Base URL of the Rule Repository server.
@@ -48,6 +55,9 @@ class RuleClient:
         self.search = SearchResource(self._http)
         self.intent = IntentResource(self._http)
         self.documents = DocumentsResource(self._http)
+        self.contracts = ContractsResource(self._http)
+        self.transactions = TransactionsResource(self._http)
+        self.communications = CommunicationsResource(self._http)
 
     async def close(self) -> None:
         """Close the underlying HTTP client."""

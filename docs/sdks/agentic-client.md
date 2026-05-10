@@ -73,13 +73,44 @@ Returns rules that apply to the given file paths. Delegates to `POST /api/v1/eva
 
 **Returns:** A list of rule objects with `id`, `statement`, `scope`, `modality`, and `tags`.
 
+### `evaluate_subject(subject_type, payload, scope=None, mode="preflight", metadata=None)`
+
+Evaluates a typed subject (contract, HR event, expense claim, etc.) against applicable rules using the Phase 7b subject envelope.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `subject_type` | `str` | Yes | Subject kind (e.g., `"hr_event"`, `"contract_clause"`, `"expense_claim"`) |
+| `payload` | `dict` | Yes | Subject-specific data |
+| `scope` | `str` | No | Override the default scope |
+| `mode` | `str` | No | `"preflight"`, `"posthoc"`, or `"sidecar"`. Default: `"preflight"` |
+| `metadata` | `dict` | No | Optional actor, timestamp, source system metadata |
+
+### `get_applicable_rules_for_surface(surface, scope=None, department=None, language="ja", **kwargs)`
+
+Get rules applicable to a specific evaluation surface.
+
+### Domain Convenience Methods
+
+```python
+# Contract review
+rules = await client.get_rules_for_contract(contract_type="nda", language="ja")
+result = await client.evaluate_contract("clause text...", contract_type="nda")
+
+# Transaction validation
+rules = await client.get_rules_for_transaction(transaction_type="expense", amount=30000)
+result = await client.evaluate_transaction({"amount_jpy": 30000}, transaction_type="expense")
+
+# Communication review
+rules = await client.get_rules_for_communication(channel="email", audience="external")
+result = await client.evaluate_communication("Dear Customer...", channel="email")
+```
+
 ## Current Limitations
 
 The following features are planned but **not yet implemented**:
 
 - **Result caching** -- repeated evaluations with the same inputs will make a new server request each time.
 - **Reason graphs** -- the evaluation result does not yet include a structured graph of reasoning steps.
-- **Two-stage evaluation** -- preflight and postcheck currently use the same evaluation path; a dedicated two-stage pipeline with diff-aware re-evaluation is planned.
 
 ## Error Handling
 

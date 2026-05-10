@@ -3,6 +3,10 @@
 Per CLAUDE_ENHANCE.md §1.4.3: evaluates each selected rule using Gemini with
 structured output. Model selection based on rule severity. All calls use
 response_mime_type="application/json" + schema.
+
+The structured output schema is now surface-aware: code evaluations use
+file_path/line_number locations, contract evaluations use clause_ref/offsets,
+transaction evaluations use JSON paths, etc.
 """
 
 from __future__ import annotations
@@ -19,67 +23,21 @@ from google.genai import types
 from rulerepo_server.core.llm import LLMConfig, get_default_config, get_judge_config
 from rulerepo_server.core.logging import get_logger
 from rulerepo_server.domain.evaluation import (
-    CodeLocation,
     EvaluationContext,
     Remediation,
     RuleVerdict,
+    Surface,
     Verdict,
+)
+from rulerepo_server.services.evaluation.schemas import (
+    build_verdict_schema,
+    parse_location,
+    validate_location_fields,
 )
 
 logger = get_logger(__name__)
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
-
-# JSON schema for structured verdict output
-_VERDICT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "verdict": {
-            "type": "string",
-            "enum": [
-                "ALLOW",
-                "DENY",
-                "NEEDS_CONFIRMATION",
-                "ALLOW_WITH_CONDITIONS",
-                "REQUIRES_DISCLOSURE",
-            ],
-        },
-        "confidence": {"type": "number"},
-        "reasoning": {"type": "string"},
-        "issue_description": {"type": "string"},
-        "fix_suggestion": {"type": "string"},
-        "locations": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "file_path": {"type": "string"},
-                    "start_line": {"type": "integer"},
-                    "end_line": {"type": "integer"},
-                    "function_name": {"type": "string"},
-                    "snippet": {"type": "string"},
-                },
-            },
-        },
-        "remediations": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "type": {"type": "string"},
-                    "file_path": {"type": "string"},
-                    "start_line": {"type": "integer"},
-                    "end_line": {"type": "integer"},
-                    "original": {"type": "string"},
-                    "replacement": {"type": "string"},
-                    "description": {"type": "string"},
-                    "auto_applicable": {"type": "boolean"},
-                },
-            },
-        },
-    },
-    "required": ["verdict", "confidence", "reasoning"],
-}
 
 
 def _load_prompt(name: str) -> str:
@@ -108,6 +66,19 @@ def _hash_content(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:16]
 
 
+def _resolve_surface(surface: Surface | str | None) -> Surface | None:
+    """Resolve a surface parameter to a Surface enum value."""
+    if surface is None:
+        return None
+    if isinstance(surface, Surface):
+        return surface
+    try:
+        return Surface(surface)
+    except ValueError:
+        logger.warning("unknown_surface_value", surface=surface)
+        return None
+
+
 # Subject-kind prompt file mapping. Each entry maps a SubjectKind value
 # to a prompt file under PROMPTS_DIR. Adapters own the domain knowledge;
 # this map is the only place the orchestrator references subject kinds.
@@ -116,6 +87,7 @@ _SUBJECT_KIND_PROMPT_MAP: dict[str, str] = {
     "event": "evaluate_hr_event.txt",
     "clause_set": "evaluate_contract_clause.txt",
     "transaction": "evaluate_expense_claim.txt",
+    "creative": "evaluate_message.txt",
 }
 
 
@@ -199,6 +171,60 @@ def _build_prompt(
     )
 
 
+def _parse_remediations(
+    raw_remediations: list[dict[str, Any]],
+    surface: Surface | None,
+) -> list[Remediation]:
+    """Parse remediation dicts from LLM output into Remediation objects.
+
+    For code surfaces, requires file_path. For other surfaces, accepts
+    surface-appropriate fields.
+
+    Args:
+        raw_remediations: List of remediation dicts from LLM JSON output.
+        surface: The evaluation surface for field expectations.
+
+    Returns:
+        List of Remediation objects.
+    """
+    remediations: list[Remediation] = []
+    for rem in raw_remediations:
+        if not isinstance(rem, dict):
+            continue
+
+        # For code surface (or legacy None), require file_path
+        if surface is None or surface == Surface.CODE:
+            if not rem.get("file_path"):
+                continue
+            remediations.append(
+                Remediation(
+                    type=rem.get("type", "replace"),
+                    file_path=rem.get("file_path", ""),
+                    start_line=rem.get("start_line", 0),
+                    end_line=rem.get("end_line"),
+                    original=rem.get("original"),
+                    replacement=rem.get("replacement"),
+                    description=rem.get("description", ""),
+                    auto_applicable=rem.get("auto_applicable", False),
+                )
+            )
+        else:
+            # Non-code surfaces: accept remediation with any valid description
+            remediations.append(
+                Remediation(
+                    type=rem.get("type", "clarification"),
+                    file_path=rem.get("file_path", ""),
+                    start_line=rem.get("start_line", 0),
+                    end_line=rem.get("end_line"),
+                    original=rem.get("original"),
+                    replacement=rem.get("replacement"),
+                    description=rem.get("description", ""),
+                    auto_applicable=rem.get("auto_applicable", False),
+                )
+            )
+    return remediations
+
+
 async def evaluate_rule(
     rule: dict[str, Any],
     context: EvaluationContext,
@@ -206,6 +232,7 @@ async def evaluate_rule(
     cache_repo: Any | None = None,
     *,
     subject_type: str | None = None,
+    surface: Surface | str | None = None,
 ) -> tuple[RuleVerdict, str, int]:
     """Evaluate a single rule against the context using LLM-as-Judge.
 
@@ -218,10 +245,14 @@ async def evaluate_rule(
         context: The evaluation context (code diff or facts).
         gemini_client: The Gemini API client.
         cache_repo: Optional LLMCacheRepository for response caching.
+        subject_type: SubjectKind value for prompt dispatch.
+        surface: Evaluation surface for schema selection. If None, uses
+            the legacy code-oriented schema for backward compatibility.
 
     Returns:
         Tuple of (RuleVerdict, model_id_used, latency_ms).
     """
+    resolved_surface = _resolve_surface(surface)
     config = _get_config_for_severity(rule["severity"])
     start_time = time.time()
 
@@ -248,6 +279,7 @@ async def evaluate_rule(
 
     # Compute cache key (CLAUDE_ENHANCE.md §0.2)
     prompt_version = _hash_content(prompt)
+    surface_str = resolved_surface.value if resolved_surface else "none"
     context_hash = _hash_content(
         json.dumps(
             {"diff": context.diff or "", "facts": context.facts, "intent": context.intent},
@@ -255,7 +287,7 @@ async def evaluate_rule(
             default=str,
         )
     )
-    cache_key = _hash_content(f"{rule['id']}:{context_hash}:{config.model_id}:{prompt_version}")
+    cache_key = _hash_content(f"{rule['id']}:{context_hash}:{config.model_id}:{prompt_version}:{surface_str}")
 
     # Check cache before calling Gemini
     if cache_repo:
@@ -264,9 +296,16 @@ async def evaluate_rule(
             if cached:
                 latency_ms = int((time.time() - start_time) * 1000)
                 logger.info("rule_eval_cache_hit", rule_id=rule["id"])
-                return _parse_verdict(rule, cached), config.model_id, latency_ms
+                return (
+                    _parse_verdict(rule, cached, surface=resolved_surface),
+                    config.model_id,
+                    latency_ms,
+                )
         except Exception:
             pass  # Cache miss or error — proceed to LLM
+
+    # Build surface-aware schema
+    verdict_schema = build_verdict_schema(resolved_surface)
 
     try:
         response = gemini_client.models.generate_content(
@@ -274,7 +313,7 @@ async def evaluate_rule(
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
-                response_json_schema=_VERDICT_SCHEMA,
+                response_json_schema=verdict_schema,
                 thinking_config=types.ThinkingConfig(
                     thinking_level=config.thinking_level,
                 ),
@@ -285,36 +324,18 @@ async def evaluate_rule(
         latency_ms = int((time.time() - start_time) * 1000)
         result = json.loads(response.text or "{}") if response.text else {}
 
-        # Parse locations
+        # Parse locations with surface-aware validation
         locations = []
         for loc in result.get("locations", []):
             if isinstance(loc, dict):
-                locations.append(
-                    CodeLocation(
-                        file_path=loc.get("file_path", ""),
-                        start_line=loc.get("start_line"),
-                        end_line=loc.get("end_line"),
-                        function_name=loc.get("function_name"),
-                        snippet=loc.get("snippet"),
-                    )
-                )
+                cleaned = validate_location_fields(loc, resolved_surface)
+                locations.append(parse_location(cleaned, resolved_surface))
 
         # Parse remediations
-        remediations = []
-        for rem in result.get("remediations", []):
-            if isinstance(rem, dict) and rem.get("file_path"):
-                remediations.append(
-                    Remediation(
-                        type=rem.get("type", "replace"),
-                        file_path=rem.get("file_path", ""),
-                        start_line=rem.get("start_line", 0),
-                        end_line=rem.get("end_line"),
-                        original=rem.get("original"),
-                        replacement=rem.get("replacement"),
-                        description=rem.get("description", ""),
-                        auto_applicable=rem.get("auto_applicable", False),
-                    )
-                )
+        remediations = _parse_remediations(
+            result.get("remediations", []),
+            resolved_surface,
+        )
 
         raw_verdict = Verdict(result.get("verdict", "NEEDS_CONFIRMATION"))
         reasoning = result.get("reasoning", "")
@@ -363,6 +384,7 @@ async def evaluate_rule(
             confidence=verdict.confidence,
             model=config.model_id,
             latency_ms=latency_ms,
+            surface=surface_str,
         )
 
         return verdict, config.model_id, latency_ms
@@ -389,20 +411,24 @@ async def evaluate_rule(
         )
 
 
-def _parse_verdict(rule: dict[str, Any], data: dict[str, Any]) -> RuleVerdict:
+def _parse_verdict(
+    rule: dict[str, Any],
+    data: dict[str, Any],
+    *,
+    surface: Surface | None = None,
+) -> RuleVerdict:
     """Parse a cached or fresh result dict into a RuleVerdict."""
     locations = []
     for loc in data.get("locations", []):
         if isinstance(loc, dict):
-            locations.append(
-                CodeLocation(
-                    file_path=loc.get("file_path", ""),
-                    start_line=loc.get("start_line"),
-                    end_line=loc.get("end_line"),
-                    function_name=loc.get("function_name"),
-                    snippet=loc.get("snippet"),
-                )
-            )
+            cleaned = validate_location_fields(loc, surface)
+            locations.append(parse_location(cleaned, surface))
+
+    remediations = _parse_remediations(
+        data.get("remediations", []),
+        surface,
+    )
+
     return RuleVerdict(
         rule_id=rule["id"],
         rule_statement=rule["statement"],
@@ -412,4 +438,5 @@ def _parse_verdict(rule: dict[str, Any], data: dict[str, Any]) -> RuleVerdict:
         issue_description=data.get("issue_description", ""),
         fix_suggestion=data.get("fix_suggestion"),
         locations=locations,
+        remediations=remediations,
     )

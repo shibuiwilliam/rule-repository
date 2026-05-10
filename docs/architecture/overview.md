@@ -7,8 +7,8 @@ The Rule Repository consists of ten services (plus setup containers), all orches
 | Component | Technology | Port | Role |
 |---|---|---|---|
 | **Backend API** | Python 3.13 / FastAPI | 8000 | System of record. 39 API routers covering rules, evaluation, search, discovery, governance, compliance, and more. |
-| **MCP Server** | Python / FastMCP | 8001 | Exposes rule search, evaluation, governance, and context delivery to AI agents via the Model Context Protocol (18 tools). |
-| **Frontend** | TypeScript / Next.js 15 / Tailwind | 3000 | Operator console with 58 pages across 8 persona route groups for browsing, searching, uploading documents, reviewing evaluations, governance proposals, agent management, department-specific surfaces, and more. Persona-aware navigation with English/Japanese i18n. |
+| **MCP Server** | Python / FastMCP | 8001 | Exposes rule search, evaluation, governance, and context delivery to AI agents via the Model Context Protocol (24 tools including domain-specific retrieval and evaluation). |
+| **Frontend** | TypeScript / Next.js 15 / Tailwind | 3000 | Operator console with 56 pages across 8 persona route groups for browsing, searching, uploading documents, reviewing evaluations, governance proposals, agent management, department-specific dashboards (Finance 505 LOC, HR 649 LOC, Legal 926 LOC, Marketing 681 LOC), and more. Persona-aware navigation with English/Japanese i18n. |
 | **PostgreSQL** | PostgreSQL 17 | 5432 | Relational store (36 ORM models, 30 migrations) with Row-Level Security for classification-based access control. Stores rules, revisions, relationships, documents, audit log, policies, evaluations, proposals, agent profiles, snapshots, federations, departments, capacities, and cache. |
 | **Elasticsearch** | Elasticsearch 8.17 | 9200 | Full-text (BM25) and vector (768-dim cosine) search index for rules and documents, with document-level security filtering. |
 | **Neo4j** | Neo4j 5 Community | 7474 / 7687 | Directed graph of rule relationships (REFINES, OVERRIDES, CONFLICTS_WITH, DEPENDS_ON, DERIVES_FROM, SUCCEEDS, LOCALIZES). |

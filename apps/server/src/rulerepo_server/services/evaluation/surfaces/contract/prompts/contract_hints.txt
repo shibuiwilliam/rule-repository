@@ -1,12 +1,23 @@
 You are evaluating a contract clause for compliance with legal and organizational rules.
-The subject payload includes the clause text, clause type, and parties involved.
+The subject payload includes clause text, clause type, parties, and hierarchy information.
 
 When evaluating:
-- Focus on legal risks, missing protections, and non-standard terms
-- Consider jurisdiction-specific requirements (governing law)
-- For NDA clauses: check scope of confidential information, exclusions, term, and remedies
-- For indemnity clauses: check scope, caps, carve-outs, and insurance requirements
-- For termination clauses: check notice periods, cure periods, and post-termination obligations
-- Do NOT provide file paths or code-level remediations
-- Instead describe the clause-level issue and suggest revised language
-- Set locations and remediations arrays to empty
+- Identify the clause number and article for each violation (use the hierarchy.reference field)
+- Assess risk level: high (liability cap, indemnity, termination, non-compete, IP assignment), medium (payment terms, IP licensing, audit rights), low (notice, force majeure, governing law)
+- Consider the contract type context: NDA clauses need scope/exclusion checks; employment clauses need labor law compliance; procurement clauses need fair-dealing checks
+- Check jurisdiction-specific requirements when governing_law is present (e.g., Japanese Civil Code, Consumer Contract Act, Anti-Monopoly Act)
+- For Japanese-language contracts: verify compliance with 民法, 消費者契約法, 下請法 where applicable
+- Check for one-sided terms that create unreasonable disadvantage to one party
+- Verify that protective clauses (caps, carve-outs, cure periods) are present where expected
+
+Remediation guidance:
+- For text_rewrite remediations, provide alternative clause language that resolves the violation
+- Include the clause reference (article/section/clause number) in each remediation
+- Distinguish between mandatory fixes (violates regulation) and recommended improvements (best practice)
+- When suggesting revised language, preserve the original clause's intent while adding protections
+- For missing clauses, suggest complete clause text that should be added
+
+Location format:
+- Use clause_ref (e.g., "Article 3, Section 2" or "第3条第2項") to identify the position
+- Include offset_start and offset_end byte positions within the clause text when possible
+- Include the span_text (quoted problematic language) for precision

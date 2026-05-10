@@ -1,7 +1,8 @@
-"""Finance domain plugin — transaction evaluation.
+"""Finance domain plugin — transaction and expense evaluation.
 
-Registers the transaction evaluator with the plugin registry. Covers
-expense claims, purchase orders, and financial compliance.
+Registers evaluators, extractors, and feedback sources with the plugin
+registry. Covers expense claims, purchase orders, approval matrices,
+policy extraction, and audit findings analysis.
 
 See: PROJECT.md SS6.4, CLAUDE.md SS12.4
 """
@@ -17,8 +18,20 @@ from rulerepo_server.plugins.base import (
     FeedbackSource,
     PersonaView,
 )
+from rulerepo_server.plugins.finance.evaluators.expense_evaluator import (
+    ExpenseEvaluator,
+)
 from rulerepo_server.plugins.finance.evaluators.transaction_evaluator import (
     TransactionEvaluator,
+)
+from rulerepo_server.plugins.finance.extractors.approval_matrix import (
+    ApprovalMatrixExtractor,
+)
+from rulerepo_server.plugins.finance.extractors.expense_policy import (
+    ExpensePolicyExtractor,
+)
+from rulerepo_server.plugins.finance.feedback.audit_findings import (
+    AuditFindingsCapture,
 )
 
 
@@ -93,20 +106,22 @@ class FinancePlugin:
         return (
             "Financial transaction and expense claim evaluation against "
             "finance rules covering approval thresholds, documentation, "
-            "segregation of duties, and anti-bribery compliance."
+            "segregation of duties, and anti-bribery compliance. "
+            "Includes extraction from approval matrices and expense policies, "
+            "plus audit findings feedback for continuous rule improvement."
         )
 
     def get_evaluators(self) -> list[Evaluator]:
-        """Return the transaction evaluator."""
-        return [TransactionEvaluator()]
+        """Return transaction and expense evaluators."""
+        return [TransactionEvaluator(), ExpenseEvaluator()]
 
     def get_extractors(self) -> list[Extractor]:
-        """No extractors registered yet."""
-        return []
+        """Return approval matrix and expense policy extractors."""
+        return [ApprovalMatrixExtractor(), ExpensePolicyExtractor()]
 
     def get_feedback_sources(self) -> list[FeedbackSource]:
-        """No feedback sources registered yet."""
-        return []
+        """Return the audit findings feedback source."""
+        return [AuditFindingsCapture()]
 
     def get_fact_providers(self) -> list[FactProvider]:
         """No external fact providers registered yet."""

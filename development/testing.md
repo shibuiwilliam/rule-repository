@@ -47,7 +47,7 @@ cd packages/rule-client && uv run pytest
 
 ## Test Structure
 
-The project has **821 test functions** across five locations (unit + integration + safety + e2e + SDK). Test count grew significantly through Phase 7 (subject polymorphism, classification RLS) and the RR-001–040 improvements (domain modules, safety, operability, eval harness).
+The project has **830+ test functions** across 90 test files in five locations (unit + integration + safety + e2e + SDK). Test count grew significantly through Phase 7 (subject polymorphism, classification RLS), the RR-001–040 improvements (domain modules, safety, operability, eval harness), and Phase 8 additions (surface-based template routing, domain SDK resources, MCP domain tools).
 
 ### Unit Tests (`apps/server/tests/unit/`)
 

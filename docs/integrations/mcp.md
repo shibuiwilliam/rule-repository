@@ -11,7 +11,7 @@ The Rule Repository exposes a Model Context Protocol (MCP) server that allows AI
 
 ## Tools
 
-The MCP server provides 18 tools organized into four categories: search and context, evaluation and compliance, governance, and cross-organizational.
+The MCP server provides 24 tools organized into four categories: search and context, evaluation and compliance, governance, and cross-organizational.
 
 ### Search and Context
 
@@ -148,6 +148,46 @@ Evaluate a human action (overtime registration, leave request, expense submissio
 Review an outbound communication (email, Slack message) for compliance with communication policies.
 
 **Parameters:** `channel` (string), `content` (string), `recipient_type` (string, optional)
+
+### Domain-Specific Rule Retrieval
+
+#### `get_rules_for_contract_review`
+
+Get applicable rules for reviewing a contract. Primary tool for legal review agents.
+
+**Parameters:** `contract_type` (string), `parties` (array, optional), `governing_law` (string, optional), `language` (string, default "ja"), `max_rules` (integer, default 15), `format` (string, default "instructions")
+
+#### `get_rules_for_transaction`
+
+Get applicable rules for validating a business transaction. Primary tool for finance/HR automation agents.
+
+**Parameters:** `transaction_type` (string), `amount` (number, optional), `department` (string, optional), `actor_role` (string, optional), `max_rules` (integer, default 15), `format` (string, default "instructions")
+
+#### `get_rules_for_communication`
+
+Get applicable rules for reviewing communications. Primary tool for content review and compliance agents.
+
+**Parameters:** `channel` (string), `audience` (string, optional), `content_type` (string, optional), `max_rules` (integer, default 15), `format` (string, default "instructions")
+
+### Domain-Specific Evaluation
+
+#### `evaluate_contract`
+
+Evaluate a contract or contract clause against applicable rules. Returns verdicts with clause-level remediations.
+
+**Parameters:** `contract_text` (string), `contract_type` (string, default "other"), `language` (string, default "ja"), `focus_areas` (array, optional)
+
+#### `evaluate_transaction`
+
+Evaluate a business transaction against applicable rules. Returns verdicts with field-level remediations.
+
+**Parameters:** `transaction_payload` (string — JSON), `transaction_type` (string, default "other"), `actor_role` (string, optional), `department` (string, optional)
+
+#### `evaluate_communication`
+
+Evaluate a communication draft against applicable rules. Returns verdicts with text-level remediations.
+
+**Parameters:** `text` (string), `channel` (string, default "email"), `audience` (string, default "external"), `language` (string, default "ja")
 
 ---
 

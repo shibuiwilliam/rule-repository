@@ -31,7 +31,7 @@ The metadata stage runs in under 50ms. The full selection is designed to avoid s
 
 ### 3. LLM Judgment (Batched)
 
-All selected rules are sent to Gemini in a **single batched API call** using structured JSON output. The batch prompt lists every rule (index, statement, modality, severity) alongside the code diff or facts, and requests an array of per-rule verdicts.
+All selected rules are sent to Gemini in a **single batched API call** using structured JSON output. The batch evaluator selects a **surface-specific prompt template** based on the `surface` field of the evaluation context (e.g., `evaluate_batch_contract.txt` for contracts, `evaluate_batch_transaction.txt` for transactions). Each surface template defines its own location format and remediation kinds. The prompt lists every rule alongside the subject content and requests an array of per-rule verdicts.
 
 **Tiered model strategy:**
 
@@ -43,7 +43,7 @@ All selected rules are sent to Gemini in a **single batched API call** using str
 
 If the batch call fails (API error, token budget exceeded, response parsing failure), the system falls back transparently to per-rule concurrent evaluation via `asyncio.gather()`.
 
-Each rule judgment produces: a verdict (ALLOW, DENY, or NEEDS_CONFIRMATION), a confidence score, reasoning, issue description, fix suggestion, and specific code locations where the issue was found.
+Each rule judgment produces: a verdict (ALLOW, DENY, or NEEDS_CONFIRMATION), a confidence score, reasoning, issue description, fix suggestion, and domain-specific locations (code file/line, contract clause references, transaction JSON paths, document spans, or message segments depending on the surface).
 
 See [Batched Evaluation](batch-evaluation.md) for full architectural details.
 

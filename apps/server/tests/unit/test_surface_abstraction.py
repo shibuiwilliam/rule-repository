@@ -232,7 +232,7 @@ class TestContractSurfaceAdapter:
 
         adapter = ContractSurfaceAdapter()
         scopes = adapter.resolve_scopes({"clause_type": "indemnity"})
-        assert "legal/contract/indemnity" in scopes
+        assert "legal/clause/indemnity" in scopes
         assert "legal/contract" in scopes
 
     def test_retention_10_years(self) -> None:

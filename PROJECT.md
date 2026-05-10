@@ -323,6 +323,9 @@ A higher-level client that wraps `RuleClient` and adds agent capabilities for sy
 **Added capabilities:**
 
 - **Subject construction helpers**: `client.evaluate.code(...)`, `client.evaluate.document(...)`, `client.evaluate.transaction(...)`.
+- **Domain-specific rule retrieval**: `client.get_rules_for_contract(...)`, `client.get_rules_for_transaction(...)`, `client.get_rules_for_communication(...)`.
+- **Domain-specific evaluation**: `client.evaluate_contract(...)`, `client.evaluate_transaction(...)`, `client.evaluate_communication(...)`.
+- **Surface-aware rule selection**: `client.get_applicable_rules_for_surface(surface, ...)`.
 - **Automatic context gathering**: given an event, pull related facts before evaluation (via Context Provider §6.20).
 - **Two-stage evaluation**: narrow the rule set by metadata + embeddings, then evaluate the narrow set.
 - **Result caching**: hash-keyed cache, automatically invalidated on rule revision.
@@ -376,7 +379,7 @@ A first-class path for evaluating business transactions (expense submissions, pu
 Exposes the Rule Repository to AI coding agents via the Model Context Protocol (MCP). The key innovation is **active context delivery** — rules reach the agent at the right moment without being asked.
 
 - **MCP Server**: FastMCP server with stdio (for Claude Code) and streamable-http (for remote agents) transports.
-- **Tools**: `search_rules`, `evaluate_compliance`, `evaluate_document`, `evaluate_transaction`, `explain_rule`, `find_conflicts`, `get_rules_for_context`.
+- **Tools**: `search_rules`, `evaluate_compliance`, `evaluate_document`, `evaluate_transaction`, `explain_rule`, `find_conflicts`, `get_rules_for_context`, plus domain-specific tools: `get_rules_for_contract_review` (legal agents), `get_rules_for_transaction` (finance/HR agents), `get_rules_for_communication` (content/compliance agents), `evaluate_contract`, `evaluate_communication`.
 - **Resources**: `rule://{id}` (single rule), `ruleset://{scope}` (dynamic CLAUDE.md section).
 - **Prompts**: `compliance_check`, `rule_summary`, `impact_analysis`.
 - **Rule Formatter**: three output formats — `instructions`, `checklist`, `detailed`.
@@ -396,10 +399,11 @@ Integration into the places where code is written, reviewed, and merged. Enginee
 
 Analytics, health scoring, and automated improvement recommendations.
 
-- **Health Scorer**: per-rule score (0–100) across 6 dimensions — completeness, clarity, test coverage, freshness, activity, owner engagement.
+- **Health Scorer**: per-rule score (0–100) across 6 dimensions — completeness, clarity, **effectiveness** (domain-aware: code=volume, legal=precision, transaction=override-rate), freshness, activity, owner engagement.
 - **Evaluation Analytics**: corpus-wide and per-rule metrics from the audit log — fire rate, deny rate, latency, trends, **department-segmented breakdowns**.
 - **Recommender**: automated suggestions — retire dormant rules, clarify ambiguous ones, escalate persistent violations, strengthen SHOULD→MUST.
-- **Effectiveness Score**: precision (40 %) + prevention rate (35 %) + agent adoption (25 %).
+- **Effectiveness Score**: domain-aware measurement — code rules use evaluation volume, legal/document rules use precision against expected deny rate, transaction/event rules use override rate.
+- **Rule Status Classification**: `dormant` (no evaluations, active >90 days), `ineffective` (>50% override rate), `over_broad` (>95% ALLOW rate on high volume).
 - **Weekly Digest**: compliance trend, rule changes, top violations, attention needed, corrections — delivered to local file by default, optionally to webhook.
 
 ### 6.10 Compliance Cockpit
@@ -430,13 +434,18 @@ Solves the cold-start problem: instead of requiring humans to write rules from s
 
 - **Source Analyzers**:
   - **Code-side** (existing): `claude_md.py`, `linter_config.py`, `code_patterns.py`, `github_importer.py`.
-  - **Business-side (new)**:
+  - **Business-side (extraction pipeline)**:
     - `contract.py` — extracts clauses from contract PDFs/DOCXs with `Article–Section–Clause` hierarchy.
     - `regulation.py` — handles regulation documents with `第N条/第M項/第L号` (or English equivalent) structure; auto-creates `derives_from` chains.
     - `handbook.py` — employee handbooks and operational manuals.
     - `minutes.py` — meeting minutes; extracts decisions and action items only.
     - `tabular.py` — Excel/CSV tables (expense limits, approval matrices) with one rule per row.
     - `email_archive.py` — past email corpora to discover de-facto patterns.
+  - **Cross-domain discovery analyzers** (Phase 8):
+    - `contract_corpus.py` — detects common clause patterns across contract corpora; proposes standard-practice rules.
+    - `hr_policy.py` — extracts quantitative thresholds from HR handbooks and employment regulations.
+    - `expense_guideline.py` — extracts approval matrices, category restrictions, documentation requirements.
+    - `communication_standard.py` — extracts tone/voice rules, prohibited language, required disclaimers.
 - **Pattern Detector**: deduplication and confidence scoring across sources.
 - **Candidate Generator**: Gemini-powered refinement of raw patterns into structured rule candidates.
 - **Human Review Queue**: all candidates go through approve/edit/dismiss before becoming active rules.
@@ -652,7 +661,7 @@ Internal wiki posts, status reports, decision memos, and external press releases
 | Spreadsheet parsing | `openpyxl` (Python) for tabular extractor |
 | Email parsing | `email` stdlib + `mail-parser` for `.eml` corpus |
 | Data | PostgreSQL 17, Elasticsearch 8.17, Neo4j 5, Redis 7 |
-| MCP | FastMCP, 18 tools |
+| MCP | FastMCP, 24 tools (18 core + 6 domain-specific) |
 | Jobs | arq (background cron) |
 | Quality | ruff + mypy, ESLint + Prettier, pre-commit hooks |
 | Local orchestration | Docker Compose |
@@ -663,7 +672,7 @@ The architecture intentionally avoids hard-coding a single LLM provider. The `Ev
 
 ## 10. Roadmap
 
-The project is structured in seven phases. Phases 1–5 follow the original PROJECT.md and are largely complete. Phases 6 and 7 are reorganized to reflect the Cross-Organizational direction.
+The project is structured in eight phases. Phases 1–5 follow the original architecture. Phases 6–7 established the Cross-Organizational direction. Phase 8 achieved full domain parity.
 
 ### Phase 1 — Foundation (Storage & Search) [COMPLETE]
 - Rule data model and persistence
@@ -793,6 +802,75 @@ The expansion that turned the Rule Repository from a code-centric guardrail into
 
 **Phase 7 success criteria**: the four end-to-end scenarios in §11.5 pass — verified by `make crossorg.acceptance` (18 tests, all green).
 
+### Phase 8 — Cross-Organizational Parity [COMPLETE]
+
+Phase 7 established the multi-domain architecture. Phase 8 eliminated the remaining code-centric bias in shared infrastructure, deepened non-code domain implementations to feature parity, and ensured every domain is a first-class citizen.
+
+#### 8a. Universal Rule Selector Defaults [COMPLETE]
+- Removed hard-coded `["code_diff"]` fallback in `rule_selector.py`. Rules with `applicable_subject_types = None` are now treated as **universal** (visible to all surfaces), not code-only.
+- Added `ALL_SUBJECT_TYPES` constant in `domain/subject.py`.
+- Migration `032_backfill_applicable_subject_types` explicitly marks code-scoped rules as `["code_diff"]`; all others remain universal.
+
+#### 8b. Surface-Based Batch Evaluation Routing [COMPLETE]
+- `batch_evaluator.py` now routes by `context.surface` (not by `if context.diff`).
+- 7 surface-specific batch prompt templates: `evaluate_batch_{code,contract,transaction,document,message,human_action,generic}.txt`.
+- Non-code evaluations are first-class paths, not fallback modes.
+
+#### 8c. Domain-Neutral Output Schemas [COMPLETE]
+- `services/evaluation/schemas/location_schemas.py` defines per-surface location schemas (CODE_LOCATION, CONTRACT_LOCATION, TRANSACTION_LOCATION, DOCUMENT_LOCATION, MESSAGE_LOCATION, HUMAN_ACTION_LOCATION, GENERIC_LOCATION).
+- `evaluation_core.py` accepts `surface` parameter and injects the appropriate schema into structured output.
+- Non-code evaluations no longer receive meaningless `file_path`/`line_number` fields.
+
+#### 8d. Deep Surface Adapters [COMPLETE]
+- Contract adapter (333 LOC): clause hierarchy detection (Japanese 条/項/号 + Western Article/Section), party extraction, governing law detection, 18 contract-type → scope mappings, risk classification.
+- Transaction adapter (330 LOC): type detection (explicit + heuristic), field validation (11 types × required fields), threshold analysis with FX approximation, approval chain extraction, 20 type → scope mappings.
+- Message adapter (322 LOC): 16-channel classification, audience detection (internal/external/regulatory), PII scanning (7 patterns), claim detection (health/financial/legal/superlative), confidentiality marker detection, channel+audience → scope mapping.
+- Human Action adapter (391 LOC): 50+ action classification, actor context enrichment, temporal analysis (business hours, fiscal period, deadline), authority verification, department+action → scope mapping.
+- All prompt hints are proactive guidance (not defensive "don't do code" language).
+
+#### 8e. Equalized Prompt Templates [COMPLETE]
+- `evaluate_hr_event.txt`: 88 lines (from 26) with overtime decision tree, 36-agreement checks, preconditions, auto-remediation criteria.
+- `evaluate_contract_clause.txt`: 91 lines with risk classification tree, jurisdiction checks, clause-level remediations.
+- `evaluate_expense_claim.txt`: 96 lines with threshold tree, category validation, receipt rules, tax compliance.
+- `evaluate_message.txt`: 95 lines (new) with PII detection tree, claim verification, channel-specific rules.
+
+#### 8f. Cross-Domain Discovery Analyzers [COMPLETE]
+- `ContractCorpusAnalyzer` (214 LOC): detects common clause patterns across contract corpora.
+- `HrPolicyAnalyzer` (376 LOC): extracts quantitative thresholds from HR handbooks and employment regulations.
+- `ExpenseGuidelineAnalyzer` (418 LOC): extracts threshold tables, category restrictions, documentation requirements.
+- `CommunicationStandardAnalyzer` (401 LOC): extracts tone rules, prohibited language, required disclaimers.
+- All registered in `discovery/service.py` and accessible via `POST /api/v1/discover/scan`.
+
+#### 8g. Domain-Aware SDK and MCP Tools [COMPLETE]
+- MCP tools: `get_rules_for_contract_review`, `get_rules_for_transaction`, `get_rules_for_communication`, `evaluate_contract`, `evaluate_transaction`, `evaluate_communication` — each described as "the primary tool for [domain] agents".
+- Agentic client: `get_rules_for_contract()`, `get_rules_for_transaction()`, `get_rules_for_communication()`, `evaluate_contract()`, `evaluate_transaction()`, `evaluate_communication()`.
+- Rule client: `client.contracts`, `client.transactions`, `client.communications` domain resources.
+
+#### 8h. Plugin Ecosystem Parity [COMPLETE]
+- HR plugin: 2,122 LOC (from 397) — AttendanceSystemExtractor, AttendanceEvaluator (deterministic 36-agreement checks), ViolationPatternCapture.
+- Finance plugin: 2,602 LOC (from 394) — ApprovalMatrixExtractor, ExpensePolicyExtractor, ExpenseEvaluator (8 deterministic checks), AuditFindingsCapture.
+- Legal plugin: 1,891 LOC (from 655) — ContractTemplateExtractor, RiskClassifier (deterministic risk indicators), NegotiationHistoryCapture.
+- Marketing plugin: 1,801 LOC (from 358) — BrandGuidelinesExtractor, RegulatoryAdvertisingExtractor (薬機法/景品表示法/特定商取引法), CreativeComplianceEvaluator, CampaignComplianceCapture.
+- All exceed the Engineering plugin baseline (1,394 LOC).
+
+#### 8i. Frontend Domain Parity [COMPLETE]
+- Finance dashboard: 505 LOC with real API calls (`getDepartmentDashboard`, `getDepartmentEvaluations`, `getDepartmentRules`); sub-pages for expenses, controls, audit.
+- Marketing dashboard: 680 LOC with real API; sub-pages for creative-reviews, guidelines.
+- HR dashboard: 649 LOC with real API; sub-pages for attendance, leave, lifecycle, policies, violations.
+- Legal dashboard: 926 LOC with real API; sub-pages for clauses, redlines, lineage.
+- No mock data remaining.
+
+#### 8j. Domain-Aware Health Scoring [COMPLETE]
+- Replaced code-centric "Test Coverage" dimension with domain-aware "Effectiveness":
+  - Code rules: volume-based (unchanged — evaluation_count × 20).
+  - Legal/document rules: precision-based (actual deny rate vs expected).
+  - Transaction/event rules: override-rate-based (low overrides = effective).
+  - Generic rules: balanced formula; 50 (neutral) when untested.
+- Added `classify_rule_status()` for Compliance Cockpit: `dormant` (0 evals, active >90d), `ineffective` (override rate >50%), `over_broad` (>95% ALLOW rate).
+- Backward-compatible: `test_coverage` key remains as alias for `effectiveness`.
+
+**Phase 8 success criteria**: 830 unit tests pass (no regressions); mypy clean; all non-code domains have ≥120 LOC of adapter logic, ≥50-line prompt templates, dedicated discovery analyzers, SDK/MCP entry points, 1,000+ LOC plugins, and real frontend dashboards.
+
 ---
 
 ## 11. Frozen / Deferred Components
@@ -882,16 +960,16 @@ All four must pass on every PR for the Cross-Organizational claim to hold.
 
 ## 15. Open Questions
 
-These will be resolved during early design iterations of Phase 7:
+Most Phase 7 questions have been resolved. Remaining open questions:
 
-- What is the canonical schema for `scope` across non-engineering subjects? Free-form tags seem sufficient; should we standardize a registry per business domain (finance/expense, hr/attendance, legal/contract)?
-- How should `event_type` be mapped to scope in `/events/ingest`? Static config file, database table, or convention (`{department}.{action}.{subject}`)?
-- Should the Conversational Assistant have memory of previous user conversations, or be stateless per turn?
-- How are department memberships managed when no enterprise IdP is integrated? Local-only deployment implies a self-managed user/membership store.
-- What is the expected SLO for `preflight` evaluations on document subjects? Document evaluation is more expensive than code evaluation; users may accept higher latency.
-- How are deprecated rules archived without losing the ability to re-evaluate historical events?
-- For polyglot rules, when primary statement and translation drift in semantics, who decides which is canonical?
-- How are department-cross-references (a contract clause rule depends on an HR rule) handled when one department retires the underlying rule?
+- ~~What is the canonical schema for `scope` across non-engineering subjects?~~ **RESOLVED**: Convention `{department}/{domain}` (e.g., `finance/expense`, `hr/attendance`, `legal/contract`). Surface adapters map domain-specific inputs to these scopes automatically.
+- ~~How should `event_type` be mapped to scope in `/events/ingest`?~~ **RESOLVED**: Convention `{department}.{action}.{noun}` with `DEFAULT_EVENT_SCOPE_MAP` in `events/scope_resolver.py`.
+- Should the Conversational Assistant have memory of previous user conversations, or be stateless per turn? (Currently stateless per turn with session_id for grouping.)
+- ~~How are department memberships managed when no enterprise IdP is integrated?~~ **RESOLVED**: Self-managed via `/api/v1/departments/memberships` endpoints. SCIM provisioning available for enterprise deployments.
+- What is the expected SLO for `preflight` evaluations on document subjects? Document evaluation is more expensive than code evaluation; users may accept higher latency. (Currently no differentiated SLO; monitoring in place.)
+- ~~How are deprecated rules archived without losing the ability to re-evaluate historical events?~~ **RESOLVED**: Rules use `effective_period.valid_until` for retirement; never deleted. Historical evaluations reference rule snapshots.
+- ~~For polyglot rules, when primary statement and translation drift in semantics, who decides which is canonical?~~ **RESOLVED**: Primary language statement is always canonical. Drift triggers a proposal to update the translation (not the primary).
+- How are department-cross-references (a contract clause rule depends on an HR rule) handled when one department retires the underlying rule? (Partially addressed by `CROSS_REFERENCES` relationship and regulatory propagation alerts, but no blocking mechanism yet.)
 
 ---
 

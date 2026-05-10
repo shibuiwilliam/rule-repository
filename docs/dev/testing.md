@@ -1,6 +1,6 @@
 # Testing
 
-The project has **821 tests** across backend, frontend, and SDK packages.
+The project has **830+ tests** across 90 test files in backend, frontend, and SDK packages.
 
 ## Commands
 

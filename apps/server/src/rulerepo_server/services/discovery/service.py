@@ -23,6 +23,16 @@ from rulerepo_server.core.logging import get_logger
 from rulerepo_server.services.discovery.analyzers.base import DiscoveryContext
 from rulerepo_server.services.discovery.analyzers.claude_md import ClaudeMdAnalyzer
 from rulerepo_server.services.discovery.analyzers.code_patterns import CodePatternsAnalyzer
+from rulerepo_server.services.discovery.analyzers.communication_standard import (
+    CommunicationStandardAnalyzer,
+)
+from rulerepo_server.services.discovery.analyzers.contract_corpus import (
+    ContractCorpusAnalyzer,
+)
+from rulerepo_server.services.discovery.analyzers.expense_guideline import (
+    ExpenseGuidelineAnalyzer,
+)
+from rulerepo_server.services.discovery.analyzers.hr_policy import HrPolicyAnalyzer
 from rulerepo_server.services.discovery.analyzers.linter_config import LinterConfigAnalyzer
 from rulerepo_server.services.discovery.analyzers.policy_document import PolicyDocumentAnalyzer
 from rulerepo_server.services.discovery.candidate_generator import generate_candidates
@@ -53,6 +63,10 @@ class DiscoveryService:
             LinterConfigAnalyzer(),
             CodePatternsAnalyzer(),
             PolicyDocumentAnalyzer(),
+            ContractCorpusAnalyzer(),
+            HrPolicyAnalyzer(),
+            ExpenseGuidelineAnalyzer(),
+            CommunicationStandardAnalyzer(),
         ]
 
     async def start_scan(

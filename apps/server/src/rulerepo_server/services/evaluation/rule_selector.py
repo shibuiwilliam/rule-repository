@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from rulerepo_server.adapters.postgres.models import RuleModel
 from rulerepo_server.core.logging import get_logger
 from rulerepo_server.domain.evaluation import EvaluationContext
+from rulerepo_server.domain.subject import ALL_SUBJECT_TYPES
 
 logger = get_logger(__name__)
 
@@ -147,10 +148,11 @@ async def select_rules(
     logger.info("rule_selector_stage1", candidates=len(all_rules))
 
     # Stage 1.5: Filter by applicable_subject_types (Phase 7b)
+    # Rules with None/empty applicable_subject_types are universal (apply to all subject types).
     if subject_type:
         pre_subject = len(all_rules)
         all_rules = [
-            r for r in all_rules if subject_type in (getattr(r, "applicable_subject_types", None) or ["code_diff"])
+            r for r in all_rules if subject_type in (getattr(r, "applicable_subject_types", None) or ALL_SUBJECT_TYPES)
         ]
         logger.info(
             "rule_selector_subject_filter",
@@ -161,12 +163,17 @@ async def select_rules(
 
     # Stage 1.6: Filter by applies_to.artifact_types (RR-003)
     # This runs *before* embedding ranking to prevent cross-domain contamination.
+    # Rules without explicit artifact_types are considered universal.
     if artifact_type:
         pre_artifact = len(all_rules)
         filtered = []
         for r in all_rules:
             applies_to = getattr(r, "applies_to", None)
-            types = applies_to.get("artifact_types", ["code_diff"]) if isinstance(applies_to, dict) else ["code_diff"]
+            types = (
+                applies_to.get("artifact_types", ALL_SUBJECT_TYPES)
+                if isinstance(applies_to, dict)
+                else ALL_SUBJECT_TYPES
+            )
             if artifact_type in types:
                 filtered.append(r)
         all_rules = filtered

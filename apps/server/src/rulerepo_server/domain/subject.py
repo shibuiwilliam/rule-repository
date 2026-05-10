@@ -38,6 +38,11 @@ class SubjectKind(str, enum.Enum):
 # Backward-compatible alias for code that still imports the old name.
 SubjectType = SubjectKind
 
+# All subject kind values as a list of strings.
+# Used as the permissive default when a rule has no explicit
+# applicable_subject_types — such rules are considered universal.
+ALL_SUBJECT_TYPES: list[str] = [kind.value for kind in SubjectKind]
+
 
 class LegalForce(str, enum.Enum):
     """Legal authority level of a rule."""

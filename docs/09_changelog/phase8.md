@@ -99,3 +99,67 @@ Added sample rules under `sample_rules/`:
 - `hr_rules/jp/labor_standards.yaml`, `childcare_leave.yaml`
 - `legal_rules/jp/civil_code.yaml`, `privacy_law.yaml`
 - `finance_rules/jp/tax_law.yaml`
+
+---
+
+## 2026-05-10 — Surface-Based Evaluation & Domain Parity
+
+### Surface-Based Batch Template Routing
+
+- **`EvaluationContext.surface` field**: Added to route batch evaluation to surface-specific prompt templates instead of branching on `if context.diff:`.
+- **`_select_template()` function**: New routing logic in `batch_evaluator.py` that selects `evaluate_batch_{surface}.txt` dynamically, falling back to `evaluate_batch_generic.txt`.
+- **7 batch prompt templates**: `evaluate_batch_code.txt`, `evaluate_batch_contract.txt`, `evaluate_batch_transaction.txt`, `evaluate_batch_document.txt`, `evaluate_batch_message.txt`, `evaluate_batch_human_action.txt`, `evaluate_batch_generic.txt`. Non-code templates do not reference code concepts (file paths, line numbers, function names).
+- **Callers updated**: `EvaluationService.evaluate()` infers surface from input shape; `evaluate_subject()` passes the surface string; `EventIngestionService` maps subject kind to surface.
+- **Tests**: `test_batch_template_routing.py` — 22 tests covering template selection, backward compatibility, and content validation.
+
+### Per-Rule Prompt Equalization
+
+Expanded non-code per-rule prompts to match the depth of `evaluate_code_change.txt` (66 lines):
+- **`evaluate_hr_event.txt`** (26 → 87 lines): Overtime decision tree, precondition/exception handling, remediation criteria, Labor Standards Act references.
+- **`evaluate_contract_clause.txt`** (27 → 90 lines): Risk classification tree, multi-party risk awareness, governing law context, auto-applicability criteria.
+- **`evaluate_expense_claim.txt`** (26 → 95 lines): Threshold decision tree, qualified invoice system compliance, approval chain validation.
+- **`evaluate_message.txt`** (new, 94 lines): Content violation tree, channel-specific rules, PMDA/FIEA guidance, recipient-aware context.
+- Registered `evaluate_message.txt` in `_SUBJECT_KIND_PROMPT_MAP` under `"creative"` subject kind.
+
+### Domain-Aware SDK and MCP Tools
+
+**MCP Tools (18 → 24)**:
+- 3 domain-specific rule retrieval tools: `get_rules_for_contract_review`, `get_rules_for_transaction`, `get_rules_for_communication`.
+- 3 domain-specific evaluation tools: `evaluate_contract`, `evaluate_transaction`, `evaluate_communication`.
+- Updated `discover_rules` description to be domain-neutral ("organizational artifacts" instead of "codebase").
+
+**Agentic Client** (`packages/agentic-client/`):
+- Added `get_applicable_rules_for_surface()` generic method.
+- Added 6 convenience methods: `get_rules_for_contract()`, `get_rules_for_transaction()`, `get_rules_for_communication()`, `evaluate_contract()`, `evaluate_transaction()`, `evaluate_communication()`.
+
+**Rule Client** (`packages/rule-client/`):
+- Added 3 new resource sub-objects: `client.contracts` (ContractsResource), `client.transactions` (TransactionsResource), `client.communications` (CommunicationsResource).
+- Each provides `list_rules()`, `search()`, and `evaluate()` methods with domain-specific parameters.
+
+**Context Delivery Service**:
+- Extended `get_formatted_rules()` with `subject_types`, `department`, `language` parameters.
+- Added `_query_rules_by_domain()` for non-file-path-based rule retrieval using direct DB queries.
+
+**Tests**: `test_mcp_domain_tools.py` (18 tests), `test_domain_resources.py` (18 tests), `test_domain_methods.py` (14 tests).
+
+### Frontend Domain Dashboard Parity
+
+Replaced mock data in all department dashboards with real API integration:
+
+| Dashboard | Before | After | Key Features |
+|---|---|---|---|
+| Finance | 89 LOC | 505 LOC | KPIs, violation sparkline, verdict distribution, top violated rules, filterable evaluation table with expandable drill-down, active rules list |
+| Marketing | 74 LOC | 681 LOC | KPIs, verdict distribution, compliance by content type, creative reviews with expanded details |
+| HR | 135 LOC | 649 LOC | Period selector, attendance compliance, overtime sparkline, department breakdown, filterable evaluations |
+| Legal | 145 LOC | 926 LOC | Contract review queue, risk distribution, clause compliance rate, regulatory impact cards, redline remediation preview |
+
+**New sub-pages**:
+- `finance/expenses` (270 LOC): Expense rules + evaluations with category/status filters.
+- `finance/controls` (217 LOC): Rules with search, severity distribution bars.
+- `finance/audit` (244 LOC): Real audit log with hash chain verification.
+- `marketing/creative-reviews` (318 LOC): Evaluation list with inline text_rewrite diff preview.
+- `marketing/guidelines` (254 LOC): Marketing rules with keyword search.
+
+**API layer**: Added `getDepartmentDashboard()`, `getDepartmentEvaluations()`, `getDepartmentRules()` to `lib/api.ts`.
+
+All pages pass `pnpm typecheck` and `pnpm lint` with zero new warnings.

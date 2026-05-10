@@ -7,8 +7,8 @@ The Rule Repository is a monorepo with 10 services orchestrated via Docker Compo
 | Component | Tech | Port | Purpose |
 |---|---|---|---|
 | Backend API | Python 3.13 + FastAPI | 8000 | 39 API routers covering rules, evaluation, search, discovery, governance, compliance, and more |
-| MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 18 tools) |
-| Frontend | TypeScript + Next.js 15 | 3000 | Operator console with 58 pages across 8 persona route groups, English/Japanese i18n |
+| MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 24 tools) |
+| Frontend | TypeScript + Next.js 15 | 3000 | Operator console with 56 pages across 8 persona route groups, English/Japanese i18n |
 | PostgreSQL | 17-alpine | 5432 | System of record (36 ORM models, 30 migrations) with Row-Level Security |
 | Elasticsearch | 8.17 | 9200 | Full-text + vector search with document-level security |
 | Neo4j | 5-community | 7474/7687 | Rule relationship graph |
@@ -655,7 +655,7 @@ The FastAPI application applies three middleware layers (outermost first):
 
 ## Frontend Pages
 
-The Next.js frontend has 58 pages across 8 persona route groups (including nested routes and domain-specific surfaces):
+The Next.js frontend has 56 pages across 8 persona route groups (including nested routes and domain-specific surfaces):
 
 | Route | Purpose |
 |---|---|

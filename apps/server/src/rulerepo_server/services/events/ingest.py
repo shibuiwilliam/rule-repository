@@ -62,11 +62,21 @@ class EventIngestionService:
         # Dispatch to the evaluation service
         from rulerepo_server.services.evaluation.service import EvaluationService
 
+        # Map subject kind to a surface for prompt routing
+        _kind_to_surface: dict[str, str] = {
+            "transaction": "transaction",
+            "document": "document",
+            "message": "message",
+            "event": "human_action",
+        }
+        surface = _kind_to_surface.get(subject.kind.value, "generic")
+
         eval_svc = EvaluationService(self._session, self._gemini)
         result = await eval_svc.evaluate(
             facts=subject.payload,
             scope=scopes[0] if scopes else None,
             mode=event.mode,
+            surface=surface,
         )
 
         logger.info(

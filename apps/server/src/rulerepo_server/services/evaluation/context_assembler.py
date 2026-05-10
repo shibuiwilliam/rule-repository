@@ -23,6 +23,7 @@ def assemble_context(
     scope: str | None = None,
     repository: str | None = None,
     actor: str | None = None,
+    surface: str | None = None,
 ) -> EvaluationContext:
     """Build an EvaluationContext from various input modes.
 
@@ -81,4 +82,5 @@ def assemble_context(
         actor=actor,
         facts=facts or {},
         narrative=narrative,
+        surface=surface,
     )

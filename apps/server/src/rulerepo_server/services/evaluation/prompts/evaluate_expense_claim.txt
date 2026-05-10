@@ -4,23 +4,92 @@ Your task is to determine whether the expense claim complies with the given rule
 
 ## Rule
 Statement: {rule_statement}
-Modality: {modality}
+Modality: {modality} (MUST = required, SHOULD = recommended, MAY = optional)
 Severity: {severity}
 Rationale: {rationale}
+Preconditions: {preconditions}
+Exceptions: {exceptions}
+Examples of compliance: {following_examples}
+Examples of violation: {violation_examples}
 
 ## Expense Claim
 {context}
 
-## Instructions
-1. Analyze whether the expense claim violates, complies with, or requires further review under the given rule.
-2. Consider the expense amount, type, documentation provided, approval level, and any thresholds specified in the rule.
-3. For entertainment expenses, verify attendee documentation and per-person limits.
-4. For travel expenses, verify pre-approval requirements and rate caps.
-5. If receipt or documentation is missing but the claim might be valid, return NEEDS_CONFIRMATION.
+## Decision Logic
 
-Return your assessment as JSON with the following structure:
-- verdict: "ALLOW" | "DENY" | "NEEDS_CONFIRMATION" | "ALLOW_WITH_CONDITIONS" | "REQUIRES_DISCLOSURE"
-- confidence: a number between 0 and 1
-- reasoning: a brief explanation of your assessment
-- issue_description: if DENY, describe the specific policy violation
-- fix_suggestion: if DENY, suggest corrective action (e.g., "obtain manager approval", "split entertainment portion")
+1. **Precondition check**: Before evaluating, verify preconditions are met. If the rule applies only to certain cost centers, departments, or roles (e.g., "applies to sales department only") and the claimant does not match, return ALLOW. If the rule targets a specific expense category (e.g., "entertainment expenses only") and the claim is a different category, return ALLOW.
+
+2. **Exception check**: If any listed exception applies, the rule does not apply — return ALLOW. Common exceptions include:
+   - Executive-level expenses with board pre-approval
+   - Emergency expenditures during business continuity events
+   - Client-mandated expenses with contractual backing
+   - Expenses below a de minimis threshold (e.g., under JPY 1,000)
+
+3. **Threshold decision tree**:
+   - **Per-transaction limits**: Amount exceeds category-specific cap (e.g., entertainment per-person limit of JPY 5,000) — DENY. Amount within limit — ALLOW.
+   - **Monthly cumulative limits**: Cumulative spend in category exceeds monthly budget — DENY or NEEDS_CONFIRMATION depending on overage severity.
+   - **Category-specific rules**: Transportation without route documentation — NEEDS_CONFIRMATION. Accommodation above rate cap — DENY with field_change remediation. Gifts/entertainment above threshold — DENY with approval_add remediation.
+   - **Pre-approval requirements**: Expense type requires pre-approval (e.g., travel, equipment >JPY 50,000) and no pre-approval on record — DENY with approval_add remediation.
+
+4. **Receipt and documentation requirements**:
+   - Missing receipt for expense above receipt threshold (e.g., JPY 3,000) — DENY.
+   - Receipt present but missing required details (vendor name, date, itemization) — NEEDS_CONFIRMATION.
+   - For Japan qualified invoice system (インボイス制度 / 適格請求書等保存方式): verify invoice includes registration number (T + 13 digits), applicable tax rate, and tax amount breakdown. Missing qualified invoice for taxable transactions — DENY with specific guidance on obtaining a compliant invoice.
+   - Electronic receipt (e-receipt) accepted if it meets National Tax Agency requirements.
+
+5. **Approval chain validation**:
+   - Expense within claimant's self-approval limit — ALLOW (no additional approval needed).
+   - Expense above self-approval limit but below department head threshold — requires manager approval.
+   - Expense above department head threshold — requires director or CFO approval.
+   - Self-approved expense above limit — DENY with approval_add remediation.
+
+6. **Verdict assignment**:
+   - DENY only when the violation is clear: amount exceeds a hard cap, required documentation is missing, or policy is explicitly violated.
+   - For SHOULD rules, prefer NEEDS_CONFIRMATION over DENY unless the claim is clearly non-compliant.
+   - ALLOW_WITH_CONDITIONS when the claim can proceed with additional documentation or retroactive approval.
+   - REQUIRES_DISCLOSURE when the expense triggers tax reporting obligations.
+
+## Remediation Criteria
+
+Provide machine-readable remediations for DENY verdicts:
+- **field_change** (auto_applicable=true): Use when a field has an obviously incorrect value that can be corrected without judgment (e.g., wrong expense category code, incorrect tax rate, mismatched currency). Specify the JSON path, current value, and corrected value.
+- **field_change** (auto_applicable=false): Use when a field correction requires human judgment (e.g., splitting an entertainment expense across attendees, adjusting amount to policy cap).
+- **approval_add**: Use when the claim requires additional approval to proceed (e.g., manager sign-off for over-threshold expenses, CFO approval for exceptional amounts). Specify the required approval level.
+- **process_reroute**: Use when the claim must be redirected (e.g., reclassification from entertainment to business development, routing to tax team for qualified invoice review).
+- **block**: Use when the claim must be rejected outright (e.g., personal expense submitted as business, duplicate submission, fraudulent receipt indicators).
+
+## Output Format
+
+Respond with JSON:
+{{
+  "verdict": "ALLOW" | "DENY" | "NEEDS_CONFIRMATION" | "ALLOW_WITH_CONDITIONS" | "REQUIRES_DISCLOSURE",
+  "confidence": <float 0.0-1.0>,
+  "reasoning": "<explanation citing specific policy clauses or regulatory requirements>",
+  "issue_description": "<specific policy violation, empty string if ALLOW>",
+  "fix_suggestion": "<concrete corrective action, null if ALLOW>",
+  "conditions": ["<condition>"],
+  "locations": [
+    {{
+      "json_path": "<path to the problematic field, e.g., '$.amount_jpy'>",
+      "field_name": "<human-readable field name>",
+      "current_value": "<the current value that triggered the violation>"
+    }}
+  ],
+  "remediations": [
+    {{
+      "type": "field_change" | "approval_add" | "process_reroute" | "block",
+      "field": "<JSON path, e.g., '$.category'>",
+      "current_value": "<current value>",
+      "suggested_value": "<corrected value, if applicable>",
+      "approval_level": "<required approver role, if approval_add>",
+      "description": "<what this remediation fixes>",
+      "auto_applicable": <boolean>
+    }}
+  ]
+}}
+
+## Rules
+- Reference Japan tax law provisions (e.g., qualified invoice requirements under Consumption Tax Act / 消費税法) when the rule derives from tax legislation.
+- For entertainment expenses, always verify the per-person amount and attendee count, not just the total.
+- If information is missing that would be needed for a definitive judgment (e.g., whether pre-approval was obtained), return NEEDS_CONFIRMATION and state what information is needed.
+- fix_suggestion must be concrete and actionable (not "obtain approval" but "obtain department head (部長) approval for entertainment expenses exceeding JPY 5,000 per person, then resubmit with approval reference number").

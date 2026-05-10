@@ -1,8 +1,9 @@
-"""Marketing domain plugin — content evaluation.
+"""Marketing domain plugin — content evaluation and compliance.
 
-Registers the content evaluator with the plugin registry. Covers
-advertising compliance, claim verification, and brand guideline
-enforcement.
+Registers evaluators, extractors, and feedback sources with the
+plugin registry. Covers advertising compliance, claim verification,
+brand guideline enforcement, regulatory extraction, and campaign
+compliance tracking.
 
 See: PROJECT.md SS6.4, CLAUDE.md SS12.5
 """
@@ -20,6 +21,18 @@ from rulerepo_server.plugins.base import (
 )
 from rulerepo_server.plugins.marketing.evaluators.content_evaluator import (
     ContentEvaluator,
+)
+from rulerepo_server.plugins.marketing.evaluators.creative_evaluator import (
+    CreativeComplianceEvaluator,
+)
+from rulerepo_server.plugins.marketing.extractors.brand_guidelines import (
+    BrandGuidelinesExtractor,
+)
+from rulerepo_server.plugins.marketing.extractors.regulatory_advertising import (
+    RegulatoryAdvertisingExtractor,
+)
+from rulerepo_server.plugins.marketing.feedback.campaign_compliance import (
+    CampaignComplianceCapture,
 )
 
 
@@ -98,16 +111,16 @@ class MarketingPlugin:
         )
 
     def get_evaluators(self) -> list[Evaluator]:
-        """Return the content evaluator."""
-        return [ContentEvaluator()]
+        """Return content and creative compliance evaluators."""
+        return [ContentEvaluator(), CreativeComplianceEvaluator()]
 
     def get_extractors(self) -> list[Extractor]:
-        """No extractors registered yet."""
-        return []
+        """Return brand guidelines and regulatory advertising extractors."""
+        return [BrandGuidelinesExtractor(), RegulatoryAdvertisingExtractor()]
 
     def get_feedback_sources(self) -> list[FeedbackSource]:
-        """No feedback sources registered yet."""
-        return []
+        """Return the campaign compliance feedback source."""
+        return [CampaignComplianceCapture()]
 
     def get_fact_providers(self) -> list[FactProvider]:
         """No external fact providers registered yet."""

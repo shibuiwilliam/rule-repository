@@ -68,6 +68,60 @@ class CodeLocation:
 
 
 @dataclass(frozen=True)
+class ContractLocation:
+    """A specific location in a contract where an issue was found."""
+
+    clause_ref: str  # e.g., "Article 3, Section 2"
+    offset_start: int | None = None
+    offset_end: int | None = None
+    span_text: str | None = None
+
+
+@dataclass(frozen=True)
+class TransactionLocation:
+    """A specific field in a transaction record where an issue was found."""
+
+    json_path: str  # e.g., "$.amount_jpy"
+    field_name: str = ""
+    current_value: str = ""
+
+
+@dataclass(frozen=True)
+class DocumentLocation:
+    """A specific location in a document where an issue was found."""
+
+    section: str = ""
+    offset_start: int | None = None
+    offset_end: int | None = None
+    span_text: str | None = None
+
+
+@dataclass(frozen=True)
+class MessageLocation:
+    """A specific segment of a message where an issue was found."""
+
+    segment: str = ""  # e.g., "subject_line", "body", "signature"
+    offset_start: int | None = None
+    offset_end: int | None = None
+    span_text: str | None = None
+
+
+@dataclass(frozen=True)
+class HumanActionLocation:
+    """A specific step/field in a human action where an issue was found."""
+
+    step: str = ""
+    field: str = ""
+    context: str = ""
+
+
+# Union of all location types for generic parsing
+IssueLocation = (
+    CodeLocation | ContractLocation | TransactionLocation | DocumentLocation | MessageLocation | HumanActionLocation
+)
+
+
+@dataclass(frozen=True)
 class FileChange:
     """A structured representation of changes to a single file."""
 
@@ -104,6 +158,9 @@ class EvaluationContext:
     # Free-form context (non-code evaluations)
     facts: dict[str, Any] = field(default_factory=dict)
     narrative: str | None = None
+
+    # Surface type for prompt routing (e.g., "code", "contract", "transaction")
+    surface: str | None = None
 
 
 @dataclass(frozen=True)

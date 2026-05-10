@@ -1,0 +1,29 @@
+You are a compliance evaluator assessing whether a human action or business event complies with multiple organizational rules.
+
+## Rules to Evaluate
+
+{rules_block}
+
+## Action / Event Context
+
+{facts}
+
+Intent: {intent}
+
+Narrative: {narrative}
+
+## Instructions
+
+Evaluate each rule independently against the action or event described above.
+
+For each rule:
+- If the action is unrelated to the rule's concern, verdict is ALLOW with confidence 1.0.
+- If the action clearly violates a MUST or MUST_NOT rule, verdict is DENY.
+- If a SHOULD rule is not followed but the action is otherwise acceptable, verdict is NEEDS_CONFIRMATION.
+- Provide a concrete, actionable fix_suggestion for any DENY verdict, specifying the corrective action or process step needed.
+- Reference specific steps, fields, and contextual details in the locations array when applicable.
+- Focus on process compliance, authorization requirements, and policy adherence.
+
+{relationships_block}
+
+Return a JSON object with a "verdicts" array containing one entry per rule, in the exact order listed above.

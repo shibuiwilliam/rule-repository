@@ -116,6 +116,9 @@ class EvaluationContext:
     # Free-form context (non-code evaluations)
     facts: dict[str, Any] = {}                       # Key-value context pairs
     narrative: str | None = None                     # Auto-generated from intent/facts
+
+    # Surface type for prompt routing
+    surface: str | None = None                       # "code", "contract", "transaction", etc.
 ```
 
 ### FileChange
@@ -132,9 +135,9 @@ class FileChange:
     functions_touched: list[str] = []                # Best-effort function name extraction
 ```
 
-### CodeLocation
+### Location Types
 
-A specific location in code where an issue was found. Used in `RuleVerdict.locations` to give file:line references.
+Six domain-specific location types are defined, unified via `IssueLocation`:
 
 ```python
 @dataclass(frozen=True)
@@ -144,7 +147,44 @@ class CodeLocation:
     end_line: int | None = None
     function_name: str | None = None
     snippet: str | None = None
+
+@dataclass(frozen=True)
+class ContractLocation:
+    clause_ref: str              # e.g., "Article 3, Section 2"
+    offset_start: int | None = None
+    offset_end: int | None = None
+    span_text: str | None = None
+
+@dataclass(frozen=True)
+class TransactionLocation:
+    json_path: str               # e.g., "$.amount_jpy"
+    field_name: str = ""
+    current_value: str = ""
+
+@dataclass(frozen=True)
+class DocumentLocation:
+    section: str = ""
+    offset_start: int | None = None
+    offset_end: int | None = None
+    span_text: str | None = None
+
+@dataclass(frozen=True)
+class MessageLocation:
+    segment: str = ""            # e.g., "subject_line", "body", "signature"
+    offset_start: int | None = None
+    offset_end: int | None = None
+    span_text: str | None = None
+
+@dataclass(frozen=True)
+class HumanActionLocation:
+    step: str = ""
+    field: str = ""
+    context: str = ""
+
+IssueLocation = CodeLocation | ContractLocation | TransactionLocation | DocumentLocation | MessageLocation | HumanActionLocation
 ```
+
+The batch evaluator's `_parse_batch_response` function uses the `surface` parameter to select the appropriate location type when parsing LLM output. The `services/evaluation/schemas/` module provides `build_batch_verdict_schema(surface)` to compose surface-aware JSON schemas for Gemini structured output.
 
 ### RuleVerdict
 
@@ -160,7 +200,8 @@ class RuleVerdict:
     reasoning: str                                   # LLM explanation
     issue_description: str = ""                      # Human-readable issue
     fix_suggestion: str | None = None                # Actionable fix
-    locations: list[CodeLocation] = []               # Where in code
+    locations: list[IssueLocation] = []               # Domain-specific locations
+    remediations: list[Remediation] = []             # Machine-readable fixes
 ```
 
 ### EvaluationResult

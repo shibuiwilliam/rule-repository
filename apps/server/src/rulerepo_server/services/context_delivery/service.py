@@ -7,6 +7,8 @@ moment, in the right format, filtered to what matters.
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rulerepo_server.core.logging import get_logger
@@ -40,6 +42,9 @@ class ContextDeliveryService:
         max_rules: int = 15,
         format_type: str = "instructions",
         federation_id: str | None = None,
+        subject_types: list[str] | None = None,
+        department: str | None = None,
+        language: str | None = None,
     ) -> str:
         """Get rules formatted for agent context injection.
 
@@ -52,6 +57,9 @@ class ContextDeliveryService:
             max_rules: Maximum rules to return.
             format_type: "instructions", "checklist", or "detailed".
             federation_id: If provided, resolve rules through federation hierarchy.
+            subject_types: Filter by applicable subject types (e.g., ["clause_set", "transaction"]).
+            department: Filter by owning department (e.g., "legal", "hr", "finance").
+            language: Filter by rule language (e.g., "ja", "en").
 
         Returns:
             Formatted plain text ready for agent context window.
@@ -62,6 +70,20 @@ class ContextDeliveryService:
 
             effective = await resolve_effective_rules(federation_id, self._session)
             rules = effective[:max_rules]
+            label = _build_context_label(file_paths, repository, task_description)
+            return format_rules(rules, format_type=format_type, context_label=label)
+
+        # Domain-specific path: when subject_types, department, or scope is
+        # provided without file paths, use scope-based DB query instead of
+        # the file-path registry.
+        if (subject_types or department or scope) and not file_paths:
+            rules = await self._query_rules_by_domain(
+                scope=scope,
+                subject_types=subject_types,
+                department=department,
+                language=language,
+                max_rules=max_rules,
+            )
             label = _build_context_label(file_paths, repository, task_description)
             return format_rules(rules, format_type=format_type, context_label=label)
 
@@ -93,6 +115,78 @@ class ContextDeliveryService:
         label = _build_context_label(file_paths, repository, task_description)
 
         return format_rules(rules, format_type=format_type, context_label=label)
+
+    async def _query_rules_by_domain(
+        self,
+        *,
+        scope: str | None = None,
+        subject_types: list[str] | None = None,
+        department: str | None = None,
+        language: str | None = None,
+        max_rules: int = 15,
+    ) -> list[dict[str, Any]]:
+        """Query rules by domain-specific filters (scope, department, subject type).
+
+        This is the non-code counterpart to the file-path registry. It queries
+        the database directly with domain filters.
+
+        Args:
+            scope: Scope prefix filter (e.g., "legal/contract").
+            subject_types: Filter by applicable subject types.
+            department: Filter by owning department.
+            language: Filter by primary language.
+            max_rules: Maximum rules to return.
+
+        Returns:
+            List of matching rule dicts.
+        """
+        from sqlalchemy import select
+
+        from rulerepo_server.adapters.postgres.models import RuleModel
+
+        stmt = select(RuleModel).where(RuleModel.status.in_(["APPROVED", "EFFECTIVE"]))
+
+        # Filter by department if the column exists
+        if department and hasattr(RuleModel, "department"):
+            stmt = stmt.where(RuleModel.department.in_([department, "public"]))
+
+        # Filter by primary language if the column exists
+        if language and hasattr(RuleModel, "primary_language"):
+            stmt = stmt.where(RuleModel.primary_language.in_([language, "en"]))
+
+        stmt = stmt.limit(max_rules * 3)  # over-fetch for post-filtering
+        result = await self._session.execute(stmt)
+
+        rules: list[dict[str, Any]] = []
+        for r in result.scalars().all():
+            rule_dict = {
+                "id": str(r.id),
+                "statement": r.statement,
+                "modality": r.modality,
+                "severity": r.severity,
+                "scope": r.scope if isinstance(r.scope, list) else [],
+                "tags": r.tags if isinstance(r.tags, list) else [],
+                "rationale": r.rationale or "",
+                "status": r.status,
+            }
+
+            # Scope prefix filter
+            if scope:
+                rule_scopes = rule_dict["scope"]
+                if rule_scopes and not any(s.startswith(scope) for s in rule_scopes):
+                    continue
+
+            # Subject type filter
+            if subject_types and hasattr(r, "applicable_subject_types"):
+                rule_subjects = r.applicable_subject_types or []
+                if rule_subjects and not any(st in rule_subjects for st in subject_types):
+                    continue
+
+            rules.append(rule_dict)
+            if len(rules) >= max_rules:
+                break
+
+        return rules
 
 
 def _build_context_label(

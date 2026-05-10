@@ -88,3 +88,32 @@ Batching is the default evaluation path. No configuration flag is needed to enab
 - Max prompt size: 30,000 characters (configurable in `batch_evaluator.py`)
 - Max diff size: 8,000 characters (truncated if longer)
 - Thinking level: `medium` for batches, `high` for Pro confirmation
+
+## Surface-Based Template Routing
+
+The batch evaluator routes to surface-specific prompt templates based on the `surface` field on `EvaluationContext`. Instead of branching on `if context.diff:` (code) vs else (facts), the evaluator selects the template dynamically:
+
+```python
+def _select_template(context: EvaluationContext) -> str:
+    surface = context.surface or ("code" if context.diff else "generic")
+    template_path = PROMPTS_DIR / f"evaluate_batch_{surface}.txt"
+    if template_path.exists():
+        return template_path.read_text()
+    return (PROMPTS_DIR / "evaluate_batch_generic.txt").read_text()
+```
+
+**Available batch templates:**
+
+| Template | Surface | Key Instructions |
+|---|---|---|
+| `evaluate_batch_code.txt` | code | Diff references, file paths, line numbers |
+| `evaluate_batch_contract.txt` | contract | Clause references, span offsets, clause revisions |
+| `evaluate_batch_transaction.txt` | transaction | JSON paths, field-level remediations, approval routing |
+| `evaluate_batch_document.txt` | document | Document spans, text_rewrite, section references |
+| `evaluate_batch_message.txt` | message | Message segments, tone guidance, disclaimers |
+| `evaluate_batch_human_action.txt` | human_action | Process compliance, authorization, event context |
+| `evaluate_batch_generic.txt` | generic (fallback) | Domain-neutral facts-based evaluation |
+
+Non-code templates do **not** reference code concepts (file paths, line numbers, function names). Each template defines its own location format and remediation kinds appropriate to its domain.
+
+For backward compatibility, contexts without an explicit `surface` that have a `diff` field default to the code template.

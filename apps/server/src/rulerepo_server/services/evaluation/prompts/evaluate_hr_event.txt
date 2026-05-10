@@ -4,23 +4,84 @@ Your task is to determine whether the HR event complies with the given rule.
 
 ## Rule
 Statement: {rule_statement}
-Modality: {modality}
+Modality: {modality} (MUST = required, SHOULD = recommended, MAY = optional)
 Severity: {severity}
 Rationale: {rationale}
+Preconditions: {preconditions}
+Exceptions: {exceptions}
+Examples of compliance: {following_examples}
+Examples of violation: {violation_examples}
 
 ## HR Event
 {context}
 
-## Instructions
-1. Analyze whether the HR event violates, complies with, or requires further review under the given rule.
-2. Consider the specific facts of the event (hours worked, leave type, employee category, etc.) against the rule's requirements.
-3. If the rule references statutory provisions, apply the statutory standard.
-4. If information is missing that would be needed to make a definitive judgment, return NEEDS_CONFIRMATION.
+## Decision Logic
 
-Return your assessment as JSON with the following structure:
-- verdict: "ALLOW" | "DENY" | "NEEDS_CONFIRMATION" | "ALLOW_WITH_CONDITIONS" | "REQUIRES_DISCLOSURE"
-- confidence: a number between 0 and 1
-- reasoning: a brief explanation of your assessment
-- issue_description: if DENY, describe the specific violation
-- fix_suggestion: if DENY, suggest how to remediate
-- conditions: if ALLOW_WITH_CONDITIONS, list the conditions that must be met
+1. **Precondition check**: Before evaluating, verify preconditions are met. If the rule specifies an employment_type (e.g., "regular", "contract", "part-time") and the event's employee does not match, the rule does not apply — return ALLOW. Similarly, if the rule targets a specific department or role that does not match, return ALLOW.
+
+2. **Exception check**: If any listed exception applies to this event, the rule does not apply — return ALLOW. Common exceptions include:
+   - Disaster response or emergency operations
+   - Critical system failure requiring immediate remediation
+   - Seasonal peak periods with pre-approved extended hours
+   - Management-exempt positions (kanrishoku / 管理監督者)
+
+3. **Overtime violation decision tree** (when applicable):
+   - Monthly cap exceeded (e.g., 45 hours/month under 36 Agreement): DENY
+   - Annual cap exceeded (e.g., 360 hours/year standard, 720 hours/year special clause): DENY
+   - 36 Agreement (三六協定) not filed or expired: DENY with high severity
+   - Consecutive working days exceeded (e.g., >6 days without rest): DENY
+   - Late-night work (22:00–05:00) without required premium calculation: NEEDS_CONFIRMATION
+
+4. **Leave and attendance decision tree** (when applicable):
+   - Annual paid leave denial without valid business reason: DENY
+   - Mandatory health check not completed within required period: NEEDS_CONFIRMATION
+   - Childcare/nursing leave request denied contrary to statute: DENY
+
+5. **Verdict assignment**:
+   - DENY only when the violation is clear and specific with statutory or policy backing.
+   - For SHOULD rules, prefer NEEDS_CONFIRMATION over DENY unless the violation is egregious or repeated.
+   - ALLOW_WITH_CONDITIONS when the event can proceed if specific steps are taken (e.g., obtain retroactive approval).
+   - REQUIRES_DISCLOSURE when an event triggers a statutory reporting obligation (e.g., industrial accident).
+
+## Remediation Criteria
+
+Provide machine-readable remediations for DENY verdicts:
+- **field_change** (auto_applicable=true): Use when a single field has an obviously wrong value that can be corrected without judgment (e.g., wrong cost center code, incorrect employee category).
+- **field_change** (auto_applicable=false): Use when a field correction requires human judgment (e.g., reducing requested overtime hours).
+- **approval_add**: Use when the event requires additional approval to proceed (e.g., department head approval for overtime above threshold, 36 Agreement renewal).
+- **process_reroute**: Use when the event must be redirected to a different process (e.g., escalation to labor standards committee, referral to occupational health).
+- **block**: Use when the event must be stopped entirely and cannot be remediated in place (e.g., work ordered during mandatory rest period, expired 36 Agreement).
+
+## Output Format
+
+Respond with JSON:
+{{
+  "verdict": "ALLOW" | "DENY" | "NEEDS_CONFIRMATION" | "ALLOW_WITH_CONDITIONS" | "REQUIRES_DISCLOSURE",
+  "confidence": <float 0.0-1.0>,
+  "reasoning": "<explanation citing specific statutory provisions or policy clauses>",
+  "issue_description": "<specific violation description, empty string if ALLOW>",
+  "fix_suggestion": "<concrete corrective action, null if ALLOW>",
+  "conditions": ["<condition>"],
+  "locations": [
+    {{
+      "step": "<event step or phase, e.g., 'overtime_registration'>",
+      "field": "<specific field, e.g., 'hours_requested'>",
+      "context": "<relevant statutory reference, e.g., 'Labor Standards Act Art. 36'>"
+    }}
+  ],
+  "remediations": [
+    {{
+      "type": "field_change" | "approval_add" | "process_reroute" | "block",
+      "field": "<JSON path to the field, e.g., '$.hours_requested'>",
+      "current_value": "<current value>",
+      "suggested_value": "<corrected value, if applicable>",
+      "description": "<what this remediation fixes>",
+      "auto_applicable": <boolean>
+    }}
+  ]
+}}
+
+## Rules
+- Reference Japanese Labor Standards Act (労働基準法), Industrial Safety and Health Act (労働安全衛生法), or other applicable statutes when the rule derives from legislation.
+- If information is missing that would be needed to make a definitive judgment (e.g., whether a 36 Agreement is in effect), return NEEDS_CONFIRMATION and state what information is needed.
+- fix_suggestion must be a concrete, actionable instruction (not "consider reducing hours" but "reduce monthly overtime to 45 hours or below, or obtain special clause 36 Agreement approval").

@@ -41,7 +41,7 @@ Constructor parameters:
 
 ## Resources
 
-The client exposes four resource groups: `rules`, `search`, `intent`, and `documents`.
+The client exposes seven resource groups: `rules`, `search`, `intent`, `documents`, `contracts`, `transactions`, and `communications`.
 
 ### Rules (CRUD)
 
@@ -157,6 +157,57 @@ All search methods accept optional keyword arguments for filtering (`scope`, `mo
                 "severity": "MEDIUM",
             }
         },
+    )
+```
+
+### Contracts
+
+```python
+    # List contract-applicable rules
+    rules = await client.contracts.list_rules(contract_type="nda")
+
+    # Search for contract rules
+    results = await client.contracts.search("indemnity clause")
+
+    # Evaluate a contract clause
+    result = await client.contracts.evaluate(
+        "The Receiving Party shall protect...",
+        clause_type="confidentiality",
+        parties=["Acme Corp", "Beta Inc"],
+    )
+```
+
+### Transactions
+
+```python
+    # List transaction-applicable rules
+    rules = await client.transactions.list_rules(transaction_type="expense")
+
+    # Search for transaction rules
+    results = await client.transactions.search("expense limit")
+
+    # Evaluate a transaction
+    result = await client.transactions.evaluate(
+        {"amount_jpy": 30000, "category": "entertainment"},
+        transaction_type="expense",
+        actor_role="manager",
+    )
+```
+
+### Communications
+
+```python
+    # List communication rules
+    rules = await client.communications.list_rules(channel="email")
+
+    # Search for communication rules
+    results = await client.communications.search("PII disclosure")
+
+    # Evaluate a message
+    result = await client.communications.evaluate(
+        "Dear Customer, please find attached...",
+        channel="email",
+        audience="external",
     )
 ```
 

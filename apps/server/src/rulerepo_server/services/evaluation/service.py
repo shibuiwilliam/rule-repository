@@ -62,6 +62,7 @@ class EvaluationService:
         environment: str | None = None,
         agent_id: str | None = None,
         subject_kind: str | None = None,
+        surface: str | None = None,
     ) -> EvaluationResult:
         """Run the full evaluation pipeline.
 
@@ -84,6 +85,8 @@ class EvaluationService:
         start_time = time.time()
 
         # 1. Assemble context
+        # Use explicit surface if provided; otherwise infer from input shape.
+        resolved_surface = surface or ("code" if diff else "generic")
         context = assemble_context(
             diff=diff,
             files=files,
@@ -92,6 +95,7 @@ class EvaluationService:
             scope=scope,
             repository=repository,
             actor=actor,
+            surface=resolved_surface,
         )
 
         # 2. Select applicable rules
@@ -159,6 +163,7 @@ class EvaluationService:
         except Exception:
             pass
 
+        # Legacy evaluate() always uses code surface (or None for backward compat)
         batch_results = await evaluate_batch(
             rules,
             context,
@@ -338,6 +343,7 @@ class EvaluationService:
             intent=subject.description,
             scope=resolved_scope,
             actor=subject.actor.identifier if subject.actor else None,
+            surface=surface,
         )
 
         # 3. Select applicable rules
@@ -421,6 +427,7 @@ class EvaluationService:
             self._gemini_client,
             cache_repo=cache_repo,
             evaluation_plan=plan,
+            surface=surface,
         )
 
         verdicts = []

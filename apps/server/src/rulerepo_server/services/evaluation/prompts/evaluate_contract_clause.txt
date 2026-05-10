@@ -4,24 +4,87 @@ Your task is to determine whether the clause complies with the given rule.
 
 ## Rule
 Statement: {rule_statement}
-Modality: {modality}
+Modality: {modality} (MUST = required, SHOULD = recommended, MAY = optional)
 Severity: {severity}
 Rationale: {rationale}
+Preconditions: {preconditions}
+Exceptions: {exceptions}
+Examples of compliance: {following_examples}
+Examples of violation: {violation_examples}
 
 ## Contract Clause
 {context}
 
-## Instructions
-1. Analyze whether the contract clause violates, complies with, or requires further review under the given rule.
-2. Consider the clause type, governing law, and counterparty context when evaluating.
-3. For MUST rules, a missing required element constitutes a violation.
-4. For MUST_NOT rules, the presence of the prohibited element constitutes a violation.
-5. If the clause is ambiguous or could be interpreted multiple ways, return NEEDS_CONFIRMATION.
+## Decision Logic
 
-Return your assessment as JSON with the following structure:
-- verdict: "ALLOW" | "DENY" | "NEEDS_CONFIRMATION" | "ALLOW_WITH_CONDITIONS" | "REQUIRES_DISCLOSURE"
-- confidence: a number between 0 and 1
-- reasoning: a brief explanation of your assessment
-- issue_description: if DENY, describe the specific clause problem
-- fix_suggestion: if DENY, suggest revised clause language
-- conditions: if ALLOW_WITH_CONDITIONS, list required modifications
+1. **Precondition check**: Before evaluating, verify preconditions are met. If the rule applies only to certain contract types (e.g., "NDA", "SaaS agreement", "employment contract") and the current contract does not match, return ALLOW. If the rule targets a specific clause type (e.g., "indemnity clauses only") and the clause is of a different type, return ALLOW.
+
+2. **Exception check**: If any listed exception applies to this clause, the rule does not apply — return ALLOW. Common exceptions include:
+   - Clauses negotiated and approved by General Counsel
+   - Standard-form clauses mandated by regulatory bodies
+   - Clauses below a de minimis threshold (e.g., contracts under a specified value)
+   - Inter-company or intra-group agreements
+
+3. **Risk classification decision tree**:
+   - **Liability caps**: Uncapped liability or liability exceeding contract value — DENY if rule prohibits. Cap below statutory minimum — DENY. Liability cap within acceptable range — ALLOW.
+   - **Indemnity**: Unilateral indemnity favoring counterparty — DENY if rule requires mutual indemnity. Indemnity scope includes consequential/indirect damages without limit — DENY. Carve-outs for IP infringement and confidentiality breach — typically ALLOW.
+   - **IP assignment**: Broad IP assignment of pre-existing IP — DENY. Work-product assignment with appropriate license-back — ALLOW. Ambiguous IP ownership language — NEEDS_CONFIRMATION.
+   - **Non-compete / exclusivity**: Duration exceeding rule's maximum (e.g., >2 years) — DENY. Geographic scope unreasonably broad — NEEDS_CONFIRMATION. Reasonable scope and duration — ALLOW.
+   - **Termination**: No termination for convenience — DENY if rule requires it. Unreasonably long notice period — NEEDS_CONFIRMATION. Automatic renewal without opt-out notice — DENY if rule prohibits.
+   - **Confidentiality**: Perpetual confidentiality obligation — NEEDS_CONFIRMATION. Confidentiality period shorter than rule minimum — DENY. Appropriate carve-outs for legally compelled disclosure — ALLOW.
+   - **Governing law / dispute resolution**: Governing law in unfavorable jurisdiction — DENY if rule specifies required jurisdiction. Arbitration clause missing when required — DENY.
+
+4. **Governing law context**: Consider how the specified jurisdiction affects clause interpretation. Japanese Civil Code (民法), Companies Act (会社法), Antimonopoly Act (独占禁止法), or Subcontract Act (下請法) provisions may override or constrain clause terms. Flag when a clause may be unenforceable under the governing law.
+
+5. **Multi-party awareness**: Identify which party bears the risk. If the organization is the party bearing disproportionate risk, increase severity. If the organization is the benefiting party, note but do not automatically ALLOW (counterparty may refuse or the clause may be unconscionable).
+
+6. **Verdict assignment**:
+   - DENY only when the violation is clear and specific — a clause directly contravenes a MUST or MUST_NOT rule.
+   - For SHOULD rules, prefer NEEDS_CONFIRMATION over DENY unless the clause creates material legal risk.
+   - ALLOW_WITH_CONDITIONS when the clause can be accepted with specific modifications.
+   - REQUIRES_DISCLOSURE when the clause triggers a disclosure or notification obligation.
+
+## Remediation Criteria
+
+Provide machine-readable remediations for DENY verdicts:
+- **text_rewrite** (auto_applicable=true): Use only for low-risk wording changes that do not alter substantive legal meaning (e.g., adding a missing "reasonable efforts" qualifier, correcting a statutory reference, adding a standard carve-out). The original clause language and the specific replacement text must be provided.
+- **text_rewrite** (auto_applicable=false): Use for substantive clause modifications that alter legal rights or obligations (e.g., adding a liability cap, modifying indemnity scope, changing termination terms). These require legal review before application.
+- **approval_add**: Use when the clause requires escalated approval (e.g., General Counsel sign-off for uncapped liability, board approval for IP assignment).
+- **block**: Use when the clause must be rejected outright and cannot be remediated through revision (e.g., clause violates applicable law, clause requires waiver of statutory rights).
+
+## Output Format
+
+Respond with JSON:
+{{
+  "verdict": "ALLOW" | "DENY" | "NEEDS_CONFIRMATION" | "ALLOW_WITH_CONDITIONS" | "REQUIRES_DISCLOSURE",
+  "confidence": <float 0.0-1.0>,
+  "reasoning": "<explanation referencing specific clause language and rule requirements>",
+  "issue_description": "<specific clause problem, empty string if ALLOW>",
+  "fix_suggestion": "<concrete revised clause language or modification instruction, null if ALLOW>",
+  "conditions": ["<condition>"],
+  "locations": [
+    {{
+      "clause_ref": "<clause identifier, e.g., 'Article 8, Section 2' or '第8条第2項'>",
+      "offset_start": <byte offset into original text, or null>,
+      "offset_end": <byte offset into original text, or null>,
+      "span_text": "<the problematic text span>"
+    }}
+  ],
+  "remediations": [
+    {{
+      "type": "text_rewrite" | "approval_add" | "block",
+      "clause_ref": "<clause identifier>",
+      "original": "<current clause language>",
+      "replacement": "<revised clause language, null for block>",
+      "description": "<what this remediation fixes and why>",
+      "auto_applicable": <boolean>,
+      "requires_counterparty_consent": <boolean>
+    }}
+  ]
+}}
+
+## Rules
+- Reference applicable legal provisions (e.g., Japanese Civil Code Art. 415, Subcontract Act Art. 4) when the rule derives from legislation.
+- If the clause is ambiguous or could be interpreted multiple ways, return NEEDS_CONFIRMATION and explain the ambiguity.
+- fix_suggestion must provide specific alternative clause language (not "consider revising" but "replace with: 'Neither party shall be liable for indirect, consequential, or punitive damages except in cases of willful misconduct.'").
+- Always indicate whether a remediation requires counterparty consent.

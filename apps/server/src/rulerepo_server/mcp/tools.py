@@ -298,8 +298,9 @@ def register_tools(mcp: FastMCP) -> None:
         repository: str | None = None,
         sources: list[str] | None = None,
     ) -> str:
-        """Discover implicit rules from a codebase. Analyzes code patterns,
-        config files, and CLAUDE.md to propose candidate rules.
+        """Discover implicit rules from organizational artifacts. Analyzes code,
+        contracts, policies, handbooks, guidelines, and config files to propose
+        candidate rules.
 
         Call this when bootstrapping rules for a new project. Provide the
         contents of relevant files (configs, CLAUDE.md, linter configs,
@@ -418,6 +419,434 @@ def register_tools(mcp: FastMCP) -> None:
                 format_type=format,
                 federation_id=federation,
             )
+
+    # ------------------------------------------------------------------
+    # Domain-specific rule retrieval tools (Phase 7)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def get_rules_for_contract_review(
+        contract_type: str = "other",
+        parties: list[str] | None = None,
+        governing_law: str | None = None,
+        language: str = "ja",
+        max_rules: int = 15,
+        format: str = "instructions",
+    ) -> str:
+        """Get applicable rules for reviewing a contract. This is the primary
+        tool for legal review agents.
+
+        Call this when reviewing a contract, NDA, service agreement, or any
+        legal document to understand what organizational and regulatory rules
+        apply to the contract type and jurisdiction.
+
+        Args:
+            contract_type: Type of contract — nda, employment, service,
+                procurement, license, or other.
+            parties: Party names involved (e.g., ["Acme Corp", "Beta Inc"]).
+            governing_law: Governing law jurisdiction (e.g., "Japan", "US-CA").
+            language: Primary language of the contract (default "ja").
+            max_rules: Maximum rules to return (default 15).
+            format: Output format — "instructions", "checklist", or "detailed".
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.context_delivery.service import ContextDeliveryService
+
+        task_desc = f"Reviewing {contract_type} contract"
+        if parties:
+            task_desc += f" between {', '.join(parties)}"
+        if governing_law:
+            task_desc += f" (governing law: {governing_law})"
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            svc = ContextDeliveryService(session)
+            return await svc.get_formatted_rules(
+                task_description=task_desc,
+                max_rules=max_rules,
+                format_type=format,
+                scope=f"legal/contract/{contract_type}" if contract_type != "other" else "legal/contract",
+                subject_types=["clause_set"],
+                department="legal",
+                language=language,
+            )
+
+    @mcp.tool()
+    async def get_rules_for_transaction(
+        transaction_type: str = "other",
+        amount: float | None = None,
+        department: str | None = None,
+        actor_role: str | None = None,
+        max_rules: int = 15,
+        format: str = "instructions",
+    ) -> str:
+        """Get applicable rules for validating a business transaction. This is
+        the primary tool for finance, HR, and automation agents.
+
+        Call this when processing expense claims, purchase orders, attendance
+        records, payroll entries, or journal entries to understand what policies
+        and regulations apply.
+
+        Args:
+            transaction_type: Type — expense, purchase_order, attendance,
+                payroll, journal_entry, or other.
+            amount: Transaction amount (for threshold-based rule selection).
+            department: Department of the actor (e.g., "sales", "engineering").
+            actor_role: Role of the actor (e.g., "manager", "employee").
+            max_rules: Maximum rules to return (default 15).
+            format: Output format — "instructions", "checklist", or "detailed".
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.context_delivery.service import ContextDeliveryService
+
+        # Map transaction type to scope
+        type_to_scope: dict[str, str] = {
+            "expense": "finance/expense",
+            "purchase_order": "finance/procurement",
+            "attendance": "hr/attendance",
+            "payroll": "hr/payroll",
+            "journal_entry": "finance/accounting",
+        }
+        scope = type_to_scope.get(transaction_type, "finance")
+
+        # Map transaction type to subject types
+        subject_types = ["transaction", "event"]
+
+        # Map to department
+        type_to_dept: dict[str, str] = {
+            "expense": "finance",
+            "purchase_order": "finance",
+            "attendance": "hr",
+            "payroll": "hr",
+            "journal_entry": "finance",
+        }
+        dept = department or type_to_dept.get(transaction_type)
+
+        task_desc = f"Validating {transaction_type} transaction"
+        if amount is not None:
+            task_desc += f" (amount: {amount})"
+        if actor_role:
+            task_desc += f" by {actor_role}"
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            svc = ContextDeliveryService(session)
+            return await svc.get_formatted_rules(
+                task_description=task_desc,
+                max_rules=max_rules,
+                format_type=format,
+                scope=scope,
+                subject_types=subject_types,
+                department=dept,
+            )
+
+    @mcp.tool()
+    async def get_rules_for_communication(
+        channel: str = "email",
+        audience: str = "external",
+        content_type: str = "general",
+        max_rules: int = 15,
+        format: str = "instructions",
+    ) -> str:
+        """Get applicable rules for reviewing communications. This is the
+        primary tool for content review and compliance agents.
+
+        Call this when drafting or reviewing emails, Slack messages, social
+        media posts, press releases, or any external communications to
+        understand what policies and regulations apply.
+
+        Args:
+            channel: Communication channel — email, slack, social,
+                press_release, customer_facing, or other.
+            audience: Target audience — internal, external, or regulatory.
+            content_type: Content category — marketing, legal, general,
+                sales, or hr.
+            max_rules: Maximum rules to return (default 15).
+            format: Output format — "instructions", "checklist", or "detailed".
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.context_delivery.service import ContextDeliveryService
+
+        # Map content type to department
+        content_to_dept: dict[str, str] = {
+            "marketing": "marketing",
+            "legal": "legal",
+            "sales": "sales",
+            "hr": "hr",
+        }
+        dept = content_to_dept.get(content_type)
+
+        task_desc = f"Reviewing {channel} communication for {audience} audience ({content_type} content)"
+        scope = f"communications/{channel}" if channel != "other" else "communications"
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            svc = ContextDeliveryService(session)
+            return await svc.get_formatted_rules(
+                task_description=task_desc,
+                max_rules=max_rules,
+                format_type=format,
+                scope=scope,
+                subject_types=["creative", "document"],
+                department=dept,
+            )
+
+    # ------------------------------------------------------------------
+    # Domain-specific evaluation tools (Phase 7)
+    # ------------------------------------------------------------------
+
+    @mcp.tool()
+    async def evaluate_contract(
+        contract_text: str,
+        contract_type: str = "other",
+        language: str = "ja",
+        focus_areas: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Evaluate a contract or contract clause against applicable rules.
+
+        Use this to check whether contract language complies with organizational
+        policies and legal requirements. Returns verdicts with clause-level
+        remediations.
+
+        Args:
+            contract_text: The contract text or clause to evaluate.
+            contract_type: Type — nda, employment, service, procurement,
+                license, or other.
+            language: Contract language (default "ja").
+            focus_areas: Optional areas to focus on (e.g., ["liability",
+                "ip", "termination", "indemnity"]).
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.gemini.client import get_gemini_client
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.evaluation.service import EvaluationService
+
+        scope = f"legal/contract/{contract_type}" if contract_type != "other" else "legal/contract"
+        payload: dict[str, Any] = {
+            "clause_text": contract_text,
+            "clause_type": contract_type,
+        }
+        if focus_areas:
+            payload["focus_areas"] = focus_areas
+        if language:
+            payload["language"] = language
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            gemini = None
+            try:
+                gemini = get_gemini_client()
+            except Exception:
+                pass
+
+            svc = EvaluationService(session, gemini)
+            result = await svc.evaluate_subject(
+                surface="contract",
+                subject_payload=payload,
+                mode="preflight",
+                scope=scope,
+            )
+            await session.commit()
+
+        return {
+            "surface": "contract",
+            "contract_type": contract_type,
+            "overall_verdict": result.overall_verdict.value,
+            "rules_evaluated": result.rules_evaluated,
+            "rules_violated": result.rules_violated,
+            "violations": [
+                {
+                    "rule_id": v.rule_id,
+                    "rule_statement": v.rule_statement,
+                    "issue": v.issue_description,
+                    "fix": v.fix_suggestion,
+                }
+                for v in result.violations
+            ],
+            "warnings": [
+                {
+                    "rule_id": w.rule_id,
+                    "issue": w.issue_description,
+                }
+                for w in result.warnings
+            ],
+            "fix_summary": result.fix_summary,
+        }
+
+    @mcp.tool()
+    async def evaluate_transaction(
+        transaction_payload: str,
+        transaction_type: str = "other",
+        actor_role: str | None = None,
+        department: str | None = None,
+    ) -> dict[str, Any]:
+        """Evaluate a business transaction against applicable rules.
+
+        Use this to check whether an expense claim, purchase order, attendance
+        record, or other transaction complies with organizational policies.
+        Returns verdicts with field-level remediations.
+
+        Args:
+            transaction_payload: JSON string of the transaction record
+                (e.g., '{{"amount_jpy": 30000, "category": "entertainment"}}').
+            transaction_type: Type — expense, purchase_order, attendance,
+                payroll, journal_entry, or other.
+            actor_role: Role of the person submitting (e.g., "manager").
+            department: Department context (e.g., "sales").
+        """
+        import json as json_mod
+
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.gemini.client import get_gemini_client
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.evaluation.service import EvaluationService
+
+        payload = json_mod.loads(transaction_payload) if isinstance(transaction_payload, str) else transaction_payload
+        payload["transaction_type"] = transaction_type
+        if actor_role:
+            payload["actor_role"] = actor_role
+        if department:
+            payload["department"] = department
+
+        type_to_scope: dict[str, str] = {
+            "expense": "finance/expense",
+            "purchase_order": "finance/procurement",
+            "attendance": "hr/attendance",
+            "payroll": "hr/payroll",
+            "journal_entry": "finance/accounting",
+        }
+        scope = type_to_scope.get(transaction_type, "finance")
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            gemini = None
+            try:
+                gemini = get_gemini_client()
+            except Exception:
+                pass
+
+            svc = EvaluationService(session, gemini)
+            result = await svc.evaluate_subject(
+                surface="transaction",
+                subject_payload=payload,
+                mode="preflight",
+                scope=scope,
+            )
+            await session.commit()
+
+        return {
+            "surface": "transaction",
+            "transaction_type": transaction_type,
+            "overall_verdict": result.overall_verdict.value,
+            "rules_evaluated": result.rules_evaluated,
+            "rules_violated": result.rules_violated,
+            "violations": [
+                {
+                    "rule_id": v.rule_id,
+                    "rule_statement": v.rule_statement,
+                    "issue": v.issue_description,
+                    "fix": v.fix_suggestion,
+                }
+                for v in result.violations
+            ],
+            "warnings": [
+                {
+                    "rule_id": w.rule_id,
+                    "issue": w.issue_description,
+                }
+                for w in result.warnings
+            ],
+            "fix_summary": result.fix_summary,
+        }
+
+    @mcp.tool()
+    async def evaluate_communication(
+        text: str,
+        channel: str = "email",
+        audience: str = "external",
+        language: str = "ja",
+    ) -> dict[str, Any]:
+        """Evaluate a communication draft against applicable rules.
+
+        Use this to check whether an email, Slack message, press release,
+        or other communication complies with messaging policies, data
+        protection rules, and regulatory requirements.
+
+        Args:
+            text: The message content to evaluate.
+            channel: Communication channel — email, slack, social,
+                press_release, customer_facing, or other.
+            audience: Target audience — internal, external, or regulatory.
+            language: Message language (default "ja").
+        """
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from rulerepo_server.adapters.gemini.client import get_gemini_client
+        from rulerepo_server.adapters.postgres.session import get_engine
+        from rulerepo_server.services.evaluation.service import EvaluationService
+
+        payload: dict[str, Any] = {
+            "content": text,
+            "channel": channel,
+            "audience": audience,
+            "language": language,
+        }
+
+        engine = get_engine()
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            gemini = None
+            try:
+                gemini = get_gemini_client()
+            except Exception:
+                pass
+
+            svc = EvaluationService(session, gemini)
+            result = await svc.evaluate_subject(
+                surface="message",
+                subject_payload=payload,
+                mode="sidecar",
+                scope=f"communications/{channel}" if channel != "other" else "communications",
+            )
+            await session.commit()
+
+        return {
+            "surface": "message",
+            "channel": channel,
+            "overall_verdict": result.overall_verdict.value,
+            "rules_evaluated": result.rules_evaluated,
+            "rules_violated": result.rules_violated,
+            "violations": [
+                {
+                    "rule_id": v.rule_id,
+                    "rule_statement": v.rule_statement,
+                    "issue": v.issue_description,
+                    "fix": v.fix_suggestion,
+                }
+                for v in result.violations
+            ],
+            "warnings": [
+                {
+                    "rule_id": w.rule_id,
+                    "issue": w.issue_description,
+                }
+                for w in result.warnings
+            ],
+            "fix_summary": result.fix_summary,
+        }
 
     # ------------------------------------------------------------------
     # Governance Proposals (Phase 6a)

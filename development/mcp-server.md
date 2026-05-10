@@ -71,7 +71,7 @@ If the Rule Repository stack is running via Docker Compose, adjust the connectio
 
 ## Tools
 
-All 18 tools are registered in `mcp/tools.py` via the `register_tools()` function.
+All 24 tools are registered in `mcp/tools.py` via the `register_tools()` function.
 
 ### search_rules
 
@@ -417,6 +417,113 @@ review_communication(
 ```
 
 **Delegates to**: `EvaluationService.evaluate()` with `MESSAGE` surface.
+
+---
+
+### get_rules_for_contract_review
+
+Get applicable rules for reviewing a contract. Primary tool for legal review agents.
+
+```
+get_rules_for_contract_review(
+    contract_type: str = "other",       # nda, employment, service, procurement, license, other
+    parties: list[str] | None = None,   # Party names
+    governing_law: str | None = None,   # Jurisdiction
+    language: str = "ja",               # Contract language
+    max_rules: int = 15,
+    format: str = "instructions",
+) -> str
+```
+
+**Delegates to**: `ContextDeliveryService.get_formatted_rules()` with domain-aware parameters (scope, department, subject_types).
+
+---
+
+### get_rules_for_transaction
+
+Get applicable rules for validating a business transaction. Primary tool for finance/HR automation agents.
+
+```
+get_rules_for_transaction(
+    transaction_type: str = "other",    # expense, purchase_order, attendance, payroll, journal_entry
+    amount: float | None = None,        # Transaction amount
+    department: str | None = None,      # Department context
+    actor_role: str | None = None,      # e.g., "manager"
+    max_rules: int = 15,
+    format: str = "instructions",
+) -> str
+```
+
+**Delegates to**: `ContextDeliveryService.get_formatted_rules()` with scope derived from transaction type.
+
+---
+
+### get_rules_for_communication
+
+Get applicable rules for reviewing communications. Primary tool for content review and compliance agents.
+
+```
+get_rules_for_communication(
+    channel: str = "email",             # email, slack, social, press_release, customer_facing
+    audience: str = "external",         # internal, external, regulatory
+    content_type: str = "general",      # marketing, legal, sales, hr, general
+    max_rules: int = 15,
+    format: str = "instructions",
+) -> str
+```
+
+**Delegates to**: `ContextDeliveryService.get_formatted_rules()` with subject_types `["creative", "document"]`.
+
+---
+
+### evaluate_contract
+
+Evaluate a contract or contract clause against applicable rules.
+
+```
+evaluate_contract(
+    contract_text: str,                 # The clause or contract text
+    contract_type: str = "other",       # nda, employment, service, procurement, license
+    language: str = "ja",
+    focus_areas: list[str] | None = None,  # e.g., ["liability", "ip", "termination"]
+) -> dict
+```
+
+**Delegates to**: `EvaluationService.evaluate_subject()` with `CONTRACT` surface.
+
+---
+
+### evaluate_transaction
+
+Evaluate a business transaction against applicable rules.
+
+```
+evaluate_transaction(
+    transaction_payload: str,           # JSON string of the transaction record
+    transaction_type: str = "other",    # expense, purchase_order, attendance, payroll
+    actor_role: str | None = None,
+    department: str | None = None,
+) -> dict
+```
+
+**Delegates to**: `EvaluationService.evaluate_subject()` with `TRANSACTION` surface.
+
+---
+
+### evaluate_communication
+
+Evaluate a communication draft against applicable rules.
+
+```
+evaluate_communication(
+    text: str,                          # Message content
+    channel: str = "email",
+    audience: str = "external",
+    language: str = "ja",
+) -> dict
+```
+
+**Delegates to**: `EvaluationService.evaluate_subject()` with `MESSAGE` surface.
 
 ---
 

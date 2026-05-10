@@ -8,9 +8,9 @@ Technical documentation for developing and extending the Rule Repository.
 
 **Phase 7 (Cross-Organizational Pivot): COMPLETE** -- Subject polymorphism, department/capacity model, classification-based RLS, and domain template packs.
 
-**Phase 8 (Domain Engines and Discovery): IN PROGRESS** -- Contract clause engine and event engine temporal modes substantially complete. Document discovery and domain UX partially complete. See [phase-8-backlog.md](phase-8-backlog.md).
+**Phase 8 (Domain Engines and Discovery): SUBSTANTIALLY COMPLETE** -- Contract clause engine, event engine temporal modes, surface abstraction (7 surfaces), domain packs (5), norm lineage, and domain-aware UX all delivered. Finance/HR/Legal/Marketing dashboards fully API-integrated (400-900+ LOC each). See [phase-8-backlog.md](phase-8-backlog.md) for remaining items.
 
-**IMPROVEMENT.md (RR-001 through RR-040): ALL MERGED** -- All 40 improvement items are implemented. 8 domain modules, Tier 1 infrastructure, eval harness, safety features, LLM provider abstraction, and operational maturity. 821 tests pass, 90/90 eval harness golden cases across 8 domains. See [progress-log.md](progress-log.md) for the complete audit trail.
+**IMPROVEMENT.md (RR-001 through RR-040): ALL MERGED** -- All 40 improvement items are implemented. 8 domain modules, Tier 1 infrastructure, eval harness, safety features, LLM provider abstraction, and operational maturity. 830+ tests pass, 90/90 eval harness golden cases across 8 domains. See [progress-log.md](progress-log.md) for the complete audit trail.
 
 ---
 
@@ -19,11 +19,11 @@ Technical documentation for developing and extending the Rule Repository.
 | Document | Description |
 |---|---|
 | [architecture.md](architecture.md) | System architecture: 10 services, 39 API routers, 8 domain modules, 7 evaluation surfaces, 5 domain packs, 30 migrations, 36 ORM models, Tier 1/2/3 infrastructure |
-| [evaluation-engine.md](evaluation-engine.md) | How the evaluation engine works: subject-polymorphic batched evaluation, diff parsing, context assembly, rule selection (with project + environment scoping), verdict aggregation, shadow mode, structured remediations, 8 subject kinds with adapters |
+| [evaluation-engine.md](evaluation-engine.md) | How the evaluation engine works: subject-polymorphic batched evaluation with surface-based template routing, 6 domain-specific location types, diff parsing, context assembly, rule selection, verdict aggregation, shadow mode, structured remediations, 8 subject kinds with adapters |
 | [api-reference.md](api-reference.md) | All API endpoints (39 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects, proposals, agent-governance, review, audit, departments, contracts, events, approval-workflows, attestation, compliance, cost, facts, operability, regulatory, risks, tenants, translations, upcoming-changes, lineage, ask, assistant, cockpit, events-ingest, onboarding |
-| [mcp-server.md](mcp-server.md) | MCP tools (18 tools), resources, prompts, and transport configuration (stdio + streamable-HTTP) |
+| [mcp-server.md](mcp-server.md) | MCP tools (24 tools including domain-specific retrieval and evaluation), resources, prompts, and transport configuration (stdio + streamable-HTTP) |
 | [integrations.md](integrations.md) | GitHub App, CI CLI, agent hooks, rule ingestion, background workers (arq + Redis, 7 cron jobs), webhook gateway |
-| [testing.md](testing.md) | Test strategy (69 test files), running tests, writing new tests, LLM mocking, classification bidirectional tests, safety tests, eval harness, and linting |
+| [testing.md](testing.md) | Test strategy (90 test files, 830+ tests), running tests, writing new tests, LLM mocking, classification bidirectional tests, safety tests, eval harness, and linting |
 | [feedback-flywheel.md](feedback-flywheel.md) | Correction capture -> analysis -> auto-drafting -> rule improvement loop (flywheel with clustering + proposals + auto-promotion) |
 | [rule-registration-workflows.md](rule-registration-workflows.md) | Sequence diagrams for all 4 rule registration paths: manual, extraction, discovery, feedback. Data store sync matrix |
 | [database-schema.md](database-schema.md) | Database schema: 36 ORM models across 30 Alembic migrations, ER diagram, design decisions |

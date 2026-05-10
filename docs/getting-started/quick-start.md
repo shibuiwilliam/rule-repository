@@ -52,7 +52,7 @@ Once all containers are healthy, the following services are available:
 | PostgreSQL | localhost:5432 | Relational store (`ruledb`, user `rule`) with Row-Level Security |
 | Elasticsearch | [http://localhost:9200](http://localhost:9200) | Full-text and vector search index |
 | Neo4j Browser | [http://localhost:7474](http://localhost:7474) | Rule relationship graph (user `neo4j`, password `ruledev1`) |
-| MCP Server | [http://localhost:8001](http://localhost:8001) | Model Context Protocol server for AI agents (18 tools) |
+| MCP Server | [http://localhost:8001](http://localhost:8001) | Model Context Protocol server for AI agents (24 tools) |
 | Redis | localhost:6379 | Job queue for background workers |
 | arq-worker | -- | Background worker running 7 cron jobs (health, recommendations, translation drift, promotion, corrections, stats, digest) |
 

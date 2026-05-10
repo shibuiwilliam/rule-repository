@@ -5,7 +5,7 @@
 
 ---
 
-## Status: IN PROGRESS
+## Status: SUBSTANTIALLY COMPLETE
 
 Started: 2026-05-08
 
@@ -15,6 +15,23 @@ Started: 2026-05-08
 - Stream B: Event Engine Temporal Modes — ADR accepted, domain types, sequence/calendar modes, prompt templates, API endpoint, unit tests
 - Stream C (partial): Document Discovery — DocumentSource/IncrementalSource protocols, contract corpus analyzer, contract DOCX source upgraded
 - Stream D (partial): Domain-Aware UX — route groups for legal/hr/finance/marketing with layouts, contract review page, event review page
+
+### Completed (2026-05-09)
+
+- Surface abstraction: 7 evaluation surfaces with adapters, domain packs, norm lineage
+- New frontend pages: compliance, finance, hr, legal sub-pages, lineage viewer, locale switcher
+
+### Completed (2026-05-10)
+
+- Surface-based batch template routing: `_select_template()` with 7 surface-specific prompts
+- Per-rule prompt equalization: HR (87 lines), contract (90 lines), expense (95 lines), message (94 lines — new)
+- Domain-aware MCP tools: 6 new tools (3 retrieval + 3 evaluation) bringing total to 24
+- Domain-aware SDKs: agentic client gains 6 convenience methods; rule client gains 3 resource sub-objects (contracts, transactions, communications)
+- Context delivery domain-aware queries: `_query_rules_by_domain()` with scope, department, language, subject_types
+- D4 DONE: Finance (505 LOC), Marketing (681 LOC), HR (649 LOC), Legal (926 LOC) dashboards fully API-integrated
+- D7 DONE: `pnpm lint` and `pnpm typecheck` pass with zero new warnings
+- Finance sub-pages: expenses (270 LOC), controls (217 LOC), audit (244 LOC) — all API-integrated
+- Marketing sub-pages: creative-reviews (318 LOC), guidelines (254 LOC) — new pages
 
 ---
 
@@ -94,10 +111,10 @@ Frontend surfaces for non-engineering departments.
 | D1 | Route groups: `app/(legal)/`, `app/(hr)/`, `app/(finance)/`, `app/(marketing)/` with shared layouts | M | 884fe95 | DONE |
 | D2 | `/contracts/review/[id]` — clause-by-clause verdict view with standard-clause overlay | L | 884fe95 | DONE |
 | D3 | `/events/[id]` — event submission view with applicable rules and verdict | M | 884fe95 | DONE |
-| D4 | Department-aware home dashboard — pending reviews, violations, alerts scoped to user's departments | L | | PENDING |
+| D4 | Department-aware home dashboard — pending reviews, violations, alerts scoped to user's departments | L | 2026-05-10 | DONE |
 | D5 | No-code rule editor wizard (`/rules/new/wizard`) — dropdowns + Gemini statement drafting | L | | PENDING |
 | D6 | Intent-first search on home page for non-engineers | M | | PENDING |
-| D7 | `pnpm lint` and `pnpm typecheck` pass | S | | PENDING |
+| D7 | `pnpm lint` and `pnpm typecheck` pass | S | 2026-05-10 | DONE |
 
 **Definition of Done:**
 - A Legal user navigating to `/contracts/review/[id]` sees clause verdicts with standard-clause overlays.
@@ -127,7 +144,7 @@ Streams A and B can proceed in parallel. Stream C is independent. Stream D depen
 - [x] Stream A (Contract Clause Engine) passes Definition of Done
 - [x] Stream B (Event Engine) passes Definition of Done (except B6: HR system adapter stubs)
 - [ ] Stream C (Document Discovery) — remaining: regulation_pdf upgrade (C2), regulation_feed (C5), incremental polling worker (C9)
-- [ ] Stream D (Domain-Aware UX) — remaining: department-aware dashboard (D4), no-code wizard (D5), intent-first search (D6), lint/typecheck (D7)
+- [ ] Stream D (Domain-Aware UX) — remaining: no-code wizard (D5), intent-first search (D6). Dashboard (D4) and lint (D7) are DONE.
 - [ ] `make check` passes (ruff + mypy + pytest + pnpm lint + pnpm typecheck)
 - [ ] `make up` brings up the full stack
 - [ ] PROJECT.md §10 Phase 8 marked `[COMPLETE]`

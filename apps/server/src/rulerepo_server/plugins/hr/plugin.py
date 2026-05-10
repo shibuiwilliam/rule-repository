@@ -18,8 +18,11 @@ from rulerepo_server.plugins.base import (
     FeedbackSource,
     PersonaView,
 )
+from rulerepo_server.plugins.hr.evaluators.attendance_evaluator import AttendanceEvaluator
 from rulerepo_server.plugins.hr.evaluators.form_evaluator import FormEvaluator
+from rulerepo_server.plugins.hr.extractors.attendance_system import AttendanceSystemExtractor
 from rulerepo_server.plugins.hr.extractors.handbook import HandbookExtractor
+from rulerepo_server.plugins.hr.feedback.violation_patterns import ViolationPatternCapture
 
 
 class HRPersonaView:
@@ -98,16 +101,16 @@ class HRPlugin:
         )
 
     def get_evaluators(self) -> list[Evaluator]:
-        """Return the HR form evaluator."""
-        return [FormEvaluator()]
+        """Return HR evaluators (form and attendance)."""
+        return [FormEvaluator(), AttendanceEvaluator()]
 
     def get_extractors(self) -> list[Extractor]:
-        """Return the handbook extractor."""
-        return [HandbookExtractor()]
+        """Return HR extractors (handbook and attendance system)."""
+        return [HandbookExtractor(), AttendanceSystemExtractor()]
 
     def get_feedback_sources(self) -> list[FeedbackSource]:
-        """No feedback sources registered yet."""
-        return []
+        """Return HR feedback sources (violation pattern capture)."""
+        return [ViolationPatternCapture()]
 
     def get_fact_providers(self) -> list[FactProvider]:
         """No external fact providers registered yet."""

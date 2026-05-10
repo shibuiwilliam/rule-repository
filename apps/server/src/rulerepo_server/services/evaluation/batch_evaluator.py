@@ -23,12 +23,17 @@ from google.genai import types
 from rulerepo_server.core.llm import get_default_config
 from rulerepo_server.core.logging import get_logger
 from rulerepo_server.domain.evaluation import (
-    CodeLocation,
     EvaluationContext,
     RuleVerdict,
+    Surface,
     Verdict,
 )
 from rulerepo_server.services.evaluation.evaluation_core import evaluate_rule
+from rulerepo_server.services.evaluation.schemas import (
+    build_batch_verdict_schema,
+    parse_location,
+    validate_location_fields,
+)
 
 logger = get_logger(__name__)
 
@@ -37,50 +42,15 @@ PROMPTS_DIR = Path(__file__).parent / "prompts"
 MAX_PROMPT_CHARS = 30_000
 MAX_DIFF_CHARS = 8_000
 
-_BATCH_VERDICT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "verdicts": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "rule_index": {"type": "integer"},
-                    "rule_id": {"type": "string"},
-                    "verdict": {
-                        "type": "string",
-                        "enum": ["ALLOW", "DENY", "NEEDS_CONFIRMATION"],
-                    },
-                    "confidence": {"type": "number"},
-                    "reasoning": {"type": "string"},
-                    "issue_description": {"type": "string"},
-                    "fix_suggestion": {"type": "string"},
-                    "locations": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "file_path": {"type": "string"},
-                                "start_line": {"type": "integer"},
-                                "end_line": {"type": "integer"},
-                                "function_name": {"type": "string"},
-                                "snippet": {"type": "string"},
-                            },
-                        },
-                    },
-                },
-                "required": [
-                    "rule_index",
-                    "rule_id",
-                    "verdict",
-                    "confidence",
-                    "reasoning",
-                ],
-            },
-        },
-    },
-    "required": ["verdicts"],
-}
+
+def _resolve_surface(surface_str: str | None) -> Surface | None:
+    """Resolve a surface string to a Surface enum value."""
+    if surface_str is None:
+        return None
+    try:
+        return Surface(surface_str)
+    except ValueError:
+        return None
 
 
 def _hash_content(*parts: str) -> str:
@@ -172,7 +142,36 @@ def _build_relationships_block(
     return "## Rule Relationships\n\n" + "\n".join(lines)
 
 
-def _parse_batch_response(rules: list[dict[str, Any]], response_verdicts: list[dict[str, Any]]) -> list[RuleVerdict]:
+def _select_template(context: EvaluationContext) -> str:
+    """Select the prompt template based on the evaluation surface.
+
+    Routes to a surface-specific template if one exists, otherwise
+    falls back to the generic template. For backward compatibility,
+    contexts without an explicit surface that have a diff use the
+    code template.
+
+    Args:
+        context: The evaluation context with an optional surface field.
+
+    Returns:
+        The prompt template text.
+    """
+    surface = context.surface
+    # Backward compatibility: no surface + has diff → code
+    if surface is None:
+        surface = "code" if context.diff else "generic"
+
+    template_path = PROMPTS_DIR / f"evaluate_batch_{surface}.txt"
+    if template_path.exists():
+        return template_path.read_text()
+    return (PROMPTS_DIR / "evaluate_batch_generic.txt").read_text()
+
+
+def _parse_batch_response(
+    rules: list[dict[str, Any]],
+    response_verdicts: list[dict[str, Any]],
+    surface: Surface | None = None,
+) -> list[RuleVerdict]:
     """Parse the batch JSON response into RuleVerdict objects."""
     # Build lookup by rule_index and rule_id
     verdict_by_index: dict[int, dict] = {}
@@ -196,17 +195,11 @@ def _parse_batch_response(rules: list[dict[str, Any]], response_verdicts: list[d
         except ValueError:
             verdict = Verdict.NEEDS_CONFIRMATION
 
-        locations = [
-            CodeLocation(
-                file_path=loc.get("file_path", ""),
-                start_line=loc.get("start_line"),
-                end_line=loc.get("end_line"),
-                function_name=loc.get("function_name"),
-                snippet=loc.get("snippet"),
-            )
-            for loc in vdata.get("locations", [])
-            if isinstance(loc, dict)
-        ]
+        locations = []
+        for loc in vdata.get("locations", []):
+            if isinstance(loc, dict):
+                cleaned = validate_location_fields(loc, surface)
+                locations.append(parse_location(cleaned, surface))
 
         results.append(
             RuleVerdict(
@@ -231,6 +224,8 @@ async def evaluate_batch(
     gemini_client: genai.Client,
     cache_repo: Any | None = None,
     evaluation_plan: Any | None = None,
+    *,
+    surface: Surface | str | None = None,
 ) -> list[tuple[RuleVerdict, str, int]]:
     """Evaluate multiple rules in a single batched LLM call.
 
@@ -239,6 +234,8 @@ async def evaluate_batch(
         context: The evaluation context (diff, facts, etc.).
         gemini_client: Gemini API client.
         cache_repo: Optional LLM cache repository.
+        evaluation_plan: Optional graph-resolved evaluation plan.
+        surface: Evaluation surface for schema selection.
 
     Returns:
         List of (RuleVerdict, model_id, latency_ms) tuples, one per rule.
@@ -247,19 +244,42 @@ async def evaluate_batch(
     if not rules:
         return []
 
+    resolved = _resolve_surface(surface) if isinstance(surface, str) else surface
+
     # For single rules, use the per-rule path directly
     if len(rules) == 1:
-        return [await evaluate_rule(rules[0], context, gemini_client, cache_repo)]
+        return [
+            await evaluate_rule(
+                rules[0],
+                context,
+                gemini_client,
+                cache_repo,
+                surface=resolved,
+            )
+        ]
 
     try:
-        return await _batch_evaluate_impl(rules, context, gemini_client, cache_repo, evaluation_plan)
+        return await _batch_evaluate_impl(
+            rules,
+            context,
+            gemini_client,
+            cache_repo,
+            evaluation_plan,
+            surface=resolved,
+        )
     except Exception as exc:
         logger.warning(
             "batch_evaluation_fallback",
             error=str(exc),
             rule_count=len(rules),
         )
-        return await _fallback_per_rule(rules, context, gemini_client, cache_repo)
+        return await _fallback_per_rule(
+            rules,
+            context,
+            gemini_client,
+            cache_repo,
+            surface=resolved,
+        )
 
 
 async def _batch_evaluate_impl(
@@ -268,6 +288,8 @@ async def _batch_evaluate_impl(
     gemini_client: genai.Client,
     cache_repo: Any | None = None,
     evaluation_plan: Any | None = None,
+    *,
+    surface: Surface | None = None,
 ) -> list[tuple[RuleVerdict, str, int]]:
     """Core batch evaluation implementation."""
     config = get_default_config()
@@ -277,9 +299,11 @@ async def _batch_evaluate_impl(
     rules_block = _build_rules_block(rules)
     relationships_block = _build_relationships_block(rules, evaluation_plan)
 
-    if context.diff:
-        template = (PROMPTS_DIR / "evaluate_batch.txt").read_text()
-        diff_text = context.diff[:MAX_DIFF_CHARS]
+    template = _select_template(context)
+
+    if context.surface == "code" or (context.surface is None and context.diff):
+        # Code surface: use diff-specific template variables
+        diff_text = context.diff[:MAX_DIFF_CHARS] if context.diff else ""
         file_paths = ", ".join(context.file_paths[:20]) if context.file_paths else "unknown"
         prompt = template.format(
             rules_block=rules_block,
@@ -288,7 +312,7 @@ async def _batch_evaluate_impl(
             relationships_block=relationships_block,
         )
     else:
-        template = (PROMPTS_DIR / "evaluate_batch_facts.txt").read_text()
+        # All non-code surfaces: use facts-based template variables
         facts_text = json.dumps(context.facts, default=str) if context.facts else "{}"
         prompt = template.format(
             rules_block=rules_block,
@@ -322,11 +346,14 @@ async def _batch_evaluate_impl(
             if cached:
                 logger.info("batch_cache_hit", rule_count=len(rules))
                 verdicts_data = json.loads(cached["response"])
-                parsed = _parse_batch_response(rules, verdicts_data.get("verdicts", []))
+                parsed = _parse_batch_response(rules, verdicts_data.get("verdicts", []), surface=surface)
                 latency = int((time.time() - start) * 1000)
                 return [(v, config.model_id, latency) for v in parsed]
         except Exception:
             pass
+
+    # Build surface-aware batch schema
+    batch_schema = build_batch_verdict_schema(surface)
 
     # Call Gemini
     # Use medium thinking for batches (multiple rules require more reasoning)
@@ -335,7 +362,7 @@ async def _batch_evaluate_impl(
         contents=prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
-            response_json_schema=_BATCH_VERDICT_SCHEMA,
+            response_json_schema=batch_schema,
             thinking_config=types.ThinkingConfig(thinking_level="medium"),
         ),
     )
@@ -353,7 +380,7 @@ async def _batch_evaluate_impl(
             received=len(response_verdicts),
         )
 
-    parsed_verdicts = _parse_batch_response(rules, response_verdicts)
+    parsed_verdicts = _parse_batch_response(rules, response_verdicts, surface=surface)
 
     # Store in cache
     if cache_repo:
@@ -384,7 +411,7 @@ async def _batch_evaluate_impl(
     if pro_tasks:
         logger.info("batch_pro_confirmation", count=len(pro_tasks))
         pro_results = await asyncio.gather(
-            *[evaluate_rule(rule, context, gemini_client, cache_repo) for _, rule in pro_tasks],
+            *[evaluate_rule(rule, context, gemini_client, cache_repo, surface=surface) for _, rule in pro_tasks],
             return_exceptions=True,
         )
         for (idx, _), pro_result in zip(pro_tasks, pro_results, strict=False):
@@ -409,9 +436,11 @@ async def _fallback_per_rule(
     context: EvaluationContext,
     gemini_client: genai.Client,
     cache_repo: Any | None = None,
+    *,
+    surface: Surface | None = None,
 ) -> list[tuple[RuleVerdict, str, int]]:
     """Fallback: evaluate each rule individually (existing behavior)."""
-    tasks = [evaluate_rule(rule, context, gemini_client, cache_repo=cache_repo) for rule in rules]
+    tasks = [evaluate_rule(rule, context, gemini_client, cache_repo=cache_repo, surface=surface) for rule in rules]
     raw_results = await asyncio.gather(*tasks, return_exceptions=True)
 
     results: list[tuple[RuleVerdict, str, int]] = []

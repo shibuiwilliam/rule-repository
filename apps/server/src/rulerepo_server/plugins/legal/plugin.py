@@ -21,8 +21,17 @@ from rulerepo_server.plugins.base import (
 from rulerepo_server.plugins.legal.evaluators.document_evaluator import (
     DocumentEvaluator,
 )
+from rulerepo_server.plugins.legal.evaluators.risk_classifier import (
+    RiskClassifier,
+)
 from rulerepo_server.plugins.legal.extractors.clause_extractor import (
     ClauseExtractor,
+)
+from rulerepo_server.plugins.legal.extractors.contract_template import (
+    ContractTemplateExtractor,
+)
+from rulerepo_server.plugins.legal.feedback.negotiation_history import (
+    NegotiationHistoryCapture,
 )
 
 
@@ -102,16 +111,16 @@ class LegalPlugin:
         )
 
     def get_evaluators(self) -> list[Evaluator]:
-        """Return the document evaluator."""
-        return [DocumentEvaluator()]
+        """Return legal domain evaluators."""
+        return [DocumentEvaluator(), RiskClassifier()]
 
     def get_extractors(self) -> list[Extractor]:
-        """Return the clause extractor."""
-        return [ClauseExtractor()]
+        """Return legal domain extractors."""
+        return [ClauseExtractor(), ContractTemplateExtractor()]
 
     def get_feedback_sources(self) -> list[FeedbackSource]:
-        """No feedback sources registered yet."""
-        return []
+        """Return legal domain feedback sources."""
+        return [NegotiationHistoryCapture()]
 
     def get_fact_providers(self) -> list[FactProvider]:
         """No external fact providers registered yet."""
