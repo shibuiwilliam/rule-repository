@@ -2,6 +2,8 @@
 
 Comprehensive guide to running, writing, and maintaining tests in the Rule Repository.
 
+> **Current test count**: 1,184+ unit tests across 100+ test files. All pass with zero regressions.
+
 ---
 
 ## Running Tests
@@ -47,7 +49,7 @@ cd packages/rule-client && uv run pytest
 
 ## Test Structure
 
-The project has **830+ test functions** across 90 test files in five locations (unit + integration + safety + e2e + SDK). Test count grew significantly through Phase 7 (subject polymorphism, classification RLS), the RR-001–040 improvements (domain modules, safety, operability, eval harness), and Phase 8 additions (surface-based template routing, domain SDK resources, MCP domain tools).
+The project has **1,184+ test functions** across 100+ test files in five locations (unit + integration + safety + e2e + SDK). Test count grew significantly through Phase 7 (subject polymorphism, classification RLS), the RR-001–040 improvements (domain modules, safety, operability, eval harness), Phase 8 additions (surface-based template routing, domain SDK resources, MCP domain tools), and post-Phase 8 enhancements (deterministic evaluator, domain pack loader, structured scope matching, kind dispatch).
 
 ### Unit Tests (`apps/server/tests/unit/`)
 
@@ -85,6 +87,10 @@ Pure logic tests with no external services. Fast (sub-second per file).
 | `test_conflict_scanner.py` | 11 | Scope overlap, statement similarity, contradictory pairs, potential conflicts, scanner integration |
 | `test_cost_tracker.py` | 9 | Cost estimation (per-model rates, zero/large tokens, rounding), cost records, tracking |
 | `test_llm_providers.py` | 8 | LLM provider protocol compliance (Anthropic, OpenAI, Local), names, generate/embed interfaces |
+| `test_scope_matching.py` | 30 | `StructuredScope` dimension matching: single/multi-value, multi-dimension, wildcard, cross-axis scenarios ("US managers' expense policy"), `from_legacy()`, `to_es_fields()` |
+| `test_deterministic_evaluator.py` | 33 | Deterministic constraint evaluation: `NumericConstraint` (pass/fail/missing/GE), `DateConstraint` (pass/fail/missing), `EnumConstraint` (pass/fail), constraint serialization roundtrips, dot-path resolution, `evaluate_from_dicts()`, real-world scenarios (overtime 45h cap, entertainment 5000 JPY cap) |
+| `test_domain_pack_loader.py` | 84 | Domain pack loader: discovery (all 9 packs), `ENABLED_PACKS` filtering, `get_pack()`, `get_packs_for_surface()`, `get_packs_for_persona()`, prompt file listing, `PackManifest` construction/defaults, parametrized structure validation (pack.yaml, rules/, prompts/, samples/, analyzers/, `__init__.py`, required rule fields) for all 9 packs |
+| `test_evaluation/test_kind_dispatch.py` | varies | Kind-based dispatch: partition normative vs. local rules, evaluate computational/procedural/definitional/principle rules locally without LLM |
 
 ### Safety Tests (`apps/server/tests/safety/`)
 

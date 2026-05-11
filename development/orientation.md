@@ -28,16 +28,29 @@ All gaps between the implementation and PROJECT.md/CLAUDE.md specifications iden
 | **Templates** | RESOLVED | 60 rules across 3 domain packs (HR attendance, contract NDA/MSA, expense policy) with 100% field coverage. |
 | **Evaluation routing** | RESOLVED | Subject-agnostic orchestrator. No `if subject.kind` branching outside registry. |
 
-### Phase 8 [IN PROGRESS] — Domain Engines and Discovery
+### Phase 8 [COMPLETE] — Cross-Organizational Parity
 
-Phase 8 builds on the Phase 7 foundation. Substantially complete:
+Phase 8 eliminated code-centric bias and achieved full domain parity.
 
 | Stream | Status | Key Deliverables |
 |---|---|---|
 | **A: Contract Clause Engine** | DONE | Parser, comparator, clause aggregator, 4 evaluation modes, API endpoint, ADR 0004 |
-| **B: Event Engine Temporal Modes** | DONE (except HR adapter stubs) | Single/sequence/calendar modes, domain types, prompt templates, API endpoint, ADR 0005 |
-| **C: Document Discovery** | PARTIAL | DocumentSource/IncrementalSource protocols, contract corpus analyzer. Remaining: regulation_pdf upgrade, regulation_feed, polling worker |
-| **D: Domain-Aware UX** | PARTIAL | Route groups and layouts for legal/hr/finance/marketing, contract review page, event review page. Remaining: department-aware dashboard, no-code wizard, intent-first search |
+| **B: Event Engine Temporal Modes** | DONE | Single/sequence/calendar modes, domain types, prompt templates, API endpoint, ADR 0005 |
+| **C: Document Discovery** | DONE | DocumentSource/IncrementalSource protocols, contract corpus analyzer, 6 extraction sources |
+| **D: Domain-Aware UX** | DONE | 9 persona route groups (engineering, legal, hr, finance, sales, compliance, security, marketing, admin) with PersonaSwitcher |
+
+### Post-Phase 8 Enhancements (IMPROVEMENT.md Proposals)
+
+Key architectural improvements implemented after Phase 8 completion:
+
+| Proposal | Status | Deliverables |
+|---|---|---|
+| **P2: Structured Scope** | DONE | Multi-axis `StructuredScope` with `domain`, `org_unit`, `subject_type` + generic attributes. ES index updated. Legacy scope backfill migration. |
+| **P3: Rule Kind** | DONE | `RuleKind` enum (normative, computational, procedural, definitional, principle). Kind-based dispatch in batch evaluator. |
+| **P4: Domain Packs** | DONE | 9 packs (code, contract, hr_attendance, expense, communication, legal, sales, it_security, governance). PackLoader at startup. |
+| **P6: Persona Frontend** | DONE | Sales portal added. PersonaSwitcher with 9 personas. Each portal has dedicated shell, layout, and dashboard. |
+| **P9: Hybrid Evaluation** | DONE | Deterministic constraint layer (NumericConstraint, DateConstraint, EnumConstraint). DeterministicEvaluator runs before LLM. `constraints` JSONB column on rules. |
+| **P11: Feature Freeze** | DONE | Gateway, advanced observability frozen. FEATURES.md documents all flags. |
 
 ---
 
@@ -136,21 +149,10 @@ All four streams in the backlog above are now implemented and verified. The clar
 
 **500 tests pass.** `ruff check`, `ruff format --check`, and `mypy src` all report zero issues. The 60-rule domain template pack (HR attendance, contract NDA/MSA, expense policy) loads cleanly via `make seed`.
 
-### Phase 8 [IN PROGRESS] — Domain Engines and Discovery
+### Phase 8 [COMPLETE] — Cross-Organizational Parity (as of 2026-05-11)
 
-Phase 8 builds on the Subject Polymorphism foundation to deliver end-to-end domain engines and multi-source discovery. Substantial progress as of 2026-05-08:
+Phase 8 is complete. All core deliverables shipped. Post-Phase 8 enhancements from IMPROVEMENT.md proposals have been implemented on top.
 
-**Completed:**
-- **Contract Clause Engine** — ADR 0004 accepted. `adapters/contract_parser.py`, `adapters/contract_compare.py`, `services/evaluation/clause_aggregator.py`, prompt templates, `POST /api/v1/evaluate/contract` with 4 review types. Unit tests pass.
-- **Event Engine Temporal Modes** — ADR 0005 accepted. `domain/event_sequence.py` with `EventWindow`, `CalendarContext`, `SequenceContext`. Three modes (single/sequence/calendar). `POST /api/v1/evaluate/event`. Unit tests pass.
-- **Document Discovery** (partial) — `DocumentSource`/`IncrementalSource` protocols, contract corpus analyzer, contract DOCX source upgraded.
-- **Domain-Aware UX** (partial) — Route groups and layouts for legal, hr, finance, marketing. Contract review page (`/contracts/review/[id]`), event review page (`/events/[id]`).
+**1,184 tests pass.** `ruff check`, `ruff format --check`, `pnpm lint`, `pnpm typecheck` all clean. 9 domain packs load via `ENABLED_PACKS`. All feature flags verified for graceful degradation.
 
-**Remaining:**
-- HR system adapter stubs (Workday, SmartHR, freee HR)
-- Regulation PDF source upgrade, regulation feed with e-Gov/FSA
-- Incremental polling worker for regulation feeds
-- Department-aware home dashboard, no-code rule wizard, intent-first search
-- `pnpm lint` and `pnpm typecheck` verification
-
-See [phase-8-backlog.md](phase-8-backlog.md) for the detailed work item tracker.
+See [phase-8-backlog.md](phase-8-backlog.md) for the detailed completion record and [../FEATURES.md](../FEATURES.md) for the feature flag reference.

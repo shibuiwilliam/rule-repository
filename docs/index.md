@@ -7,7 +7,7 @@ Where traditional rule engines require translating human rules into formal logic
 ## Key Capabilities
 
 - **Store rules** as natural-language statements with document context, preconditions, exceptions, following/violation examples, provenance, revision history, governance metadata, classification level, and maturity level.
-- **Multi-domain coverage**: 28 pre-built rule templates (280+ rules) spanning HR/labor law, contracts, expenses, anti-corruption, data privacy, advertising compliance, Python/FastAPI, TypeScript/React, security (OWASP/IaC), API design, testing, documentation, meta-governance, NDA review, finance (invoices, journal entries, POs, revenue recognition), access control, and more.
+- **Multi-domain coverage**: 31 pre-built rule templates (300+ rules) spanning HR/labor law, contracts, expenses, anti-corruption, data privacy, advertising compliance, Python/FastAPI, TypeScript/React, security (OWASP/IaC), API design, testing, documentation, meta-governance, NDA review, finance (invoices, journal entries, POs, revenue recognition), access control, sales pricing, and more.
 - **Subject polymorphism**: eight subject kinds (`CODE_DIFF`, `CLAUSE_SET`, `EVENT`, `TRANSACTION`, `CREATIVE`, `DECISION`, `IDENTITY`, `DOCUMENT`) allow the same evaluation pipeline to handle code diffs, contract clauses, HR events, financial transactions, and more. Adding a new domain means writing one adapter.
 - **Department-aware governance**: rules belong to departments (Legal, HR, Finance, Sales, Marketing, IT, Operations, R&D, Executive). Proposals, intelligence digests, and notifications route through department resolvers to reach the right owners, approvers, and audiences.
 - **Classification-based access control**: every rule, document, evaluation, and audit entry carries a classification (`PUBLIC`, `INTERNAL`, `CONFIDENTIAL`, `RESTRICTED`). PostgreSQL Row-Level Security, Elasticsearch document-level security, and MCP clearance enforcement ensure data boundaries.
@@ -34,7 +34,7 @@ Where traditional rule engines require translating human rules into formal logic
 - **Proactive alerts**: automated notifications for dormant rules, high deny rates, health decline, verdict drift, effectiveness decline, and conflicts. Background workers (arq + Redis) run daily maintenance.
 - **Versioned snapshots**: capture immutable snapshots, deploy to environments (production, staging, development), simulate impact, and roll back.
 - **Conversational tutor**: ask questions about rules in natural language and get LLM-powered explanations and guidance.
-- **Persona-aware UI**: sidebar navigation adapts to role (All / Compliance / Legal / HR / Finance / Engineering / Sales / Executive), showing the most relevant pages for each workflow.
+- **Persona-aware UI**: 9 persona portals (Engineering, Legal, HR, Finance, Sales, Compliance, Security, Marketing, Admin) with dedicated dashboards, navigation, and `PersonaSwitcher` for cross-portal navigation.
 - **Multilingual**: English and Japanese UI via `next-intl`.
 - **Compliance-grade audit**: append-only, hash-chained audit log with WORM storage mirroring, transparency log anchoring (Sigstore Rekor), PII redaction, legal hold, and regulator export formats (J-SOX, SOX, FSA, GDPR).
 - **8 domain modules**: engineering, legal, HR, finance, IT security, sales, communications, and governance -- each with its own evaluators, context assemblers, discovery analyzers, and evaluation prompts.
@@ -49,7 +49,10 @@ Where traditional rule engines require translating human rules into formal logic
 - **Verdict drift detection**: weekly replay of canary inputs detects unexpected LLM behavior changes.
 - **Polyglot rules**: rules can have translations in multiple locales with consistency verification.
 - **Surface abstraction**: 7 evaluation surfaces (code, contract, document, human_action, message, transaction, generic) normalize different input types into a common pipeline. Adding a new surface means implementing one adapter.
-- **Domain Packs**: bundled rule sets with scopes, UI routes, and compliance prompts per domain (code, contract, HR attendance, expense, communication). Deploy a domain pack to get started in minutes.
+- **Domain Packs**: 9 bundled rule packs with scopes, UI routes, prompts, analyzers, and sample data per domain (code, contract, HR attendance, expense, communication, legal, sales, IT security, governance). Loaded at startup by `DomainPackLoader`, controlled by `ENABLED_PACKS` env var.
+- **Hybrid evaluation**: rules with `kind=computational` and structured `constraints` are evaluated deterministically before the LLM. Numeric thresholds (expense caps, overtime limits), date comparisons, and enum checks run without LLM calls — only ambiguous cases fall through.
+- **Structured scope**: multi-axis scope with `domain`, `org_unit`, `subject_type` dimensions plus ad-hoc attributes (jurisdiction, role, confidentiality). Enables precise cross-organizational rule matching like "US managers' expense policy".
+- **Feature flags**: comprehensive flag system (see [FEATURES.md](../FEATURES.md)) controlling infrastructure tiers, cross-org features, opt-in features, and frozen features. All flags verified for graceful degradation.
 - **Norm lineage**: trace rule derivation chains from source laws/regulations down to operational rules (and vice versa). Background propagation of upstream norm amendments.
 - **Contract review CLI**: `rulerepo-review-contract` evaluates contracts from the command line against organizational clause rules.
 - **Action check CLI**: `rulerepo-check-action` evaluates human actions (overtime registration, leave requests) against applicable rules.

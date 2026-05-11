@@ -8,9 +8,17 @@ Technical documentation for developing and extending the Rule Repository.
 
 **Phase 7 (Cross-Organizational Pivot): COMPLETE** -- Subject polymorphism, department/capacity model, classification-based RLS, and domain template packs.
 
-**Phase 8 (Domain Engines and Discovery): SUBSTANTIALLY COMPLETE** -- Contract clause engine, event engine temporal modes, surface abstraction (7 surfaces), domain packs (5), norm lineage, and domain-aware UX all delivered. Finance/HR/Legal/Marketing dashboards fully API-integrated (400-900+ LOC each). See [phase-8-backlog.md](phase-8-backlog.md) for remaining items.
+**Phase 8 (Cross-Organizational Parity): COMPLETE** -- Contract clause engine, event engine temporal modes, surface abstraction (7 surfaces), domain packs (9), norm lineage, and domain-aware UX all delivered. Finance/HR/Legal/Marketing/Sales dashboards fully API-integrated. Deterministic evaluation layer, kind-based dispatch, structured scope, and domain pack architecture added.
 
-**IMPROVEMENT.md (RR-001 through RR-040): ALL MERGED** -- All 40 improvement items are implemented. 8 domain modules, Tier 1 infrastructure, eval harness, safety features, LLM provider abstraction, and operational maturity. 830+ tests pass, 90/90 eval harness golden cases across 8 domains. See [progress-log.md](progress-log.md) for the complete audit trail.
+**IMPROVEMENT.md Proposals: SUBSTANTIALLY IMPLEMENTED** -- Key proposals from IMPROVEMENT.md implemented:
+- Proposal 2: Multi-axis structured scope (domain, org_unit, subject_type dimensions)
+- Proposal 3: Rule kind polymorphism (normative, computational, procedural, definitional, principle)
+- Proposal 4: Domain Pack architecture (9 packs with loader, prompts, analyzers, samples)
+- Proposal 6: Persona-based frontend (9 portal route groups with PersonaSwitcher)
+- Proposal 9: Hybrid evaluation (deterministic constraint layer + LLM)
+- Proposal 11: Phase 6 feature freeze (gateway, advanced observability disabled by default)
+
+**Test suite: 1,184 tests pass**, all linters clean. See [testing.md](testing.md).
 
 ---
 
@@ -18,15 +26,15 @@ Technical documentation for developing and extending the Rule Repository.
 
 | Document | Description |
 |---|---|
-| [architecture.md](architecture.md) | System architecture: 10 services, 39 API routers, 8 domain modules, 7 evaluation surfaces, 5 domain packs, 30 migrations, 36 ORM models, Tier 1/2/3 infrastructure |
-| [evaluation-engine.md](evaluation-engine.md) | How the evaluation engine works: subject-polymorphic batched evaluation with surface-based template routing, 6 domain-specific location types, diff parsing, context assembly, rule selection, verdict aggregation, shadow mode, structured remediations, 8 subject kinds with adapters |
+| [architecture.md](architecture.md) | System architecture: 10 services, 38 API routers, 8 domain modules, 7 evaluation surfaces, 9 domain packs, 35 migrations, 36+ ORM models, Tier 1/2/3 infrastructure |
+| [evaluation-engine.md](evaluation-engine.md) | How the evaluation engine works: subject-polymorphic batched evaluation with kind-based dispatch (5 rule kinds), deterministic constraint layer (numeric/date/enum), surface-based template routing, 6 domain-specific location types, structured remediations, 8 subject kinds with adapters |
 | [api-reference.md](api-reference.md) | All API endpoints (39 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects, proposals, agent-governance, review, audit, departments, contracts, events, approval-workflows, attestation, compliance, cost, facts, operability, regulatory, risks, tenants, translations, upcoming-changes, lineage, ask, assistant, cockpit, events-ingest, onboarding |
 | [mcp-server.md](mcp-server.md) | MCP tools (24 tools including domain-specific retrieval and evaluation), resources, prompts, and transport configuration (stdio + streamable-HTTP) |
 | [integrations.md](integrations.md) | GitHub App, CI CLI, agent hooks, rule ingestion, background workers (arq + Redis, 7 cron jobs), webhook gateway |
-| [testing.md](testing.md) | Test strategy (90 test files, 830+ tests), running tests, writing new tests, LLM mocking, classification bidirectional tests, safety tests, eval harness, and linting |
+| [testing.md](testing.md) | Test strategy (100+ test files, 1,184+ tests), running tests, writing new tests, LLM mocking, deterministic evaluator tests, domain pack structure tests, classification bidirectional tests, safety tests, eval harness, and linting |
 | [feedback-flywheel.md](feedback-flywheel.md) | Correction capture -> analysis -> auto-drafting -> rule improvement loop (flywheel with clustering + proposals + auto-promotion) |
 | [rule-registration-workflows.md](rule-registration-workflows.md) | Sequence diagrams for all 4 rule registration paths: manual, extraction, discovery, feedback. Data store sync matrix |
-| [database-schema.md](database-schema.md) | Database schema: 36 ORM models across 30 Alembic migrations, ER diagram, design decisions |
+| [database-schema.md](database-schema.md) | Database schema: 36+ ORM models across 35 Alembic migrations, ER diagram, design decisions |
 | [intelligence-dashboard-plan.md](intelligence-dashboard-plan.md) | Intelligence Dashboard implementation plan (completed) |
 | [playground-enhancement-plan.md](playground-enhancement-plan.md) | Playground multi-mode input support (completed) -- Code + Scenario evaluation, rule picker, suggest-by-LLM |
 | [project-entity-plan.md](project-entity-plan.md) | Project entity as top-level organizational boundary (completed) |
@@ -34,7 +42,7 @@ Technical documentation for developing and extending the Rule Repository.
 | [agent-integration-and-analytics.md](agent-integration-and-analytics.md) | Seamless agent integration (scope resolution, session context API), rule impact analytics (effectiveness score, weekly digest, team comparison), rule templates library, bulk import API |
 | [proactive-delivery-and-quality.md](proactive-delivery-and-quality.md) | CLAUDE.md context generator CLI, effectiveness visibility (rule detail, dashboard, rules list, digest), alert banner, effectiveness-based alerts |
 | [phase7-status.md](phase7-status.md) | Phase 7 status: COMPLETE. 4 streams delivered: Subject Polymorphism, Department/Capacity, Classification/RLS, Domain Templates (60 rules across 3 domain packs). |
-| [phase-8-backlog.md](phase-8-backlog.md) | Phase 8 backlog: IN PROGRESS. Streams A (Contract Clause Engine) and B (Event Engine) substantially complete. Streams C (Document Discovery) and D (Domain UX) partially complete. |
+| [phase-8-backlog.md](phase-8-backlog.md) | Phase 8 backlog: COMPLETE. All streams delivered. Post-Phase 8 enhancements (IMPROVEMENT.md proposals) tracked here. |
 | [orientation.md](orientation.md) | Cross-organizational pivot orientation: gap analysis (now resolved), Phase 7 streams, execution order, closure notes |
 | [spec_implementation_audit.md](spec_implementation_audit.md) | Code-only audit of PROJECT.md/CLAUDE.md specs vs. implementation: 165/167 features (98.8%) implemented |
 | [feature_interactions.md](feature_interactions.md) | Cross-feature interaction pairs: intended vs. actual behavior, gap analysis, and remediations (federation x snapshot, proposal x federation, agent governance x federation) |
@@ -58,7 +66,8 @@ Technical documentation for developing and extending the Rule Repository.
 
 - **[PROJECT.md](../PROJECT.md)** -- Project vision, domain model, roadmap, and specification. Read this first for context on what the system does and why.
 - **[CLAUDE.md](../CLAUDE.md)** -- Operational contract for Claude Code: coding conventions, tech stack rules, Gemini API constraints, and non-negotiable development rules.
-- **[IMPROVEMENT.md](../IMPROVEMENT.md)** -- Gap analysis comparing vision vs. implementation, with 40 improvement items (RR-001 through RR-040). All items now Merged.
+- **[IMPROVEMENT.md](../IMPROVEMENT.md)** -- Gap analysis comparing vision vs. implementation, with 12 improvement proposals. Key proposals (2, 3, 4, 6, 9, 11) implemented.
+- **[FEATURES.md](../FEATURES.md)** -- Complete feature flag reference: infrastructure tiers, cross-org features, opt-in features, frozen features, domain pack configuration.
 
 ---
 

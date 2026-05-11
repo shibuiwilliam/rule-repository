@@ -4,10 +4,17 @@ The Subject-Polymorphic Evaluation Engine is the core product capability. It acc
 
 ## Pipeline
 
-The evaluation runs through four stages:
+The evaluation runs through five stages:
 
 ```
-Context Assembly  -->  Rule Selection  -->  LLM Judgment  -->  Verdict Aggregation
+Context Assembly  -->  Rule Selection  -->  Kind Dispatch  -->  LLM Judgment  -->  Verdict Aggregation
+                                              │
+                                              ├── COMPUTATIONAL (with constraints) → Deterministic Evaluator → PASS/FAIL (skip LLM)
+                                              ├── COMPUTATIONAL (no constraints) → regex fallback → LLM if INDETERMINATE
+                                              ├── PROCEDURAL → state-transition check → LLM if INDETERMINATE
+                                              ├── DEFINITIONAL → always ALLOW (no LLM)
+                                              ├── PRINCIPLE → always ALLOW (no LLM)
+                                              └── NORMATIVE → LLM Judgment (existing path)
 ```
 
 ### 1. Context Assembly
@@ -29,9 +36,27 @@ Narrows the full rule corpus to a manageable set of 5--20 relevant rules:
 
 The metadata stage runs in under 50ms. The full selection is designed to avoid sending irrelevant rules to the LLM.
 
-### 3. LLM Judgment (Batched)
+### 3. Kind Dispatch (Hybrid Evaluation)
 
-All selected rules are sent to Gemini in a **single batched API call** using structured JSON output. The batch evaluator selects a **surface-specific prompt template** based on the `surface` field of the evaluation context (e.g., `evaluate_batch_contract.txt` for contracts, `evaluate_batch_transaction.txt` for transactions). Each surface template defines its own location format and remediation kinds. The prompt lists every rule alongside the subject content and requests an array of per-rule verdicts.
+Before sending rules to the LLM, the batch evaluator partitions them by `kind` (see `kind_dispatch.py`):
+
+- **NORMATIVE** rules proceed to the LLM batch evaluation (stage 4).
+- **COMPUTATIONAL** rules with structured `constraints` are evaluated by the **DeterministicEvaluator** (`deterministic/evaluator.py`). This layer checks numeric thresholds (`amount <= 100000`), date comparisons, and enum validations against the subject's facts. If all constraints pass → ALLOW (confidence 0.95, no LLM call). If any fail → DENY (confidence 0.95, no LLM call). If the relevant facts are missing → INDETERMINATE, and the rule falls through to the LLM.
+- **COMPUTATIONAL** rules without constraints fall back to a regex-based threshold extraction from the rule statement, then heuristic matching against fact keys.
+- **PROCEDURAL** rules check for ordering constraints against `steps`/`sequence` facts.
+- **DEFINITIONAL** rules always return ALLOW — they define terms, not constraints.
+- **PRINCIPLE** rules always return ALLOW — they are evaluated through their derived normative rules.
+
+This dispatch reduces LLM token consumption significantly for quantitative rules (expense caps, overtime limits, date deadlines) while preserving LLM judgment for normative interpretation.
+
+**Constraint types** (stored as JSONB on rules):
+- `NumericConstraint`: `{field_path, operator, threshold, unit}` — e.g., `{field_path: "monthly_overtime_hours", operator: "<=", threshold: 45, unit: "hours"}`
+- `DateConstraint`: `{field_path, operator, reference_date}`
+- `EnumConstraint`: `{field_path, allowed_values}`
+
+### 4. LLM Judgment (Batched)
+
+All selected NORMATIVE rules (and INDETERMINATE computational rules) are sent to Gemini in a **single batched API call** using structured JSON output. The batch evaluator selects a **surface-specific prompt template** based on the `surface` field of the evaluation context (e.g., `evaluate_batch_contract.txt` for contracts, `evaluate_batch_transaction.txt` for transactions). Each surface template defines its own location format and remediation kinds. The prompt lists every rule alongside the subject content and requests an array of per-rule verdicts.
 
 **Tiered model strategy:**
 

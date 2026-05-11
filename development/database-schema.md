@@ -1,9 +1,11 @@
 # Database Schema & ER Diagram
 
 > PostgreSQL 17 -- source of truth for the Rule Repository.
-> 36 ORM models across 30 Alembic migrations (001-031, skipping 020).
+> 36+ ORM models across 35 Alembic migrations (001-035, skipping 020).
 > Row-Level Security enabled on `rules`, `documents`, `evaluations`, `audit_log` for classification-based access control.
 > Phase 7 additions: `subject_kinds`, `jurisdiction`, `classification`, `sensitivity`, department/capacity fields.
+> Phase 8 additions: `applies_to_surfaces`, `norm_tier`, `norm_authority`, `locale`, `statement_translations`, `tech_scope`, `org_scope`.
+> Post-Phase 8 additions: `kind` (rule evaluation strategy), `constraints` (deterministic evaluation), `structured_scope` backfill, `rule_translations` table.
 
 ---
 
@@ -21,8 +23,11 @@ erDiagram
         modality_enum modality
         severity_enum severity
         rule_status_enum status
+        varchar kind "normative|computational|procedural|definitional|principle"
+        jsonb constraints "deterministic evaluation constraints"
         jsonb source_refs
         jsonb scope
+        jsonb structured_scope "path + dimensions (domain, org_unit, subject_type, ...)"
         jsonb tags
         jsonb preconditions
         jsonb exceptions
@@ -32,6 +37,13 @@ erDiagram
         text context
         jsonb following_examples
         jsonb violation_examples
+        jsonb applies_to_surfaces
+        varchar norm_tier
+        text norm_authority
+        varchar locale
+        jsonb statement_translations
+        jsonb tech_scope
+        jsonb org_scope
         float8_array embedding
         float8 clarity_score
         timestamptz created_at

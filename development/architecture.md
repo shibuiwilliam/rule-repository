@@ -6,10 +6,10 @@ The Rule Repository is a monorepo with 10 services orchestrated via Docker Compo
 
 | Component | Tech | Port | Purpose |
 |---|---|---|---|
-| Backend API | Python 3.13 + FastAPI | 8000 | 39 API routers covering rules, evaluation, search, discovery, governance, compliance, and more |
+| Backend API | Python 3.13 + FastAPI | 8000 | 38 API routers covering rules, evaluation, search, discovery, governance, compliance, and more |
 | MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 24 tools) |
-| Frontend | TypeScript + Next.js 15 | 3000 | Operator console with 56 pages across 8 persona route groups, English/Japanese i18n |
-| PostgreSQL | 17-alpine | 5432 | System of record (36 ORM models, 30 migrations) with Row-Level Security |
+| Frontend | TypeScript + Next.js 15 | 3000 | Operator console with 58+ pages across 9 persona route groups, English/Japanese i18n |
+| PostgreSQL | 17-alpine | 5432 | System of record (36+ ORM models, 35 migrations) with Row-Level Security |
 | Elasticsearch | 8.17 | 9200 | Full-text + vector search with document-level security |
 | Neo4j | 5-community | 7474/7687 | Rule relationship graph |
 | Redis | 7-alpine | 6379 | Job queue for arq background worker |
@@ -114,10 +114,14 @@ src/rulerepo_server/
 │   ├── project_service.py          # Project/workspace management
 │   ├── evaluation/                 # Subject-polymorphic evaluation pipeline
 │   │   ├── service.py              #   EvaluationService (subject-agnostic orchestrator)
-│   │   ├── batch_evaluator.py      #   Batched multi-rule evaluation (single LLM call)
+│   │   ├── batch_evaluator.py      #   Batched multi-rule evaluation (kind-aware dispatch → LLM)
+│   │   ├── kind_dispatch.py        #   Kind-based routing (normative→LLM, computational→deterministic, etc.)
+│   │   ├── deterministic/          #   Hybrid eval: deterministic constraint layer (Proposal 9)
+│   │   │   ├── constraint.py       #     NumericConstraint, DateConstraint, EnumConstraint, Operator
+│   │   │   └── evaluator.py        #     DeterministicEvaluator (runs before LLM, PASS/FAIL skip LLM)
 │   │   ├── evaluation_core.py      #   LLM-as-Judge per rule (subject-agnostic)
 │   │   ├── context_assembler.py    #   Stage 1: normalize inputs
-│   │   ├── rule_selector.py        #   Stage 2: narrow rule corpus
+│   │   ├── rule_selector.py        #   Stage 2: narrow rule corpus (structured scope + dimension scoring)
 │   │   ├── graph_resolver.py       #   Stage 3: resolve Neo4j relationships
 │   │   ├── conflict_aggregator.py  #   Stage 5a: conflict-aware aggregation
 │   │   ├── verdict_aggregator.py   #   Stage 5b: simple aggregation (fallback)
@@ -315,12 +319,16 @@ src/rulerepo_server/
 │   ├── archival.py                 # Rule archival and retention
 │   ├── norm_lineage_propagation.py # Propagate norm changes downstream
 │   └── translation_drift.py       # Detect translation locale drift
-├── domain_packs/                   # Bundled rule packs per domain
+├── domain_packs/                   # Bundled rule packs per domain (9 packs)
 │   ├── code/                       #   Engineering rules pack
+│   ├── communication/              #   Communications policy pack
 │   ├── contract/                   #   Legal contract rules pack
-│   ├── hr_attendance/              #   HR attendance/leave pack
 │   ├── expense/                    #   Finance expense/invoice pack
-│   └── communication/              #   Communications policy pack
+│   ├── governance/                 #   Corporate governance pack (new)
+│   ├── hr_attendance/              #   HR attendance/leave pack
+│   ├── it_security/                #   IT security pack (new)
+│   ├── legal/                      #   Legal/regulatory pack (new)
+│   └── sales/                      #   Sales/pricing pack (new)
 └── schemas/                        # Pydantic request/response models
     ├── rule.py, common.py, search.py, evaluation.py, extraction.py
     ├── intent.py, intelligence.py, discovery.py, feedback.py
