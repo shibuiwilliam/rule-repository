@@ -5,7 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 import sqlalchemy as sa
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Header, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,10 +29,11 @@ router = APIRouter(prefix="/search", tags=["search"])
 async def fulltext_search(
     query: SearchQuery,
     project_id: str | None = Query(default=None),
+    accept_language: str | None = Header(default=None, alias="Accept-Language"),
     service: SearchService = Depends(get_search_service),
 ) -> dict:
     """BM25 full-text search over rule statements."""
-    filters = _build_filters(query)
+    filters = _build_filters(query, accept_language)
     if project_id:
         filters["project_id"] = project_id
     return await service.fulltext_search(query.query, filters=filters, page=query.page, page_size=query.page_size)
@@ -42,10 +43,11 @@ async def fulltext_search(
 async def vector_search(
     query: SearchQuery,
     project_id: str | None = Query(default=None),
+    accept_language: str | None = Header(default=None, alias="Accept-Language"),
     service: SearchService = Depends(get_search_service),
 ) -> dict:
     """Semantic similarity search using embeddings."""
-    filters = _build_filters(query)
+    filters = _build_filters(query, accept_language)
     if project_id:
         filters["project_id"] = project_id
     return await service.vector_search(query.query, filters=filters, page=query.page, page_size=query.page_size)
@@ -55,10 +57,11 @@ async def vector_search(
 async def hybrid_search(
     query: SearchQuery,
     project_id: str | None = Query(default=None),
+    accept_language: str | None = Header(default=None, alias="Accept-Language"),
     service: SearchService = Depends(get_search_service),
 ) -> dict:
     """Combined BM25 + vector hybrid search."""
-    filters = _build_filters(query)
+    filters = _build_filters(query, accept_language)
     if project_id:
         filters["project_id"] = project_id
     return await service.hybrid_search(query.query, filters=filters, page=query.page, page_size=query.page_size)
@@ -573,8 +576,13 @@ async def conflict_search(
     }
 
 
-def _build_filters(query: SearchQuery) -> dict:
-    """Build ES filter dict from search query parameters."""
+def _build_filters(query: SearchQuery, accept_language: str | None = None) -> dict:
+    """Build ES filter dict from search query parameters.
+
+    When ``query.language`` is set it takes precedence.  Otherwise, the
+    ``Accept-Language`` header is parsed for a primary language tag and
+    mapped to the ``primary_language`` ES field.
+    """
     filters: dict = {}
     if query.modality:
         filters["modality"] = query.modality.value
@@ -584,4 +592,31 @@ def _build_filters(query: SearchQuery) -> dict:
         filters["scope"] = query.scope
     if query.tags:
         filters["tags"] = query.tags
+
+    # Language filter: explicit query param > Accept-Language header.
+    lang = query.language
+    if not lang and accept_language:
+        lang = _parse_accept_language(accept_language)
+    if lang:
+        filters["primary_language"] = lang
+
     return filters
+
+
+def _parse_accept_language(header: str) -> str | None:
+    """Extract the primary language tag from an Accept-Language header.
+
+    Returns the first two-letter language code, or None if unparseable.
+    Examples: ``"ja,en;q=0.9"`` → ``"ja"``, ``"en-US"`` → ``"en"``.
+    """
+    if not header:
+        return None
+    # Take the first language (highest priority).
+    first = header.split(",")[0].strip()
+    # Strip quality factor.
+    tag = first.split(";")[0].strip()
+    # Extract primary subtag (e.g., "en-US" → "en").
+    primary = tag.split("-")[0].strip().lower()
+    if len(primary) == 2 and primary.isalpha():
+        return primary
+    return None

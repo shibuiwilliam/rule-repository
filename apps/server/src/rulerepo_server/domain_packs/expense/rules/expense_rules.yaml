@@ -3,11 +3,18 @@ rules:
     statement: "All expense claims exceeding 5,000 JPY (or equivalent) must include a receipt or invoice as supporting documentation."
     severity: HIGH
     modality: MUST
+    kind: computational
     tags: [receipt, documentation, expense-claim]
     org_scope: [finance/expense]
     applies_to_surfaces: [transaction]
     norm_tier: CORPORATE_POLICY
     locale: en
+    constraints:
+      - type: numeric
+        field_path: amount
+        operator: "<="
+        threshold: 5000
+        unit: JPY
     statement_translations:
       ja: "5,000円（または同等額）を超える全ての経費申請には、領収書または請求書を添付しなければならない。"
 
@@ -51,12 +58,19 @@ rules:
     statement: "Entertainment expenses must not exceed 5,000 JPY per person per event. The expense report must list all attendees, their affiliations, and the business purpose."
     severity: HIGH
     modality: MUST_NOT
+    kind: computational
     tags: [entertainment, hospitality, per-person-cap]
     org_scope: [finance/expense]
     applies_to_surfaces: [transaction]
     norm_tier: CORPORATE_POLICY
     norm_authority: "Tax Special Measures Act Article 61-4 (Japan)"
     locale: en
+    constraints:
+      - type: numeric
+        field_path: per_person_entertainment
+        operator: "<="
+        threshold: 5000
+        unit: JPY
     statement_translations:
       ja: "交際費は1人当たり5,000円を超えてはならない。経費報告書には全出席者の氏名・所属・業務目的を記載すること。"
 

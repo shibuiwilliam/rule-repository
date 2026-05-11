@@ -13,6 +13,7 @@ from rulerepo_server.adapters.postgres.audit_repo import AuditLogRepository
 from rulerepo_server.adapters.postgres.rule_repo import PostgresRuleRepository
 from rulerepo_server.core.logging import get_logger
 from rulerepo_server.domain.rule import RuleStatus, validate_status_transition
+from rulerepo_server.domain.scope import StructuredScope
 from rulerepo_server.schemas.rule import RuleCreate, RuleUpdate
 
 logger = get_logger(__name__)
@@ -72,6 +73,7 @@ class RuleService:
             "modality": data.modality.value,
             "severity": data.severity.value,
             "status": data.status.value,
+            "kind": data.kind.value,
             "scope": data.scope,
             "tags": data.tags,
             "rationale": data.rationale,
@@ -110,6 +112,11 @@ class RuleService:
 
         # 2. Elasticsearch (search index)
         try:
+            structured = StructuredScope(
+                path=data.structured_scope.path,
+                dimensions=data.structured_scope.dimensions,
+            )
+            es_scope_fields = structured.to_es_fields()
             es_doc = {
                 "rule_id": str(rule_id),
                 "project_id": project_id or DEFAULT_PROJECT_ID,
@@ -121,6 +128,14 @@ class RuleService:
                 "tags": data.tags,
                 "rationale": data.rationale,
                 "context": data.context,
+                "applicable_subject_types": data.applicable_subject_types,
+                "structured_scope": {
+                    "path": data.structured_scope.path,
+                    "dimensions": data.structured_scope.dimensions,
+                },
+                "scope_domain": es_scope_fields["scope_domain"],
+                "scope_org_unit": es_scope_fields["scope_org_unit"],
+                "scope_subject_type": es_scope_fields["scope_subject_type"],
                 "effective_from": data.effective_period.valid_from.isoformat()
                 if data.effective_period.valid_from
                 else None,
@@ -295,6 +310,12 @@ class RuleService:
 
         # 3. Re-index in Elasticsearch
         try:
+            raw_structured = getattr(model, "structured_scope", None) or {}
+            structured = StructuredScope(
+                path=raw_structured.get("path", "") if isinstance(raw_structured, dict) else "",
+                dimensions=raw_structured.get("dimensions", {}) if isinstance(raw_structured, dict) else {},
+            )
+            es_scope_fields = structured.to_es_fields()
             es_doc = {
                 "rule_id": str(rule_id),
                 "project_id": str(model.project_id) if hasattr(model, "project_id") else None,
@@ -305,6 +326,11 @@ class RuleService:
                 "scope": model.scope,
                 "tags": model.tags,
                 "rationale": model.rationale,
+                "applicable_subject_types": getattr(model, "applicable_subject_types", []),
+                "structured_scope": raw_structured if isinstance(raw_structured, dict) else {},
+                "scope_domain": es_scope_fields["scope_domain"],
+                "scope_org_unit": es_scope_fields["scope_org_unit"],
+                "scope_subject_type": es_scope_fields["scope_subject_type"],
                 "effective_from": model.effective_period.get("valid_from")
                 if isinstance(model.effective_period, dict)
                 else None,

@@ -51,12 +51,16 @@ rule-repository/
 │   │   ├── src/rulerepo_server/
 │   │   │   ├── api/v1/             # REST API routers
 │   │   │   ├── core/               # config, logging, errors, auth, middleware, PII, deps
-│   │   │   ├── domain/             # Rule, Evaluation, Verdict, Subject, BusinessEvent, Department (pure)
+│   │   │   ├── domain/             # Rule (kind, constraints), Evaluation, Verdict, Subject, Scope, BusinessEvent, Department (pure)
 │   │   │   ├── services/
 │   │   │   │   ├── evaluation/     # Subject Evaluation Engine
 │   │   │   │   │   ├── service.py          # orchestrator (subject dispatch)
 │   │   │   │   │   ├── rule_selector.py    # subject-agnostic rule selection
-│   │   │   │   │   ├── batch_evaluator.py  # subject-agnostic batched LLM call
+│   │   │   │   │   ├── batch_evaluator.py  # subject-agnostic batched LLM call (kind-aware dispatch)
+│   │   │   │   │   ├── kind_dispatch.py    # kind-based routing (normative→LLM, computational→deterministic, etc.)
+│   │   │   │   │   ├── deterministic/      # Hybrid evaluation: deterministic constraint layer
+│   │   │   │   │   │   ├── constraint.py   # NumericConstraint, DateConstraint, EnumConstraint
+│   │   │   │   │   │   └── evaluator.py    # DeterministicEvaluator (runs before LLM)
 │   │   │   │   │   ├── verdict_aggregator.py # subject-agnostic
 │   │   │   │   │   ├── conflict_aggregator.py
 │   │   │   │   │   ├── graph_resolver.py
@@ -100,9 +104,9 @@ rule-repository/
 │   │   │   │   ├── discovery/              # automatic rule discovery
 │   │   │   │   ├── feedback/               # correction feedback loop
 │   │   │   │   ├── federation/             # cross-project rule federation
-│   │   │   │   ├── department/             # NEW: Department RBAC (Phase 7d)
-│   │   │   │   │   ├── authz.py
-│   │   │   │   │   └── membership.py
+│   │   │   │   ├── departments/            # Department RBAC + ABAC policies (Phase 7d)
+│   │   │   │   │   ├── authz.py            # ABAC policy engine (check_permission, can_view/edit/approve)
+│   │   │   │   │   └── service.py          # Department CRUD, capacity assignment, rule ownership
 │   │   │   │   ├── events/                 # NEW: Business Event ingestion (Phase 7e)
 │   │   │   │   │   ├── ingest.py
 │   │   │   │   │   └── scope_resolver.py
@@ -121,15 +125,30 @@ rule-repository/
 │   │   │   ├── integrations/               # GitHub App (opt-in), CI formatters
 │   │   │   ├── schemas/                    # Pydantic request/response models
 │   │   │   └── workers/                    # background jobs (arq)
+│   │   ├── domain_packs/                   # Domain Pack bundles (rules + prompts + samples + analyzers)
+│   │   │   ├── code/                       # Engineering
+│   │   │   ├── communication/              # Communication compliance
+│   │   │   ├── contract/                   # Contract review
+│   │   │   ├── expense/                    # Finance/expense
+│   │   │   ├── hr_attendance/              # HR attendance
+│   │   │   ├── legal/                      # Legal/regulatory
+│   │   │   ├── sales/                      # Sales/pricing
+│   │   │   ├── it_security/                # IT security
+│   │   │   └── governance/                 # Corporate governance
 │   │   ├── alembic/                        # database migrations
 │   │   └── tests/
 │   └── frontend/                           # Next.js + TS + Tailwind (pnpm)
 │       ├── package.json
-│       └── app/(dashboard)/
-│           ├── (existing pages)
-│           ├── assistant/                  # NEW: Conversational Assistant (Phase 7g)
-│           ├── compliance/                 # NEW: Compliance Cockpit (Phase 7h)
-│           └── departments/                # NEW: Department admin (Phase 7d)
+│       └── app/
+│           ├── (dashboard)/                # Engineering persona (default)
+│           ├── (legal)/                    # Legal persona portal
+│           ├── (hr)/                       # HR persona portal
+│           ├── (finance)/                  # Finance persona portal
+│           ├── (sales)/                    # Sales persona portal
+│           ├── (compliance)/               # Compliance persona portal
+│           ├── (security)/                 # Security persona portal
+│           ├── (marketing)/                # Marketing persona portal
+│           └── (admin)/                    # Admin portal
 ├── packages/
 │   ├── rule-client/                        # Python SDK
 │   ├── agentic-client/                     # Python SDK
@@ -298,20 +317,25 @@ The server is a single FastAPI application that exposes:
 - **REST API** at `/api/v1/...` for CRUD on rules, documents, evaluations.
 - **Evaluate APIs**:
   - `/api/v1/evaluate` — polymorphic, accepts a Subject (or legacy diff/files for backward compatibility).
-  - `/api/v1/evaluate/document` — convenience endpoint for `DOCUMENT_DRAFT` subjects.
-  - `/api/v1/evaluate/transaction` — convenience endpoint for `TRANSACTION` subjects.
-- **Events API** at `/api/v1/events/ingest` — universal business event ingestion.
+  - `/api/v1/evaluate/{surface}` — surface-aware evaluation (Phase 8+). Surfaces: code, contract, human_action, transaction, document, message, generic.
+  - `/api/v1/evaluate/quick` — simplified non-code evaluation.
+- **Submissions API** at `/api/v1/submissions` — **unified entry point** for any business event or artifact. Resolves scope from `event_type` + actor department, dispatches to the correct surface evaluator, returns full evaluation response. Replaces the need for callers to choose between `/evaluate` and `/events/ingest`.
+- **Events API** at `/api/v1/events/ingest` — lightweight business event ingestion (returns verdict + counts only; use `/submissions` for full response).
 - **Intent API** at `/api/v1/intent` — natural language query routing.
 - **Assistant API** at `/api/v1/assistant/...` — conversational assistant orchestrator.
 - **Compliance API** at `/api/v1/compliance/...` — Cockpit data.
-- **Department API** at `/api/v1/departments/...` — membership management.
+- **Department API** at `/api/v1/departments/...` — membership management + ABAC policy management (`GET/PUT /departments/{dept}/policies`).
 - **Existing routers** (rules, search, intelligence, discovery, feedback, federation, integrations, playground, alerts, snapshots, proposals, agent-governance) preserved.
-- **Frozen routers** (multi-agent sessions) return 404 unless feature flag enabled.
+- **Frozen routers** (multi-agent sessions, gateway, advanced observability) return 404 unless feature flag enabled.
 - **MCP Server** on a separate port (8001).
 
 **Layering rule**: `api → services → domain/adapters`. `domain` depends on nothing else in the project.
 
 **Subject dispatch pattern**: `services/evaluation/service.py` is the orchestrator. It receives an `EvaluationSubject`, runs subject-agnostic Rule Selection, then dispatches to the matching subject path under `services/evaluation/{code,document,transaction,text,workflow,agent}/`. Each path has its own evaluator and prompt templates but shares the rule selector, batch evaluator, and verdict aggregator.
+
+**Kind-based dispatch**: `batch_evaluator.py` partitions rules by `kind` before LLM evaluation. Non-normative rules (COMPUTATIONAL, PROCEDURAL, DEFINITIONAL, PRINCIPLE) are handled locally via `kind_dispatch.py`. COMPUTATIONAL rules with structured `constraints` are evaluated by the `deterministic/evaluator.py` layer — only INDETERMINATE results fall through to the LLM. This reduces LLM token consumption and improves latency for quantitative rules.
+
+**Domain Packs**: loaded at startup by `DomainPackLoader` (in `main.py` lifespan). Controlled by `ENABLED_PACKS` env var. Each pack contributes rules, prompts, analyzers, and samples. Packs are queryable by name, surface, or persona.
 
 **Async**: API layer is fully async. DB via `asyncpg` / `sqlalchemy[asyncio]`, Elasticsearch via async client, Neo4j via official async driver, Gemini via `google-genai`.
 
@@ -324,11 +348,11 @@ The frontend serves two audiences:
 - **Operators** (existing): browse and search rules, upload documents, run extraction, review candidates, view the relationship graph, inspect evaluations and audit logs, manage governance.
 - **End users (new)**: the `/assistant` route is an end-user chat surface; the `/compliance` route is the Compliance Cockpit for Compliance/Legal/Exec.
 
-Use the Next.js App Router. Co-locate route segments under `app/(dashboard)/...`. Server Components for data fetching, Client Components for interactivity.
+Use the Next.js App Router. Each department has its own route group: `(dashboard)` for Engineering, `(legal)`, `(hr)`, `(finance)`, `(sales)`, `(compliance)`, `(security)`, `(marketing)`, `(admin)`. Each uses `PersonaLayout` for consistent sidebar and navigation, with a `PersonaSwitcher` dropdown for cross-portal navigation.
 
 The graph view (Neo4j-backed) renders using `react-flow` or `cytoscape` — pick one early and stick with it.
 
-The sidebar is reorganized for Cross-Organizational use:
+The Engineering sidebar (`(dashboard)/Sidebar.tsx`) is organized for Cross-Organizational use:
 
 - **Manage**: Rules, Discover, Documents, Proposals, Snapshots, Departments
 - **Observe**: Compliance Cockpit, Intelligence, Agents (single-agent view), Notifications, Alerts
@@ -405,7 +429,7 @@ Centralize model selection in `core/llm.py`. Never hardcode model IDs in busines
 - The audit log table is **append-only**. Postgres trigger rejects updates/deletes. Hash chain column.
 
 ### 10.2 Elasticsearch (search)
-- Index `rules` with: `statement` (analyzed), `tags`, `scope`, `modality`, `effective_period`, `embedding`, **`department`**, **`kind`**, **`primary_language`**, **`applicable_subject_types`**.
+- Index `rules` with: `statement` (analyzed), `tags`, `scope`, `modality`, `effective_period`, `embedding`, **`department`**, **`kind`**, **`primary_language`**, **`applicable_subject_types`**, **`scope_domain`**, **`scope_org_unit`**, **`scope_subject_type`**, **`structured_scope`**.
 - BM25 + kNN hybrid scoring. Rerank top-k with the LLM only when "smart" search is requested.
 - Re-index on rule revision; no partial updates that risk drift.
 
@@ -431,6 +455,11 @@ Centralize model selection in `core/llm.py`. Never hardcode model IDs in busines
 
   These run on every PR. Failure blocks merge.
 - **Subject-type test coverage**: each subject path under `services/evaluation/<path>/` has its own tests directory. Document/transaction tests use canned text/JSON fixtures, not live API calls.
+- **Deterministic evaluator tests**: `tests/unit/test_deterministic_evaluator.py` — tests all constraint types (numeric, date, enum), edge cases, and real-world scenarios (overtime caps, expense limits). No LLM required.
+- **Domain pack structure tests**: `tests/unit/test_domain_pack_loader.py` — parametrized validation that all 9 packs have the required structure (pack.yaml, rules/, prompts/, samples/, analyzers/).
+- **Department ABAC policy tests**: `tests/unit/test_department_authz.py` — tests default policy set, principal matching, cross-department scenarios, policy customization.
+- **Unified submissions tests**: `tests/unit/test_submissions.py` — tests scope resolution, surface mapping, payload forwarding, backward compatibility for code diffs.
+- **Domain extractor tests**: `tests/unit/test_regulation_extractor.py`, `test_handbook_extractor.py`, `test_tabular_extractor.py` — tests Japanese legal hierarchy (条/項/号), reference resolution, employment type detection, financial metadata tagging.
 
 ---
 
@@ -472,6 +501,10 @@ POLYGLOT_VERIFICATION_ENABLED=true
 MULTI_AGENT_SESSIONS_ENABLED=false
 GITHUB_APP_ENABLED=false
 
+# Frozen features (Phase 6 freeze — default OFF)
+GATEWAY_ENABLED=false
+ADVANCED_OBSERVABILITY_ENABLED=false
+
 # GitHub Integration (only used when GITHUB_APP_ENABLED=true)
 GITHUB_APP_ID=
 GITHUB_APP_PRIVATE_KEY=
@@ -511,7 +544,7 @@ These are non-negotiable. Violating them breaks the system or wastes review time
 16. **Cross-Organizational acceptance tests must pass on every PR.** Do not merge with red.
 17. **Do not extend frozen components.** Multi-agent sessions — leave at current state. If a need arises, raise it in PROJECT.md first.
 18. **Subject Type abstraction is load-bearing.** Do not add subject-type-specific logic to subject-agnostic modules (`rule_selector.py`, `batch_evaluator.py`, `verdict_aggregator.py`). If you find yourself wanting to, refactor into the appropriate subject path.
-19. **Department RBAC is non-bypassable.** Every API endpoint that returns or mutates rules must apply department visibility. Do not add a new endpoint without an authorization check.
+19. **Department RBAC is non-bypassable.** Every API endpoint that returns or mutates rules must call `check_permission()` from `services/departments/authz.py`. The authorization model is ABAC-style: policies map `(owner_department, action)` to allowed `(principal_department, capacity)` pairs. Default policies allow cross-department READ but restrict EDIT/APPROVE/DELETE to same-department principals. Custom policies can be set via `PUT /departments/{dept}/policies`. Do not add a new endpoint without an authorization check.
 20. **Polymorphic Remediation kinds must be exhaustively handled.** When new code consumes Remediations, use exhaustive `match` on `RemediationKind`. Adding a new kind requires updating all consumers.
 21. **When unsure, ask.** Open an issue or a draft PR with the question. Do not guess on domain semantics — wrong rules are worse than no rules.
 

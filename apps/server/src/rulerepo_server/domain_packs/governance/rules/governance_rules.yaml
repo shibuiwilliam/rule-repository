@@ -1,0 +1,63 @@
+rules:
+  - id: GOV-001
+    statement: "All corporate policies must be reviewed and reaffirmed by the policy owner at least annually. Policies not reviewed within 18 months are automatically flagged as stale and escalated to the compliance officer."
+    severity: HIGH
+    modality: MUST
+    tags: [policy-review, cadence, staleness, compliance]
+    org_scope: [governance/corporate]
+    applies_to_surfaces: [document, human_action]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "全社方針はポリシーオーナーにより年1回以上の見直し・再確認を行うこと。18ヶ月以上見直されていない方針は自動的に陳腐化としてフラグされ、コンプライアンスオフィサーにエスカレーションされる。"
+
+  - id: GOV-002
+    statement: "Decisions involving financial commitments exceeding 10 million JPY must follow the delegation of authority matrix and require documented approval at the appropriate level."
+    severity: CRITICAL
+    modality: MUST
+    tags: [delegation-of-authority, financial-commitment, approval]
+    org_scope: [governance/delegation]
+    applies_to_surfaces: [human_action, document]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "1,000万円を超える財務的コミットメントを伴う意思決定は権限委譲マトリクスに従い、適切なレベルでの文書化された承認が必要。"
+
+  - id: GOV-003
+    statement: "Directors and officers must disclose potential conflicts of interest in writing before participating in any related decision. Undisclosed conflicts discovered after the fact may void the decision."
+    severity: CRITICAL
+    modality: MUST
+    tags: [conflict-of-interest, disclosure, board, officer]
+    org_scope: [governance/board]
+    applies_to_surfaces: [human_action, document]
+    norm_tier: CORPORATE_POLICY
+    norm_authority: "Companies Act Article 356 (Japan)"
+    locale: en
+    statement_translations:
+      ja: "取締役および役員は関連する意思決定に参加する前に、利益相反の可能性を書面で開示すること。事後に発覚した未開示の利益相反は当該決定を無効にする場合がある。"
+
+  - id: GOV-004
+    statement: "Internal control deficiencies identified in audits must have a remediation plan within 30 days and be resolved within 90 days. Material weaknesses must be reported to the board audit committee."
+    severity: HIGH
+    modality: MUST
+    tags: [internal-control, audit, remediation, j-sox]
+    org_scope: [governance/internal-control]
+    applies_to_surfaces: [document, human_action]
+    norm_tier: CORPORATE_POLICY
+    norm_authority: "Financial Instruments and Exchange Act Article 24-4-4 (J-SOX)"
+    locale: en
+    statement_translations:
+      ja: "監査で識別された内部統制の不備は30日以内に是正計画を策定し、90日以内に解決すること。重要な欠陥は取締役会監査委員会に報告すること。"
+
+  - id: GOV-005
+    statement: "A confidential whistleblower reporting channel must be maintained and its existence communicated to all employees annually. Reports must be investigated within 10 business days of receipt."
+    severity: HIGH
+    modality: MUST
+    tags: [whistleblower, reporting-channel, investigation]
+    org_scope: [governance/corporate]
+    applies_to_surfaces: [human_action]
+    norm_tier: CORPORATE_POLICY
+    norm_authority: "Whistleblower Protection Act (Japan)"
+    locale: en
+    statement_translations:
+      ja: "機密の内部通報窓口を維持し、その存在を年1回全従業員に周知すること。通報は受領後10営業日以内に調査を開始すること。"

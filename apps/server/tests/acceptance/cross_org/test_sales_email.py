@@ -11,8 +11,12 @@ This test mocks the LLM per CLAUDE.md §13 rule 15.
 
 from __future__ import annotations
 
+from rulerepo_server.domain.evaluation import EvaluationContext, Verdict
 from rulerepo_server.domain.remediation import PolymorphicRemediation, RemediationKind
+from rulerepo_server.domain.scope import DOMAIN_KEY, SUBJECT_TYPE_KEY, matches_scope_dimensions
 from rulerepo_server.domain.subject import EvaluationSubject, SubjectKind
+from rulerepo_server.services.evaluation.context_assembler import assemble_context_from_subject
+from rulerepo_server.services.evaluation.kind_dispatch import partition_by_kind
 
 
 class TestSalesEmail:
@@ -105,3 +109,74 @@ class TestSalesEmail:
             RemediationKind.BLOCK,
         }
         assert all_kinds == expected
+
+    # ------------------------------------------------------------------
+    # Polymorphic context assembly (Proposal 1)
+    # ------------------------------------------------------------------
+
+    def test_context_assembly_from_document_subject(self) -> None:
+        """assemble_context_from_subject builds document context for email."""
+        subject = EvaluationSubject(
+            kind=SubjectKind.DOCUMENT,
+            payload={
+                "text": "Our supplement is clinically proven to cure diabetes.",
+                "document_type": "email",
+            },
+        )
+        ctx = assemble_context_from_subject(subject)
+
+        assert ctx.surface == "document"
+        assert ctx.diff is None
+        assert ctx.files_changed == []
+        assert "clinically proven" in (ctx.narrative or "")
+
+    # ------------------------------------------------------------------
+    # Structured scope (Proposal 2)
+    # ------------------------------------------------------------------
+
+    def test_sales_communication_scope_matches(self) -> None:
+        """A sales/communication rule matches sales communication query."""
+        rule_scope = {DOMAIN_KEY: "sales", SUBJECT_TYPE_KEY: "communication"}
+        query_dims = {DOMAIN_KEY: "sales", SUBJECT_TYPE_KEY: "communication"}
+        assert matches_scope_dimensions(rule_scope, query_dims) is True
+
+    def test_sales_rule_does_not_match_engineering(self) -> None:
+        """A sales rule does not match an engineering query."""
+        rule_scope = {DOMAIN_KEY: "sales", SUBJECT_TYPE_KEY: "communication"}
+        query_dims = {DOMAIN_KEY: "engineering"}
+        assert matches_scope_dimensions(rule_scope, query_dims) is False
+
+    # ------------------------------------------------------------------
+    # Kind dispatch (Proposal 3)
+    # ------------------------------------------------------------------
+
+    def test_normative_email_rules_go_to_llm(self) -> None:
+        """Normative rules about email content require LLM judgment."""
+        rules = [
+            {
+                "id": "r-pharma",
+                "kind": "normative",
+                "statement": "Sales emails MUST NOT contain unverified health claims.",
+            },
+            {
+                "id": "r-privacy",
+                "kind": "normative",
+                "statement": "Customer PII MUST NOT be shared without consent.",
+            },
+        ]
+        llm_rules, local_rules = partition_by_kind(rules)
+        assert len(llm_rules) == 2
+        assert len(local_rules) == 0
+
+    def test_principle_rule_allows_without_llm(self) -> None:
+        """A principle rule about communication standards returns ALLOW locally."""
+        from rulerepo_server.services.evaluation.kind_dispatch import evaluate_local
+
+        rule = {
+            "id": "r-principle-comms",
+            "kind": "principle",
+            "statement": "All external communications must be honest and transparent.",
+        }
+        verdict, _, _ = evaluate_local(rule, EvaluationContext())
+        assert verdict.verdict == Verdict.ALLOW
+        assert "principle" in verdict.reasoning.lower()

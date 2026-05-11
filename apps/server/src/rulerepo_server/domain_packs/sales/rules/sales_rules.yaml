@@ -1,0 +1,62 @@
+rules:
+  - id: SAL-001
+    statement: "Standard discount rates must not exceed 15% off list price. Discounts between 15% and 30% require Sales Director approval. Discounts exceeding 30% require VP of Sales or CEO approval."
+    severity: HIGH
+    modality: MUST_NOT
+    tags: [discount, pricing, approval-authority]
+    org_scope: [sales/discount]
+    applies_to_surfaces: [transaction, document]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "標準割引率は定価の15%を超えてはならない。15%〜30%の割引には営業部長の承認が必要。30%を超える割引にはVP営業またはCEOの承認が必要。"
+
+  - id: SAL-002
+    statement: "Resale price maintenance is prohibited. Sales agreements must not include clauses that fix, set, or recommend minimum resale prices to distributors or retailers."
+    severity: CRITICAL
+    modality: MUST_NOT
+    tags: [competition-law, resale-price, anti-trust]
+    org_scope: [sales/pricing]
+    applies_to_surfaces: [document, contract]
+    norm_tier: LAW
+    norm_authority: "Antimonopoly Act Article 2(9)(iv) (Japan)"
+    locale: en
+    statement_translations:
+      ja: "再販売価格の拘束は禁止。販売契約に販売店・小売店への最低再販価格の固定・設定・推奨条項を含めてはならない。"
+
+  - id: SAL-003
+    statement: "All competitive bids and multi-vendor proposals must document the selection criteria, evaluation scores, and rationale for the chosen vendor. Records must be retained for 7 years."
+    severity: HIGH
+    modality: MUST
+    tags: [competitive-bid, documentation, procurement, record-retention]
+    org_scope: [sales/proposal]
+    applies_to_surfaces: [document]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "競合入札および複数ベンダー提案においては、選定基準、評価スコア、選定理由を文書化すること。記録は7年間保存すること。"
+
+  - id: SAL-004
+    statement: "Customer-facing product claims must be accurate and substantiated. Unverified performance claims, misleading comparisons with competitors, or guarantees without legal review are prohibited."
+    severity: HIGH
+    modality: MUST_NOT
+    tags: [customer-communication, accuracy, misleading-claims]
+    org_scope: [sales/communication]
+    applies_to_surfaces: [message, document]
+    norm_tier: CORPORATE_POLICY
+    norm_authority: "Act against Unjustifiable Premiums and Misleading Representations (Japan)"
+    locale: en
+    statement_translations:
+      ja: "顧客向けの製品表示は正確で根拠のあるものでなければならない。未検証の性能表示、競合他社との誤解を招く比較、法務レビューなしの保証は禁止。"
+
+  - id: SAL-005
+    statement: "Volume discount agreements must include a sunset clause with a maximum term of 12 months. Automatic renewal without re-evaluation of market conditions is prohibited."
+    severity: MEDIUM
+    modality: MUST
+    tags: [volume-discount, contract-term, sunset-clause]
+    org_scope: [sales/discount]
+    applies_to_surfaces: [document, contract]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "ボリュームディスカウント契約には最長12ヶ月のサンセット条項を含めること。市場状況の再評価なしの自動更新は禁止。"

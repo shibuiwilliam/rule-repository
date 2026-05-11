@@ -1,7 +1,9 @@
 """Handbook extractor — extracts rules from employee handbooks and operational manuals.
 
 More forgiving structure than regulations; uses section headings to organize
-extracted rules. See CLAUDE.md §14.11.
+extracted rules. Detects HR-specific scope (employment type, position level)
+and labor agreement references.
+See CLAUDE.md §14.11, IMPROVEMENT.md §3 提案5.
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ _HEADING_PATTERNS = [
 _NORMATIVE_JP = [
     "しなければならない",
     "してはならない",
+    "てはならない",
     "するものとする",
     "禁止する",
     "義務とする",
@@ -43,12 +46,44 @@ _NORMATIVE_EN = [
     "it is mandatory",
 ]
 
+# ---------------------------------------------------------------------------
+# HR-specific scope detection
+# ---------------------------------------------------------------------------
+
+# Employment type patterns (雇用区分)
+_EMPLOYMENT_TYPE_JP = re.compile(
+    r"(正社員|正規社員|契約社員|パート(?:タイム)?|アルバイト|派遣社員|嘱託社員|臨時社員|非正規)"
+)
+_EMPLOYMENT_TYPE_EN = re.compile(
+    r"(full[- ]?time|part[- ]?time|contract\s+employee|temporary|intern|probationary)",
+    re.IGNORECASE,
+)
+
+# Position level patterns (職位)
+_POSITION_LEVEL_JP = re.compile(r"(管理職|一般社員|役員|取締役|部長|課長|係長|主任|新入社員)")
+_POSITION_LEVEL_EN = re.compile(
+    r"(manager|executive|director|supervisor|officer|senior|junior|entry[- ]?level|lead)",
+    re.IGNORECASE,
+)
+
+# ---------------------------------------------------------------------------
+# Labor agreement reference patterns (労使協定)
+# ---------------------------------------------------------------------------
+_LABOR_AGREEMENT_JP = re.compile(r"(労使協定|三六協定|36協定|労働協約|就業規則|賃金規程|退職金規程|育児介護休業規程)")
+_LABOR_AGREEMENT_EN = re.compile(
+    r"(collective\s+(?:bargaining\s+)?agreement|labor\s+agreement|employment\s+regulations"
+    r"|work\s+rules|salary\s+regulations|retirement\s+benefit\s+plan)",
+    re.IGNORECASE,
+)
+
 
 class HandbookExtractor:
     """Extracts rules from employee handbooks and operational manuals.
 
     Unlike the regulation extractor, this handles less formal structure:
     section headings, bullet lists, and paragraph-level normative statements.
+    Detects HR-specific scope (employment type, position level) and labor
+    agreement references.
     """
 
     source_types = ["handbook", "manual", "employee_handbook"]
@@ -86,24 +121,51 @@ class HandbookExtractor:
                 continue
 
             # Check for normative language
-            if _contains_normative(para):
-                candidates.append(
-                    CandidateRule(
-                        statement=para[:500],
-                        modality=_detect_modality(para),
-                        severity=_detect_severity(para),
-                        scope=source.metadata.get("scope", []),
-                        source_refs={
-                            "document": str(source.path),
-                            "section": current_section,
-                        },
-                        department=source.metadata.get("department", "hr"),
-                        tags=["handbook", "extracted"],
-                        context=f"Section: {current_section}" if current_section else "",
-                        applicable_subject_kinds=["event", "transaction", "document"],
-                        confidence=0.6,
-                    )
+            if not _contains_normative(para):
+                continue
+
+            # Detect HR-specific scope
+            employment_types = _detect_employment_types(para)
+            position_levels = _detect_position_levels(para)
+            labor_refs = _detect_labor_agreement_refs(para)
+
+            # Also check the current section heading for scope clues
+            if current_section:
+                employment_types.update(_detect_employment_types(current_section))
+                position_levels.update(_detect_position_levels(current_section))
+
+            source_refs: dict[str, object] = {
+                "document": str(source.path),
+                "section": current_section,
+            }
+            if employment_types:
+                source_refs["employment_types"] = sorted(employment_types)
+            if position_levels:
+                source_refs["position_levels"] = sorted(position_levels)
+            if labor_refs:
+                source_refs["labor_agreement_refs"] = sorted(labor_refs)
+
+            # Build tags
+            tags = ["handbook", "extracted"]
+            if employment_types:
+                tags.append("scoped_by_employment_type")
+            if labor_refs:
+                tags.append("labor_agreement_ref")
+
+            candidates.append(
+                CandidateRule(
+                    statement=para[:500],
+                    modality=_detect_modality(para),
+                    severity=_detect_severity(para),
+                    scope=source.metadata.get("scope", []),
+                    source_refs=source_refs,
+                    department=source.metadata.get("department", "hr"),
+                    tags=tags,
+                    context=f"Section: {current_section}" if current_section else "",
+                    applicable_subject_kinds=["event", "transaction", "document"],
+                    confidence=0.6,
                 )
+            )
 
         logger.info("handbook_extraction_complete", candidates=len(candidates))
         return candidates
@@ -127,7 +189,7 @@ def _contains_normative(text: str) -> bool:
 def _detect_modality(text: str) -> str:
     """Detect the modality of a normative statement."""
     text_lower = text.lower()
-    if any(kw in text for kw in ("してはならない", "禁止する")):
+    if any(kw in text for kw in ("してはならない", "てはならない", "禁止する")):
         return "MUST_NOT"
     if "must not" in text_lower or "shall not" in text_lower or "is prohibited" in text_lower:
         return "MUST_NOT"
@@ -149,3 +211,38 @@ def _detect_severity(text: str) -> str:
     if any(kw in text or kw in text_lower for kw in high_indicators):
         return "HIGH"
     return "MEDIUM"
+
+
+# ---------------------------------------------------------------------------
+# HR-specific scope detection helpers
+# ---------------------------------------------------------------------------
+
+
+def _detect_employment_types(text: str) -> set[str]:
+    """Detect employment type mentions in text."""
+    found: set[str] = set()
+    for m in _EMPLOYMENT_TYPE_JP.finditer(text):
+        found.add(m.group(1))
+    for m in _EMPLOYMENT_TYPE_EN.finditer(text):
+        found.add(m.group(1).lower())
+    return found
+
+
+def _detect_position_levels(text: str) -> set[str]:
+    """Detect position level mentions in text."""
+    found: set[str] = set()
+    for m in _POSITION_LEVEL_JP.finditer(text):
+        found.add(m.group(1))
+    for m in _POSITION_LEVEL_EN.finditer(text):
+        found.add(m.group(1).lower())
+    return found
+
+
+def _detect_labor_agreement_refs(text: str) -> set[str]:
+    """Detect labor agreement references in text."""
+    found: set[str] = set()
+    for m in _LABOR_AGREEMENT_JP.finditer(text):
+        found.add(m.group(1))
+    for m in _LABOR_AGREEMENT_EN.finditer(text):
+        found.add(m.group(1).lower())
+    return found

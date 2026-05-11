@@ -37,6 +37,7 @@ from rulerepo_server.api.v1.risks import router as risks_router
 from rulerepo_server.api.v1.rules import router as rules_router
 from rulerepo_server.api.v1.search import router as search_router
 from rulerepo_server.api.v1.snapshots import router as snapshots_router
+from rulerepo_server.api.v1.submissions import router as submissions_router
 from rulerepo_server.api.v1.translations import router as translations_router
 from rulerepo_server.api.v1.upcoming_changes import router as upcoming_changes_router
 
@@ -79,6 +80,7 @@ v1_router.include_router(lineage_router)
 v1_router.include_router(assistant_router)
 v1_router.include_router(cockpit_router)
 v1_router.include_router(events_ingest_router)
+v1_router.include_router(submissions_router)
 
 
 @v1_router.get("/health", tags=["health"])

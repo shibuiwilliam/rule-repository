@@ -14,6 +14,10 @@ class SearchQuery(BaseModel):
     modality: Modality | None = None
     severity: Severity | None = None
     tags: list[str] | None = None
+    language: str | None = Field(
+        default=None,
+        description="Filter by primary language (ISO 639-1, e.g. 'ja', 'en').",
+    )
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=20, ge=1, le=100)
 
@@ -26,6 +30,10 @@ class CategorySearchQuery(BaseModel):
     severity: Severity | None = None
     tags: list[str] | None = None
     status: str | None = None
+    language: str | None = Field(
+        default=None,
+        description="Filter by primary language (ISO 639-1, e.g. 'ja', 'en').",
+    )
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=20, ge=1, le=100)
 

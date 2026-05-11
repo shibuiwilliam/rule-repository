@@ -207,7 +207,7 @@ async def _load_templates(client) -> None:  # type: ignore[no-untyped-def]
                 "violation_examples": rule.get("violation_examples", []),
             }
             # Phase 7b fields
-            for field in ("applicable_subject_types", "jurisdiction", "legal_force", "review_cadence"):
+            for field in ("applicable_subject_types", "jurisdiction", "legal_force", "review_cadence", "kind"):
                 if rule.get(field):
                     item[field] = rule[field]
             import_rules.append(item)

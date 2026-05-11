@@ -1,0 +1,64 @@
+rules:
+  - id: LEG-001
+    statement: "Personal information must be collected only to the extent necessary for the specified purpose, and the purpose of use must be disclosed to the data subject at or before the time of collection."
+    severity: CRITICAL
+    modality: MUST
+    tags: [privacy, appi, personal-data, purpose-limitation]
+    org_scope: [legal/privacy]
+    applies_to_surfaces: [document, human_action]
+    norm_tier: LAW
+    norm_authority: "Act on the Protection of Personal Information (APPI), Articles 17-18"
+    locale: en
+    statement_translations:
+      ja: "個人情報は特定された利用目的の達成に必要な範囲でのみ取得し、取得時またはそれ以前に利用目的を本人に通知または公表しなければならない。"
+
+  - id: LEG-002
+    statement: "Transfer of personal information to a third party requires prior consent of the data subject, unless an exception under Article 27 of the APPI applies."
+    severity: CRITICAL
+    modality: MUST
+    tags: [privacy, appi, third-party-transfer, consent]
+    org_scope: [legal/privacy]
+    applies_to_surfaces: [document, human_action]
+    norm_tier: LAW
+    norm_authority: "APPI Article 27"
+    locale: en
+    statement_translations:
+      ja: "個人情報の第三者提供には本人の事前同意が必要。ただしAPPI第27条の例外に該当する場合を除く。"
+
+  - id: LEG-003
+    statement: "All employees must complete anti-bribery training annually. Records of completion must be retained for at least 5 years."
+    severity: HIGH
+    modality: MUST
+    tags: [anti-bribery, training, compliance, record-retention]
+    org_scope: [legal/compliance]
+    applies_to_surfaces: [human_action]
+    norm_tier: CORPORATE_POLICY
+    norm_authority: "Unfair Competition Prevention Act (Japan), FCPA (US)"
+    locale: en
+    statement_translations:
+      ja: "全従業員は年1回の贈収賄防止研修を受講すること。受講記録は最低5年間保存すること。"
+
+  - id: LEG-004
+    statement: "Intellectual property created by employees in the scope of their employment belongs to the company. Invention disclosures must be filed within 30 days of conception."
+    severity: HIGH
+    modality: MUST
+    tags: [ip, invention, patent, disclosure]
+    org_scope: [legal/ip]
+    applies_to_surfaces: [document, human_action]
+    norm_tier: CORPORATE_POLICY
+    norm_authority: "Patent Act Article 35 (Japan)"
+    locale: en
+    statement_translations:
+      ja: "業務範囲で従業員が創作した知的財産は会社に帰属する。発明届は着想から30日以内に提出すること。"
+
+  - id: LEG-005
+    statement: "Regulatory filings (tax returns, annual reports, statutory disclosures) must be submitted by their statutory deadlines. A compliance calendar must be maintained and reviewed monthly."
+    severity: CRITICAL
+    modality: MUST
+    tags: [regulatory-filing, deadline, compliance-calendar]
+    org_scope: [legal/regulatory]
+    applies_to_surfaces: [document, human_action]
+    norm_tier: GUIDELINE
+    locale: en
+    statement_translations:
+      ja: "規制上の届出（税務申告、年次報告、法定開示）は法定期限までに提出すること。コンプライアンスカレンダーを維持し、毎月確認すること。"

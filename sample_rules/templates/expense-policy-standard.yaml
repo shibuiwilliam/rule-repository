@@ -264,6 +264,7 @@ rules:
     expense exemption.
   modality: MUST_NOT
   severity: HIGH
+  kind: computational
   scope:
   - finance/expenses/jp
   - finance/entertainment
@@ -324,6 +325,7 @@ rules:
     approved by the department head.
   modality: MUST
   severity: HIGH
+  kind: procedural
   scope:
   - finance/expenses/jp
   tags:

@@ -1,0 +1,10 @@
+name: it_security
+version: 0.1.0
+display_name: IT Security Pack
+description: Access control policies, incident response procedures, infrastructure security, and vulnerability management
+surfaces: [human_action, document, code]
+required_adapters: []
+default_scopes: [security/access-control, security/incident, security/infrastructure, security/vulnerability]
+ui_routes: [/security/access, /security/incidents, /security/vulnerabilities, /security/audit]
+seed_rules_path: rules/
+persona: security

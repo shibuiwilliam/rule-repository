@@ -2,22 +2,36 @@ rules:
   - statement: "Monthly overtime hours MUST NOT exceed 45 hours per employee unless a special-clause 36-agreement is in effect."
     modality: MUST_NOT
     severity: CRITICAL
+    kind: computational
     scope: [hr/overtime]
     tags: [overtime, 36-agreement, labor-standards-act]
     rationale: "Article 36 of the Labor Standards Act caps ordinary overtime at 45 hours per month. Exceeding this without a special clause violates the law."
     applicable_subject_types: [event]
     jurisdiction: JP
     legal_force: statutory
+    constraints:
+      - type: numeric
+        field_path: monthly_overtime_hours
+        operator: "<="
+        threshold: 45
+        unit: hours
 
   - statement: "Annual overtime hours MUST NOT exceed 360 hours per employee unless a special-clause 36-agreement is in effect."
     modality: MUST_NOT
     severity: CRITICAL
+    kind: computational
     scope: [hr/overtime]
     tags: [overtime, 36-agreement, annual-cap, labor-standards-act]
     rationale: "Article 36 of the Labor Standards Act sets the annual overtime cap at 360 hours. This is a hard legal limit absent a special clause."
     applicable_subject_types: [event]
     jurisdiction: JP
     legal_force: statutory
+    constraints:
+      - type: numeric
+        field_path: annual_overtime_hours
+        operator: "<="
+        threshold: 360
+        unit: hours
 
   - statement: "A valid 36-agreement (saburoku kyoutei) MUST be filed with the Labor Standards Inspection Office before any overtime or holiday work is assigned."
     modality: MUST
@@ -32,12 +46,19 @@ rules:
   - statement: "A minimum rest period of 11 hours MUST be ensured between the end of one work shift and the start of the next."
     modality: MUST
     severity: HIGH
+    kind: computational
     scope: [hr/attendance, hr/overtime]
     tags: [rest-period, interval, health-safety]
     rationale: "The interval rest provision (effort obligation under the Work Style Reform Act) protects employee health by ensuring adequate recovery time between shifts."
     applicable_subject_types: [event]
     jurisdiction: JP
     legal_force: statutory
+    constraints:
+      - type: numeric
+        field_path: rest_period_hours
+        operator: ">="
+        threshold: 11
+        unit: hours
 
   - statement: "Late-night work (22:00-05:00) MUST NOT be assigned to employees under 18 years of age."
     modality: MUST_NOT

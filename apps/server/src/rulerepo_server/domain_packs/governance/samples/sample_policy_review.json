@@ -1,0 +1,38 @@
+{
+  "description": "Sample policy review event for governance compliance testing",
+  "surface": "human_action",
+  "identifier": "grc:policy-review:POL-2026-018",
+  "payload": {
+    "action_type": "policy_review_request",
+    "policy_id": "POL-FIN-003",
+    "policy_title": "Travel and Entertainment Expense Policy",
+    "policy_owner": "CFO",
+    "last_reviewed_date": "2024-08-15",
+    "review_status": "overdue",
+    "days_since_last_review": 635,
+    "related_commitment_amount": 15000000,
+    "approval_level": "department_head",
+    "conflict_of_interest_disclosed": false
+  },
+  "facts": {
+    "staleness_threshold_months": 18,
+    "delegation_threshold_jpy": 10000000,
+    "required_approval_level": "director",
+    "audit_findings_pending": 2
+  },
+  "actor": {
+    "kind": "human",
+    "identifier": "emp:C005",
+    "attributes": {
+      "department": "Compliance",
+      "job_title": "Compliance Officer",
+      "employee_id": "C005"
+    }
+  },
+  "timestamp": "2026-05-11T09:00:00+09:00",
+  "_evaluation_notes": [
+    "GOV-001: Policy last reviewed 635 days ago (>18 months) - VIOLATION, auto-stale",
+    "GOV-002: Commitment of 15M JPY approved by department_head, but threshold requires director-level - VIOLATION",
+    "GOV-003: conflict_of_interest_disclosed=false needs verification before decision proceeds - NEEDS_REVIEW"
+  ]
+}

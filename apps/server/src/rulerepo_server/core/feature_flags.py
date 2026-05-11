@@ -42,6 +42,10 @@ class FeatureFlags:
         self.multi_agent_sessions_enabled: bool = getattr(settings, "multi_agent_sessions_enabled", False)
         self.github_app_enabled: bool = getattr(settings, "github_app_enabled", False)
 
+        # Frozen features (Phase 6 freeze — default OFF)
+        self.gateway_enabled: bool = getattr(settings, "gateway_enabled", False)
+        self.advanced_observability_enabled: bool = getattr(settings, "advanced_observability_enabled", False)
+
         # Alert / Digest delivery mode
         self.alert_output_mode: str = getattr(settings, "alert_output_mode", "local")
         self.digest_output_mode: str = getattr(settings, "digest_output_mode", "local")

@@ -1,0 +1,39 @@
+{
+  "description": "Sample discount approval request for evaluation testing",
+  "surface": "transaction",
+  "identifier": "crm:deal:DEAL-2026-1847",
+  "payload": {
+    "document_type": "discount_request",
+    "deal_id": "DEAL-2026-1847",
+    "customer": "Tanaka Manufacturing Co., Ltd.",
+    "product_line": "Enterprise Platform",
+    "list_price": 5000000,
+    "proposed_discount_pct": 25,
+    "proposed_price": 3750000,
+    "discount_justification": "Competitive pressure from rival vendor offering 30% below our list price",
+    "contract_term_months": 24,
+    "auto_renewal": true,
+    "competitive_bid_conducted": false
+  },
+  "facts": {
+    "approver_title": "Sales Manager",
+    "deal_stage": "negotiation",
+    "customer_tier": "enterprise",
+    "region": "Kanto"
+  },
+  "actor": {
+    "kind": "human",
+    "identifier": "emp:S042",
+    "attributes": {
+      "department": "Sales",
+      "job_title": "Account Executive",
+      "employee_id": "S042"
+    }
+  },
+  "timestamp": "2026-05-08T11:00:00+09:00",
+  "_evaluation_notes": [
+    "SAL-001: 25% discount exceeds 15% standard limit, requires Sales Director approval (current approver is Sales Manager) - VIOLATION",
+    "SAL-005: 24-month term with auto_renewal=true violates sunset clause requirement - VIOLATION",
+    "SAL-003: competitive_bid_conducted=false, no documentation of selection criteria - NEEDS_REVIEW"
+  ]
+}

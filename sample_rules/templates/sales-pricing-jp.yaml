@@ -1,0 +1,155 @@
+version: 1
+template:
+  name: sales-pricing-jp
+  description: Japanese sales pricing rules covering discount limits, approval authority, anti-trust compliance, and competitive bidding documentation
+  tags:
+  - sales
+  - pricing
+  - japan
+  - discount
+  - anti-trust
+  - compliance
+  owning_department: sales
+  applicable_subject_kinds: [transaction, document]
+
+rules:
+- statement: 標準割引率は定価の15%を上限とする。15%を超える割引を提示する場合は、所定の特別割引承認プロセスを経なければならない。
+  modality: MUST_NOT
+  severity: HIGH
+  kind: computational
+  scope:
+  - sales/pricing/jp
+  - sales/discount
+  tags:
+  - discount
+  - standard-rate
+  - pricing-control
+  - margin-protection
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: 無制限な割引は利益率の毀損と価格体系の崩壊を招く。標準割引率の上限を設けることで、営業担当者が個別判断で過度な値引きを行うことを防止し、健全な収益管理を維持する。
+  source_refs:
+  - authority: 社内価格管理規程
+    note: 標準割引率の上限および承認フローを定める
+  preconditions:
+  - 営業担当者が顧客に対して定価からの割引を提示する場面
+  exceptions:
+  - 年間契約額が1億円を超える大口取引は、個別の価格交渉プロセスに基づき営業本部長の承認を得た上で15%超の割引が認められる場合がある
+  - 在庫処分セールなど、経営会議で承認された期間限定キャンペーンは別途定める割引率に従う
+  following_examples:
+  - 顧客に10%の割引を提示し、直属上司の確認を得て見積書を発行した
+  - 定価100万円の商品に対して12%（88万円）の見積りを提示した
+  violation_examples:
+  - 営業担当者が独断で20%の割引を顧客に口頭約束し、上長の承認なく見積書を送付した
+  - 過去の取引実績を理由に恒常的に18%の割引を適用しているが、特別割引承認を取得していない
+
+- statement: 標準割引率（15%）を超える特別割引は、割引率に応じた承認権限者の書面承認を得なければならない。15%超〜25%は営業部長承認、25%超は営業本部長承認を要する。
+  modality: MUST
+  severity: HIGH
+  kind: procedural
+  scope:
+  - sales/pricing/jp
+  - sales/discount
+  tags:
+  - discount
+  - special-discount
+  - approval-authority
+  - pricing-control
+  applicable_subject_types:
+  - transaction
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: 特別割引には収益への影響が大きいため、割引幅に応じた権限者による承認を義務付けることで、適切な牽制機能を確保する。口頭承認は証跡が残らないため書面（電子承認含む）を要件とする。
+  source_refs:
+  - authority: 社内価格管理規程
+    note: 特別割引の承認権限マトリクス
+  preconditions:
+  - 顧客に対して標準割引率（15%）を超える割引を適用する場合
+  exceptions:
+  - 経営会議で個別承認された戦略的案件は、承認議事録をもって書面承認に代えることができる
+  following_examples:
+  - 顧客から20%割引の要請を受け、営業部長の承認メールを取得した上で見積書を発行した
+  - 30%の特別割引が必要な大口案件について、営業本部長の決裁を経て契約を締結した
+  violation_examples:
+  - 22%の割引を営業課長の口頭了承のみで適用し、営業部長の書面承認を得ていない
+  - 営業部長が28%の割引を承認したが、営業本部長決裁が必要な25%超の閾値を見落としていた
+
+- statement: 再販業者に対して再販価格を拘束する行為（再販価格維持行為）を行ってはならない。希望小売価格の提示は認められるが、当該価格での販売を強制・誘導してはならない。
+  modality: MUST_NOT
+  severity: CRITICAL
+  scope:
+  - sales/pricing/jp
+  - compliance/antitrust
+  tags:
+  - resale-price-maintenance
+  - antitrust
+  - fair-trade
+  - RPM
+  - independence-of-retailers
+  applicable_subject_types:
+  - transaction
+  - document
+  jurisdiction: JP
+  legal_force: statutory
+  classification: internal
+  rationale: 再販価格維持行為は独占禁止法第2条第9項第4号（不公正な取引方法）に該当し、公正取引委員会による排除措置命令および課徴金の対象となる。再販業者の価格設定の自由を侵害する行為は、明示的な価格指定だけでなく、事実上の拘束（例：値引き販売した販売店への出荷停止示唆）も含まれる。
+  source_refs:
+  - statute: Act on Prohibition of Private Monopolization and Maintenance of Fair Trade (独占禁止法)
+    article: '2'
+    paragraph: 9-4
+    note: 不公正な取引方法としての再販価格維持行為の定義
+  - authority: JFTC (公正取引委員会)
+    note: 流通・取引慣行に関するガイドライン
+  preconditions:
+  - 自社製品を再販業者（販売代理店、小売店等）を通じて販売する取引
+  exceptions:
+  - 著作物（書籍、雑誌、新聞、音楽CD）は独占禁止法第23条により再販価格維持が例外的に認められている
+  following_examples:
+  - 販売代理店に対して希望小売価格を参考情報として提示し、実際の販売価格は代理店が自由に決定している
+  - 価格表に「メーカー希望小売価格」と明記し、拘束力がないことを書面で確認している
+  violation_examples:
+  - 販売代理店に対して「この価格以下で販売した場合は取引を停止する」と通知した
+  - 値引き販売を行った小売店に対して出荷量を削減する措置を取った
+  - 販売店会議で「統一価格を守るように」と口頭で指示した
+
+- statement: 一定金額以上の調達・外注において相見積りを取得する場合、見積書には取得日、提出元企業名、見積金額、主要条件を記載し、選定理由とともに保管しなければならない。
+  modality: MUST
+  severity: MEDIUM
+  scope:
+  - sales/pricing/jp
+  - sales/bidding
+  - procurement/jp
+  tags:
+  - competitive-bid
+  - quotation
+  - documentation
+  - transparency
+  - audit-trail
+  applicable_subject_types:
+  - transaction
+  - document
+  jurisdiction: JP
+  legal_force: policy
+  classification: internal
+  rationale: 相見積りの記録を適切に保管することで、価格決定の透明性を確保し、社内監査および税務調査に対応できる。記録不備は、内部統制の不備として監査指摘事項となるほか、下請法上の問題（買い叩き等）の証跡としても重要となる。
+  source_refs:
+  - authority: 社内購買管理規程
+    note: 相見積り取得基準および保管要件
+  - statute: Act against Delay in Payment of Subcontract Proceeds, Etc. to Subcontractors (下請代金支払遅延等防止法)
+    note: 下請法における価格決定の公正性確保に関連
+  preconditions:
+  - 調達金額が社内規程で定める相見積り取得基準額を超える場合
+  exceptions:
+  - 緊急調達（災害対応等）で複数見積りの取得が困難な場合は、事後に理由書を添えて1社見積りで処理できる
+  - 特許技術等により供給元が限定される場合は、技術的必然性を記録した上で随意契約が認められる
+  following_examples:
+  - 500万円の外注案件について3社から見積りを取得し、見積比較表に各社の金額・納期・条件を記載の上、選定理由を付して稟議書に添付した
+  - 相見積り一覧表に取得日（2025年4月1日）、提出元（A社、B社、C社）、金額、および選定理由「コスト・納期・実績の総合評価」を記載した
+  violation_examples:
+  - 1,000万円の外注契約を相見積りなしで特定の1社と締結し、選定理由の記録もない
+  - 相見積りは取得したが、見積書のコピーを保管しておらず、監査時に提示できなかった
+  - 見積比較表に金額のみ記載し、取得日や選定理由が欠落している

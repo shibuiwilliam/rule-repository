@@ -7,6 +7,8 @@ import { usePersona, PERSONA_SECTIONS, PersonaSwitcher } from "./PersonaSwitcher
 import { PersonaSwitcher as PortalSwitcher } from "@/components/PersonaSwitcher";
 import { ProjectSelector } from "./ProjectSelector";
 
+const GATEWAY_ENABLED = process.env.NEXT_PUBLIC_GATEWAY_ENABLED === "true";
+
 const NAV_ITEMS = [
   // Observe
   { href: "/dashboard", key: "dashboard", section: "observe" },
@@ -30,7 +32,7 @@ const NAV_ITEMS = [
   { href: "/playground", key: "playground", section: "use" },
   // Enforce
   { href: "/review", key: "review", section: "enforce" },
-  { href: "/gateway", key: "gateway", section: "enforce" },
+  ...(GATEWAY_ENABLED ? [{ href: "/gateway", key: "gateway", section: "enforce" }] : []),
   { href: "/federations", key: "federations", section: "enforce" },
   // Settings
   { href: "/projects", key: "projects", section: "settings" },

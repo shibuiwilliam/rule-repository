@@ -1,11 +1,10 @@
 """Polyglot rule equivalence validator worker.
 
-Per CLAUDE.md Tier 4.3: validates that rules sharing an equivalence_id
-are semantically equivalent across languages. Detects polyglot drift
-and fires alerts when translations diverge.
+Per CLAUDE.md §9: validates that rules sharing an equivalence_id
+are semantically equivalent across languages.  Detects polyglot drift
+and logs warnings when translations diverge.
 
-This is a stub implementation. Full LLM-based semantic comparison
-requires the Tier 3 LLM provider abstraction to be in place.
+Runs weekly (Sunday 6 AM) via arq cron.
 """
 
 from __future__ import annotations
@@ -20,12 +19,8 @@ async def validate_polyglot_equivalence(ctx: dict) -> None:
 
     For each set of rules sharing an equivalence_id:
     1. Fetch all rules in the equivalence group.
-    2. Compare translations pairwise for semantic equivalence.
-    3. Fire a polyglot_drift alert if divergence is detected.
-
-    This stub queries for rules with equivalence_id set, groups them,
-    and logs the monitoring intent. Actual LLM comparison is deferred
-    until the LLM provider abstraction (Tier 3) is available.
+    2. Use the PolyglotVerifier to compare translations pairwise.
+    3. Log warnings when drift is detected.
 
     Args:
         ctx: arq worker context dict.
@@ -38,40 +33,68 @@ async def validate_polyglot_equivalence(ctx: dict) -> None:
 
         from rulerepo_server.adapters.postgres.models import RuleModel
         from rulerepo_server.core.config import get_settings
+        from rulerepo_server.services.polyglot.verifier import PolyglotVerifier
 
         settings = get_settings()
         engine = create_async_engine(settings.database_url)
         factory = async_sessionmaker(engine, expire_on_commit=False)
         session: AsyncSession = factory()
 
+        gemini_client = None
         try:
-            # Query rules that have an equivalence_id set
+            from rulerepo_server.adapters.gemini.client import get_gemini_client
+
+            gemini_client = get_gemini_client()
+        except Exception:
+            logger.info("polyglot_validator_no_gemini", message="Running with heuristic fallback")
+
+        verifier = PolyglotVerifier(session, gemini_client)
+
+        try:
+            # Query active rules that have an equivalence_id set.
             result = await session.execute(
                 select(RuleModel).where(
                     RuleModel.status.in_(["APPROVED", "EFFECTIVE"]),
+                    RuleModel.equivalence_id.isnot(None),
                 )
             )
             rules = list(result.scalars().all())
 
-            # Group by equivalence_id (filter rules that have the attribute)
+            # Group by equivalence_id.
             groups: dict[str, list] = {}
             for rule in rules:
-                eq_id = getattr(rule, "equivalence_id", None)
+                eq_id = rule.equivalence_id
                 if eq_id:
                     groups.setdefault(eq_id, []).append(rule)
 
-            equivalence_group_count = len(groups)
-            total_rules_in_groups = sum(len(g) for g in groups.values())
+            drift_count = 0
+            groups_checked = 0
+
+            for eq_id, group_rules in groups.items():
+                if len(group_rules) < 2:
+                    continue
+
+                groups_checked += 1
+
+                # Pick the first rule as primary; others are translations.
+                primary = group_rules[0]
+                translations = {r.locale: r.statement for r in group_rules[1:]}
+
+                report = await verifier.verify_equivalence(
+                    rule_id=str(primary.id),
+                    primary_statement=primary.statement,
+                    primary_language=primary.locale or "en",
+                    translations=translations,
+                )
+
+                if report.has_drift:
+                    drift_count += 1
 
             logger.info(
-                "polyglot_validator_scan_complete",
-                equivalence_groups=equivalence_group_count,
-                rules_in_groups=total_rules_in_groups,
-                message=(
-                    f"Would check {equivalence_group_count} equivalence groups "
-                    f"containing {total_rules_in_groups} rules for semantic drift. "
-                    "LLM comparison deferred until Tier 3 provider abstraction."
-                ),
+                "polyglot_validator_complete",
+                equivalence_groups=len(groups),
+                groups_checked=groups_checked,
+                drift_detected=drift_count,
             )
         finally:
             await session.close()

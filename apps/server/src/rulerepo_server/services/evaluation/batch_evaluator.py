@@ -43,6 +43,18 @@ MAX_PROMPT_CHARS = 30_000
 MAX_DIFF_CHARS = 8_000
 
 
+class _LenientFormatMap(dict[str, str]):
+    """Dict subclass that returns an empty string for missing keys.
+
+    Used with ``str.format_map`` so that surface-specific templates can
+    reference variables that only exist for their surface without raising
+    ``KeyError`` for other surfaces.
+    """
+
+    def __missing__(self, key: str) -> str:
+        return ""
+
+
 def _resolve_surface(surface_str: str | None) -> Surface | None:
     """Resolve a surface string to a Surface enum value."""
     if surface_str is None:
@@ -227,10 +239,15 @@ async def evaluate_batch(
     *,
     surface: Surface | str | None = None,
 ) -> list[tuple[RuleVerdict, str, int]]:
-    """Evaluate multiple rules in a single batched LLM call.
+    """Evaluate multiple rules, dispatching by kind before LLM call.
+
+    Rules are first partitioned by ``kind`` (IMPROVEMENT.md Proposal 3).
+    Non-normative rules (COMPUTATIONAL, PROCEDURAL, DEFINITIONAL, PRINCIPLE)
+    are evaluated locally without consuming LLM tokens.  NORMATIVE rules
+    are sent to the LLM as before.
 
     Args:
-        rules: List of rule dicts with id, statement, modality, severity.
+        rules: List of rule dicts with id, statement, modality, severity, kind.
         context: The evaluation context (diff, facts, etc.).
         gemini_client: Gemini API client.
         cache_repo: Optional LLM cache repository.
@@ -238,48 +255,100 @@ async def evaluate_batch(
         surface: Evaluation surface for schema selection.
 
     Returns:
-        List of (RuleVerdict, model_id, latency_ms) tuples, one per rule.
-        Falls back to per-rule evaluation on failure.
+        List of (RuleVerdict, model_id, latency_ms) tuples, one per rule,
+        in the same order as the input ``rules`` list.
     """
     if not rules:
         return []
 
     resolved = _resolve_surface(surface) if isinstance(surface, str) else surface
 
-    # For single rules, use the per-rule path directly
-    if len(rules) == 1:
-        return [
-            await evaluate_rule(
-                rules[0],
-                context,
-                gemini_client,
-                cache_repo,
-                surface=resolved,
-            )
-        ]
+    # --- Kind-based dispatch (Proposal 3) ---
+    from rulerepo_server.services.evaluation.kind_dispatch import (
+        evaluate_local,
+        partition_by_kind,
+    )
 
-    try:
-        return await _batch_evaluate_impl(
-            rules,
-            context,
-            gemini_client,
-            cache_repo,
-            evaluation_plan,
-            surface=resolved,
+    llm_rules, local_rules = partition_by_kind(rules)
+
+    # Evaluate local rules without LLM.
+    local_results: dict[str, tuple[RuleVerdict, str, int]] = {}
+    for rule in local_rules:
+        local_results[rule["id"]] = evaluate_local(rule, context)
+
+    if local_rules:
+        logger.info(
+            "kind_dispatch_local_batch",
+            local_count=len(local_rules),
+            llm_count=len(llm_rules),
         )
-    except Exception as exc:
-        logger.warning(
-            "batch_evaluation_fallback",
-            error=str(exc),
-            rule_count=len(rules),
-        )
-        return await _fallback_per_rule(
-            rules,
-            context,
-            gemini_client,
-            cache_repo,
-            surface=resolved,
-        )
+
+    # Evaluate LLM (normative) rules via the existing batch path.
+    llm_results_list: list[tuple[RuleVerdict, str, int]] = []
+    if llm_rules:
+        if len(llm_rules) == 1:
+            llm_results_list = [
+                await evaluate_rule(
+                    llm_rules[0],
+                    context,
+                    gemini_client,
+                    cache_repo,
+                    surface=resolved,
+                )
+            ]
+        else:
+            try:
+                llm_results_list = await _batch_evaluate_impl(
+                    llm_rules,
+                    context,
+                    gemini_client,
+                    cache_repo,
+                    evaluation_plan,
+                    surface=resolved,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "batch_evaluation_fallback",
+                    error=str(exc),
+                    rule_count=len(llm_rules),
+                )
+                llm_results_list = await _fallback_per_rule(
+                    llm_rules,
+                    context,
+                    gemini_client,
+                    cache_repo,
+                    surface=resolved,
+                )
+
+    # Build a lookup of LLM results by rule ID.
+    llm_results: dict[str, tuple[RuleVerdict, str, int]] = {}
+    for rule, result in zip(llm_rules, llm_results_list, strict=False):
+        llm_results[rule["id"]] = result
+
+    # Reassemble results in the original rule order.
+    results: list[tuple[RuleVerdict, str, int]] = []
+    for rule in rules:
+        rid = rule["id"]
+        if rid in local_results:
+            results.append(local_results[rid])
+        elif rid in llm_results:
+            results.append(llm_results[rid])
+        else:
+            results.append(
+                (
+                    RuleVerdict(
+                        rule_id=rid,
+                        rule_statement=rule.get("statement", ""),
+                        verdict=Verdict.NEEDS_CONFIRMATION,
+                        confidence=0.0,
+                        reasoning="Rule was not evaluated due to dispatch error.",
+                    ),
+                    "error",
+                    0,
+                )
+            )
+
+    return results
 
 
 async def _batch_evaluate_impl(
@@ -301,26 +370,22 @@ async def _batch_evaluate_impl(
 
     template = _select_template(context)
 
-    if context.surface == "code" or (context.surface is None and context.diff):
-        # Code surface: use diff-specific template variables
-        diff_text = context.diff[:MAX_DIFF_CHARS] if context.diff else ""
-        file_paths = ", ".join(context.file_paths[:20]) if context.file_paths else "unknown"
-        prompt = template.format(
-            rules_block=rules_block,
-            diff=diff_text,
-            file_paths=file_paths,
-            relationships_block=relationships_block,
-        )
-    else:
-        # All non-code surfaces: use facts-based template variables
-        facts_text = json.dumps(context.facts, default=str) if context.facts else "{}"
-        prompt = template.format(
-            rules_block=rules_block,
-            intent=context.intent or "",
-            facts=facts_text,
-            narrative=context.narrative or "No narrative provided",
-            relationships_block=relationships_block,
-        )
+    # Build a universal set of template variables.  Each surface-specific
+    # template picks the variables it needs; unused variables are silently
+    # ignored by str.format_map via _LenientFormatMap.
+    template_vars: dict[str, str] = {
+        "rules_block": rules_block,
+        "relationships_block": relationships_block,
+        # Code-surface variables (populated from EvaluationContext fields
+        # that the code surface adapter sets; empty for non-code surfaces).
+        "diff": (context.diff or "")[:MAX_DIFF_CHARS],
+        "file_paths": ", ".join(context.file_paths[:20]) if context.file_paths else "",
+        # Non-code / generic variables
+        "intent": context.intent or "",
+        "facts": json.dumps(context.facts, default=str) if context.facts else "{}",
+        "narrative": context.narrative or "No narrative provided",
+    }
+    prompt = template.format_map(_LenientFormatMap(template_vars))
 
     # Check prompt size — if too large, fall back
     if len(prompt) > MAX_PROMPT_CHARS:

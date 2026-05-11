@@ -74,6 +74,7 @@ rules:
     Inspection Office.
   modality: MUST_NOT
   severity: CRITICAL
+  kind: procedural
   scope:
   - hr/attendance/jp
   tags:
@@ -102,6 +103,7 @@ rules:
 - statement: Monthly overtime hours MUST NOT exceed 45 hours under the general 36 Agreement limit.
   modality: MUST_NOT
   severity: HIGH
+  kind: computational
   scope:
   - hr/attendance/jp
   tags:
@@ -131,6 +133,7 @@ rules:
 - statement: Annual overtime hours MUST NOT exceed 360 hours under the general 36 Agreement limit.
   modality: MUST_NOT
   severity: HIGH
+  kind: computational
   scope:
   - hr/attendance/jp
   tags:
@@ -159,6 +162,7 @@ rules:
     and the average over any 2-6 month period MUST NOT exceed 80 hours.
   modality: MUST_NOT
   severity: CRITICAL
+  kind: computational
   scope:
   - hr/attendance/jp
   tags:
@@ -189,6 +193,7 @@ rules:
 - statement: Annual overtime MUST NOT exceed 720 hours even under a special-clause 36 Agreement.
   modality: MUST_NOT
   severity: CRITICAL
+  kind: computational
   scope:
   - hr/attendance/jp
   tags:
@@ -271,6 +276,7 @@ rules:
 - statement: Employees working more than 6 hours in a day MUST be granted at least 45 minutes of break time.
   modality: MUST
   severity: HIGH
+  kind: computational
   scope:
   - hr/attendance/jp
   tags:
@@ -533,6 +539,37 @@ rules:
   - Employee works until 23:00; the hour from 22:00-23:00 is paid at 125% of base rate.
   violation_examples:
   - Employee works 22:00-01:00 but receives no late-night premium.
+- statement: 管理監督者（労働基準法第41条第2号）は労働時間・休日の規定が適用除外となるが、深夜労働（22:00-05:00）の割増賃金は適用除外とならない。深夜に勤務した管理監督者には25%以上の深夜割増賃金を支払わなければならない。
+  modality: MUST
+  severity: HIGH
+  scope:
+  - hr/attendance/jp
+  tags:
+  - late-night
+  - management-exemption
+  - premium-pay
+  - kanri-kantokusha
+  applicable_subject_types:
+  - event
+  jurisdiction: JP
+  legal_force: statutory
+  classification: confidential
+  rationale: 労働基準法第41条第2号により管理監督者は労働時間・休日・休憩の規定が適用除外されるが、同法第37条第4項の深夜割増賃金は適用除外の対象外である。管理監督者であっても深夜帯に勤務した場合は深夜割増賃金の支払義務がある。
+  source_refs:
+  - statute: Labor Standards Act (労働基準法)
+    article: '41'
+    paragraph: '2'
+    note: 管理監督者の適用除外範囲は労働時間・休日・休憩に限られ、深夜業の割増賃金は除外されない
+  preconditions:
+  - 従業員が労働基準法第41条第2号に定める管理監督者に該当する
+  - 管理監督者が深夜時間帯（22:00-05:00）に勤務した
+  exceptions:
+  - 管理監督者に該当しない名ばかり管理職は通常の時間外・休日割増賃金も必要（管理監督者性が否定される場合）
+  following_examples:
+  - 部長が23:00まで勤務し、22:00-23:00の1時間に対して25%の深夜割増賃金が支払われている
+  violation_examples:
+  - 管理監督者として扱われている課長が毎晩22:00以降まで勤務しているが、深夜割増賃金が一切支払われていない
+  - 会社の規程で管理職には深夜割増賃金を支給しないと定めている
 - statement: A pregnant employee who requests leave MUST be granted 6 weeks of prenatal leave (14 weeks for multiple pregnancy).
     Post-natal leave of 8 weeks MUST be granted regardless of request.
   modality: MUST

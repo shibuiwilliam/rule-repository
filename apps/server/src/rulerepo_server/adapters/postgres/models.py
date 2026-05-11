@@ -101,6 +101,13 @@ class RuleModel(Base):
         default="DRAFT",
     )
 
+    # Rule kind — evaluation strategy discriminator (IMPROVEMENT.md Proposal 3)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False, default="normative")
+
+    # Deterministic constraints — structured conditions for hybrid evaluation
+    # (IMPROVEMENT.md Proposal 9).  Stored as a list of constraint dicts.
+    constraints: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+
     # Maturity model (PROJECT_ENHANCE.md §2)
     maturity_level: Mapped[str] = mapped_column(String(20), nullable=False, default="experimental")
     false_positive_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -180,6 +187,48 @@ class RuleModel(Base):
     revisions: Mapped[list["RuleRevisionModel"]] = relationship(
         back_populates="rule", order_by="RuleRevisionModel.revision_number"
     )
+    translations: Mapped[list["RuleTranslationModel"]] = relationship(
+        back_populates="source_rule",
+        foreign_keys="RuleTranslationModel.source_rule_id",
+    )
+
+
+class RuleTranslationModel(Base):
+    """A translation link between two rules in different languages.
+
+    Each row records that ``target_rule_id`` is a translation of
+    ``source_rule_id``, with an equivalence score from the last
+    verification run.  The source rule's ``locale`` field is the
+    primary language; the target rule's ``locale`` is the translation
+    language.
+
+    See IMPROVEMENT.md Proposal 8.
+    """
+
+    __tablename__ = "rule_translations"
+
+    id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    source_rule_id: Mapped[str] = mapped_column(
+        Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    target_rule_id: Mapped[str] = mapped_column(
+        Uuid, ForeignKey("rules.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    target_language: Mapped[str] = mapped_column(String(10), nullable=False)
+    equivalence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    verified_by: Mapped[str] = mapped_column(String(100), nullable=False, default="system")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    source_rule: Mapped["RuleModel"] = relationship(back_populates="translations", foreign_keys=[source_rule_id])
+    target_rule: Mapped["RuleModel"] = relationship(foreign_keys=[target_rule_id])
+
+    # Unique constraint: one translation per source+target pair
+    __table_args__ = (sa.UniqueConstraint("source_rule_id", "target_rule_id", name="uq_rule_translation_pair"),)
 
 
 # ---------------------------------------------------------------------------

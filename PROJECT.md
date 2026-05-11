@@ -128,7 +128,8 @@ The following components exist in the codebase but are **disabled by default** u
 
 - **Multi-Agent Governance Sessions** — disabled via `MULTI_AGENT_SESSIONS_ENABLED=false`. Single-agent profile, personalized rules, trust levels remain active.
 - **GitHub App webhook receiver** — disabled via `GITHUB_APP_ENABLED=false`. CLI tools (`rulerepo-check`) for CI integration remain active.
-- **External webhook normalizers** (Slack, GitHub) — only the generic normalizer is active by default.
+- **Gateway / Connectors** — disabled via `GATEWAY_ENABLED=false`. Webhook ingestion, policy engine, and normalizers (Slack, Teams, Email, GitHub) are frozen. The generic normalizer is not registered when disabled.
+- **Advanced Observability** — disabled via `ADVANCED_OBSERVABILITY_ENABLED=false`. Digest delivery, agent analytics, effectiveness scoring, and cross-project comparison endpoints return 404. Core intelligence endpoints (dashboard, health, analytics, recommendations) remain active.
 
 See §11 for the full freeze policy.
 
@@ -148,10 +149,12 @@ A rule is the central first-class object. It is **not** a regex or a code expres
 | `translations` | Map of language code → translated statement; semantic equivalence verified periodically |
 | `equivalence_verified_at` | When translations were last re-verified against the primary statement |
 | `source_refs` | Pointers to the source document, section path (`clause:3.2.1`, `第36条第2項`), and offset |
-| `scope` | Who/what the rule applies to (org units, roles, systems, regions, business processes) |
+| `scope` | Legacy flat scope tags (e.g., `["engineering", "python"]`). Retained for backward compatibility |
+| `structured_scope` | Multi-axis scope with `path` + `dimensions` dict. Primary axes: `domain` (legal/hr/finance/...), `org_unit` (acme/jp/sales), `subject_type` (contract/expense/code_file). Additional attributes: `jurisdiction`, `role`, `confidentiality`, etc. |
 | `department` | Owning department (legal/hr/finance/sales/engineering/it/ga/compliance/exec/public) |
 | `modality` | MUST / MUST_NOT / SHOULD / MAY / INFO (RFC 2119-style) |
-| `kind` | Taxonomic axis: mandatory / guideline / template / informational / meta |
+| `kind` | Evaluation strategy: `normative` (LLM-as-Judge), `computational` (deterministic + optional LLM), `procedural` (state-transition verification), `definitional` (reference/lookup, no violations), `principle` (high-level intent, evaluated via derived rules) |
+| `constraints` | Optional structured deterministic constraints (numeric, date, enum). When present, the deterministic evaluator runs before the LLM (see §6.4.1) |
 | `effective_period` | `valid_from` / `valid_until` |
 | `preconditions` | Facts required to evaluate the rule |
 | `exceptions` | References to other rules or carve-outs |
@@ -245,36 +248,52 @@ When evaluation produces a denial or warning, it returns one or more `Remediatio
 
 Each kind has typed payload. `auto_applicable=true` is set only when confidence is high and the kind permits unambiguous mechanical fixes.
 
-### 5.7 Department and Membership
+### 5.7 Department, Capacity, and ABAC Policies
 
-A user belongs to one or more **departments**, each with one or more roles.
+A user belongs to one or more **departments**, each with a **capacity** (privilege level).
 
 ```python
-class Department(StrEnum):
+class DepartmentType(StrEnum):
     LEGAL = "legal"
     HR = "hr"
     FINANCE = "finance"
     SALES = "sales"
-    ENGINEERING = "engineering"
+    MARKETING = "marketing"
     IT = "it"
-    GENERAL_AFFAIRS = "ga"
-    COMPLIANCE = "compliance"
-    EXEC = "exec"
-    PUBLIC = "public"   # readable by everyone
+    OPERATIONS = "operations"
+    RND = "rnd"
+    EXECUTIVE = "executive"
+    CUSTOM = "custom"
 
-class DepartmentRole(StrEnum):
-    VIEWER = "viewer"
-    EDITOR = "editor"
-    APPROVER = "approver"
-    OWNER = "owner"
+class Capacity(StrEnum):
+    OWNER = "owner"           # All actions
+    REVIEWER = "reviewer"     # Read, edit, evaluate
+    AUDITOR = "auditor"       # Read, evaluate
+    SUBSCRIBER = "subscriber" # Read only
 ```
 
-A rule has a single owning `department`. Authorization is enforced at API and service layers:
+A rule has a single owning `department`. Authorization is ABAC-style, driven by **policies** that map `(owner_department, action)` → allowed `(principal_department, capacity)` pairs:
 
-- Listing/searching rules: filtered by caller's `viewer` membership.
-- Editing a rule: requires `editor` in that rule's department.
-- Approving / enacting a proposal: requires `approver` in that rule's department.
-- Evaluating: only rules visible to the caller participate.
+```python
+class Action(StrEnum):
+    READ = "read"
+    EDIT = "edit"
+    APPROVE = "approve"
+    EVALUATE = "evaluate"
+    DELETE = "delete"
+```
+
+**Default policy matrix:**
+
+| Action | Same-dept OWNER | Same-dept REVIEWER | Same-dept AUDITOR | Same-dept SUBSCRIBER | Cross-dept (any) |
+| --- | --- | --- | --- | --- | --- |
+| READ | Yes | Yes | Yes | Yes | **Yes** |
+| EDIT | Yes | Yes | - | - | - |
+| APPROVE | Yes | - | - | - | - |
+| EVALUATE | Yes | Yes | Yes | - | - |
+| DELETE | Yes | - | - | - | - |
+
+**Cross-department READ** is the key enabler: Engineering can read Legal rules (and vice versa), but cannot edit them. Custom policies can be configured per department via `PUT /api/v1/departments/{dept}/policies`.
 
 `Department` is **orthogonal** to Federation (§6.14). Federation governs vertical inheritance (org → team → project); Department governs horizontal ownership (which function maintains the rule).
 
@@ -354,6 +373,65 @@ The evaluation engine is the core differentiator. It accepts a `Subject` as poly
 
 The shared infrastructure (rule selector, batch evaluator, verdict aggregator, cache, audit log) is **subject-agnostic**. Only prompt templates and Remediation parsing branch by subject type.
 
+#### 6.4.1 Hybrid Evaluation Architecture (Deterministic + LLM)
+
+Rules with `kind=computational` and structured `constraints` are evaluated in a two-layer architecture:
+
+```
+Subject + Rules → [Deterministic Evaluator] → DeterministicVerdict
+                  (numeric checks, date math, enum validation)
+                ↓
+                PASS → skip LLM → ALLOW (confidence 0.95)
+                FAIL → skip LLM → DENY (confidence 0.95)
+                INDETERMINATE → [LLM Judge] → normative verdict
+```
+
+Constraint types:
+- **NumericConstraint**: `field_path`, `operator` (`<=`, `>=`, `==`, `<`, `>`, `!=`), `threshold`, `unit`. Example: `{field_path: "monthly_overtime_hours", operator: "<=", threshold: 45, unit: "hours"}`.
+- **DateConstraint**: `field_path`, `operator`, `reference_date`.
+- **EnumConstraint**: `field_path`, `allowed_values`.
+
+Constraints are stored as structured JSONB on the rule (not parsed from the statement). The deterministic evaluator resolves `field_path` against the evaluation context's `facts` dict using dot-separated path syntax (`line_items.0.amount`).
+
+Rules without constraints fall back to the legacy regex-based threshold extraction or full LLM evaluation. This layer improves latency, cost, determinism, and auditability for quantitative rules (expense caps, overtime limits, date deadlines) while preserving LLM judgment for normative interpretation.
+
+#### 6.4.2 Kind-Based Dispatch
+
+Before the LLM batch evaluator, rules are partitioned by `kind`:
+- **NORMATIVE**: sent to the LLM for full evaluation (existing path).
+- **COMPUTATIONAL**: evaluated by the Deterministic Evaluator; only INDETERMINATE results fall through to the LLM.
+- **PROCEDURAL**: checked against `steps`/`sequence` facts for ordering constraints.
+- **DEFINITIONAL**: always ALLOW — definitions are referenced by other rules.
+- **PRINCIPLE**: always ALLOW — evaluated through derived normative rules.
+
+This reduces LLM token consumption by handling quantitative and structural rules locally.
+
+#### 6.4.3 Domain Pack Architecture
+
+Domain Packs are self-contained units that bundle domain-specific rules, prompts, analyzers, and sample data. They decouple domain knowledge from the core server.
+
+```
+domain_packs/
+├── code/              # Engineering
+├── communication/     # Communication compliance
+├── contract/          # Contract review
+├── expense/           # Finance/expense
+├── hr_attendance/     # HR attendance
+├── legal/             # Legal/regulatory
+├── sales/             # Sales/pricing
+├── it_security/       # IT security
+└── governance/        # Corporate governance
+```
+
+Each pack contains:
+- `pack.yaml`: manifest (name, version, surfaces, scopes, persona, metadata_schema)
+- `rules/`: seed rule YAML files
+- `prompts/`: LLM prompt templates for evaluation
+- `analyzers/`: domain-specific document analyzers
+- `samples/`: example business data for testing
+
+The `DomainPackLoader` discovers packs at startup, controlled by the `ENABLED_PACKS` env var (comma-separated; defaults to all discovered packs).
+
 ### 6.5 Document Evaluation Path
 
 A first-class path for evaluating natural-language documents (contracts, emails, minutes, proposals, press releases, reports).
@@ -420,13 +498,19 @@ Implemented as `services/compliance/cockpit.py` and `/compliance` frontend route
 
 ### 6.11 Business Event Ingestion
 
-Single endpoint for business systems to push events for evaluation.
+Two endpoints serve business event evaluation at different levels of detail:
 
-- **Endpoint**: `POST /api/v1/events/ingest`
-- **Input**: `BusinessEvent` (§5.5).
-- **Behavior**: scope resolution from `event_type` → rule selection → subject dispatch → synchronous verdict + async audit.
-- **Modes**: `preflight` blocks; `posthoc` audits; `sidecar` observes without affecting the calling flow.
-- **Replaces** the engineering-specific webhook gateway as the cross-organizational ingress. The legacy `/api/v1/gateway/...` endpoints continue to work for engineering use cases but are no longer the primary ingress.
+- **`POST /api/v1/submissions`** — **Unified entry point** (recommended). Accepts any `subject_kind` with a polymorphic payload, resolves scope from `event_type` and actor department, dispatches to the correct surface evaluator, and returns the **full** evaluation response (per-rule verdicts, violations, remediations, fix suggestions). This is the single endpoint all business systems should target.
+- **`POST /api/v1/events/ingest`** — **Lightweight variant**. Returns only verdict + counts (no per-rule details). Useful for high-throughput event streams that only need pass/fail.
+
+**Scope resolution priority** (in `/submissions`):
+1. Explicit `scope` field (if provided)
+2. Mapped from `event_type` via `EventScopeResolver`
+3. Derived from actor's `department`
+
+**Behavior**: scope resolution → rule selection → subject dispatch → synchronous verdict + async audit.
+**Modes**: `preflight` blocks; `posthoc` audits.
+**Replaces** the engineering-specific webhook gateway as the cross-organizational ingress. The legacy `/api/v1/gateway/...` endpoints are frozen behind `GATEWAY_ENABLED`.
 
 ### 6.12 Automatic Rule Discovery
 
@@ -750,9 +834,12 @@ The expansion that turned the Rule Repository from a code-centric guardrail into
 - `services/evaluation/surfaces/message/` for communication evaluation.
 - Remediations: `field_change`, `approval_add`, `process_reroute`.
 
-#### 7d. Department-Aware RBAC [COMPLETE]
+#### 7d. Department-Aware RBAC + ABAC Policies [COMPLETE]
 - `DepartmentType` enum (10 types) and `Capacity` enum (owner, reviewer, auditor, subscriber) in `domain/department.py`.
-- `services/departments/authz.py` with `can_view`, `can_edit`, `can_approve`, `visible_departments`.
+- `Action` enum (read, edit, approve, evaluate, delete), `Principal`, and `DepartmentPolicy` dataclasses for ABAC-style authorization.
+- `default_policies()` function providing the default policy set (cross-department READ, same-department EDIT/APPROVE/DELETE).
+- `services/departments/authz.py` with `check_permission()` (core policy engine), plus backward-compatible `can_view`, `can_edit`, `can_approve`.
+- `GET/PUT /api/v1/departments/{dept}/policies` for policy management.
 - `services/departments/service.py` with CRUD for departments and capacity assignments.
 - Frontend `/departments` admin page.
 
@@ -760,15 +847,16 @@ The expansion that turned the Rule Repository from a code-centric guardrail into
 - `BusinessEvent` and `ActorRef` domain objects in `domain/business_event.py`.
 - `services/events/scope_resolver.py` with `DEFAULT_EVENT_SCOPE_MAP`.
 - `services/events/ingest.py` with `EventIngestionService`.
-- `POST /api/v1/events/ingest` endpoint.
+- `POST /api/v1/events/ingest` endpoint (lightweight, verdict + counts).
+- `POST /api/v1/submissions` unified entry point (full evaluation response with per-rule verdicts, remediations). Resolves scope from `event_type` + actor department. Supports all 8 subject kinds.
 
 #### 7f. Domain-Specific Extractors [COMPLETE]
 - 6 extractors implementing the `Extractor` protocol in `services/extraction/extractors/`:
-  - `contract.py` — clause segmentation with hierarchy detection.
-  - `regulation.py` — Japanese 条/項/号 and English Article/Section/Clause parsing.
-  - `handbook.py` — section-heading-based extraction for employee manuals.
+  - `contract.py` — clause segmentation with hierarchy, cross-reference resolution, party extraction, effective date extraction.
+  - `regulation.py` — Japanese 条/項/号 hierarchy, 前項/前条 reference resolution, statute numbers (法律番号), effective dates, amendment tracking.
+  - `handbook.py` — section-heading-based extraction with HR-specific scope detection (employment type, position level) and labor agreement references.
   - `minutes.py` — extracts decisions and action items only.
-  - `tabular.py` — Excel/CSV via openpyxl (one rule per row).
+  - `tabular.py` — Excel/CSV via openpyxl (one rule per row) with financial metadata tagging (account codes, tax categories, cost centers).
   - `email_archive.py` — pattern discovery from .eml corpora.
 
 #### 7g. Conversational Rule Assistant [COMPLETE]
@@ -939,8 +1027,8 @@ All four must pass on every PR for the Cross-Organizational claim to hold.
 - **Rule**: a natural-language normative statement, plus structured metadata, managed as a first-class object.
 - **Statement**: the canonical natural-language text of a rule, in `primary_language`.
 - **Modality**: the strength of the obligation (MUST, MUST_NOT, SHOULD, MAY, INFO).
-- **Kind**: taxonomic axis (mandatory / guideline / template / informational / meta).
-- **Scope**: the set of subjects, systems, business processes to which a rule applies.
+- **Kind**: evaluation strategy axis (`normative`, `computational`, `procedural`, `definitional`, `principle`). Determines whether the rule is evaluated by LLM, deterministic evaluator, or not at all.
+- **Scope**: the set of subjects, systems, business processes to which a rule applies. Legacy flat tags (`["engineering", "python"]`) are complemented by `structured_scope` with multi-axis dimensions (`domain`, `org_unit`, `subject_type`, plus ad-hoc attributes).
 - **Department**: the function (legal/hr/finance/sales/engineering/it/ga/compliance/exec/public) that owns the rule.
 - **Verdict**: the result of an evaluation (ALLOW, DENY, NEEDS_CONFIRMATION).
 - **Reason graph**: a structured DAG explaining which facts triggered which conditions in which rules.

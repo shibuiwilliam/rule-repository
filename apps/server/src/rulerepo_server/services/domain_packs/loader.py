@@ -23,7 +23,15 @@ DOMAIN_PACKS_DIR = Path(__file__).parent.parent.parent / "domain_packs"
 
 @dataclass
 class PackManifest:
-    """Parsed representation of a pack.yaml."""
+    """Parsed representation of a pack.yaml.
+
+    Each domain pack is a self-contained unit containing:
+    - ``pack.yaml``: this manifest (metadata, surfaces, scopes, persona)
+    - ``rules/``: seed rule YAML files
+    - ``prompts/``: LLM prompt templates for extraction and evaluation
+    - ``analyzers/``: domain-specific document analyzers for discovery
+    - ``samples/``: example business data for testing
+    """
 
     name: str
     version: str
@@ -34,6 +42,10 @@ class PackManifest:
     default_scopes: list[str] = field(default_factory=list)
     ui_routes: list[str] = field(default_factory=list)
     seed_rules_path: str = "rules/"
+    prompts_path: str = "prompts/"
+    analyzers_path: str = "analyzers/"
+    samples_path: str = "samples/"
+    metadata_schema: dict[str, Any] = field(default_factory=dict)
     persona: str = "admin"
     pack_dir: Path = field(default_factory=lambda: Path("."))
 
@@ -50,6 +62,10 @@ class PackManifest:
             default_scopes=data.get("default_scopes", []),
             ui_routes=data.get("ui_routes", []),
             seed_rules_path=data.get("seed_rules_path", "rules/"),
+            prompts_path=data.get("prompts_path", "prompts/"),
+            analyzers_path=data.get("analyzers_path", "analyzers/"),
+            samples_path=data.get("samples_path", "samples/"),
+            metadata_schema=data.get("metadata_schema", {}),
             persona=data.get("persona", "admin"),
             pack_dir=pack_dir,
         )
@@ -58,6 +74,37 @@ class PackManifest:
     def rules_dir(self) -> Path:
         """Absolute path to the pack's rules directory."""
         return self.pack_dir / self.seed_rules_path
+
+    @property
+    def prompts_dir(self) -> Path:
+        """Absolute path to the pack's prompts directory."""
+        return self.pack_dir / self.prompts_path
+
+    @property
+    def analyzers_dir(self) -> Path:
+        """Absolute path to the pack's analyzers directory."""
+        return self.pack_dir / self.analyzers_path
+
+    @property
+    def samples_dir(self) -> Path:
+        """Absolute path to the pack's samples directory."""
+        return self.pack_dir / self.samples_path
+
+    @property
+    def has_prompts(self) -> bool:
+        """Whether the pack has prompt templates."""
+        return self.prompts_dir.is_dir() and any(self.prompts_dir.iterdir())
+
+    @property
+    def has_analyzers(self) -> bool:
+        """Whether the pack has domain-specific analyzers."""
+        d = self.analyzers_dir
+        return d.is_dir() and any(f for f in d.iterdir() if f.suffix == ".py" and f.name != "__init__.py")
+
+    @property
+    def has_samples(self) -> bool:
+        """Whether the pack has sample data files."""
+        return self.samples_dir.is_dir() and any(self.samples_dir.iterdir())
 
 
 # Global registry
@@ -72,7 +119,7 @@ class DomainPackLoader:
 
     def discover(self) -> list[PackManifest]:
         """Discover all packs with pack.yaml files."""
-        packs = []
+        packs: list[PackManifest] = []
         if not self._packs_dir.is_dir():
             logger.warning("domain_packs_dir_not_found", path=str(self._packs_dir))
             return packs
@@ -144,3 +191,43 @@ class DomainPackLoader:
     def get_pack(name: str) -> PackManifest | None:
         """Get a loaded pack by name."""
         return _LOADED_PACKS.get(name)
+
+    @staticmethod
+    def get_packs_for_surface(surface: str) -> list[PackManifest]:
+        """Return all loaded packs that handle a given surface type.
+
+        Args:
+            surface: The surface type (e.g. ``code``, ``contract``, ``transaction``).
+
+        Returns:
+            List of packs whose ``surfaces`` list contains the given surface.
+        """
+        return [p for p in _LOADED_PACKS.values() if surface in p.surfaces]
+
+    @staticmethod
+    def get_packs_for_persona(persona: str) -> list[PackManifest]:
+        """Return all loaded packs targeting a given persona.
+
+        Args:
+            persona: The persona name (e.g. ``legal``, ``hr``, ``finance``).
+
+        Returns:
+            List of packs whose ``persona`` matches.
+        """
+        return [p for p in _LOADED_PACKS.values() if p.persona == persona]
+
+    @staticmethod
+    def get_prompt_files(pack_name: str) -> list[Path]:
+        """Return all prompt template files for a loaded pack.
+
+        Args:
+            pack_name: The pack's registered name.
+
+        Returns:
+            List of absolute paths to prompt files, or empty list if pack
+            not found or has no prompts.
+        """
+        pack = _LOADED_PACKS.get(pack_name)
+        if pack is None or not pack.has_prompts:
+            return []
+        return sorted(pack.prompts_dir.glob("*.txt"))

@@ -1,0 +1,36 @@
+{
+  "description": "Sample access request for production database admin privileges",
+  "surface": "human_action",
+  "identifier": "itsm:access:REQ-2026-4210",
+  "payload": {
+    "request_type": "access_grant",
+    "target_system": "production-database-cluster-01",
+    "requested_role": "database_admin",
+    "current_role": "developer_readonly",
+    "justification": "Need to run migration scripts for the quarterly release",
+    "duration": "permanent",
+    "mfa_enrolled": false,
+    "data_classification": "CONFIDENTIAL"
+  },
+  "facts": {
+    "last_access_review_date": "2025-11-15",
+    "months_since_last_review": 6,
+    "requester_department": "Engineering",
+    "approver": "engineering_manager_003"
+  },
+  "actor": {
+    "kind": "human",
+    "identifier": "emp:E098",
+    "attributes": {
+      "department": "Engineering",
+      "job_title": "Software Engineer",
+      "employee_id": "E098"
+    }
+  },
+  "timestamp": "2026-05-09T10:30:00+09:00",
+  "_evaluation_notes": [
+    "SEC-001: 'permanent' duration for database_admin violates least privilege - should be time-bounded - VIOLATION",
+    "SEC-002: mfa_enrolled=false for CONFIDENTIAL data access - VIOLATION",
+    "SEC-001: last_access_review was 6 months ago, exceeds quarterly requirement - VIOLATION"
+  ]
+}

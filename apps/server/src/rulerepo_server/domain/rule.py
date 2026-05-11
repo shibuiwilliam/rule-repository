@@ -95,6 +95,26 @@ class RegulatorySeverity(str, enum.Enum):
     CRIMINAL = "CRIMINAL"
 
 
+class RuleKind(str, enum.Enum):
+    """Kind of rule — determines the evaluation strategy.
+
+    Different kinds require fundamentally different evaluation approaches:
+    - NORMATIVE: standard LLM-as-Judge (current behavior).
+    - COMPUTATIONAL: deterministic calculation + LLM verification for edge cases.
+    - PROCEDURAL: state-transition / ordering-constraint verification.
+    - DEFINITIONAL: reference/lookup — definitions don't produce violations.
+    - PRINCIPLE: high-level intent, evaluated through derived normative rules.
+
+    See IMPROVEMENT.md Proposal 3.
+    """
+
+    NORMATIVE = "normative"
+    COMPUTATIONAL = "computational"
+    PROCEDURAL = "procedural"
+    DEFINITIONAL = "definitional"
+    PRINCIPLE = "principle"
+
+
 class NormTier(str, enum.Enum):
     """Position of a rule in the norm-lineage hierarchy.
 
@@ -175,6 +195,10 @@ class Rule:
     modality: Modality = Modality.MUST
     severity: Severity = Severity.MEDIUM
     status: RuleStatus = RuleStatus.DRAFT
+    kind: RuleKind = RuleKind.NORMATIVE
+
+    # Deterministic constraints (Proposal 9: Hybrid Evaluation Architecture)
+    constraints: list[dict] = field(default_factory=list)
 
     # Provenance
     source_refs: list[SourceRef] = field(default_factory=list)

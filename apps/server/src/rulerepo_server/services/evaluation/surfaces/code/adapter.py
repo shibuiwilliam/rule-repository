@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from rulerepo_server.domain.evaluation import Surface
-from rulerepo_server.services.evaluation.context_assembler import assemble_context
+from rulerepo_server.services.evaluation.context_assembler import assemble_code_context
 from rulerepo_server.services.evaluation.diff_parser import detect_language, parse_unified_diff
 from rulerepo_server.services.evaluation.surfaces.base import (
     EvaluationSubjectPayload,
@@ -40,7 +40,7 @@ class CodeSurfaceAdapter(SurfaceAdapter):
         Returns:
             EvaluationSubjectPayload with code-specific fields.
         """
-        ctx = assemble_context(
+        ctx = assemble_code_context(
             diff=payload.get("diff"),
             files=payload.get("files"),
             facts=payload.get("facts"),

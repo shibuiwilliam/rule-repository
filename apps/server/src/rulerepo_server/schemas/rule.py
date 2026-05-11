@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from rulerepo_server.domain.classification import Classification
-from rulerepo_server.domain.rule import Modality, RegulatorySeverity, RuleStatus, Sensitivity, Severity
+from rulerepo_server.domain.rule import Modality, RegulatorySeverity, RuleKind, RuleStatus, Sensitivity, Severity
 
 # ---------------------------------------------------------------------------
 # Nested value-object schemas
@@ -75,6 +75,10 @@ class RuleCreate(BaseModel):
     modality: Modality = Modality.MUST
     severity: Severity = Severity.MEDIUM
     status: RuleStatus = RuleStatus.DRAFT
+    kind: RuleKind = Field(
+        default=RuleKind.NORMATIVE,
+        description="Evaluation strategy: normative, computational, procedural, definitional, principle.",
+    )
     scope: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     rationale: str = ""
@@ -101,6 +105,10 @@ class RuleCreate(BaseModel):
     jurisdiction: str = "global"
     legal_force: str = "policy"
     review_cadence: str | None = None
+    constraints: list[dict] = Field(
+        default_factory=list,
+        description="Structured deterministic constraints (numeric, date, enum) for hybrid evaluation.",
+    )
     source_refs: list[SourceRefSchema] = Field(default_factory=list)
     effective_period: EffectivePeriodSchema = Field(default_factory=EffectivePeriodSchema)
     governance: GovernanceSchema = Field(default_factory=GovernanceSchema)
@@ -113,6 +121,7 @@ class RuleUpdate(BaseModel):
     modality: Modality | None = None
     severity: Severity | None = None
     status: RuleStatus | None = None
+    kind: RuleKind | None = None
     scope: list[str] | None = None
     tags: list[str] | None = None
     rationale: str | None = None
@@ -234,6 +243,7 @@ class RuleImportItem(BaseModel):
     statement: str = Field(..., min_length=1, max_length=10000)
     modality: str = "MUST"
     severity: str = "MEDIUM"
+    kind: str | None = None
     scope: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     rationale: str = ""

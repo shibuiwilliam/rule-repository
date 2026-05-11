@@ -61,6 +61,14 @@ _SUBSECTION = re.compile(
 )
 
 
+class ClauseSegmenter:
+    """Convenience wrapper around :func:`segment_contract`."""
+
+    def segment(self, text: str, *, title: str = "") -> SegmentedDocument:
+        """Segment a contract into hierarchical clauses."""
+        return segment_contract(text, title=title)
+
+
 def segment_contract(text: str, *, title: str = "") -> SegmentedDocument:
     """Segment a contract into hierarchical clauses.
 

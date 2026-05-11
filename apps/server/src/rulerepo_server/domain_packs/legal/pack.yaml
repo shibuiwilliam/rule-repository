@@ -1,0 +1,10 @@
+name: legal
+version: 0.1.0
+display_name: Legal Pack
+description: Regulatory compliance, IP protection, data privacy, and general legal governance rules
+surfaces: [document, contract]
+required_adapters: []
+default_scopes: [legal/regulatory, legal/ip, legal/privacy, legal/compliance]
+ui_routes: [/legal/regulations, /legal/privacy, /legal/ip, /legal/compliance]
+seed_rules_path: rules/
+persona: legal

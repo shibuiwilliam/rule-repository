@@ -99,6 +99,10 @@ class Settings(BaseSettings):
     multi_agent_sessions_enabled: bool = False
     github_app_enabled: bool = False
 
+    # --- Frozen features (Phase 6 freeze — default OFF) ---
+    gateway_enabled: bool = False
+    advanced_observability_enabled: bool = False
+
     # --- Alert / Digest delivery mode ---
     alert_output_mode: str = "local"  # "local" | "webhook" | "both"
     digest_output_mode: str = "local"  # "local" | "webhook" | "both"

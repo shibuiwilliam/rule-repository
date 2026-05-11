@@ -39,6 +39,29 @@
           "similarity": "cosine"
         },
         "rationale": { "type": "text", "analyzer": "rule_analyzer" },
+        "department": { "type": "keyword" },
+        "kind": { "type": "keyword" },
+        "primary_language": { "type": "keyword" },
+        "applicable_subject_types": { "type": "keyword" },
+        "scope_domain": { "type": "keyword" },
+        "scope_org_unit": { "type": "keyword" },
+        "scope_subject_type": { "type": "keyword" },
+        "scope_dimensions": {
+          "type": "object",
+          "enabled": true,
+          "dynamic": true
+        },
+        "structured_scope": {
+          "type": "object",
+          "properties": {
+            "path": { "type": "keyword" },
+            "dimensions": {
+              "type": "object",
+              "enabled": true,
+              "dynamic": true
+            }
+          }
+        },
         "created_at": { "type": "date" },
         "updated_at": { "type": "date" }
       }

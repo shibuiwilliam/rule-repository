@@ -1,0 +1,10 @@
+name: governance
+version: 0.1.0
+display_name: Governance Pack
+description: Corporate governance policies, internal control frameworks, delegation of authority, and board compliance
+surfaces: [document, human_action]
+required_adapters: []
+default_scopes: [governance/corporate, governance/internal-control, governance/delegation, governance/board]
+ui_routes: [/governance/policies, /governance/controls, /governance/delegation, /governance/audit]
+seed_rules_path: rules/
+persona: compliance

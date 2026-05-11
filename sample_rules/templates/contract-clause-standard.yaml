@@ -91,3 +91,29 @@ rules:
     scope: [legal/contract/data-processing, compliance/privacy]
     tags: [contract, privacy, dpa, appi]
     rationale: "APPI and GDPR require documented data processing agreements"
+
+  - statement: "契約書には反社会的勢力の排除条項（反社条項）を必ず含めなければならない"
+    modality: MUST
+    severity: CRITICAL
+    classification: CONFIDENTIAL
+    scope: [legal/contract/anti-social-forces, compliance/jp]
+    tags: [contract, anti-social-forces, bouryokudan, japan, compliance]
+    subject_kinds: [clause_set, document]
+    jurisdiction: JP
+    rationale: "各都道府県の暴力団排除条例および企業コンプライアンス基準により、反社会的勢力との取引を排除する条項を契約書に含めることが実質的に義務付けられている。条項欠落は行政指導やレピュテーションリスクの原因となる。"
+    violation_examples:
+      - "取引基本契約書に反社条項が含まれておらず、署名済みのまま放置されている"
+      - "反社条項が契約書の付属書に記載されているが、本契約で参照されていない"
+
+  - statement: "契約当事者の権利義務の第三者への譲渡は、相手方の事前書面同意なく行ってはならない旨を明記しなければならない"
+    modality: MUST
+    severity: HIGH
+    classification: INTERNAL
+    scope: [legal/contract/assignment]
+    tags: [contract, assignment, transfer, restriction, japan]
+    subject_kinds: [clause_set, document]
+    jurisdiction: JP
+    rationale: "権利譲渡制限条項がない場合、契約上の地位が無断で第三者に移転されるリスクがある。民法466条に基づく債権譲渡制限特約を設けることで、取引相手の変更リスクを管理できる。"
+    violation_examples:
+      - "契約書に譲渡制限条項がなく、取引先が債権を第三者ファクタリング会社に譲渡した"
+      - "権利譲渡条項が「合理的に拒否してはならない」となっており実質的に制限として機能していない"

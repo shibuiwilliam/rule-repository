@@ -10,6 +10,7 @@ export type PersonaId =
   | "compliance"
   | "security"
   | "finance"
+  | "sales"
   | "marketing"
   | "admin";
 
@@ -72,6 +73,14 @@ export const PERSONAS: PersonaOption[] = [
     color: "bg-emerald-50 text-emerald-700 border-emerald-200",
   },
   {
+    id: "sales",
+    label: "Sales",
+    description: "Pricing approvals, discount governance, communication compliance",
+    icon: "\ud83d\udcc8",
+    rootPath: "/sales",
+    color: "bg-orange-50 text-orange-700 border-orange-200",
+  },
+  {
     id: "marketing",
     label: "Marketing",
     description: "Creative review, ad compliance, brand rules",
@@ -95,6 +104,7 @@ function detectCurrentPersona(pathname: string): PersonaOption {
   if (pathname.startsWith("/compliance")) return PERSONAS.find((p) => p.id === "compliance")!;
   if (pathname.startsWith("/security")) return PERSONAS.find((p) => p.id === "security")!;
   if (pathname.startsWith("/finance")) return PERSONAS.find((p) => p.id === "finance")!;
+  if (pathname.startsWith("/sales")) return PERSONAS.find((p) => p.id === "sales")!;
   if (pathname.startsWith("/marketing")) return PERSONAS.find((p) => p.id === "marketing")!;
   if (pathname.startsWith("/admin")) return PERSONAS.find((p) => p.id === "admin")!;
   return PERSONAS.find((p) => p.id === "engineering")!;

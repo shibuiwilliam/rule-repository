@@ -215,11 +215,15 @@ async def select_rules(
 
     logger.info("rule_selector_stage2", after_severity_modality=len(filtered))
 
-    # Stage 3: Scope matching on file paths and languages (in-memory)
-    if context.file_paths or context.languages:
+    # Stage 3: Relevance scoring (in-memory)
+    # For code subjects: score on file_paths and languages.
+    # For non-code subjects: score on narrative/facts keyword overlap.
+    # For all subjects: boost on structured scope dimension overlap.
+    has_signals = context.file_paths or context.languages or context.narrative or context.facts or scope_dimensions
+    if has_signals:
         scored: list[tuple[Any, float]] = []
         for rule in filtered:
-            score = _compute_relevance(rule, context)
+            score = _compute_relevance(rule, context, query_dimensions=scope_dimensions)
             scored.append((rule, score))
         scored.sort(key=lambda x: x[1], reverse=True)
         filtered = [r for r, _ in scored]
@@ -237,7 +241,11 @@ async def select_rules(
             if violation_ids:
                 boosted: list[tuple[Any, float]] = []
                 for rule in filtered:
-                    score = _compute_relevance(rule, context) if (context.file_paths or context.languages) else 0.0
+                    score = (
+                        _compute_relevance(rule, context, query_dimensions=scope_dimensions)
+                        if (context.file_paths or context.languages)
+                        else 0.0
+                    )
                     if str(rule.id) in violation_ids:
                         score += 20.0
                     boosted.append((rule, score))
@@ -255,10 +263,21 @@ async def select_rules(
     return [_rule_to_dict(r) for r in selected]
 
 
-def _compute_relevance(rule: Any, context: EvaluationContext) -> float:
+def _compute_relevance(
+    rule: Any,
+    context: EvaluationContext,
+    query_dimensions: dict[str, str | list[str]] | None = None,
+) -> float:
     """Compute a relevance score for a rule given the context.
 
-    Higher scores = more relevant. Uses scope, tag, and language overlap.
+    Higher scores = more relevant. Uses scope, tag, language,
+    narrative/facts keyword overlap (the latter for non-code subjects),
+    and — when provided — structured scope dimension overlap.
+
+    Args:
+        rule: A ``RuleModel`` instance.
+        context: The evaluation context.
+        query_dimensions: Optional structured scope dimensions to boost on.
     """
     score = 0.0
     rule_scope = rule.scope if isinstance(rule.scope, list) else []
@@ -283,6 +302,48 @@ def _compute_relevance(rule: Any, context: EvaluationContext) -> float:
             if tag_lower in fp.lower():
                 score += 2.0
 
+    # Non-code relevance: keyword overlap between rule statement/tags and
+    # the narrative/facts text. This ensures non-code subjects (transactions,
+    # documents, events) still get meaningful relevance ranking.
+    if not context.file_paths and not context.languages:
+        context_text = context.narrative or ""
+        if context.facts:
+            fact_str = " ".join(str(v) for v in context.facts.values() if v is not None)
+            context_text = f"{context_text} {fact_str}".strip()
+
+        if context_text:
+            rule_text = getattr(rule, "statement", "") or ""
+            kw_score = compute_keyword_relevance(rule_text, context_text)
+            score += kw_score * 10.0  # Scale to comparable range
+
+            # Also match tags against narrative/facts
+            context_lower = context_text.lower()
+            for tag in rule_tags:
+                if tag.lower() in context_lower:
+                    score += 3.0
+            for scope_item in rule_scope:
+                if scope_item.lower() in context_lower:
+                    score += 5.0
+
+    # Structured scope dimension overlap scoring (RR-040)
+    if query_dimensions:
+        structured = getattr(rule, "structured_scope", None)
+        rule_dims = structured.get("dimensions", {}) if isinstance(structured, dict) else {}
+        if rule_dims:
+            from rulerepo_server.domain.scope import DOMAIN_KEY, ORG_UNIT_KEY, SUBJECT_TYPE_KEY
+
+            _primary_weights = {DOMAIN_KEY: 15.0, ORG_UNIT_KEY: 10.0, SUBJECT_TYPE_KEY: 12.0}
+            _default_weight = 5.0
+
+            for key, query_vals in query_dimensions.items():
+                if key not in rule_dims:
+                    continue
+                q_set = set(query_vals) if isinstance(query_vals, list) else {query_vals}
+                r_vals = rule_dims[key]
+                r_set = set(r_vals) if isinstance(r_vals, list) else {r_vals}
+                if q_set & r_set:
+                    score += _primary_weights.get(key, _default_weight)
+
     # Severity bonus (CRITICAL rules always rank higher)
     severity_bonus = {"CRITICAL": 5, "HIGH": 3, "MEDIUM": 1, "LOW": 0}
     score += severity_bonus.get(rule.severity, 0)
@@ -292,6 +353,8 @@ def _compute_relevance(rule: Any, context: EvaluationContext) -> float:
 
 def _rule_to_dict(rule: Any) -> dict[str, Any]:
     """Convert a RuleModel to a dict for use by the evaluation core."""
+    raw_structured = getattr(rule, "structured_scope", None)
+    structured_scope = raw_structured if isinstance(raw_structured, dict) else {"path": "", "dimensions": {}}
     return {
         "id": str(rule.id),
         "statement": rule.statement,
@@ -307,6 +370,9 @@ def _rule_to_dict(rule: Any) -> dict[str, Any]:
         "following_examples": getattr(rule, "following_examples", []),
         "violation_examples": getattr(rule, "violation_examples", []),
         "maturity_level": getattr(rule, "maturity_level", "proven"),
+        "kind": getattr(rule, "kind", "normative"),
+        "constraints": getattr(rule, "constraints", []) or [],
+        "structured_scope": structured_scope,
     }
 
 

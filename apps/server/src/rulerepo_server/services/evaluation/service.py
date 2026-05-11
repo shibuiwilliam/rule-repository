@@ -85,8 +85,9 @@ class EvaluationService:
         start_time = time.time()
 
         # 1. Assemble context
-        # Use explicit surface if provided; otherwise infer from input shape.
-        resolved_surface = surface or ("code" if diff else "generic")
+        # Use explicit surface if provided; infer from subject_kind; fall
+        # back to "code" only when a diff is actually provided.
+        resolved_surface = surface or _subject_kind_to_surface(subject_kind) or ("code" if diff else "generic")
         context = assemble_context(
             diff=diff,
             files=files,
@@ -119,8 +120,7 @@ class EvaluationService:
             "evaluation_rules_selected",
             rules_count=len(rules),
             mode=mode,
-            has_diff=bool(diff),
-            file_count=len(context.file_paths),
+            surface=resolved_surface,
         )
 
         # 3. If no Gemini client or no rules, return ALLOW
@@ -211,7 +211,7 @@ class EvaluationService:
                 EvaluationRecordModel,
             )
 
-            input_type = "code" if diff else "facts"
+            input_type = resolved_surface if resolved_surface != "generic" else ("code" if diff else "facts")
             eval_scope = scope or ""
             latency_per_rule = [total_rule_latency // max(len(verdicts), 1)] * len(verdicts)
             for i, (v, mid) in enumerate(zip(verdicts, model_ids, strict=False)):
@@ -243,8 +243,7 @@ class EvaluationService:
                 "rules_evaluated": eval_result.rules_evaluated,
                 "rules_violated": eval_result.rules_violated,
                 "mode": mode,
-                "has_diff": bool(diff),
-                "file_paths": context.file_paths[:10],
+                "surface": resolved_surface,
                 "model_ids": list(set(model_ids)),
                 "latency_ms": total_latency,
             },
@@ -335,11 +334,13 @@ class EvaluationService:
         resolved_scope = scope or (adapter.resolve_scopes(subject_payload) or [None])[0]
 
         # 2. Build an EvaluationContext from the parsed subject
-        # This bridges the surface-aware API to the existing pipeline
+        # Merge subject facts and payload into a single facts dict. The
+        # surface adapter has already parsed the payload into the uniform
+        # EvaluationSubjectPayload — the shared assembler does not need
+        # to know which fields are surface-specific.
+        merged_facts = {**subject.facts, **subject.payload}
         context = assemble_context(
-            diff=subject.payload.get("diff"),
-            files=None,
-            facts={**subject.facts, **subject.payload},
+            facts=merged_facts,
             intent=subject.description,
             scope=resolved_scope,
             actor=subject.actor.identifier if subject.actor else None,
@@ -516,3 +517,20 @@ class EvaluationService:
         )
 
         return eval_result
+
+
+def _subject_kind_to_surface(subject_kind: str | None) -> str | None:
+    """Map a SubjectKind string to a surface name, or None if unknown."""
+    if not subject_kind:
+        return None
+    mapping: dict[str, str] = {
+        "code_diff": "code",
+        "document": "document",
+        "transaction": "transaction",
+        "event": "human_action",
+        "clause_set": "contract",
+        "creative": "message",
+        "decision": "generic",
+        "identity": "generic",
+    }
+    return mapping.get(subject_kind)

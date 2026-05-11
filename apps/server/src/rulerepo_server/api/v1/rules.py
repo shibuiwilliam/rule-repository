@@ -217,6 +217,13 @@ async def import_rules(
                 "tags": item.tags + (["imported"] if "imported" not in item.tags else []),
                 "rationale": item.rationale or "",
             }
+            if item.kind:
+                from rulerepo_server.domain.rule import RuleKind
+
+                try:
+                    create_kwargs["kind"] = RuleKind(item.kind)
+                except ValueError:
+                    create_kwargs["kind"] = RuleKind.NORMATIVE
             if item.following_examples:
                 create_kwargs["following_examples"] = item.following_examples
             if item.violation_examples:

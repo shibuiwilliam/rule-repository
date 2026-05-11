@@ -1,0 +1,43 @@
+{
+  "description": "Sample privacy impact assessment for a new customer data collection form",
+  "surface": "document",
+  "identifier": "doc:privacy-review:PIA-2026-003",
+  "payload": {
+    "document_type": "privacy_impact_assessment",
+    "title": "Customer Onboarding Form - Data Collection Review",
+    "sections": [
+      {
+        "heading": "Data Fields Collected",
+        "content": "The form collects: full name, email address, phone number, date of birth, residential address, employer name, annual income range, and credit card number for payment."
+      },
+      {
+        "heading": "Purpose of Use",
+        "content": "Data will be used for account creation, identity verification, marketing communications, and sharing with partner companies for product recommendations."
+      },
+      {
+        "heading": "Retention Period",
+        "content": "All data retained indefinitely for business analytics purposes."
+      }
+    ]
+  },
+  "facts": {
+    "jurisdiction": "JP",
+    "data_categories": ["personal_information", "financial_data"],
+    "third_party_sharing": true,
+    "consent_mechanism": "checkbox_at_bottom_of_form"
+  },
+  "actor": {
+    "kind": "human",
+    "identifier": "emp:L002",
+    "attributes": {
+      "department": "Legal",
+      "job_title": "Privacy Officer"
+    }
+  },
+  "timestamp": "2026-05-10T14:00:00+09:00",
+  "_evaluation_notes": [
+    "LEG-001: Purpose of use includes 'marketing' and 'partner sharing' - must be clearly disclosed separately - NEEDS_REVIEW",
+    "LEG-002: Third-party sharing with partner companies requires explicit consent, not just a checkbox - VIOLATION",
+    "LEG-001: Income and credit card data may exceed 'necessary' scope for account creation - VIOLATION"
+  ]
+}

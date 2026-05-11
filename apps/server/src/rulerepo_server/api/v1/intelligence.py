@@ -1,12 +1,20 @@
 """REST API routes for Rule Intelligence & Analytics."""
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rulerepo_server.adapters.postgres.session import get_db_session
 from rulerepo_server.services.intelligence.service import IntelligenceService
 
 router = APIRouter(prefix="/intelligence", tags=["intelligence"])
+
+
+def _require_advanced_observability() -> None:
+    """Raise 404 if advanced observability features are disabled."""
+    from rulerepo_server.core.feature_flags import get_feature_flags
+
+    if not get_feature_flags().advanced_observability_enabled:
+        raise HTTPException(status_code=404, detail="Advanced observability is disabled")
 
 
 async def _get_intelligence_service(
@@ -101,6 +109,7 @@ async def list_agents(
     service: IntelligenceService = Depends(_get_intelligence_service),
 ) -> dict:
     """List all agents with compliance rates and evaluation counts."""
+    _require_advanced_observability()
     from rulerepo_server.services.intelligence.agent_analytics import get_agent_list
 
     agents = await get_agent_list(service._session, period_days=period)
@@ -114,6 +123,7 @@ async def get_agent_detail(
     service: IntelligenceService = Depends(_get_intelligence_service),
 ) -> dict:
     """Per-agent analytics: compliance trend, top violations."""
+    _require_advanced_observability()
     from rulerepo_server.services.intelligence.agent_analytics import (
         get_agent_detail as _get_detail,
     )
@@ -133,6 +143,7 @@ async def get_rule_effectiveness(
     service: IntelligenceService = Depends(_get_intelligence_service),
 ) -> dict:
     """Per-rule effectiveness score: precision, prevention rate, agent adoption."""
+    _require_advanced_observability()
     from rulerepo_server.services.intelligence.effectiveness import compute_effectiveness
 
     return await compute_effectiveness(service._session, rule_id, period_days=period)
@@ -149,6 +160,7 @@ async def get_weekly_digest(
     service: IntelligenceService = Depends(_get_intelligence_service),
 ) -> dict:
     """Weekly governance digest with compliance trends, top violations, and pending actions."""
+    _require_advanced_observability()
     from rulerepo_server.services.intelligence.digest import generate_weekly_digest
 
     return await generate_weekly_digest(service._session, project_id=project_id)
@@ -164,6 +176,7 @@ async def get_project_comparison(
     service: IntelligenceService = Depends(_get_intelligence_service),
 ) -> dict:
     """Compare compliance metrics across all projects."""
+    _require_advanced_observability()
     from sqlalchemy import func, select
 
     from rulerepo_server.adapters.postgres.models import ProjectModel, RuleModel

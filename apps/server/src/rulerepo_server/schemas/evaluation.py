@@ -116,7 +116,17 @@ class EvaluateRequest(BaseModel):
         if self.agent_id is not None:
             metadata["agent_id"] = self.agent_id
 
-        artifact_type = self.subject_kind or "code_diff"
+        # Infer artifact type from inputs: only default to code_diff when
+        # a diff is actually provided.  Otherwise use "generic" so non-code
+        # subjects are not silently coerced into the code path.
+        if self.subject_kind:
+            artifact_type = self.subject_kind
+        elif self.diff is not None:
+            artifact_type = "code_diff"
+        elif self.facts is not None:
+            artifact_type = "generic"
+        else:
+            artifact_type = "code_diff"
         return EvaluableSchema(
             artifact_type=artifact_type,
             payload=payload,

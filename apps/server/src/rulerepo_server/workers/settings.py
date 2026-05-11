@@ -396,8 +396,15 @@ async def send_weekly_digest(ctx: dict) -> None:
     """Generate and optionally deliver the weekly governance digest.
 
     Runs every Monday at 9am. Generates the digest and sends it to the
-    configured DIGEST_WEBHOOK_URL if set.
+    configured DIGEST_WEBHOOK_URL if set. Gated behind
+    ADVANCED_OBSERVABILITY_ENABLED.
     """
+    from rulerepo_server.core.feature_flags import get_feature_flags
+
+    if not get_feature_flags().advanced_observability_enabled:
+        logger.info("send_weekly_digest_skipped", reason="advanced_observability_disabled")
+        return
+
     session = await _get_worker_session()
     try:
         from rulerepo_server.services.intelligence.digest import generate_weekly_digest

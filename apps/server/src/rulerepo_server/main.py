@@ -66,6 +66,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     logger.info("all_connections_initialized", tier=flags.tier)
 
+    # Domain Packs — load at startup so they're available from boot
+    from rulerepo_server.services.domain_packs.loader import DomainPackLoader
+
+    pack_loader = DomainPackLoader()
+    loaded_packs = pack_loader.load_enabled()
+    logger.info("domain_packs_loaded", count=len(loaded_packs), names=[p.name for p in loaded_packs])
+
     yield
 
     # Teardown
@@ -216,13 +223,18 @@ def create_app() -> FastAPI:
     # --- Register API routers ---
     from rulerepo_server.api.v1 import v1_router
     from rulerepo_server.core.feature_flags import get_feature_flags
-    from rulerepo_server.gateway.router import router as gateway_router
 
     app.include_router(v1_router)
-    app.include_router(gateway_router, prefix="/api/v1")
+
+    flags = get_feature_flags()
+
+    # Gateway — only registered when enabled (frozen by default)
+    if flags.gateway_enabled:
+        from rulerepo_server.gateway.router import router as gateway_router
+
+        app.include_router(gateway_router, prefix="/api/v1")
 
     # GitHub App webhook — only registered when enabled
-    flags = get_feature_flags()
     if flags.github_app_enabled:
         from rulerepo_server.integrations.github.router import router as github_router
 

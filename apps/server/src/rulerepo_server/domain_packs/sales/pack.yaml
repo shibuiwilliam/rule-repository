@@ -1,0 +1,10 @@
+name: sales
+version: 0.1.0
+display_name: Sales Pack
+description: Pricing policies, discount governance, competitive bidding, and customer communication standards
+surfaces: [transaction, message, document]
+required_adapters: []
+default_scopes: [sales/pricing, sales/discount, sales/proposal, sales/communication]
+ui_routes: [/sales/pricing, /sales/discounts, /sales/proposals, /sales/compliance]
+seed_rules_path: rules/
+persona: sales

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from rulerepo_server.services.evaluation.context_assembler import assemble_context
+from rulerepo_server.services.evaluation.context_assembler import assemble_code_context
 from rulerepo_server.services.evaluation.diff_parser import detect_language
 
 # File-path glob → scope mapping for code evaluation
@@ -60,7 +60,7 @@ class CodeAdapter:
         Returns:
             EvaluationContext as a dict.
         """
-        ctx = assemble_context(
+        ctx = assemble_code_context(
             diff=payload.get("diff"),
             files=payload.get("files"),
             facts=payload.get("facts"),

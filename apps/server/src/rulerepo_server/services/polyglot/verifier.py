@@ -151,12 +151,12 @@ class PolyglotVerifier:
             from rulerepo_server.core.config import get_settings
 
             settings = get_settings()
-            response = self._gemini.models.generate_content(
+            response = await self._gemini.aio.models.generate_content(
                 model=settings.llm_default_model,
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
-                    thinking_config=types.ThinkingConfig(thinking_budget=0),
+                    thinking_config=types.ThinkingConfig(thinking_level="low"),
                 ),
             )
 

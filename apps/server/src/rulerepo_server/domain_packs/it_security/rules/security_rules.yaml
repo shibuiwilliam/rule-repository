@@ -1,0 +1,60 @@
+rules:
+  - id: SEC-001
+    statement: "Access to production systems must follow the principle of least privilege. Permissions must be scoped to the minimum necessary for the role and reviewed quarterly."
+    severity: HIGH
+    modality: MUST
+    tags: [access-control, least-privilege, quarterly-review]
+    org_scope: [security/access-control]
+    applies_to_surfaces: [human_action]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "本番システムへのアクセスは最小権限の原則に従うこと。権限は業務に必要な最小範囲に限定し、四半期ごとに見直すこと。"
+
+  - id: SEC-002
+    statement: "Multi-factor authentication (MFA) is required for all remote access, privileged accounts, and access to systems containing CONFIDENTIAL or RESTRICTED data."
+    severity: CRITICAL
+    modality: MUST
+    tags: [mfa, authentication, remote-access]
+    org_scope: [security/access-control]
+    applies_to_surfaces: [human_action]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "リモートアクセス、特権アカウント、機密・制限データを含むシステムへのアクセスには多要素認証（MFA）が必須。"
+
+  - id: SEC-003
+    statement: "Security incidents must be reported to the security team within 1 hour of detection. Critical incidents (data breach, ransomware) must be escalated to the CISO within 2 hours."
+    severity: CRITICAL
+    modality: MUST
+    tags: [incident-response, escalation, reporting]
+    org_scope: [security/incident]
+    applies_to_surfaces: [human_action]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "セキュリティインシデントは検知後1時間以内にセキュリティチームに報告すること。重大インシデント（データ漏洩・ランサムウェア）は2時間以内にCISOにエスカレーションすること。"
+
+  - id: SEC-004
+    statement: "Critical vulnerabilities (CVSS >= 9.0) must be remediated within 72 hours. High vulnerabilities (CVSS 7.0-8.9) within 2 weeks. Medium vulnerabilities within 30 days."
+    severity: HIGH
+    modality: MUST
+    tags: [vulnerability, remediation, sla, cvss]
+    org_scope: [security/vulnerability]
+    applies_to_surfaces: [human_action, code]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "重大な脆弱性（CVSS 9.0以上）は72時間以内に修正すること。高（CVSS 7.0-8.9）は2週間以内。中は30日以内。"
+
+  - id: SEC-005
+    statement: "All changes to production infrastructure must go through the change management process with documented approval, rollback plan, and post-deployment verification."
+    severity: HIGH
+    modality: MUST
+    tags: [change-management, infrastructure, approval, rollback]
+    org_scope: [security/infrastructure]
+    applies_to_surfaces: [human_action, document]
+    norm_tier: CORPORATE_POLICY
+    locale: en
+    statement_translations:
+      ja: "本番インフラへの全変更は変更管理プロセスを経ること。承認記録、ロールバック計画、デプロイ後検証を文書化すること。"

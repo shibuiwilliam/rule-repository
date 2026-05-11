@@ -16,8 +16,12 @@ from datetime import UTC, datetime
 import pytest
 
 from rulerepo_server.domain.business_event import ActorRef, BusinessEvent
+from rulerepo_server.domain.evaluation import EvaluationContext, Verdict
 from rulerepo_server.domain.remediation import PolymorphicRemediation, RemediationKind
+from rulerepo_server.domain.scope import DOMAIN_KEY, SUBJECT_TYPE_KEY
 from rulerepo_server.domain.subject import EvaluationSubject, SubjectKind
+from rulerepo_server.services.evaluation.context_assembler import assemble_context_from_subject
+from rulerepo_server.services.evaluation.kind_dispatch import evaluate_local, partition_by_kind
 from rulerepo_server.services.events.scope_resolver import EventScopeResolver
 from rulerepo_server.services.extraction.extractors.regulation import RegulationExtractor
 
@@ -98,3 +102,92 @@ class TestExpenseRoundtrip:
         )
         assert remediation.validate_payload()
         assert remediation.kind == RemediationKind.FIELD_CHANGE
+
+    # ------------------------------------------------------------------
+    # Polymorphic context assembly (Proposal 1 validation)
+    # ------------------------------------------------------------------
+
+    def test_context_assembly_from_transaction_subject(self) -> None:
+        """assemble_context_from_subject builds transaction context without code artifacts."""
+        subject = EvaluationSubject(
+            kind=SubjectKind.TRANSACTION,
+            payload={
+                "amount_jpy": 50000,
+                "category": "entertainment",
+            },
+            metadata={"intent": "Expense claim"},
+        )
+        ctx = assemble_context_from_subject(subject)
+
+        assert isinstance(ctx, EvaluationContext)
+        assert ctx.surface == "transaction"
+        assert ctx.diff is None
+        assert ctx.files_changed == []
+        assert ctx.facts["amount_jpy"] == 50000
+        assert ctx.narrative is not None
+        assert "50000" in ctx.narrative
+
+    # ------------------------------------------------------------------
+    # Structured scope matching (Proposal 2 / RR-040)
+    # ------------------------------------------------------------------
+
+    def test_structured_scope_expense_rule_matches(self) -> None:
+        """A finance/expense rule with structured scope dimensions matches correctly."""
+        from rulerepo_server.domain.scope import matches_scope_dimensions
+
+        rule_scope = {DOMAIN_KEY: "finance", SUBJECT_TYPE_KEY: "expense"}
+        query_dims = {DOMAIN_KEY: "finance", SUBJECT_TYPE_KEY: "expense"}
+        assert matches_scope_dimensions(rule_scope, query_dims) is True
+
+    def test_structured_scope_cross_domain_no_match(self) -> None:
+        """An HR rule does not match a finance query."""
+        from rulerepo_server.domain.scope import matches_scope_dimensions
+
+        rule_scope = {DOMAIN_KEY: "hr", SUBJECT_TYPE_KEY: "attendance"}
+        query_dims = {DOMAIN_KEY: "finance", SUBJECT_TYPE_KEY: "expense"}
+        assert matches_scope_dimensions(rule_scope, query_dims) is False
+
+    # ------------------------------------------------------------------
+    # Kind dispatch (Proposal 3)
+    # ------------------------------------------------------------------
+
+    def test_computational_rule_denies_over_limit(self) -> None:
+        """A COMPUTATIONAL expense-cap rule denies without LLM when facts exceed threshold."""
+        rule = {
+            "id": "r-expense-cap",
+            "kind": "computational",
+            "statement": "Entertainment spending MUST NOT exceed 30,000 JPY per event.",
+            "modality": "MUST_NOT",
+            "severity": "HIGH",
+        }
+
+        ctx = EvaluationContext(
+            facts={"amount_jpy": 50000, "category": "entertainment"},
+            surface="transaction",
+        )
+
+        llm_rules, local_rules = partition_by_kind([rule])
+        assert len(llm_rules) == 0
+        assert len(local_rules) == 1
+
+        verdict, model_id, _ = evaluate_local(rule, ctx)
+        assert verdict.verdict == Verdict.DENY
+        assert model_id == "local/kind-dispatch"
+
+    def test_computational_rule_allows_under_limit(self) -> None:
+        """A COMPUTATIONAL expense-cap rule allows when facts are within threshold."""
+        rule = {
+            "id": "r-expense-cap",
+            "kind": "computational",
+            "statement": "Entertainment spending MUST NOT exceed 30,000 JPY per event.",
+            "modality": "MUST_NOT",
+            "severity": "HIGH",
+        }
+
+        ctx = EvaluationContext(
+            facts={"amount_jpy": 20000},
+            surface="transaction",
+        )
+
+        verdict, _, _ = evaluate_local(rule, ctx)
+        assert verdict.verdict == Verdict.ALLOW

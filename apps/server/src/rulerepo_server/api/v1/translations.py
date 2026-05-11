@@ -1,6 +1,6 @@
 """REST API routes for polyglot rule translations.
 
-See IMPROVEMENT.md RR-020.
+See IMPROVEMENT.md Proposal 8 / RR-020.
 """
 
 from __future__ import annotations
@@ -10,7 +10,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from rulerepo_server.adapters.postgres.session import get_db_session
 from rulerepo_server.core.errors import NotFoundError
 from rulerepo_server.core.logging import get_logger
 from rulerepo_server.services.translation.service import TranslationService
@@ -19,19 +21,24 @@ logger = get_logger(__name__)
 
 router = APIRouter(tags=["translations"])
 
+
 # ---------------------------------------------------------------------------
-# Singleton service (in-memory for now; will be replaced by DI with Postgres)
+# Dependency injection
 # ---------------------------------------------------------------------------
 
-_service: TranslationService | None = None
 
+def _get_service(
+    session: AsyncSession = Depends(get_db_session),
+) -> TranslationService:
+    """Build a Postgres-backed TranslationService."""
+    gemini = None
+    try:
+        from rulerepo_server.adapters.gemini.client import get_gemini_client
 
-def _get_service() -> TranslationService:
-    """Return the module-level TranslationService singleton."""
-    global _service
-    if _service is None:
-        _service = TranslationService()
-    return _service
+        gemini = get_gemini_client()
+    except Exception:
+        logger.debug("gemini_unavailable_for_translations")
+    return TranslationService(session, gemini)
 
 
 # ---------------------------------------------------------------------------
@@ -126,12 +133,15 @@ async def create_translation(
     svc: TranslationService = Depends(_get_service),
 ) -> TranslationResponse:
     """Add a translation for an existing rule."""
-    translation = await svc.create_translation(
-        rule_id=rule_id,
-        language=body.language,
-        statement=body.statement,
-        translator=body.translator,
-    )
+    try:
+        translation = await svc.create_translation(
+            rule_id=rule_id,
+            language=body.language,
+            statement=body.statement,
+            translator=body.translator,
+        )
+    except NotFoundError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return _serialize_translation(translation)
 
 
@@ -149,6 +159,34 @@ async def list_translations(
 
 
 @router.post(
+    "/rules/{rule_id}/translations/verify",
+    response_model=list[VerificationResponse],
+)
+async def verify_rule_translations(
+    rule_id: UUID,
+    svc: TranslationService = Depends(_get_service),
+) -> list[VerificationResponse]:
+    """Trigger equivalence verification for all translations of a rule."""
+    try:
+        results = await svc.verify_all_for_rule(rule_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+    return [
+        VerificationResponse(
+            translation_id=str(r.translation_id),
+            original_statement=r.original_statement,
+            translated_statement=r.translated_statement,
+            back_translated=r.back_translated,
+            equivalence_score=r.equivalence_score,
+            verified_at=r.verified_at,
+            passed=r.passed,
+        )
+        for r in results
+    ]
+
+
+@router.post(
     "/translations/{translation_id}/verify",
     response_model=VerificationResponse,
 )
@@ -156,11 +194,7 @@ async def verify_translation(
     translation_id: UUID,
     svc: TranslationService = Depends(_get_service),
 ) -> VerificationResponse:
-    """Trigger verification of a translation's accuracy.
-
-    Back-translates the statement and computes semantic similarity
-    against the original rule.
-    """
+    """Trigger verification of a single translation's accuracy."""
     try:
         result = await svc.verify_translation(translation_id)
     except NotFoundError as exc:
