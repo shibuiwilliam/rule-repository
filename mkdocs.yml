@@ -70,6 +70,16 @@ nav:
     - Phase 7: 09_changelog/phase7.md
     - Phase 7 Status: 09_changelog/phase7-status.md
     - Phase 8: 09_changelog/phase8.md
+  - Walkthroughs:
+    - Engineering: walkthroughs/engineering.md
+    - Legal: walkthroughs/legal.md
+    - HR: walkthroughs/hr.md
+    - Finance: walkthroughs/finance.md
+    - Sales: walkthroughs/sales.md
+    - Compliance: walkthroughs/compliance.md
+    - Security: walkthroughs/security.md
+    - Marketing: walkthroughs/marketing.md
+    - Admin: walkthroughs/admin.md
   - ADR:
     - "001: Three-Store Architecture": adr/001-three-store-architecture.md
     - "003: Classification and RLS": adr/003-classification-and-rls.md

@@ -36,5 +36,5 @@ Navigate to `/admin/users`. Manage user accounts and access:
 ## Next Steps
 
 - Review [Multi-Tenancy](../architecture/overview.md#tier-1-infrastructure-postgres-only) for deployment tier options
-- See [Feature Flags](../../FEATURES.md) for the full configuration reference
+- See `FEATURES.md` at the repository root for the full configuration reference
 - Explore [Docker Compose Setup](../getting-started/docker-compose.md) for infrastructure management
