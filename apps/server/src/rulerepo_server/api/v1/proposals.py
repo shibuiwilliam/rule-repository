@@ -6,9 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rulerepo_server.adapters.postgres.session import get_db_session
-from rulerepo_server.core.deps import _get_optional_gemini
+from rulerepo_server.core.deps import _get_optional_gemini, require_department_action
 from rulerepo_server.core.errors import ConflictError, NotFoundError, ValidationError
 from rulerepo_server.core.logging import get_logger
+from rulerepo_server.domain.department import Action
 from rulerepo_server.schemas.proposal import (
     CommentCreate,
     CommentResponse,
@@ -142,7 +143,11 @@ async def submit_proposal(
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
 
-@router.post("/{proposal_id}/vote", response_model=ProposalResponse)
+@router.post(
+    "/{proposal_id}/vote",
+    response_model=ProposalResponse,
+    dependencies=[Depends(require_department_action(Action.APPROVE))],
+)
 async def vote_on_proposal(
     proposal_id: str,
     body: VoteRequest,
@@ -162,7 +167,11 @@ async def vote_on_proposal(
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
 
-@router.post("/{proposal_id}/enact", response_model=ProposalResponse)
+@router.post(
+    "/{proposal_id}/enact",
+    response_model=ProposalResponse,
+    dependencies=[Depends(require_department_action(Action.APPROVE))],
+)
 async def enact_proposal(
     proposal_id: str,
     actor: str = Query(default="system", description="Actor performing enactment."),

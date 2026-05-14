@@ -22,6 +22,9 @@ A legal counsel reviewing an NDA, an HR manager checking overtime compliance, a 
 - [Frontend](#frontend)
 - [Evaluation Engine](#evaluation-engine)
 - [Norm Lineage](#norm-lineage)
+- [Rule Kinds](#rule-kinds)
+- [Structured Scope](#structured-scope)
+- [Multilingual Rules](#multilingual-rules)
 - [Rule Extraction](#rule-extraction)
 - [Rule Templates](#rule-templates)
 - [Compliance and Privacy](#compliance-and-privacy)
@@ -52,14 +55,14 @@ After about a minute:
 
 | Service | URL | Purpose |
 |---|---|---|
-| Backend API | http://localhost:8000 | FastAPI server (37 API routers + gateway) |
+| Backend API | http://localhost:8000 | FastAPI server (41 API routers) |
 | Swagger UI | http://localhost:8000/docs | Interactive API explorer |
-| Frontend | http://localhost:3000 | Persona-specific consoles (58 pages, 9 route groups) |
+| Frontend | http://localhost:3000 | Persona-specific consoles (61 pages, 9 route groups) |
 | PostgreSQL | localhost:5432 | Source of truth with Row-Level Security |
 | Elasticsearch | localhost:9200 | Full-text + vector hybrid search |
 | Neo4j | localhost:7474 | Rule relationship graph + norm lineage |
 | Redis | localhost:6379 | Background job queue (arq, 9 cron jobs) |
-| MCP Server | localhost:8001 | AI agent tool integration (18 tools) |
+| MCP Server | localhost:8001 | AI agent tool integration (25 tools) |
 
 ### Start with Postgres only (Tier 1)
 
@@ -169,7 +172,7 @@ The Rule Repository stores rules as natural-language statements and evaluates an
 - **Sales**: Validate advertising claims, enforce discount authority, check quote accuracy
 - **Compliance**: Track regulatory amendments, monitor department violation trends, manage action queues
 
-Each rule carries structured metadata: modality (MUST / MUST_NOT / SHOULD / MAY / INFO), severity (LOW through CRITICAL), scope, department ownership, effective period, locale, rationale, and examples of both compliance and violation.
+Each rule carries structured metadata: modality (MUST / MUST_NOT / SHOULD / MAY / INFO), severity (LOW through CRITICAL), kind (normative / computational / procedural / definitional / principle), structured scope with multi-axis dimensions, department ownership, effective period, locale, rationale, and examples of both compliance and violation.
 
 ---
 
@@ -226,7 +229,7 @@ A **Domain Pack** bundles rules, prompt hints, samples, and frontend route decla
 │                     Rule Repository Server                      │
 │                                                                 │
 │  ┌──────────────────┐  ┌────────────────────────────────────┐  │
-│  │ Domain-Neutral    │  │ Surfaces (7)                       │  │
+│  │ Domain-Neutral    │  │ Surfaces (8)                       │  │
 │  │ Core              │  │                                    │  │
 │  │                   │  │ Code  Contract  Human Action       │  │
 │  │ Rule CRUD+Search  │  │ Transaction  Document  Message     │  │
@@ -244,8 +247,8 @@ A **Domain Pack** bundles rules, prompt hints, samples, and frontend route decla
 │  ┌──────────────────┐  ┌────────────────────────────────────┐  │
 │  │ LLM Abstraction  │  │ Integration Layer                  │  │
 │  │                   │  │                                    │  │
-│  │ Primary/fallback  │  │ 37 REST API routers                │  │
-│  │ Gemini, Anthropic │  │ MCP Server (18 tools)              │  │
+│  │ Primary/fallback  │  │ 41 REST API routers                │  │
+│  │ Gemini, Anthropic │  │ MCP Server (25 tools)              │  │
 │  │ OpenAI, self-host │  │ Business Event Ingestion           │  │
 │  └──────────────────┘  │ Gateway + GitHub (opt-in)           │  │
 │                         └────────────────────────────────────┘  │
@@ -301,7 +304,7 @@ Three modes:
 
 ## MCP Server
 
-The MCP (Model Context Protocol) server lets AI agents interact with the rule repository. It exposes 18 tools:
+The MCP (Model Context Protocol) server lets AI agents interact with the rule repository. Key tools include:
 
 | Tool | Purpose |
 |---|---|
@@ -368,7 +371,7 @@ rulerepo init --name my-project
 
 ## Frontend
 
-A Next.js 15 + React 19 + Tailwind CSS frontend with 58 pages organized into 9 persona-specific route groups. Each persona sees a dashboard aligned to their workflow, not a generic engineering view.
+A Next.js 15 + React 19 + Tailwind CSS frontend with 61 pages organized into 9 persona-specific route groups. Each persona sees a dashboard aligned to their workflow, not a generic engineering view.
 
 | Console | Route | Key pages |
 |---|---|---|
@@ -394,9 +397,10 @@ The frontend supports English and Japanese via `next-intl`, with a locale switch
 The evaluation pipeline works the same regardless of the surface:
 
 1. **Surface adapter** -- transforms domain-specific input (diff, contract clause, HR event, etc.) into a uniform Subject
-2. **Rule selection** -- multi-stage filter pipeline: scope, subject type, artifact type, dimensions, severity, relevance scoring
-3. **Fact resolution** -- the Fact Store resolves external facts (employee grade, 36-agreement status, contract value). Context Providers (`StaticFileProvider`, `HttpProvider`) can supply missing facts automatically
-4. **LLM evaluation** -- the selected rules and the subject are sent to the LLM with surface-specific prompt hints. Cross-locale fallback selects translated rule statements when available
+2. **Rule selection** -- multi-stage filter pipeline: scope, subject type, artifact type, structured scope dimensions, severity, relevance scoring
+3. **Kind dispatch** -- rules are partitioned by `kind`. Computational, procedural, and definitional rules are resolved deterministically without LLM calls. Only normative rules proceed to step 5.
+4. **Fact resolution** -- the Fact Store resolves external facts (employee grade, 36-agreement status, contract value). Context Providers (`StaticFileProvider`, `HttpProvider`) can supply missing facts automatically
+5. **LLM evaluation** -- the selected normative rules and the subject are sent to the LLM with surface-specific prompt hints. Cross-locale fallback selects translated rule statements when available
 5. **Verdict aggregation** -- per-rule verdicts are aggregated into ALLOW / DENY / NEEDS_CONFIRMATION / ALLOW_WITH_CONDITIONS / REQUIRES_DISCLOSURE
 6. **Remediation** -- typed remediation proposals: `code_edit` (line-level patches), `text_rewrite` (document span replacement), `field_change` (transaction field correction), `approval_add` (escalate to approver), `process_reroute` (redirect workflow), `clarification` (request missing information), `block` (requires human judgment)
 7. **Audit persistence** -- model ID, prompt version, inputs, outputs, latency, surface, actor, and locale are logged to the append-only, hash-chained audit log
@@ -429,6 +433,61 @@ The norm lineage is **orthogonal** to the organizational federation (Org / Team 
 
 ---
 
+## Rule Kinds
+
+Not all rules require LLM judgment. The `kind` field on each rule determines its evaluation strategy, saving LLM tokens and improving determinism where possible.
+
+| Kind | Evaluation approach | Example |
+|------|-------------------|---------|
+| **normative** | Full LLM-as-Judge reasoning | "Code reviews must address security concerns" |
+| **computational** | Deterministic threshold check first, LLM only for edge cases | "Monthly overtime MUST NOT exceed 45 hours" |
+| **procedural** | State-transition / ordering verification | "36 Agreement must be filed before assigning overtime" |
+| **definitional** | Always ALLOW (reference only, no violations) | "'Force majeure' means acts of God, war, or government action" |
+| **principle** | Always ALLOW (evaluated through derived normative rules) | "All dealings must be transparent and honest" |
+
+The kind dispatcher (`services/evaluation/kind_dispatch.py`) partitions rules before the LLM batch call. Computational rules extract numeric thresholds from the rule statement (supporting both English units like "45 hours" and Japanese units like "45時間") and compare them against subject facts deterministically. Procedural rules check that preconditions appear in the workflow steps. Only normative rules -- which require genuine judgment -- are sent to the LLM.
+
+---
+
+## Structured Scope
+
+Rules use multi-axis structured scope for precise applicability filtering. This prevents cross-domain contamination (an HR overtime rule won't match against a finance expense query) and enables fine-grained rule selection.
+
+```yaml
+structured_scope:
+  path: "hr/attendance/jp"
+  dimensions:
+    domain: "hr"                  # legal | hr | finance | sales | engineering | ...
+    org_unit: "acme/jp/tokyo"     # organizational hierarchy
+    subject_type: "attendance"    # contract | expense | code_file | employee | ...
+    jurisdiction: "JP"            # optional attribute
+```
+
+Three primary dimension keys receive first-class treatment in indexing and selection: `domain`, `org_unit`, and `subject_type`. Additional dimensions (jurisdiction, confidentiality level, customer segment, etc.) are supported as generic key-value pairs.
+
+The rule selector uses structured scope dimensions for relevance scoring, boosting rules whose dimensions overlap with the query. Elasticsearch indexes all dimensions as keyword fields for efficient filtering.
+
+---
+
+## Multilingual Rules
+
+Rules can be authored in any language and linked to translations in other languages. The system verifies that translations remain semantically equivalent over time.
+
+**How it works:**
+
+1. **Author a rule** with a `locale` (e.g., `ja` for Japanese, `en` for English).
+2. **Link a translation** via `POST /api/v1/rules/{id}/translations` -- this creates a new rule in the target language and a `rule_translations` link record.
+3. **Verify equivalence** via `POST /api/v1/rules/{id}/translations/verify` -- the `PolyglotVerifier` sends both statements to the LLM and returns a 0.0-1.0 semantic equivalence score. Scores below 0.85 are flagged as drift.
+4. **Search by language** using the `language` query parameter or the `Accept-Language` HTTP header on search endpoints.
+
+**Background workers** run automatically:
+- **Translation drift checker** (daily, 3:30 AM) -- compares each rule's `statement_translations` JSONB against the canonical statement
+- **Polyglot equivalence validator** (weekly, Sunday 6 AM) -- groups rules by `equivalence_id` and verifies pairwise semantic equivalence
+
+The `rule_translations` table stores `source_rule_id`, `target_rule_id`, `target_language`, `equivalence_score`, `verified_at`, and `verified_by`.
+
+---
+
 ## Rule Extraction
 
 Six domain-specific extractors bootstrap rules from existing organizational documents:
@@ -456,18 +515,21 @@ rulerepo ingest --source spreadsheet --file ./policies/expense_limits.xlsx
 
 ## Rule Templates
 
-30 ready-to-use templates covering 300+ rules across 8 domains:
+33 ready-to-use templates covering 300+ rules across 9 domains:
 
 | Domain | Templates | Example topics |
 |---|---|---|
-| Engineering | 5 | Python/FastAPI, TypeScript/React, OWASP security, API design, testing |
-| Legal | 4 | NDA review, contract clauses, IP protection, regulatory compliance |
-| HR | 5 | Attendance (JP), leave management, evaluation fairness, harassment prevention, overtime |
-| Finance | 5 | Expense policy, journal entries, invoice compliance, purchase orders, revenue recognition |
-| Compliance | 2 | Anti-corruption, data privacy (JP) |
+| Engineering | 5 | Python/FastAPI, TypeScript/React, API design, testing, documentation |
+| Legal / Contract | 7 | NDA review, contract clauses, contracts (JP), IP protection, regulatory compliance |
+| HR | 5 | Attendance (JP labor law), leave management, evaluation fairness, harassment prevention, overtime |
+| Finance | 6 | Expense policy (JP), expense policy (standard), journal entries, invoice compliance, purchase orders, revenue recognition |
+| Sales | 1 | Pricing policy (discount caps, approval authority, resale price maintenance, competitive bids) |
+| Compliance | 2 | Anti-corruption (FCPA, UK Bribery Act), data privacy (JP APPI) |
 | IT Security | 3 | Access control, IaC/Terraform, OWASP |
 | Communication | 1 | Internal communication standards |
-| Cross-domain | 5 | Contract clause standard, procurement rules, documentation, advertising, meta-rules |
+| Cross-domain | 3 | Procurement rules, advertising (JP pharma), meta-rules (rules about rules) |
+
+Many templates include `kind` annotations: computational rules for numeric thresholds (overtime caps, expense limits), procedural rules for approval workflows, and definitional rules for term definitions.
 
 Load templates with `make seed` or through the onboarding wizard at `/onboarding`.
 
@@ -513,7 +575,7 @@ make up                       # start full stack (Tier 3)
 make up.tier1                 # start with Postgres only
 make seed                     # load sample rules + templates
 make check                    # format + lint + test (run before committing)
-make crossorg.acceptance      # run the 4 cross-organizational acceptance tests
+make crossorg.acceptance      # run the 6 cross-organizational acceptance tests (64 cases)
 make eval                     # run eval harness
 make dev.server               # FastAPI with hot-reload
 make dev.frontend             # Next.js with hot-reload
@@ -541,12 +603,12 @@ rule-repository/
 ├── apps/
 │   ├── server/                        # FastAPI backend
 │   │   ├── src/rulerepo_server/
-│   │   │   ├── api/v1/                # 37 REST API routers
+│   │   │   ├── api/v1/                # 41 REST API routers
 │   │   │   ├── domain/                # Pure domain models (Rule, Subject, Department, Remediation)
 │   │   │   ├── services/
 │   │   │   │   ├── evaluation/        # Surface-agnostic evaluation engine
 │   │   │   │   │   ├── core/          # Universal pipeline (no surface imports)
-│   │   │   │   │   └── surfaces/      # 7 per-surface adapters
+│   │   │   │   │   └── surfaces/      # 8 per-surface adapters
 │   │   │   │   ├── extraction/        # Document ingestion + 6 domain extractors
 │   │   │   │   ├── intelligence/      # Health scoring, drift detection, analytics
 │   │   │   │   ├── norm_lineage/      # Upstream/downstream lineage walker
@@ -561,15 +623,15 @@ rule-repository/
 │   │   │   │   └── ...               # 20+ more service modules
 │   │   │   ├── domain_packs/          # Code, Contract, HR, Communication, Expense
 │   │   │   ├── adapters/              # Postgres, ES, Neo4j, Gemini, LLM router
-│   │   │   ├── mcp/                   # MCP server (18 tools)
+│   │   │   ├── mcp/                   # MCP server (25 tools)
 │   │   │   └── workers/               # 9 background cron jobs
-│   │   └── tests/                     # 69 test files (765+ tests)
-│   └── frontend/                      # Next.js 15 (58 pages, 9 route groups)
+│   │   └── tests/                     # 86 test files (1180+ tests)
+│   └── frontend/                      # Next.js 15 (61 pages, 9 route groups)
 ├── packages/
 │   ├── rule-client/                   # Python SDK
 │   ├── agentic-client/                # Python agentic SDK
 │   └── cli/                           # CLI tools (12 commands)
-├── sample_rules/                      # 30 templates (300+ rules)
+├── sample_rules/                      # 33 templates (300+ rules)
 ├── infra/                             # Docker, Postgres init, ES templates
 ├── scripts/                           # Seeding, graph reconciliation, audit verification
 ├── PROJECT.md                         # Vision, domain model, roadmap

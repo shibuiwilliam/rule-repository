@@ -103,6 +103,38 @@ SAMPLE_RULES = [
         "tags": ["handbook", "information", "onboarding"],
         "rationale": "New employees should know where to find the handbook",
     },
+    # Polyglot rule pair — EN version
+    {
+        "statement": "Monthly overtime hours must not exceed 45 hours per employee unless a special-clause 36-agreement is in effect.",
+        "modality": "MUST_NOT",
+        "severity": "CRITICAL",
+        "scope": ["hr/overtime"],
+        "tags": ["overtime", "36-agreement", "labor-standards-act", "polyglot"],
+        "rationale": "Article 36 of the Labor Standards Act caps ordinary overtime at 45 hours per month.",
+        "equivalence_id": "polyglot-overtime-45h",
+        "locale": "en",
+        "jurisdiction": "JP",
+        "applicable_subject_types": ["event"],
+        "statement_translations": {
+            "ja": "月間の時間外労働時間は、特別条項付き36協定が効力を有する場合を除き、従業員1人当たり45時間を超えてはならない。",
+        },
+    },
+    # Polyglot rule pair — JA version (linked by equivalence_id)
+    {
+        "statement": "月間の時間外労働時間は、特別条項付き36協定が効力を有する場合を除き、従業員1人当たり45時間を超えてはならない。",
+        "modality": "MUST_NOT",
+        "severity": "CRITICAL",
+        "scope": ["hr/overtime"],
+        "tags": ["overtime", "36-agreement", "labor-standards-act", "polyglot"],
+        "rationale": "労働基準法第36条により、通常の時間外労働の上限は月45時間。",
+        "equivalence_id": "polyglot-overtime-45h",
+        "locale": "ja",
+        "jurisdiction": "JP",
+        "applicable_subject_types": ["event"],
+        "statement_translations": {
+            "en": "Monthly overtime hours must not exceed 45 hours per employee unless a special-clause 36-agreement is in effect.",
+        },
+    },
 ]
 
 

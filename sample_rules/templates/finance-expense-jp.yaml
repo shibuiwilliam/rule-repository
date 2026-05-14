@@ -1,0 +1,98 @@
+version: 1
+template:
+  name: finance-expense-jp
+  description: Japan-focused expense policy rules — entertainment caps, receipt thresholds, overseas travel approval, reimbursement deadlines
+  tags: [finance, expenses, japan, tax, entertainment]
+  owning_department: finance
+  applicable_subject_kinds: [transaction, event]
+
+rules:
+  - statement: "Entertainment expenses must not exceed 5,000 JPY per person per event. The expense report must list all attendees, their affiliations, and the business purpose."
+    modality: MUST_NOT
+    severity: HIGH
+    classification: internal
+    scope: [finance/expense]
+    tags: [entertainment, hospitality, per-person-cap, tax]
+    applicable_subject_types: [transaction, event]
+    jurisdiction: JP
+    legal_force: statutory
+    kind: computational
+    norm_authority: "Tax Special Measures Act Article 61-4 (Japan)"
+    rationale: "The 5,000 JPY per-person threshold determines tax deductibility of entertainment expenses under Japanese tax law."
+    constraints:
+      - type: numeric
+        field_path: per_person_entertainment
+        operator: "<="
+        threshold: 5000
+        unit: JPY
+    violation_examples:
+      - "Client dinner for 4 people totaling 42,000 JPY (10,500 per person)"
+    following_examples:
+      - "Team lunch for 6 people totaling 24,000 JPY (4,000 per person) with full attendee list"
+
+  - statement: "All expense claims exceeding 5,000 JPY must include a receipt or invoice as supporting documentation."
+    modality: MUST
+    severity: HIGH
+    classification: internal
+    scope: [finance/expense]
+    tags: [receipt, documentation, threshold]
+    applicable_subject_types: [transaction, event]
+    jurisdiction: JP
+    legal_force: policy
+    kind: computational
+    rationale: "Tax authorities require documentary evidence for deductible expenses above the de minimis threshold."
+    constraints:
+      - type: numeric
+        field_path: amount
+        operator: "<="
+        threshold: 5000
+        unit: JPY
+
+  - statement: "Overseas business travel must receive prior written approval from the department head. Trips exceeding 7 days or costing more than 500,000 JPY require executive approval."
+    modality: MUST
+    severity: HIGH
+    classification: internal
+    scope: [finance/expense, finance/travel]
+    tags: [travel, overseas, approval, pre-authorization]
+    applicable_subject_types: [transaction, event]
+    jurisdiction: JP
+    legal_force: policy
+    rationale: "Pre-approval prevents unauthorized spending and ensures budget alignment for international travel."
+    violation_examples:
+      - "Employee books international flight and hotel without prior approval"
+
+  - statement: "Expense reimbursement claims must be submitted within 30 calendar days of the expense date. Claims older than 60 days will not be reimbursed without VP-level exception approval."
+    modality: MUST
+    severity: MEDIUM
+    classification: internal
+    scope: [finance/expense]
+    tags: [deadline, reimbursement, timeliness]
+    applicable_subject_types: [transaction, event]
+    jurisdiction: JP
+    legal_force: policy
+    kind: computational
+    rationale: "Timely submission ensures accurate period accounting and prevents stale claims."
+    constraints:
+      - type: numeric
+        field_path: days_since_expense
+        operator: "<="
+        threshold: 30
+        unit: days
+
+  - statement: "Standard discount rates on sales must not exceed 15% off list price without Sales Director approval."
+    modality: MUST_NOT
+    severity: HIGH
+    classification: internal
+    scope: [finance/expense, sales/discount]
+    tags: [discount, pricing, approval-authority]
+    applicable_subject_types: [transaction]
+    jurisdiction: JP
+    legal_force: policy
+    kind: computational
+    rationale: "Unapproved discounts erode margins and may violate pricing agreements."
+    constraints:
+      - type: numeric
+        field_path: discount_pct
+        operator: "<="
+        threshold: 15
+        unit: "%"

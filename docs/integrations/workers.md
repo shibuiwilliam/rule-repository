@@ -19,7 +19,7 @@ Both services are included in `docker-compose.yml` and start automatically with 
 
 ## Scheduled Jobs
 
-The arq worker runs seven scheduled cron jobs plus on-demand tasks. All are fully implemented with real database operations.
+The arq worker runs nine scheduled cron jobs plus on-demand tasks. All are fully implemented with real database operations.
 
 | Job | Schedule | Description |
 |---|---|---|
@@ -27,8 +27,10 @@ The arq worker runs seven scheduled cron jobs plus on-demand tasks. All are full
 | `generate_recommendations_task` | 3:00 AM daily | Analyzes rule usage patterns, generates improvement recommendations. Alerts on high deny rate (> 50%). |
 | `verify_translation_drift` | 3:30 AM daily | Checks semantic equivalence of translated rule locales. Creates alerts for locale drift. |
 | `auto_promote_rules` | 4:00 AM daily | Promotes rules through maturity levels (experimental -> stable -> proven) based on false-positive rate. Demotes if FP exceeds 10%. |
+| `detect_verdict_drift` | 4:30 AM daily | Replays canary inputs to detect unexpected LLM behavior changes. Creates alerts for verdict distribution shifts. |
 | `cluster_corrections` | 5:00 AM daily | Clusters similar corrections by embedding similarity, auto-drafts rule proposals via Gemini. Creates `DraftRuleProposalModel` entries for human review. |
 | `compute_correction_stats` | Every hour | Aggregates correction statistics by analysis_type and status. |
+| `validate_polyglot_equivalence` | Sunday 6:00 AM | Verifies multilingual rule equivalence across locales. |
 | `send_weekly_digest` | Monday 9:00 AM | Generates weekly governance digest (compliance trends, top violations, most effective rules, declining rules, pending actions). Sends to `DIGEST_WEBHOOK_URL` if configured. |
 
 On-demand tasks (triggered by API or events):

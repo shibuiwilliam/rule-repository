@@ -92,11 +92,27 @@ Control how alerts and digests are delivered. Not feature flags per se, but affe
 3. **`main.py`** — checks `FeatureFlags` to conditionally register routers (e.g., gateway, GitHub App) and initialize services (e.g., DomainPackLoader).
 4. **Frontend** — uses `NEXT_PUBLIC_*` env vars at build time to conditionally render sidebar items and routes.
 
+## Frozen Schema
+
+Tables belonging to frozen features are moved to the `frozen` PostgreSQL schema (migration 037). This keeps them out of the default `public` namespace while preserving all data.
+
+| Table | Schema | Feature Flag |
+|-------|--------|-------------|
+| `enforcement_policies` | `frozen` | `GATEWAY_ENABLED` |
+| `gateway_evaluations` | `frozen` | `GATEWAY_ENABLED` |
+| `governance_sessions` | `frozen` | `MULTI_AGENT_SESSIONS_ENABLED` |
+| `agent_negotiations` | `frozen` | `MULTI_AGENT_SESSIONS_ENABLED` |
+
+Tables that remain in `public` even when their parent feature is opt-in:
+- `agent_profiles` — single-agent tracking is always active
+- `agent_exception_requests` — exception workflow is always active
+
 ## Graceful Degradation
 
 When a feature flag is disabled:
 - The corresponding API routers are **not registered** (return 404, not 500).
 - Background workers for that feature are **not started**.
 - Frontend sidebar items are **hidden**.
+- Frozen tables live in the `frozen` PostgreSQL schema (not dropped).
 - No import errors or module-level crashes occur — all imports are guarded behind the flag check.
 - The full test suite passes regardless of flag state (tests mock dependencies, not flags).

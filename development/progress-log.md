@@ -60,3 +60,24 @@
 2026-05-09 — test: Tier 1 integration test suite (13 tests) covering feature flags, adapters, domain modules, eval harness, LLM router.
 2026-05-09 — verify: Tier 1 boot confirmed (readyz tier=1). Tier 3 boot confirmed (readyz tier=3, all checks ok).
 2026-05-09 — verify: 746 tests passed. 90/90 eval harness cases across 8 domains.
+
+## Phase 8 Expansion
+
+2026-05-10 — Surface-based batch template routing (7 surface-specific prompts). Per-rule prompt equalization (HR 87 LOC, contract 90 LOC, expense 95 LOC, message 94 LOC). MCP tools 18→24.
+2026-05-10 — Domain-aware SDKs: agentic client +6 methods, rule client +3 resource sub-objects. Context delivery domain-aware queries.
+2026-05-10 — Frontend domain dashboard parity: Finance 505 LOC, Marketing 681 LOC, HR 649 LOC, Legal 926 LOC. Finance sub-pages (expenses, controls, audit). Marketing sub-pages (creative-reviews, guidelines).
+
+## Post-Phase 8
+
+2026-05-14 — Migration 032: backfill applicable_subject_types. Migration 033: backfill structured_scope.
+2026-05-14 — Migration 034: add rule kind column. Migration 035: add constraints column for deterministic evaluation.
+2026-05-14 — Migration 036: create rule_translations table. Migration 037: move frozen tables to frozen schema.
+2026-05-14 — Evaluation dispatcher with kind-based dispatch (normative→LLM, computational→deterministic, procedural→state check, definitional/principle→always ALLOW).
+2026-05-14 — 4 new domain packs: legal, sales, it_security, governance (total: 9 packs).
+2026-05-14 — Worker expansion: 7→9 cron jobs (added detect_verdict_drift, validate_polyglot_equivalence).
+2026-05-14 — New sample templates: finance-expense-jp.yaml, legal-contracts-jp.yaml.
+2026-05-14 — docs: Comprehensive documentation update across docs/ and development/ to reflect latest codebase state.
+2026-05-14 — Migration 038: add GIN indexes on scope_structured JSONB for fast multi-axis scope queries.
+2026-05-14 — ORM models: 37 total (added DepartmentModel, CapacityAssignmentModel, RuleOwnershipModel, RuleTranslationModel, EvaluationDailyAggModel).
+2026-05-14 — Frontend: 61 pages across 9 persona route groups, 12 shared components, 65+ API functions in lib/api.ts.
+2026-05-14 — docs: Second comprehensive pass — aligned all counts (38 routers, 38 migrations, 37 ORM models, 61 pages, 9 cron jobs, 24 MCP tools).

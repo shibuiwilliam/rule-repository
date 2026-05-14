@@ -1,11 +1,11 @@
 # Database Schema & ER Diagram
 
 > PostgreSQL 17 -- source of truth for the Rule Repository.
-> 36+ ORM models across 35 Alembic migrations (001-035, skipping 020).
+> 37 ORM models across 38 Alembic migrations (001-038, skipping 020).
 > Row-Level Security enabled on `rules`, `documents`, `evaluations`, `audit_log` for classification-based access control.
 > Phase 7 additions: `subject_kinds`, `jurisdiction`, `classification`, `sensitivity`, department/capacity fields.
 > Phase 8 additions: `applies_to_surfaces`, `norm_tier`, `norm_authority`, `locale`, `statement_translations`, `tech_scope`, `org_scope`.
-> Post-Phase 8 additions: `kind` (rule evaluation strategy), `constraints` (deterministic evaluation), `structured_scope` backfill, `rule_translations` table.
+> Post-Phase 8 additions: `kind` (rule evaluation strategy), `constraints` (deterministic evaluation), `structured_scope` backfill, `rule_translations` table, frozen schema reorganization.
 
 ---
 
@@ -378,6 +378,27 @@ erDiagram
     rule_federations ||--o{ rule_federations : "parent_id (self-ref tree)"
 
     rule_set_snapshots ||--o{ rule_set_deployments : "deployed as"
+
+    %% ============================================================
+    %% TRANSLATIONS
+    %% ============================================================
+
+    rule_translations {
+        uuid id PK
+        uuid rule_id FK
+        varchar locale
+        text statement
+        text rationale
+        jsonb preconditions
+        jsonb exceptions
+        jsonb following_examples
+        jsonb violation_examples
+        varchar translated_by
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    rules ||--o{ rule_translations : "has translations"
 ```
 
 ---
@@ -466,6 +487,12 @@ erDiagram
 | Table | Purpose | Key Relationships |
 |---|---|---|
 | **llm_cache** | Cached Gemini responses keyed by hash(inputs+model+prompt) | Standalone |
+
+### Translations (1 table)
+
+| Table | Purpose | Key Relationships |
+|---|---|---|
+| **rule_translations** | Multilingual rule translations with per-locale statement and metadata | `rule_id → rules.id` |
 
 ### Governance Proposals (3 tables)
 

@@ -26,15 +26,15 @@ Technical documentation for developing and extending the Rule Repository.
 
 | Document | Description |
 |---|---|
-| [architecture.md](architecture.md) | System architecture: 10 services, 38 API routers, 8 domain modules, 7 evaluation surfaces, 9 domain packs, 35 migrations, 36+ ORM models, Tier 1/2/3 infrastructure |
+| [architecture.md](architecture.md) | System architecture: 10 services, 38 API routers, 8 domain modules, 7 evaluation surfaces, 9 domain packs, 38 migrations, 37 ORM models, Tier 1/2/3 infrastructure |
 | [evaluation-engine.md](evaluation-engine.md) | How the evaluation engine works: subject-polymorphic batched evaluation with kind-based dispatch (5 rule kinds), deterministic constraint layer (numeric/date/enum), surface-based template routing, 6 domain-specific location types, structured remediations, 8 subject kinds with adapters |
-| [api-reference.md](api-reference.md) | All API endpoints (39 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects, proposals, agent-governance, review, audit, departments, contracts, events, approval-workflows, attestation, compliance, cost, facts, operability, regulatory, risks, tenants, translations, upcoming-changes, lineage, ask, assistant, cockpit, events-ingest, onboarding |
+| [api-reference.md](api-reference.md) | All API endpoints (38 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects, proposals, agent-governance, review, audit, departments, contracts, events, approval-workflows, attestation, compliance, cost, facts, operability, regulatory, risks, translations, upcoming-changes, lineage, ask, assistant, cockpit, events-ingest, onboarding, submissions |
 | [mcp-server.md](mcp-server.md) | MCP tools (24 tools including domain-specific retrieval and evaluation), resources, prompts, and transport configuration (stdio + streamable-HTTP) |
-| [integrations.md](integrations.md) | GitHub App, CI CLI, agent hooks, rule ingestion, background workers (arq + Redis, 7 cron jobs), webhook gateway |
-| [testing.md](testing.md) | Test strategy (100+ test files, 1,184+ tests), running tests, writing new tests, LLM mocking, deterministic evaluator tests, domain pack structure tests, classification bidirectional tests, safety tests, eval harness, and linting |
+| [integrations.md](integrations.md) | GitHub App, CI CLI, agent hooks, rule ingestion, background workers (arq + Redis, 9 cron jobs), webhook gateway |
+| [testing.md](testing.md) | Test strategy (100+ test files, 1,184+ tests), running tests, writing new tests, LLM mocking, deterministic evaluator tests, domain pack structure tests, classification bidirectional tests, safety tests, eval harness (90 golden cases across 8 domains), and linting |
 | [feedback-flywheel.md](feedback-flywheel.md) | Correction capture -> analysis -> auto-drafting -> rule improvement loop (flywheel with clustering + proposals + auto-promotion) |
 | [rule-registration-workflows.md](rule-registration-workflows.md) | Sequence diagrams for all 4 rule registration paths: manual, extraction, discovery, feedback. Data store sync matrix |
-| [database-schema.md](database-schema.md) | Database schema: 36+ ORM models across 35 Alembic migrations, ER diagram, design decisions |
+| [database-schema.md](database-schema.md) | Database schema: 37 ORM models across 38 Alembic migrations, ER diagram, design decisions |
 | [intelligence-dashboard-plan.md](intelligence-dashboard-plan.md) | Intelligence Dashboard implementation plan (completed) |
 | [playground-enhancement-plan.md](playground-enhancement-plan.md) | Playground multi-mode input support (completed) -- Code + Scenario evaluation, rule picker, suggest-by-LLM |
 | [project-entity-plan.md](project-entity-plan.md) | Project entity as top-level organizational boundary (completed) |

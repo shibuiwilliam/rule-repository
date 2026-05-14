@@ -46,7 +46,7 @@ Once all containers are healthy, the following services are available:
 
 | Service | URL | Purpose |
 |---|---|---|
-| Backend API | [http://localhost:8000](http://localhost:8000) | 39 API routers (rules, evaluation, search, governance, compliance, etc.) |
+| Backend API | [http://localhost:8000](http://localhost:8000) | 38 API routers (rules, evaluation, search, governance, compliance, etc.) |
 | API docs (Swagger) | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive OpenAPI documentation |
 | Frontend | [http://localhost:3000](http://localhost:3000) | Operator console (browse, search, upload, evaluate, govern) |
 | PostgreSQL | localhost:5432 | Relational store (`ruledb`, user `rule`) with Row-Level Security |
@@ -54,7 +54,7 @@ Once all containers are healthy, the following services are available:
 | Neo4j Browser | [http://localhost:7474](http://localhost:7474) | Rule relationship graph (user `neo4j`, password `ruledev1`) |
 | MCP Server | [http://localhost:8001](http://localhost:8001) | Model Context Protocol server for AI agents (24 tools) |
 | Redis | localhost:6379 | Job queue for background workers |
-| arq-worker | -- | Background worker running 7 cron jobs (health, recommendations, translation drift, promotion, corrections, stats, digest) |
+| arq-worker | -- | Background worker running 9 cron jobs (health, recommendations, translation drift, promotion, verdict drift, corrections, stats, polyglot validation, digest) |
 
 ## Try It Out
 

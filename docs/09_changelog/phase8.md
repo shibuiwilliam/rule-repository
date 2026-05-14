@@ -61,7 +61,7 @@ Introduced `services/evaluation/surfaces/` with 7 surface implementations (code,
 
 ### Domain Packs
 
-Added `domain_packs/` with 5 bundled packs: code, contract, hr_attendance, expense, communication. Each includes `pack.yaml` (metadata, scopes, UI routes), `rules/`, `samples/`, and `prompts/`.
+Added `domain_packs/` with 9 bundled packs: code, contract, hr_attendance, expense, communication, legal, sales, it_security, governance. Each includes `pack.yaml` (metadata, scopes, UI routes), `rules/`, `samples/`, and `prompts/`.
 
 ### Norm Lineage
 
@@ -163,3 +163,49 @@ Replaced mock data in all department dashboards with real API integration:
 **API layer**: Added `getDepartmentDashboard()`, `getDepartmentEvaluations()`, `getDepartmentRules()` to `lib/api.ts`.
 
 All pages pass `pnpm typecheck` and `pnpm lint` with zero new warnings.
+
+---
+
+## 2026-05-14 — Hybrid Evaluation, Structured Scope, Translations, Schema Cleanup
+
+### Hybrid Evaluation & Kind Dispatch
+
+- **`services/evaluation/dispatcher.py`**: New `EvaluationDispatcher` class routing subjects to handlers per the CLAUDE.md contract.
+- **Migration 034** (`add_rule_kind_column`): Added `kind` column (normative/computational/procedural/definitional/principle) to rules table.
+- **Migration 035** (`add_constraints_column`): Added `constraints` JSONB column for deterministic evaluation expressions (NumericConstraint, DateConstraint, EnumConstraint).
+- **`services/evaluation/kind_dispatch.py`**: Kind-based routing — NORMATIVE→LLM, COMPUTATIONAL→deterministic layer, PROCEDURAL→state check, DEFINITIONAL/PRINCIPLE→always ALLOW.
+- **`services/evaluation/deterministic/`**: DeterministicEvaluator checks numeric thresholds, date comparisons, and enum validations without LLM calls.
+
+### Structured Scope Backfill
+
+- **Migration 032** (`backfill_applicable_subject_types`): Backfill subject type support on existing rules.
+- **Migration 033** (`backfill_structured_scope`): Populate `scope_structured` JSONB with domain, org_unit, subject_type dimensions from legacy scope strings.
+
+### Multilingual Translations
+
+- **Migration 036** (`create_rule_translations_table`): New `rule_translations` table for per-locale rule content (statement, rationale, preconditions, exceptions, examples).
+- **`services/translation/service.py`**: Translation management with polyglot verification.
+- **Workers**: `translation_drift.py` (daily 3:30), `polyglot_validator.py` (weekly Sunday 6:00).
+
+### Schema Reorganization
+
+- **Migration 037** (`move_frozen_tables_to_schema`): Moved frozen feature tables (marketplace, gateway webhooks) to `frozen` PostgreSQL schema per feature flag discipline.
+
+### Additional Domain Packs
+
+- Added 4 new domain packs: `legal`, `sales`, `it_security`, `governance` — bringing the total to 9.
+- Each pack includes `pack.yaml`, scoped rules, evaluation prompts, and sample data.
+
+### New Sample Rule Templates
+
+- `sample_rules/templates/finance-expense-jp.yaml`: Japan-specific expense policy rules.
+- `sample_rules/templates/legal-contracts-jp.yaml`: Japan-specific contract review rules.
+
+### Worker Expansion (7 → 9 Cron Jobs)
+
+- Added `detect_verdict_drift` (daily 4:30): Weekly replay of canary inputs to detect LLM behavior changes.
+- Added `validate_polyglot_equivalence` (weekly Sunday 6:00): Verify multilingual rule consistency across locales.
+
+### Structured Scope Performance
+
+- **Migration 038** (`add_structured_scope_gin_indexes`): Added GIN indexes on `scope_structured` JSONB column for fast multi-axis scope queries (domain, org_unit, subject_type).

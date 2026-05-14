@@ -1,0 +1,77 @@
+version: 1
+template:
+  name: legal-contracts-jp
+  description: Japanese contract review rules — anti-social forces, liability caps, governing law, confidentiality periods, assignment restrictions
+  tags: [contract, legal, japan, clause-review]
+  owning_department: legal
+  applicable_subject_kinds: [clause_set, document]
+
+rules:
+  - statement: "All contracts must include an anti-social forces exclusion clause (反社条項). Parties must represent that they have no relationship with organized crime groups."
+    modality: MUST
+    severity: CRITICAL
+    classification: confidential
+    scope: [legal/contract]
+    tags: [contract, anti-social-forces, boryokudan, japan]
+    applicable_subject_types: [clause_set, document]
+    jurisdiction: JP
+    legal_force: guideline
+    rationale: "Government guidelines and banking industry standards require anti-social forces clauses in all commercial contracts."
+    violation_examples:
+      - "A contract with no mention of anti-social forces or organized crime exclusion"
+    following_examples:
+      - "Each Party represents and warrants that neither it nor any of its officers or directors has any relationship with anti-social forces (boryokudan) as defined by the Organized Crime Exclusion Ordinances."
+
+  - statement: "Liability caps must be explicitly stated in all contracts. Total liability must not exceed the total contract value unless otherwise approved by the legal department."
+    modality: MUST
+    severity: HIGH
+    classification: confidential
+    scope: [legal/contract/liability]
+    tags: [contract, liability, cap, damages]
+    applicable_subject_types: [clause_set, document]
+    jurisdiction: JP
+    legal_force: policy
+    rationale: "Unlimited liability clauses expose the company to disproportionate financial risk."
+    violation_examples:
+      - "The Contractor shall be liable for all direct and indirect damages without limitation."
+    following_examples:
+      - "The total aggregate liability of either Party under this Agreement shall not exceed the total fees paid or payable under this Agreement during the twelve (12) months preceding the claim."
+
+  - statement: "The governing law must be specified in every contract. For domestic contracts, Japanese law must be designated. For cross-border contracts, governing law must be approved by the legal department."
+    modality: MUST
+    severity: HIGH
+    classification: internal
+    scope: [legal/contract/jurisdiction]
+    tags: [contract, governing-law, jurisdiction, japan]
+    applicable_subject_types: [clause_set, document]
+    jurisdiction: JP
+    legal_force: policy
+    rationale: "Ambiguous governing law creates jurisdictional risk and unpredictable dispute resolution."
+    violation_examples:
+      - "A contract with no governing law clause"
+      - "A domestic contract specifying Delaware law"
+
+  - statement: "Confidentiality obligations must have a defined term not exceeding 5 years, unless the information constitutes a trade secret under the Unfair Competition Prevention Act."
+    modality: MUST
+    severity: MEDIUM
+    classification: confidential
+    scope: [legal/contract/confidentiality]
+    tags: [contract, confidentiality, term, trade-secret]
+    applicable_subject_types: [clause_set, document]
+    jurisdiction: JP
+    legal_force: policy
+    norm_authority: "Unfair Competition Prevention Act (Japan)"
+    rationale: "Perpetual confidentiality obligations are unenforceable in practice and create compliance burden. Trade secrets have separate statutory protection."
+
+  - statement: "Assignment or transfer of contractual rights or obligations must not be permitted without prior written consent of the other party."
+    modality: MUST_NOT
+    severity: HIGH
+    classification: internal
+    scope: [legal/contract/assignment]
+    tags: [contract, assignment, transfer, consent]
+    applicable_subject_types: [clause_set, document]
+    jurisdiction: JP
+    legal_force: policy
+    rationale: "Unrestricted assignment allows unknown third parties to assume contractual obligations, creating counterparty risk."
+    violation_examples:
+      - "Either party may freely assign its rights under this Agreement."

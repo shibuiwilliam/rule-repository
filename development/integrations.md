@@ -349,15 +349,19 @@ The Rule Repository uses **arq** (async Redis queue) for background job processi
 
 ### Cron Jobs
 
-Seven scheduled cron jobs are defined in `workers/settings.py`. All have real implementations that query PostgreSQL and perform actual computation.
+Nine scheduled cron jobs are defined in `workers/settings.py`. All have real implementations that query PostgreSQL and perform actual computation.
 
 | Job | Schedule | Description |
 |---|---|---|
 | `compute_health_scores` | Daily at 2:00 AM | Recomputes health scores for all APPROVED/EFFECTIVE rules. Creates alerts for unhealthy/dormant rules. |
 | `generate_recommendations_task` | Daily at 3:00 AM | Analyzes rule health scores and correction patterns to produce improvement recommendations. |
+| `verify_translation_drift` | Daily at 3:30 AM | Detects translation equivalence drift across locales. |
 | `auto_promote_rules` | Daily at 4:00 AM | Promotes/demotes rules based on false-positive rate (experimental→stable→proven). |
+| `detect_verdict_drift` | Daily at 4:30 AM | Replays canary inputs to detect unexpected LLM behavior changes. |
 | `cluster_corrections` | Daily at 5:00 AM | Clusters similar corrections, auto-drafts rule proposals via Gemini (correction-to-rule flywheel). |
 | `compute_correction_stats` | Hourly at minute 0 | Aggregates correction statistics by analysis_type and status from the corrections table. |
+| `validate_polyglot_equivalence` | Weekly Sunday 6:00 AM | Verifies multilingual rule equivalence across locales. |
+| `send_weekly_digest` | Weekly Monday 9:00 AM | Generates and delivers the weekly governance digest. |
 
 ### Cron Job Details
 

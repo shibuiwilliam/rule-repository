@@ -5,12 +5,12 @@ with equivalence scores from periodic verification runs.
 
 See IMPROVEMENT.md Proposal 8.
 
-Revision ID: 035
-Revises: 034
+Revision ID: 036
+Revises: 035
 """
 
-revision = "035"
-down_revision = "034"
+revision = "036"
+down_revision = "035"
 branch_labels = None
 depends_on = None
 

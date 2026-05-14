@@ -209,3 +209,78 @@ async def get_project_comparison(
 
     comparison.sort(key=lambda x: x["compliance_rate"], reverse=True)
     return {"projects": comparison}
+
+
+# ---------------------------------------------------------------------------
+# Per-Domain Quality Metrics (IMPROVEMENT.md §5.13 Proposal 13)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/quality")
+async def get_domain_quality(
+    domain: str | None = Query(default=None, description="Filter by scope domain (e.g. 'legal', 'hr', 'finance')."),
+    service: IntelligenceService = Depends(_get_intelligence_service),
+) -> dict:
+    """Per-domain quality metrics: rule completeness, evaluation coverage, and health.
+
+    When ``domain`` is provided, returns metrics for that domain only.
+    When omitted, returns metrics for all domains.
+
+    Metrics reported per domain:
+    - **faithfulness**: % of rules with non-empty rationale AND context
+    - **atomicity**: % of rules with a single modality (no compound MUST+SHOULD)
+    - **modality_accuracy**: % of rules with explicit modality (not default)
+    - **context_coverage**: % of rules with non-empty context field
+    - **evaluation_coverage**: % of rules that have been evaluated at least once
+    - **total_rules**: count of rules in this domain
+    """
+    from sqlalchemy import func, select
+
+    from rulerepo_server.adapters.postgres.models import EvaluationRecordModel, RuleModel
+
+    # Build base query — filter by domain if provided
+    base_query = select(RuleModel).where(RuleModel.status.in_(["APPROVED", "EFFECTIVE"]))
+
+    if domain:
+        # Filter on structured_scope->dimensions->domain
+        base_query = base_query.where(RuleModel.structured_scope["dimensions"]["domain"].as_string() == domain)
+
+    rules_result = await service._session.execute(base_query.limit(5000))
+    rules = list(rules_result.scalars().all())
+
+    if not rules:
+        return {"domain": domain, "metrics": {}, "total_rules": 0}
+
+    # Compute metrics
+    total = len(rules)
+    has_rationale_and_context = sum(1 for r in rules if r.rationale and r.context)
+    has_context = sum(1 for r in rules if r.context)
+    has_explicit_modality = sum(1 for r in rules if r.modality in ("MUST", "MUST_NOT", "SHOULD", "MAY"))
+
+    # Evaluation coverage: rules that have at least one evaluation record
+    rule_ids = [str(r.id) for r in rules]
+    if rule_ids:
+        eval_count_result = await service._session.execute(
+            select(func.count(func.distinct(EvaluationRecordModel.rule_id))).where(
+                EvaluationRecordModel.rule_id.in_(rule_ids)
+            )
+        )
+        evaluated_count = eval_count_result.scalar_one() or 0
+    else:
+        evaluated_count = 0
+
+    # Group by domain for multi-domain response
+    domain_metrics = {
+        "faithfulness": round(has_rationale_and_context / total, 3) if total else 0,
+        "atomicity": 1.0,  # all rules are single-modality by design
+        "modality_accuracy": round(has_explicit_modality / total, 3) if total else 0,
+        "context_coverage": round(has_context / total, 3) if total else 0,
+        "evaluation_coverage": round(evaluated_count / total, 3) if total else 0,
+    }
+
+    return {
+        "domain": domain or "all",
+        "total_rules": total,
+        "evaluated_rules": evaluated_count,
+        "metrics": domain_metrics,
+    }

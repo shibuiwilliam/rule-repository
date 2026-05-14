@@ -523,6 +523,53 @@ The audit log table is append-only with hash chaining (each row links to the pre
 
 ---
 
+## Evaluation Dispatcher
+
+**File**: `services/evaluation/dispatcher.py`
+
+The `EvaluationDispatcher` is the canonical entry point into evaluation logic (per CLAUDE.md §7.2). It routes `EvaluationSubject` kinds to their respective handlers. All code paths must go through the dispatcher — never bypass it.
+
+```python
+class EvaluationDispatcher:
+    async def evaluate(self, subject: EvaluationSubject) -> EvaluationResult:
+        handler = self._handlers[subject.kind]
+        normalized = await handler.normalize(subject)
+        rules = await handler.select_rules(normalized)
+        prompt = handler.build_prompt(normalized, rules)
+        verdicts = await self._llm_judge(prompt, handler.verdict_schema)
+        return handler.aggregate(verdicts, rules, normalized)
+```
+
+---
+
+## Kind-Based Dispatch (Hybrid Evaluation)
+
+**File**: `services/evaluation/kind_dispatch.py`
+
+Before sending rules to the LLM, the batch evaluator partitions them by `kind`:
+
+| Rule Kind | Evaluation Path | LLM Required? |
+|---|---|---|
+| `NORMATIVE` | Full LLM-as-Judge evaluation | Yes |
+| `COMPUTATIONAL` (with constraints) | `DeterministicEvaluator` → PASS/FAIL | No (skip LLM) |
+| `COMPUTATIONAL` (no constraints) | Regex fallback → LLM if INDETERMINATE | Sometimes |
+| `PROCEDURAL` | State-transition check → LLM if INDETERMINATE | Sometimes |
+| `DEFINITIONAL` | Always ALLOW (defines terms, not constraints) | No |
+| `PRINCIPLE` | Always ALLOW (evaluated through derived normative rules) | No |
+
+### Deterministic Evaluator
+
+**Files**: `services/evaluation/deterministic/evaluator.py`, `services/evaluation/deterministic/constraint.py`
+
+Constraint types (stored as JSONB on rules):
+- `NumericConstraint`: `{field_path, operator, threshold, unit}` — e.g., `{field_path: "monthly_overtime_hours", operator: "<=", threshold: 45, unit: "hours"}`
+- `DateConstraint`: `{field_path, operator, reference_date}`
+- `EnumConstraint`: `{field_path, allowed_values}`
+
+If all constraints pass → ALLOW (confidence 0.95, no LLM call). If any fail → DENY (confidence 0.95, no LLM call). If facts are missing → INDETERMINATE, falls through to LLM.
+
+---
+
 ## Domain-Specific Engines (Phase 8)
 
 ### Contract Clause Engine

@@ -39,10 +39,11 @@ PostgreSQL 17 holds the canonical data. All writes go through PostgreSQL first. 
 | `agent_exception_requests` | Agent requests for rule exceptions. |
 | `agent_negotiations` | Agent-initiated verdict challenges and negotiations. |
 | `governance_sessions` | Multi-agent governance session tracking. |
+| `rule_translations` | Multilingual rule translations (per-locale statement, rationale, examples). |
 
-36 ORM models across 30 Alembic migrations (001–031, skipping 020). Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
+37 ORM models across 38 Alembic migrations (001–038, skipping 020). Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
 
-Note: The `rules` table includes `maturity_level` (experimental/stable/proven), `false_positive_count`, `true_positive_count`, `classification`, `subject_kinds`, and `jurisdiction` columns.
+Note: The `rules` table includes `maturity_level` (experimental/stable/proven), `false_positive_count`, `true_positive_count`, `classification`, `subject_kinds`, `jurisdiction`, `kind` (normative/computational/procedural/definitional/principle), `constraints` (JSONB for deterministic evaluation), and `structured_scope` (JSONB with domain/org_unit/subject_type dimensions) columns.
 
 Migrations are managed by **Alembic**.
 
@@ -71,6 +72,11 @@ The index uses a custom analyzer (`rule_analyzer`: standard tokenizer with lower
 | `effective_until` | date | End of effective period. |
 | `embedding` | dense_vector (768 dims, cosine) | For semantic similarity search. |
 | `rationale` | text (analyzed) | Searchable rationale. |
+| `structured_scope` | object | Multi-axis scope (path, dimensions: domain, org_unit, subject_type). |
+| `department` | keyword | Owning department. |
+| `kind` | keyword | Rule kind (normative, computational, procedural, definitional, principle). |
+| `primary_language` | keyword | Primary rule language (en, ja). |
+| `applicable_subject_types` | keyword | Subject types this rule applies to. |
 | `created_at` / `updated_at` | date | Timestamps. |
 
 The index template is applied by the `es-setup` container on first start from `infra/elasticsearch/rules-index-template.json`.

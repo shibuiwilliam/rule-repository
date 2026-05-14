@@ -4,14 +4,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from rulerepo_server.core.deps import get_rule_service
+from rulerepo_server.core.deps import get_rule_service, require_department_action
+from rulerepo_server.domain.department import Action
 from rulerepo_server.schemas.rule import RelationshipCreate
 from rulerepo_server.services.rule_service import RuleService
 
 router = APIRouter(prefix="/relationships", tags=["relationships"])
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, dependencies=[Depends(require_department_action(Action.EDIT))])
 async def create_relationship(
     data: RelationshipCreate,
     service: RuleService = Depends(get_rule_service),
@@ -20,7 +21,7 @@ async def create_relationship(
     return await service.add_relationship(data.source_id, data.target_id, data.relationship_type)
 
 
-@router.delete("")
+@router.delete("", dependencies=[Depends(require_department_action(Action.EDIT))])
 async def delete_relationship(
     source_id: UUID = Query(...),
     target_id: UUID = Query(...),

@@ -503,9 +503,13 @@ class LLMCacheModel(Base):
 
 
 class EnforcementPolicyModel(Base):
-    """Defines when and how rules are automatically enforced via webhooks."""
+    """Defines when and how rules are automatically enforced via webhooks.
+
+    Frozen feature (GATEWAY_ENABLED=false). Table lives in the ``frozen`` schema.
+    """
 
     __tablename__ = "enforcement_policies"
+    __table_args__ = {"schema": "frozen"}
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
     project_id: Mapped[str] = mapped_column(
@@ -593,13 +597,17 @@ class EvaluationDailyAggModel(Base):
 
 
 class GatewayEvaluationModel(Base):
-    """Record of an automated evaluation triggered by the gateway."""
+    """Record of an automated evaluation triggered by the gateway.
+
+    Frozen feature (GATEWAY_ENABLED=false). Table lives in the ``frozen`` schema.
+    """
 
     __tablename__ = "gateway_evaluations"
+    __table_args__ = {"schema": "frozen"}
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
     policy_id: Mapped[str] = mapped_column(
-        Uuid, ForeignKey("enforcement_policies.id", ondelete="CASCADE"), nullable=False, index=True
+        Uuid, ForeignKey("frozen.enforcement_policies.id", ondelete="CASCADE"), nullable=False, index=True
     )
     event_source: Mapped[str] = mapped_column(String(100), nullable=False)
     event_type: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -913,9 +921,13 @@ class AgentExceptionRequestModel(Base):
 
 
 class AgentNegotiationModel(Base):
-    """An agent's challenge of a verdict with a counter-argument."""
+    """An agent's challenge of a verdict with a counter-argument.
+
+    Frozen feature (MULTI_AGENT_SESSIONS_ENABLED=false). Table lives in ``frozen`` schema.
+    """
 
     __tablename__ = "agent_negotiations"
+    __table_args__ = {"schema": "frozen"}
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
     agent_id: Mapped[str] = mapped_column(
@@ -932,9 +944,13 @@ class AgentNegotiationModel(Base):
 
 
 class GovernanceSessionModel(Base):
-    """Multi-agent governance session for shared verdict context."""
+    """Multi-agent governance session for shared verdict context.
+
+    Frozen feature (MULTI_AGENT_SESSIONS_ENABLED=false). Table lives in ``frozen`` schema.
+    """
 
     __tablename__ = "governance_sessions"
+    __table_args__ = {"schema": "frozen"}
 
     id: Mapped[str] = mapped_column(Uuid, primary_key=True, default=uuid4)
     project_id: Mapped[str | None] = mapped_column(Uuid, nullable=True)

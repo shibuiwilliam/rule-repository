@@ -7,8 +7,9 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rulerepo_server.adapters.postgres.session import get_db_session
-from rulerepo_server.core.deps import get_graph_repo, get_rule_service
+from rulerepo_server.core.deps import get_graph_repo, get_rule_service, require_department_action
 from rulerepo_server.core.logging import get_logger
+from rulerepo_server.domain.department import Action
 from rulerepo_server.schemas.rule import RuleCreate, RulesImportRequest, RuleUpdate
 from rulerepo_server.services.provenance.lineage_resolver import (
     MAX_LINEAGE_DEPTH,
@@ -21,7 +22,7 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/rules", tags=["rules"])
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, dependencies=[Depends(require_department_action(Action.EDIT))])
 async def create_rule(
     data: RuleCreate,
     project_id: str | None = Query(default=None),
@@ -145,7 +146,7 @@ async def get_rule(
     return await service.get_rule(rule_id)
 
 
-@router.patch("/{rule_id}")
+@router.patch("/{rule_id}", dependencies=[Depends(require_department_action(Action.EDIT))])
 async def update_rule(
     rule_id: UUID,
     data: RuleUpdate,
@@ -155,7 +156,7 @@ async def update_rule(
     return await service.update_rule(rule_id, data)
 
 
-@router.post("/{rule_id}/retire")
+@router.post("/{rule_id}/retire", dependencies=[Depends(require_department_action(Action.DELETE))])
 async def retire_rule(
     rule_id: UUID,
     service: RuleService = Depends(get_rule_service),
@@ -192,7 +193,7 @@ async def get_graph(
     return await service.get_graph(rule_id, depth=depth)
 
 
-@router.post("/import", status_code=201)
+@router.post("/import", status_code=201, dependencies=[Depends(require_department_action(Action.EDIT))])
 async def import_rules(
     body: RulesImportRequest,
     project_id: str | None = Query(default=None),

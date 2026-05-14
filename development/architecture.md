@@ -8,12 +8,12 @@ The Rule Repository is a monorepo with 10 services orchestrated via Docker Compo
 |---|---|---|---|
 | Backend API | Python 3.13 + FastAPI | 8000 | 38 API routers covering rules, evaluation, search, discovery, governance, compliance, and more |
 | MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 24 tools) |
-| Frontend | TypeScript + Next.js 15 | 3000 | Operator console with 58+ pages across 9 persona route groups, English/Japanese i18n |
-| PostgreSQL | 17-alpine | 5432 | System of record (36+ ORM models, 35 migrations) with Row-Level Security |
+| Frontend | TypeScript + Next.js 15 | 3000 | Operator console with 61 pages across 9 persona route groups, English/Japanese i18n |
+| PostgreSQL | 17-alpine | 5432 | System of record (37 ORM models, 38 migrations) with Row-Level Security |
 | Elasticsearch | 8.17 | 9200 | Full-text + vector search with document-level security |
 | Neo4j | 5-community | 7474/7687 | Rule relationship graph |
 | Redis | 7-alpine | 6379 | Job queue for arq background worker |
-| arq worker | Python 3.13 + arq | -- | 7 scheduled cron jobs + on-demand tasks |
+| arq worker | Python 3.13 + arq | -- | 9 scheduled cron jobs + on-demand tasks |
 | es-setup | curlimages/curl | -- | One-shot: creates ES index templates on startup |
 | neo4j-setup | neo4j:5-community | -- | One-shot: applies Cypher constraints on startup |
 
@@ -25,7 +25,7 @@ The Rule Repository is a monorepo with 10 services orchestrated via Docker Compo
 src/rulerepo_server/
 ├── main.py                         # FastAPI app factory, router registration
 ├── api/
-│   └── v1/                         # 39 API routers
+│   └── v1/                         # 38 API routers
 │       ├── rules.py                #   CRUD, retire, revisions, relationships, graph
 │       ├── search.py               #   fulltext, vector, hybrid, category, context
 │       ├── evaluation.py           #   evaluate, quick, applicable-rules, get by ID
@@ -310,7 +310,7 @@ src/rulerepo_server/
 │       ├── signature.py
 │       └── review_formatter.py
 ├── workers/
-│   ├── settings.py                 # arq WorkerSettings: 7 cron jobs + on-demand tasks
+│   ├── settings.py                 # arq WorkerSettings: 9 cron jobs + on-demand tasks
 │   ├── tasks.py                    # On-demand async tasks
 │   ├── policy_review_cycle.py      # Policy review alerting
 │   ├── conflict_scanner.py         # Background conflict detection
@@ -337,7 +337,7 @@ src/rulerepo_server/
     ├── department.py, event.py, review.py, audit.py, project.py
 ```
 
-### ORM Models (35+ total in `adapters/postgres/models.py`)
+### ORM Models (37 total in `adapters/postgres/models.py`)
 
 | Model | Table | Purpose |
 |---|---|---|
@@ -373,6 +373,11 @@ src/rulerepo_server/
 | `AgentExceptionRequestModel` | `agent_exception_requests` | Agent requests for rule exceptions |
 | `AgentNegotiationModel` | `agent_negotiations` | Agent-initiated rule negotiations |
 | `GovernanceSessionModel` | `governance_sessions` | Agent governance session tracking |
+| `DepartmentModel` | `departments` | Department definitions and metadata (Phase 7) |
+| `CapacityAssignmentModel` | `capacity_assignments` | User-to-department capacity assignments (Phase 7) |
+| `RuleOwnershipModel` | `rule_ownerships` | Rule-to-department ownership mappings (Phase 7) |
+| `RuleTranslationModel` | `rule_translations` | Multilingual rule translations (post-Phase 8) |
+| `EvaluationDailyAggModel` | `evaluation_daily_agg` | Daily aggregated evaluation statistics |
 
 ---
 
@@ -581,7 +586,7 @@ Docker Compose files:
 
 ## Alembic Migrations
 
-30 migrations in `apps/server/alembic/versions/`:
+38 migrations in `apps/server/alembic/versions/` (001-038, skipping 020):
 
 | Migration | Description |
 |---|---|
@@ -615,6 +620,13 @@ Docker Compose files:
 | `029_add_classification_column` | Classification column on rules, evaluations, audit_log |
 | `030_add_surface_aware_rule_fields` | Surface-aware fields on rules (norm_tier, norm_authority, etc.) |
 | `031_add_surface_aware_evaluation_fields` | Surface-aware fields on evaluations |
+| `032_backfill_applicable_subject_types` | Backfill subject type support on existing rules |
+| `033_backfill_structured_scope` | Hierarchical structured scope backfill |
+| `034_add_rule_kind_column` | Rule kind discriminator (normative/computational/procedural/definitional/principle) |
+| `035_add_constraints_column` | Deterministic evaluation constraints (JSONB) |
+| `036_create_rule_translations_table` | Multilingual rule translations table |
+| `037_move_frozen_tables_to_schema` | Move frozen feature tables to `frozen` schema |
+| `038_add_structured_scope_gin_indexes` | GIN indexes on `scope_structured` JSONB for fast multi-axis scope queries |
 
 ---
 
@@ -663,7 +675,7 @@ The FastAPI application applies three middleware layers (outermost first):
 
 ## Frontend Pages
 
-The Next.js frontend has 56 pages across 8 persona route groups (including nested routes and domain-specific surfaces):
+The Next.js frontend has 61 pages across 9 persona route groups (including nested routes and domain-specific surfaces):
 
 | Route | Purpose |
 |---|---|
@@ -696,3 +708,16 @@ The Next.js frontend has 56 pages across 8 persona route groups (including neste
 | `/events/[id]` | HR: event submission with applicable rules |
 | `/transactions/[id]` | Finance: transaction compliance review |
 | `/creatives/review/[id]` | Marketing: creative compliance review |
+| `/admin` | Admin: system dashboard, tenant/user management |
+| `/admin/tenants` | Admin: tenant management |
+| `/admin/users` | Admin: user management |
+| `/compliance` | Compliance: cross-domain compliance dashboard |
+| `/compliance/bundles` | Compliance: rule bundles |
+| `/compliance/audit-packets` | Compliance: audit packet viewer |
+| `/compliance/exceptions` | Compliance: exception tracking |
+| `/compliance/regulatory` | Compliance: regulatory feed |
+| `/sales` | Sales: sales dashboard |
+| `/security` | Security: security dashboard |
+| `/marketing` | Marketing: marketing dashboard |
+| `/marketing/creative-reviews` | Marketing: creative submission reviews |
+| `/marketing/guidelines` | Marketing: brand guidelines |
