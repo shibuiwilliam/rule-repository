@@ -384,8 +384,8 @@ export default function HrDashboardPage() {
               })}
             </div>
             <div className="mt-1 flex justify-between text-xs text-gray-400">
-              <span>{dashboard.violation_trend[0]?.date ?? ""}</span>
-              <span>{dashboard.violation_trend[dashboard.violation_trend.length - 1]?.date ?? ""}</span>
+              <span>{dashboard.violation_trend?.[0]?.date ?? ""}</span>
+              <span>{dashboard.violation_trend?.[(dashboard.violation_trend?.length ?? 1) - 1]?.date ?? ""}</span>
             </div>
           </div>
         </div>
@@ -403,7 +403,7 @@ export default function HrDashboardPage() {
           <div className="rounded-xl border bg-white p-5">
             <h2 className="text-base font-semibold text-gray-900">Verdict Distribution</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Breakdown of evaluation outcomes ({dashboard.evaluations_30d} total)
+              Breakdown of evaluation outcomes ({dashboard.evaluations_30d ?? 0} total)
             </p>
             {verdictDistTotal > 0 ? (
               <>
