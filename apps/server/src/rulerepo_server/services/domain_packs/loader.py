@@ -18,7 +18,13 @@ from rulerepo_server.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-DOMAIN_PACKS_DIR = Path(__file__).parent.parent.parent / "domain_packs"
+# Internal packs (inside the server package)
+_INTERNAL_PACKS_DIR = Path(__file__).parent.parent.parent / "domain_packs"
+# External packs (packages/domain-packs/ at repo root)
+_EXTERNAL_PACKS_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "packages" / "domain-packs"
+
+# Keep the old name for backward compatibility (points to internal dir)
+DOMAIN_PACKS_DIR = _INTERNAL_PACKS_DIR
 
 
 @dataclass
@@ -114,18 +120,38 @@ _LOADED_PACKS: dict[str, PackManifest] = {}
 class DomainPackLoader:
     """Loads and validates domain packs from the filesystem."""
 
-    def __init__(self, packs_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        packs_dir: Path | None = None,
+        *,
+        extra_packs_dirs: list[Path] | None = None,
+    ) -> None:
         self._packs_dir = packs_dir or DOMAIN_PACKS_DIR
+        # By default, also scan the external packs directory at the repo root.
+        if extra_packs_dirs is not None:
+            self._extra_dirs = list(extra_packs_dirs)
+        else:
+            self._extra_dirs = [_EXTERNAL_PACKS_DIR]
 
-    def discover(self) -> list[PackManifest]:
-        """Discover all packs with pack.yaml files."""
+    # Directories to skip when scanning external packs (shared utilities, not packs)
+    _SKIP_DIRS: frozenset[str] = frozenset({"_core", "__pycache__"})
+
+    def _scan_directory(
+        self,
+        base_dir: Path,
+        *,
+        skip_dirs: frozenset[str] | None = None,
+    ) -> list[PackManifest]:
+        """Scan a single directory for pack.yaml files and return manifests."""
         packs: list[PackManifest] = []
-        if not self._packs_dir.is_dir():
-            logger.warning("domain_packs_dir_not_found", path=str(self._packs_dir))
+        if not base_dir.is_dir():
+            logger.warning("domain_packs_dir_not_found", path=str(base_dir))
             return packs
 
-        for pack_dir in sorted(self._packs_dir.iterdir()):
+        for pack_dir in sorted(base_dir.iterdir()):
             if not pack_dir.is_dir():
+                continue
+            if skip_dirs and pack_dir.name in skip_dirs:
                 continue
             pack_yaml = pack_dir / "pack.yaml"
             if not pack_yaml.exists():
@@ -142,6 +168,7 @@ class DomainPackLoader:
                     name=manifest.name,
                     version=manifest.version,
                     persona=manifest.persona,
+                    source=str(base_dir),
                 )
             except Exception as exc:
                 logger.warning(
@@ -151,6 +178,35 @@ class DomainPackLoader:
                 )
 
         return packs
+
+    def discover(self) -> list[PackManifest]:
+        """Discover all packs with pack.yaml files.
+
+        Scans the primary packs directory (internal) and any extra directories
+        (by default, ``packages/domain-packs/`` at the repo root). Packs from
+        the extra directories skip utility directories like ``_core/``.
+
+        When the same pack name appears in multiple directories the last
+        occurrence wins, so external packs can override internal ones.
+        """
+        seen: dict[str, PackManifest] = {}
+
+        # Scan internal packs first
+        for manifest in self._scan_directory(self._packs_dir):
+            seen[manifest.name] = manifest
+
+        # Scan extra directories (external packs); skip _core/ etc.
+        for extra_dir in self._extra_dirs:
+            for manifest in self._scan_directory(extra_dir, skip_dirs=self._SKIP_DIRS):
+                if manifest.name in seen:
+                    logger.info(
+                        "pack_overridden_by_external",
+                        name=manifest.name,
+                        source=str(extra_dir),
+                    )
+                seen[manifest.name] = manifest
+
+        return list(seen.values())
 
     def load_enabled(self) -> list[PackManifest]:
         """Load only the packs listed in ENABLED_PACKS env var.

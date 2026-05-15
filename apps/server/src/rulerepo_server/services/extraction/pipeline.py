@@ -24,6 +24,15 @@ from rulerepo_server.adapters.postgres.audit_repo import AuditLogRepository
 from rulerepo_server.adapters.postgres.cache_repo import LLMCacheRepository
 from rulerepo_server.core.llm import get_default_config
 from rulerepo_server.core.logging import get_logger
+from rulerepo_server.services.extraction.structural.markdown_structure import (
+    extract_markdown_structure,
+)
+from rulerepo_server.services.extraction.structural.pdf_structure import (
+    StructuralExtractionResult,
+)
+from rulerepo_server.services.extraction.structural.text_structure import (
+    extract_text_structure,
+)
 
 logger = get_logger(__name__)
 
@@ -57,6 +66,54 @@ class ExtractionPipeline:
         self._audit_repo = audit_repo
         self._cache_repo = cache_repo
 
+    @staticmethod
+    def _run_structural_parser(
+        file_bytes: bytes,
+        mime_type: str,
+        filename: str,
+    ) -> StructuralExtractionResult | None:
+        """Run the appropriate structural parser based on content type.
+
+        Returns the structural result or ``None`` if no parser applies or
+        the parser fails.  This is a preprocessing step — failures are
+        non-fatal and the pipeline continues without structural context.
+        """
+        try:
+            if mime_type in ("text/markdown",) or filename.endswith(".md"):
+                text = file_bytes.decode("utf-8", errors="replace")
+                return extract_markdown_structure(text)
+            if mime_type in ("text/plain",) or filename.endswith(".txt"):
+                text = file_bytes.decode("utf-8", errors="replace")
+                return extract_text_structure(text)
+            if mime_type == "application/pdf":
+                # PDF structural parser is a stub — log and skip.
+                logger.info(
+                    "structural_parser_skipped_pdf",
+                    filename=filename,
+                    reason="pdf parser is a stub",
+                )
+                return None
+        except Exception as exc:
+            logger.warning(
+                "structural_parser_failed",
+                filename=filename,
+                mime_type=mime_type,
+                error=str(exc),
+            )
+        return None
+
+    @staticmethod
+    def _format_structural_context(result: StructuralExtractionResult) -> str:
+        """Format structural extraction result as text context for the LLM."""
+        lines = [f"Document type: {result.document_type}", f"Sections found: {len(result.sections)}", ""]
+        for sec in result.sections:
+            indent = "  " * sec.level
+            lines.append(f"{indent}[{sec.section_id}] {sec.title} (level {sec.level})")
+            if sec.content:
+                preview = sec.content[:200].replace("\n", " ")
+                lines.append(f"{indent}  {preview}{'...' if len(sec.content) > 200 else ''}")
+        return "\n".join(lines)
+
     async def extract_from_document(
         self,
         file_bytes: bytes,
@@ -78,6 +135,18 @@ class ExtractionPipeline:
         extraction_id = uuid4()
         start_time = time.time()
 
+        # Stage 0: Structural pre-processing (additive — enriches LLM context)
+        structural_result = self._run_structural_parser(file_bytes, mime_type, filename)
+        structural_context = ""
+        if structural_result and structural_result.sections:
+            structural_context = self._format_structural_context(structural_result)
+            logger.info(
+                "structural_parsing_completed",
+                filename=filename,
+                sections_count=len(structural_result.sections),
+                document_type=structural_result.document_type,
+            )
+
         # Prepare document for Gemini
         if mime_type == "application/pdf" and len(file_bytes) > 50_000:
             file_ref = await upload_to_files_api(self._client, file_bytes, mime_type, filename)
@@ -87,6 +156,17 @@ class ExtractionPipeline:
         else:
             text_content = file_bytes.decode("utf-8", errors="replace")
             content_parts = [types.Part.from_text(text=text_content)]
+
+        # Prepend structural context to LLM input when available
+        if structural_context:
+            structural_preamble = (
+                "The following document structure was extracted by a structural parser. "
+                "Use it to identify section boundaries and associate extracted rules with "
+                "their source sections.\n\n"
+                f"{structural_context}\n\n"
+                "--- Original document content follows ---\n"
+            )
+            content_parts.insert(0, types.Part.from_text(text=structural_preamble))
 
         # Stage 1: Extract rules
         extract_prompt = _load_prompt("extract_rules.txt")

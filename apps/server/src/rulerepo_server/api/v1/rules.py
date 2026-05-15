@@ -7,7 +7,12 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rulerepo_server.adapters.postgres.session import get_db_session
-from rulerepo_server.core.deps import get_graph_repo, get_rule_service, require_department_action
+from rulerepo_server.core.deps import (
+    get_graph_repo,
+    get_rule_service,
+    require_department_action,
+    require_governance_policy,
+)
 from rulerepo_server.core.logging import get_logger
 from rulerepo_server.domain.department import Action
 from rulerepo_server.schemas.rule import RuleCreate, RulesImportRequest, RuleUpdate
@@ -22,7 +27,14 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/rules", tags=["rules"])
 
 
-@router.post("", status_code=201, dependencies=[Depends(require_department_action(Action.EDIT))])
+@router.post(
+    "",
+    status_code=201,
+    dependencies=[
+        Depends(require_department_action(Action.EDIT)),
+        Depends(require_governance_policy("rule.create")),
+    ],
+)
 async def create_rule(
     data: RuleCreate,
     project_id: str | None = Query(default=None),
@@ -146,7 +158,13 @@ async def get_rule(
     return await service.get_rule(rule_id)
 
 
-@router.patch("/{rule_id}", dependencies=[Depends(require_department_action(Action.EDIT))])
+@router.patch(
+    "/{rule_id}",
+    dependencies=[
+        Depends(require_department_action(Action.EDIT)),
+        Depends(require_governance_policy("rule.edit")),
+    ],
+)
 async def update_rule(
     rule_id: UUID,
     data: RuleUpdate,

@@ -392,6 +392,69 @@ async def cluster_corrections(ctx: dict) -> None:
         await session.close()
 
 
+async def verify_translation_equivalence(ctx: dict) -> None:
+    """Daily verification of translation pair equivalence scores.
+
+    Loads all translation pairs from Postgres, re-runs equivalence
+    checks via ``verify_all_translations``, and logs results.
+    Gated behind ``polyglot_verification_enabled``.
+    """
+    from rulerepo_server.core.feature_flags import get_feature_flags
+
+    if not get_feature_flags().polyglot_verification_enabled:
+        logger.info("verify_translation_equivalence_skipped", reason="polyglot_verification_disabled")
+        return
+
+    session = await _get_worker_session()
+    try:
+        from sqlalchemy import select
+
+        from rulerepo_server.adapters.postgres.models import RuleTranslationModel
+        from rulerepo_server.workers.verify_translations import verify_all_translations
+
+        result = await session.execute(select(RuleTranslationModel))
+        rows = list(result.scalars().all())
+
+        # Load source and target rule statements for each translation pair
+        from rulerepo_server.adapters.postgres.models import RuleModel
+
+        rule_ids = {str(row.source_rule_id) for row in rows} | {str(row.target_rule_id) for row in rows}
+        rule_result = await session.execute(select(RuleModel).where(RuleModel.id.in_(rule_ids)))
+        rule_map = {str(r.id): r for r in rule_result.scalars().all()}
+
+        pairs = []
+        for row in rows:
+            source = rule_map.get(str(row.source_rule_id))
+            target = rule_map.get(str(row.target_rule_id))
+            if not source or not target:
+                continue
+            pairs.append(
+                {
+                    "rule_id": str(row.source_rule_id),
+                    "sibling_rule_id": str(row.target_rule_id),
+                    "rule_statement": source.statement or "",
+                    "rule_language": getattr(source, "locale", "en") or "en",
+                    "sibling_statement": target.statement or "",
+                    "sibling_language": row.target_language or "ja",
+                }
+            )
+
+        results = await verify_all_translations(translation_pairs=pairs)
+
+        below = sum(1 for r in results if r.below_threshold)
+        logger.info(
+            "verify_translation_equivalence_completed",
+            total_pairs=len(results),
+            below_threshold=below,
+        )
+    except Exception:
+        await session.rollback()
+        logger.exception("verify_translation_equivalence_failed")
+        raise
+    finally:
+        await session.close()
+
+
 async def send_weekly_digest(ctx: dict) -> None:
     """Generate and optionally deliver the weekly governance digest.
 
@@ -450,6 +513,7 @@ class WorkerSettings:
         cron(send_weekly_digest, weekday=0, hour=9, minute=0),  # Monday 9am
         cron(detect_verdict_drift, hour=4, minute=30),  # daily (Phase 5i)
         cron(validate_polyglot_equivalence, weekday=6, hour=6, minute=0),  # Sunday 6am (Phase 7i)
+        cron(verify_translation_equivalence, hour=5, minute=30),  # daily (CLAUDE.md §14.8)
     ]
 
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)

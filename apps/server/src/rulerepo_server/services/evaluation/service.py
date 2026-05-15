@@ -14,12 +14,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from rulerepo_server.adapters.postgres.audit_repo import AuditLogRepository
 from rulerepo_server.core.logging import get_logger
-from rulerepo_server.domain.evaluation import EvaluationResult
+from rulerepo_server.domain.evaluation import EvaluationResult, RuleVerdict, Verdict
+from rulerepo_server.domain.rule import ComputationalBody, DefinitionalBody, NormativeBody, RuleKind
 from rulerepo_server.services.evaluation.batch_evaluator import evaluate_batch
 from rulerepo_server.services.evaluation.conflict_aggregator import (
     aggregate_with_conflicts,
 )
 from rulerepo_server.services.evaluation.context_assembler import assemble_context
+from rulerepo_server.services.evaluation.deterministic.runner import (
+    DeterministicRuleVerdict,
+    evaluate_deterministic,
+)
 from rulerepo_server.services.evaluation.graph_resolver import resolve_evaluation_plan
 from rulerepo_server.services.evaluation.rule_selector import select_rules
 from rulerepo_server.services.evaluation.verdict_aggregator import aggregate_verdicts
@@ -123,16 +128,38 @@ class EvaluationService:
             surface=resolved_surface,
         )
 
-        # 3. If no Gemini client or no rules, return ALLOW
+        # 3. If no rules, return ALLOW
         if not rules:
             return aggregate_verdicts([], [], 0)
 
+        # 3a. Deterministic pre-pass: resolve computational/lookup rules
+        #     without touching the LLM. Rules that are fully resolved are
+        #     excluded from the LLM batch. See CLAUDE.md §14.9.
+        det_verdicts, det_model_ids, llm_rules = _run_deterministic_prepass(
+            rules,
+            facts or {},
+        )
+
+        if det_verdicts:
+            logger.info(
+                "deterministic_prepass_complete",
+                resolved=len(det_verdicts),
+                remaining_for_llm=len(llm_rules),
+            )
+
+        # If everything was resolved deterministically, skip LLM entirely
+        if not llm_rules:
+            total_latency = int((time.time() - start_time) * 1000)
+            return aggregate_verdicts(det_verdicts, det_model_ids, total_latency)
+
         if not self._gemini_client:
             logger.warning("evaluation_no_llm_client")
-            return aggregate_verdicts([], [], 0)
+            # Return whatever the deterministic layer produced
+            total_latency = int((time.time() - start_time) * 1000)
+            return aggregate_verdicts(det_verdicts, det_model_ids, total_latency)
 
         # 4. Resolve relationship graph for conflict-aware evaluation
-        rule_id_list = [r["id"] for r in rules]
+        rule_id_list = [r["id"] for r in llm_rules]
         try:
             from rulerepo_server.core.feature_flags import get_feature_flags
 
@@ -153,7 +180,7 @@ class EvaluationService:
 
             plan = EvaluationPlan(ordered_rules=rule_id_list)
 
-        # 5. Evaluate each rule (concurrently)
+        # 5. Evaluate remaining rules via LLM (concurrently)
         # Pass LLM cache repo for caching (CLAUDE_ENHANCE.md §0.2)
         cache_repo = None
         try:
@@ -163,17 +190,17 @@ class EvaluationService:
         except Exception:
             pass
 
-        # Legacy evaluate() always uses code surface (or None for backward compat)
         batch_results = await evaluate_batch(
-            rules,
+            llm_rules,
             context,
             self._gemini_client,
             cache_repo=cache_repo,
             evaluation_plan=plan,
         )
 
-        verdicts = []
-        model_ids: list[str] = []
+        # Merge deterministic verdicts with LLM verdicts
+        verdicts = list(det_verdicts)
+        model_ids: list[str] = list(det_model_ids)
         total_rule_latency = 0
 
         for result_item in batch_results:
@@ -384,15 +411,36 @@ class EvaluationService:
             subject_id=subject.identifier,
         )
 
-        # 4. Early return if no rules or no LLM
+        # 4. Early return if no rules
         if not rules:
             return aggregate_verdicts([], [], 0)
+
+        # 4a. Deterministic pre-pass (same as legacy evaluate)
+        subject_facts = {**merged_facts}
+        det_verdicts, det_model_ids, llm_rules = _run_deterministic_prepass(
+            rules,
+            subject_facts,
+        )
+
+        if det_verdicts:
+            logger.info(
+                "deterministic_prepass_complete",
+                surface=surface,
+                resolved=len(det_verdicts),
+                remaining_for_llm=len(llm_rules),
+            )
+
+        if not llm_rules:
+            total_latency = int((time.time() - start_time) * 1000)
+            return aggregate_verdicts(det_verdicts, det_model_ids, total_latency)
+
         if not self._gemini_client:
             logger.warning("evaluation_no_llm_client", surface=surface)
-            return aggregate_verdicts([], [], 0)
+            total_latency = int((time.time() - start_time) * 1000)
+            return aggregate_verdicts(det_verdicts, det_model_ids, total_latency)
 
         # 5. Resolve graph relationships
-        rule_id_list = [r["id"] for r in rules]
+        rule_id_list = [r["id"] for r in llm_rules]
         try:
             from rulerepo_server.core.feature_flags import get_feature_flags
 
@@ -413,7 +461,7 @@ class EvaluationService:
 
             plan = EvaluationPlan(ordered_rules=rule_id_list)
 
-        # 6. Evaluate rules
+        # 6. Evaluate remaining rules via LLM
         cache_repo = None
         try:
             from rulerepo_server.adapters.postgres.cache_repo import LLMCacheRepository
@@ -423,7 +471,7 @@ class EvaluationService:
             pass
 
         batch_results = await evaluate_batch(
-            rules,
+            llm_rules,
             context,
             self._gemini_client,
             cache_repo=cache_repo,
@@ -431,8 +479,9 @@ class EvaluationService:
             surface=surface,
         )
 
-        verdicts = []
-        model_ids: list[str] = []
+        # Merge deterministic verdicts with LLM verdicts
+        verdicts = list(det_verdicts)
+        model_ids: list[str] = list(det_model_ids)
         total_rule_latency = 0
         for verdict, model_id, latency_ms in batch_results:
             verdicts.append(verdict)
@@ -517,6 +566,130 @@ class EvaluationService:
         )
 
         return eval_result
+
+
+def _build_rule_body(rule: dict[str, Any]) -> ComputationalBody | NormativeBody | DefinitionalBody | None:
+    """Build a typed RuleBody from a rule dict's ``body`` or ``constraints`` fields.
+
+    Returns ``None`` if the rule has no deterministic-evaluable body.
+    """
+    body = rule.get("body")
+    kind_str = rule.get("kind", "normative")
+
+    if isinstance(body, ComputationalBody | NormativeBody | DefinitionalBody):
+        return body
+
+    if isinstance(body, dict):
+        if kind_str == "computational" or "expression" in body:
+            return ComputationalBody(
+                expression=body.get("expression", ""),
+                required_inputs=body.get("required_inputs", []),
+                unit=body.get("unit"),
+                exception_predicate=body.get("exception_predicate"),
+            )
+        if kind_str == "definitional" and "term" in body:
+            return DefinitionalBody(
+                term=body.get("term", ""),
+                definition=body.get("definition", ""),
+                lookup_table=body.get("lookup_table"),
+            )
+        if kind_str == "normative" and body.get("predicate"):
+            return NormativeBody(predicate=body.get("predicate"))
+
+    # Check legacy constraints field for expression-based rules
+    constraints = rule.get("constraints")
+    if isinstance(constraints, list):
+        for c in constraints:
+            if isinstance(c, dict) and c.get("expression"):
+                return ComputationalBody(
+                    expression=c["expression"],
+                    required_inputs=c.get("required_inputs", []),
+                )
+
+    return None
+
+
+def _resolve_rule_kind(rule: dict[str, Any]) -> RuleKind:
+    """Resolve a ``RuleKind`` from a rule dict, defaulting to NORMATIVE."""
+    kind_str = rule.get("kind", "normative")
+    try:
+        return RuleKind(kind_str)
+    except (ValueError, KeyError):
+        return RuleKind.NORMATIVE
+
+
+def _deterministic_verdict_to_rule_verdict(
+    det: DeterministicRuleVerdict,
+    rule: dict[str, Any],
+) -> RuleVerdict:
+    """Convert a fully-resolved ``DeterministicRuleVerdict`` into a ``RuleVerdict``."""
+    if det.passed:
+        verdict = Verdict.ALLOW
+        reasoning = "Deterministic evaluation passed."
+    else:
+        verdict = Verdict.DENY
+        reasoning = "Deterministic evaluation failed."
+
+    if det.numeric_result:
+        reasoning += f" Computed value: {det.numeric_result.computed_value}."
+    if det.lookup_result:
+        reasoning += f" Lookup matched: {det.lookup_result.matched}."
+
+    return RuleVerdict(
+        rule_id=det.rule_id,
+        rule_statement=rule.get("statement", ""),
+        verdict=verdict,
+        confidence=1.0,
+        reasoning=reasoning,
+    )
+
+
+def _run_deterministic_prepass(
+    rules: list[dict[str, Any]],
+    facts: dict[str, Any],
+) -> tuple[list[RuleVerdict], list[str], list[dict[str, Any]]]:
+    """Split rules into deterministically-resolved and LLM-bound.
+
+    Returns:
+        (deterministic_verdicts, deterministic_model_ids, llm_rules)
+    """
+    deterministic_verdicts: list[RuleVerdict] = []
+    deterministic_model_ids: list[str] = []
+    llm_rules: list[dict[str, Any]] = []
+
+    for rule in rules:
+        kind = _resolve_rule_kind(rule)
+        body = _build_rule_body(rule)
+
+        if body is None:
+            llm_rules.append(rule)
+            continue
+
+        try:
+            det_result = evaluate_deterministic(
+                rule_id=str(rule.get("id", "")),
+                kind=kind,
+                body=body,
+                inputs=facts,
+            )
+        except Exception as exc:
+            logger.warning(
+                "deterministic_evaluation_error",
+                rule_id=str(rule.get("id", "")),
+                error=str(exc),
+            )
+            llm_rules.append(rule)
+            continue
+
+        if det_result.resolved:
+            rv = _deterministic_verdict_to_rule_verdict(det_result, rule)
+            deterministic_verdicts.append(rv)
+            deterministic_model_ids.append("deterministic")
+        else:
+            # Not fully resolved — send to LLM
+            llm_rules.append(rule)
+
+    return deterministic_verdicts, deterministic_model_ids, llm_rules
 
 
 def _subject_kind_to_surface(subject_kind: str | None) -> str | None:
