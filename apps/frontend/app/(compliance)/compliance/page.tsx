@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePersonaTerm } from "@/lib/use-persona-term";
 
 const BUNDLES = [
   { id: "B-001", name: "J-SOX Internal Controls", framework: "J-SOX", totalControls: 42, implementedControls: 38, lastAudit: "2026-04-15", status: "on-track" as const },
@@ -19,10 +22,11 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function ComplianceDashboardPage() {
+  const t = usePersonaTerm();
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Compliance Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("landing_title", "Compliance Dashboard")}</h1>
         <p className="mt-1 text-sm text-gray-500">Framework progress, control status, and exception management</p>
       </div>
 

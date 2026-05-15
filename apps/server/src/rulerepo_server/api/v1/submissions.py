@@ -24,6 +24,15 @@ from rulerepo_server.adapters.postgres.session import get_db_session
 from rulerepo_server.api.v1.evaluation import _result_to_response
 from rulerepo_server.core.logging import get_logger
 from rulerepo_server.schemas.evaluation import EvaluateResponse
+from rulerepo_server.schemas.submissions import (
+    BusinessEventInput,
+    CodeChangeInput,
+    CommunicationInput,
+    DecisionRequestInput,
+    DocumentArtifactInput,
+    TransactionInput,
+    UniversalSubmissionRequest,
+)
 from rulerepo_server.services.evaluation.service import EvaluationService
 from rulerepo_server.services.events.scope_resolver import EventScopeResolver
 
@@ -247,6 +256,141 @@ async def submit(
         rules_evaluated=result.rules_evaluated,
         violations=result.rules_violated,
         correlation_id=body.correlation_id,
+    )
+
+    return _result_to_response(result)
+
+
+# ---------------------------------------------------------------------------
+# Canonical subject kind mapping (PROJECT.md §6.6 kinds → legacy surfaces)
+# ---------------------------------------------------------------------------
+
+_CANONICAL_KIND_TO_SURFACE: dict[str, str] = {
+    "code_change": "code",
+    "business_event": "human_action",
+    "document_artifact": "document",
+    "transaction": "transaction",
+    "communication": "message",
+    "decision_request": "generic",
+}
+
+_CANONICAL_KIND_TO_LEGACY: dict[str, str] = {
+    "code_change": "code_diff",
+    "business_event": "event",
+    "document_artifact": "document",
+    "transaction": "transaction",
+    "communication": "creative",
+    "decision_request": "decision",
+}
+
+
+def _subject_to_facts(subject: object) -> dict[str, object]:
+    """Extract evaluation facts from a typed subject input."""
+    if isinstance(subject, CodeChangeInput):
+        facts: dict[str, object] = {}
+        if subject.diff:
+            facts["diff"] = subject.diff
+        if subject.files:
+            facts["files"] = subject.files
+        if subject.repository:
+            facts["repository"] = subject.repository
+        return facts
+    if isinstance(subject, BusinessEventInput):
+        return {"event_type": subject.event_type, **subject.payload}
+    if isinstance(subject, DocumentArtifactInput):
+        facts = {}
+        if subject.document_id:
+            facts["document_id"] = subject.document_id
+        if subject.sections:
+            facts["sections"] = subject.sections
+        if subject.intent:
+            facts["intent"] = subject.intent
+        return facts
+    if isinstance(subject, TransactionInput):
+        return {
+            "transaction_type": subject.transaction_type,
+            "amount": float(subject.amount),
+            "currency": subject.currency,
+            "counterparties": subject.counterparties,
+            "line_items": subject.line_items,
+        }
+    if isinstance(subject, CommunicationInput):
+        return {
+            "channel": subject.channel,
+            "sender_id": subject.sender_id,
+            "content": subject.content,
+            "recipient_ids": subject.recipient_ids,
+        }
+    if isinstance(subject, DecisionRequestInput):
+        return {
+            "request_type": subject.request_type,
+            "description": subject.description,
+            "options": subject.options,
+            **subject.context_data,
+        }
+    return {}
+
+
+@router.post("/v2", response_model=EvaluateResponse)
+async def submit_v2(
+    body: UniversalSubmissionRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> EvaluateResponse:
+    """Submit using the canonical EvaluationSubject schema (PROJECT.md §6.6).
+
+    Accepts a discriminated-union ``subject`` with ``kind`` as the
+    discriminator field.  Maps to the existing evaluation pipeline.
+
+    This is the spec-compliant entry point per CLAUDE.md §14.7.
+    The legacy ``POST /api/v1/submissions`` endpoint remains for
+    backward compatibility.
+    """
+    kind = body.subject.kind
+    surface = _CANONICAL_KIND_TO_SURFACE.get(kind, "generic")
+    legacy_kind = _CANONICAL_KIND_TO_LEGACY.get(kind, kind)
+
+    # Resolve scope
+    resolved_scope: str | None = None
+    if body.scope:
+        resolved_scope = body.scope.domain
+
+    # Build evaluation service
+    gemini = None
+    try:
+        from rulerepo_server.adapters.gemini.client import get_gemini_client
+
+        gemini = get_gemini_client()
+    except Exception:
+        logger.warning("gemini_unavailable_for_submission_v2")
+
+    eval_svc = EvaluationService(session, gemini)
+
+    # Extract facts from typed subject
+    facts = _subject_to_facts(body.subject)
+    if body.subject.metadata:
+        facts["_metadata"] = body.subject.metadata
+
+    # Dispatch
+    result = await eval_svc.evaluate(
+        facts=facts,
+        intent=body.intent,
+        scope=resolved_scope,
+        mode=body.mode if body.mode != "sidecar" else "posthoc",
+        max_rules=20,
+        severity_min="MEDIUM",
+        subject_kind=legacy_kind,
+        surface=surface,
+        actor=body.subject.actor_id,
+        diff=facts.get("diff") if kind == "code_change" else None,
+    )
+
+    logger.info(
+        "submission_v2_evaluated",
+        kind=kind,
+        surface=surface,
+        verdict=result.overall_verdict.value,
+        rules_evaluated=result.rules_evaluated,
+        submission_id=body.submission_id,
     )
 
     return _result_to_response(result)

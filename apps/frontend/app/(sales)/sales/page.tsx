@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { usePersonaTerm } from "@/lib/use-persona-term";
 import {
   getDepartmentDashboard,
   getDepartmentEvaluations,
@@ -115,6 +116,7 @@ type VerdictFilter = "all" | "ALLOW" | "DENY" | "NEEDS_CONFIRMATION";
 // ---------------------------------------------------------------------------
 
 export default function SalesDashboardPage() {
+  const t = usePersonaTerm();
   const [dashboard, setDashboard] = useState<DepartmentDashboard | null>(null);
   const [evaluations, setEvaluations] = useState<DepartmentEvaluation[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
@@ -184,7 +186,7 @@ export default function SalesDashboardPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Sales Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("landing_title", "Sales Dashboard")}</h1>
         <p className="mt-1 text-sm text-gray-500">
           Pricing approvals, discount governance, and communication compliance
         </p>

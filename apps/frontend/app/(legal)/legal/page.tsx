@@ -7,6 +7,7 @@ import {
   getDepartmentEvaluations,
   getDepartmentRules,
 } from "@/lib/api";
+import { usePersonaTerm } from "@/lib/use-persona-term";
 import type {
   DepartmentDashboard,
   DepartmentEvaluation,
@@ -147,6 +148,8 @@ function TableSkeleton({ rows = 4 }: { rows?: number }) {
 // ---------------------------------------------------------------------------
 
 export default function LegalDashboardPage() {
+  const t = usePersonaTerm();
+
   // Data state
   const [dashboard, setDashboard] = useState<DepartmentDashboard | null>(null);
   const [evaluations, setEvaluations] = useState<DepartmentEvaluation[]>([]);
@@ -281,7 +284,7 @@ export default function LegalDashboardPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Legal Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("landing_title", "Legal Dashboard")}</h1>
         <p className="mt-1 text-sm text-gray-500">
           Contract pipeline, regulatory changes, and clause compliance
         </p>

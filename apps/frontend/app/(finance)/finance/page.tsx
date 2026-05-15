@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { usePersonaTerm } from "@/lib/use-persona-term";
 import {
   getDepartmentDashboard,
   getDepartmentEvaluations,
@@ -116,6 +117,7 @@ type TxTypeFilter = "all" | "expense" | "purchase_order" | "invoice" | "journal_
 // ---------------------------------------------------------------------------
 
 export default function FinanceDashboardPage() {
+  const t = usePersonaTerm();
   const [dashboard, setDashboard] = useState<DepartmentDashboard | null>(null);
   const [evaluations, setEvaluations] = useState<DepartmentEvaluation[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
@@ -191,7 +193,7 @@ export default function FinanceDashboardPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Finance Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("landing_title", "Finance Dashboard")}</h1>
         <p className="mt-1 text-sm text-gray-500">
           Expense compliance, transaction screening, and financial controls
         </p>

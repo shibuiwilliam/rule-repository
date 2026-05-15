@@ -8,6 +8,7 @@ import {
   type DepartmentDashboard,
   type DepartmentEvaluation,
 } from "@/lib/api";
+import { usePersonaTerm } from "@/lib/use-persona-term";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -134,6 +135,9 @@ function SectionSkeleton({ rows = 4 }: { rows?: number }) {
 // ---------------------------------------------------------------------------
 
 export default function HrDashboardPage() {
+  // --- persona vocabulary --------------------------------------------------
+  const t = usePersonaTerm();
+
   // --- state ---------------------------------------------------------------
   const [period, setPeriod] = useState<PeriodOption>("30");
   const [departmentFilter, setDepartmentFilter] = useState("hr");
@@ -224,7 +228,7 @@ export default function HrDashboardPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">HR Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("landing_title", "HR Dashboard")}</h1>
           <p className="mt-1 text-sm text-gray-500">
             Labor compliance overview and workforce risk indicators
           </p>

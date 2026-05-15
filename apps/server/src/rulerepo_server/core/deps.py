@@ -180,3 +180,67 @@ async def get_search_service(
 ) -> SearchService:
     """Provide a SearchService wired to the appropriate search adapter."""
     return SearchService(session, search_index, _get_optional_gemini())
+
+
+# ---------------------------------------------------------------------------
+# Governance policy dependency (ABAC — PROJECT.md §6.9, CLAUDE.md §14.10)
+# ---------------------------------------------------------------------------
+
+
+def require_governance_policy(action: str):
+    """Create a dependency that enforces ABAC governance policies.
+
+    Only active when ``ABAC_GOVERNANCE_ENABLED`` is ``true``. When the
+    flag is off, this dependency is a no-op.
+
+    Resolution order (per GovernanceResolver):
+    explicit deny > explicit allow > inherited allow > default deny.
+
+    Args:
+        action: The governance action (e.g. "rule.read", "rule.edit",
+                "rule.approve", "rule.evaluate").
+
+    Returns:
+        A FastAPI dependency that raises ``AuthorizationError`` when
+        the principal lacks access.
+    """
+
+    async def _enforce(
+        request: Request,
+        user: CurrentUser = Depends(get_current_user),
+        session: AsyncSession = Depends(get_db_session),
+    ) -> None:
+        flags = get_feature_flags()
+        if not flags.abac_governance_enabled:
+            return  # ABAC not yet enabled — pass through
+
+        from rulerepo_server.services.governance.resolver import GovernanceResolver
+
+        # Build resolver from stored policies (stub: empty policy list for now)
+        # In production this would load policies from the governance_policies table.
+        resolver = GovernanceResolver()
+
+        # Determine principal and domain from request context
+        principal = f"user:{user.user_id}"
+        domain = request.query_params.get("domain")
+        org_unit = request.query_params.get("org_unit")
+
+        decision = resolver.evaluate(
+            principal=principal,
+            action=action,
+            domain=domain,
+            org_unit=org_unit,
+        )
+
+        if not decision.allowed:
+            _logger.warning(
+                "governance_denied",
+                principal=principal,
+                action=action,
+                domain=domain,
+                org_unit=org_unit,
+                reason=decision.reason,
+            )
+            raise AuthorizationError(f"Governance policy denied: {decision.reason}")
+
+    return _enforce

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+import { usePersonaTerm } from "@/lib/use-persona-term";
 import { usePersona, type Persona } from "../PersonaSwitcher";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -139,10 +140,11 @@ function FinanceDashboard({ data }: { data: SummaryData | null }) {
 }
 
 function EngineeringDashboard({ data }: { data: SummaryData | null }) {
+  const t = usePersonaTerm();
   const rate = data ? Math.round((data.compliance_rate ?? 0) * 100) : 0;
   return (
     <div>
-      <h1 className="text-2xl font-bold">Engineering Dashboard</h1>
+      <h1 className="text-2xl font-bold">{t("landing_title", "Engineering Dashboard")}</h1>
       <p className="mt-1 text-sm text-gray-500">Code compliance, agent governance, and engineering standards</p>
       <div className="mt-6 grid grid-cols-4 gap-4">
         <KpiCard label="Compliance Rate" value={`${rate}%`} color={rate >= 90 ? "text-green-600" : "text-yellow-600"} />
