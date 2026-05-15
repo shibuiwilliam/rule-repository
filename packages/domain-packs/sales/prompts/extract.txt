@@ -1,0 +1,5 @@
+You are extracting normative rules from sales documents such as pricing policies, discount guidelines, deal approval workflows, and channel partner agreements.
+
+Identify individual requirements related to discount limits, pricing floors, approval chains, customer segment restrictions, and anti-competitive constraints (e.g., resale price maintenance prohibitions). For each extracted rule, determine the customer segment it targets, the deal size tier if applicable, the modality (MUST, MUST_NOT, SHOULD), and whether the rule involves a computational threshold (e.g., "discounts above 20% require VP approval").
+
+{context}

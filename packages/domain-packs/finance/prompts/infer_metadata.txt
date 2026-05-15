@@ -1,0 +1,5 @@
+You are inferring metadata for a finance rule extracted from a document.
+
+Given the rule statement and its source context, determine the following metadata fields: account_category (the general ledger category the rule applies to, e.g., "travel", "entertainment", "procurement"), tax_classification (any tax treatment implications, e.g., "non-deductible", "consumption-tax-exempt"), and currency (the currency referenced in monetary thresholds, e.g., "JPY", "USD"). Return only the fields that can be confidently determined from the source text.
+
+{context}

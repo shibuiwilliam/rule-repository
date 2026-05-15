@@ -135,6 +135,81 @@ class StructuredScope:
         }
 
 
+@dataclass(frozen=True)
+class Scope:
+    """Multi-axis structured scope per PROJECT.md §6.2.
+
+    Matching semantics: a rule's scope matches a request's scope when:
+    - domain is equal (or rule's domain is None = global)
+    - org_unit is None or is an ancestor of request's org_unit
+    - subject_type is None or equals request's subject_type
+    - every attribute key in rule's attributes is present and equal in request's attributes
+    """
+
+    domain: str | None = None
+    org_unit: str | None = None
+    subject_type: str | None = None
+    attributes: dict[str, str] = field(default_factory=dict)
+
+    def matches(self, request_scope: Scope) -> bool:
+        """Check if this rule scope matches a request scope."""
+        if self.domain is not None and self.domain != request_scope.domain:
+            return False
+        if self.org_unit is not None:
+            if request_scope.org_unit is None:
+                return False
+            if request_scope.org_unit != self.org_unit and not request_scope.org_unit.startswith(self.org_unit + "/"):
+                return False
+        if self.subject_type is not None and self.subject_type != request_scope.subject_type:
+            return False
+        return all(request_scope.attributes.get(key) == value for key, value in self.attributes.items())
+
+    @classmethod
+    def from_legacy_string(cls, scope_str: str) -> Scope:
+        """Normalize a legacy slash-separated scope string.
+
+        E.g., ``"engineering/python"`` -> ``Scope(domain="engineering", subject_type="python_source")``
+        """
+        if not scope_str:
+            return cls()
+        parts = scope_str.strip("/").split("/")
+        domain = parts[0] if parts else None
+        subject_type = None
+        if len(parts) > 1:
+            subject_type = parts[1]
+            # Normalize common engineering subject types
+            if subject_type in ("python", "py"):
+                subject_type = "python_source"
+            elif subject_type in ("typescript", "ts"):
+                subject_type = "typescript_source"
+            elif subject_type in ("react",):
+                subject_type = "react_component"
+        return cls(domain=domain, subject_type=subject_type)
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize to a dict suitable for JSONB storage."""
+        result: dict[str, object] = {}
+        if self.domain is not None:
+            result["domain"] = self.domain
+        if self.org_unit is not None:
+            result["org_unit"] = self.org_unit
+        if self.subject_type is not None:
+            result["subject_type"] = self.subject_type
+        if self.attributes:
+            result["attributes"] = self.attributes
+        return result
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> Scope:
+        """Deserialize from a JSONB dict."""
+        return cls(
+            domain=data.get("domain"),  # type: ignore[arg-type]
+            org_unit=data.get("org_unit"),  # type: ignore[arg-type]
+            subject_type=data.get("subject_type"),  # type: ignore[arg-type]
+            attributes=data.get("attributes", {}),  # type: ignore[arg-type]
+        )
+
+
 def matches_scope_dimensions(
     rule_scope: dict[str, str | list[str]],
     query_dimensions: dict[str, str | list[str]],

@@ -1,0 +1,235 @@
+name: hr-attendance-jp
+domain: hr
+description: "Japanese labor standards for attendance, working hours, overtime, breaks, and leave"
+maturity_level: experimental
+language: ja
+rules:
+  - id: hr_jp_001
+    statement: "月間の時間外労働は45時間を超えてはならない（36協定の一般条項上限）。"
+    kind: computational
+    modality: MUST_NOT
+    severity: HIGH
+    scope:
+      domain: hr
+      subject_type: attendance_record
+      attributes:
+        jurisdiction: JP
+        regulation: "労働基準法第36条第4項"
+    rationale: "2019年施行の働き方改革関連法により、時間外労働の上限が法定化された。一般条項では月45時間・年360時間が上限。"
+    body:
+      expression: "monthly_overtime_hours <= 45"
+      required_inputs:
+        - name: monthly_overtime_hours
+          type: number
+          description: "当月の時間外労働時間数"
+      unit: hours
+      exception_predicate: "has_special_clause_36_agreement == True"
+    following_example: "当月の時間外労働が40時間で、45時間の上限内に収まっている。"
+    violation_example: "36協定の特別条項なしに、当月の時間外労働が50時間に達している。"
+    test_cases:
+      - input: {monthly_overtime_hours: 40, has_special_clause_36_agreement: false}
+        expected_verdict: ALLOW
+      - input: {monthly_overtime_hours: 50, has_special_clause_36_agreement: false}
+        expected_verdict: DENY
+      - input: {monthly_overtime_hours: 50, has_special_clause_36_agreement: true}
+        expected_verdict: ALLOW
+
+  - id: hr_jp_002
+    statement: "時間外労働を命じるには、有効な36協定（三六協定）を所轄労働基準監督署に届け出なければならない。"
+    kind: normative
+    modality: MUST
+    severity: CRITICAL
+    scope:
+      domain: hr
+      subject_type: attendance_record
+      attributes:
+        jurisdiction: JP
+        regulation: "労働基準法第36条第1項"
+    rationale: "労働基準法第36条に基づき、法定労働時間を超える労働には書面による労使協定の届出が必要。届出なしの時間外労働は刑事罰の対象。"
+    following_example: "当年度の36協定を労働基準監督署に届出済みで、2時間の残業を指示。"
+    violation_example: "当年度の36協定が届出されていないにもかかわらず、従業員に残業を指示。"
+    test_cases:
+      - input: {has_valid_36_agreement: true, overtime_assigned: true}
+        expected_verdict: ALLOW
+      - input: {has_valid_36_agreement: false, overtime_assigned: true}
+        expected_verdict: DENY
+
+  - id: hr_jp_003
+    statement: "年次有給休暇が10日以上付与された従業員は、年間5日以上取得しなければならない。"
+    kind: computational
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: hr
+      subject_type: attendance_record
+      attributes:
+        jurisdiction: JP
+        regulation: "労働基準法第39条第7項"
+    rationale: "働き方改革関連法により、使用者は年10日以上の有給休暇が付与される従業員に年5日の取得を確実にする義務がある。"
+    body:
+      expression: "used_paid_leave_days >= 5"
+      required_inputs:
+        - name: used_paid_leave_days
+          type: number
+          description: "当年度の有給休暇取得日数"
+      unit: days
+    following_example: "年間で8日の有給休暇を取得済み。"
+    violation_example: "年度末時点で有給休暇取得が3日にとどまり、使用者による取得促進措置もない。"
+    test_cases:
+      - input: {used_paid_leave_days: 8, entitled_paid_leave_days: 15}
+        expected_verdict: ALLOW
+      - input: {used_paid_leave_days: 3, entitled_paid_leave_days: 15}
+        expected_verdict: DENY
+
+  - id: hr_jp_004
+    statement: "18歳未満の年少者を22時から翌5時までの深夜時間帯に勤務させてはならない。"
+    kind: normative
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope:
+      domain: hr
+      subject_type: attendance_record
+      attributes:
+        jurisdiction: JP
+        regulation: "労働基準法第61条"
+    rationale: "労働基準法第61条により、年少者の深夜労働は原則禁止。健康と成長の保護が目的。"
+    following_example: "17歳のアルバイトのシフトが21:30に終了し、深夜時間帯にかからない。"
+    violation_example: "17歳のアルバイトが23:00までのシフトに配置されている。"
+    test_cases:
+      - input: {employee_age: 17, shift_end_time: "21:30"}
+        expected_verdict: ALLOW
+      - input: {employee_age: 17, shift_end_time: "23:00"}
+        expected_verdict: DENY
+
+  - id: hr_jp_005
+    statement: "1日の労働時間が6時間を超える場合、45分以上の休憩時間を付与しなければならない。"
+    kind: computational
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: hr
+      subject_type: attendance_record
+      attributes:
+        jurisdiction: JP
+        regulation: "労働基準法第34条第1項"
+    rationale: "労働基準法第34条第1項に基づく最低休憩時間の規定。8時間超の場合は60分以上。"
+    body:
+      expression: "break_minutes >= 45"
+      required_inputs:
+        - name: break_minutes
+          type: number
+          description: "当日の休憩時間（分）"
+        - name: working_hours
+          type: number
+          description: "当日の労働時間数"
+      unit: minutes
+      exception_predicate: "working_hours <= 6"
+    following_example: "7時間勤務で45分の昼休憩を取得。"
+    violation_example: "7時間のシフトで30分しか休憩がない。"
+    test_cases:
+      - input: {working_hours: 7, break_minutes: 45}
+        expected_verdict: ALLOW
+      - input: {working_hours: 7, break_minutes: 30}
+        expected_verdict: DENY
+      - input: {working_hours: 5, break_minutes: 0}
+        expected_verdict: ALLOW
+
+  - id: hr_jp_006
+    statement: "遅刻が発生した場合は、始業時刻から30分以内に所属上長へ報告しなければならない。"
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: hr
+      subject_type: attendance_record
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "勤怠管理の正確性を確保し、業務への影響を最小限にするための社内規定。"
+    following_example: "交通遅延で10分遅刻し、始業時刻から15分後に上長へ連絡。"
+    violation_example: "30分遅刻したが、午後になるまで上長への報告がなかった。"
+    test_cases:
+      - input: {late_arrival: true, reported_within_30min: true}
+        expected_verdict: ALLOW
+      - input: {late_arrival: true, reported_within_30min: false}
+        expected_verdict: DENY
+
+  - id: hr_jp_007
+    statement: "勤怠記録の修正は、所属上長の承認を得なければならない。"
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: hr
+      subject_type: attendance_record
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "勤怠記録の改ざん防止および正確な労働時間管理のため、修正には承認プロセスが必要。"
+    following_example: "打刻漏れを申告し、上長承認を経て勤怠記録を修正。"
+    violation_example: "従業員が上長の承認なく勤怠記録を直接修正。"
+    test_cases:
+      - input: {correction_requested: true, manager_approved: true}
+        expected_verdict: ALLOW
+      - input: {correction_requested: true, manager_approved: false}
+        expected_verdict: DENY
+
+  - id: hr_jp_008
+    statement: "在宅勤務は、事前に所属部門の承認を得た上で実施しなければならない。"
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: hr
+      subject_type: attendance_record
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "労務管理・情報セキュリティの観点から、在宅勤務には事前承認が必要。"
+    following_example: "在宅勤務申請を前日までに提出し、上長の承認を得て在宅勤務を実施。"
+    violation_example: "事前申請なく在宅勤務を行い、事後報告のみ。"
+    test_cases:
+      - input: {remote_work: true, pre_approved: true}
+        expected_verdict: ALLOW
+      - input: {remote_work: true, pre_approved: false}
+        expected_verdict: DENY
+
+  - id: hr_jp_009
+    statement: "年次有給休暇の取得は、計画的に年度初めに取得計画を策定しなければならない。"
+    kind: normative
+    modality: SHOULD
+    severity: LOW
+    scope:
+      domain: hr
+      subject_type: attendance_record
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "計画的な有給取得により、業務への影響を最小限にし、年5日の取得義務を確実に達成する。"
+    following_example: "年度初めに有給取得予定日を上長と相談の上、年間計画として登録。"
+    violation_example: "年度末まで有給取得計画が策定されていない。"
+    test_cases:
+      - input: {leave_plan_submitted: true}
+        expected_verdict: ALLOW
+      - input: {leave_plan_submitted: false}
+        expected_verdict: DENY
+
+  - id: hr_jp_010
+    statement: "時間外労働は、事前に所属上長の承認を得なければならない。"
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: hr
+      subject_type: attendance_record
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "時間外労働の適正管理およびサービス残業防止のため、事前承認制を義務化する。"
+    following_example: "残業が必要な場合、事前に上長へ申請し承認を得てから実施。"
+    violation_example: "上長の承認なく残業を行い、事後に勤怠システムへ入力。"
+    test_cases:
+      - input: {overtime_requested: true, manager_pre_approved: true}
+        expected_verdict: ALLOW
+      - input: {overtime_requested: true, manager_pre_approved: false}
+        expected_verdict: DENY

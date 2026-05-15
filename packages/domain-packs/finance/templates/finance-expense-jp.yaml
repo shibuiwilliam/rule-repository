@@ -1,0 +1,241 @@
+name: finance-expense-jp
+domain: finance
+description: "Japanese expense policy rules for entertainment, receipts, travel, and reimbursement"
+maturity_level: experimental
+language: ja
+rules:
+  - id: finance_jp_001
+    statement: "接待交際費は1人あたり5,000円以下でなければならない（税務上の損金算入要件）。"
+    kind: computational
+    modality: MUST_NOT
+    severity: HIGH
+    scope:
+      domain: finance
+      subject_type: expense_claim
+      attributes:
+        jurisdiction: JP
+        regulation: "租税特別措置法第61条の4"
+    rationale: "租税特別措置法に基づき、1人あたり5,000円以下の飲食費は損金算入が可能。超過分は交際費として課税対象。"
+    body:
+      expression: "per_person_amount <= 5000"
+      required_inputs:
+        - name: per_person_amount
+          type: number
+          description: "1人あたりの接待費用（円）"
+      unit: JPY
+    following_example: "6名の顧客接待で合計24,000円（1人あたり4,000円）、出席者リスト添付。"
+    violation_example: "4名の顧客接待で合計42,000円（1人あたり10,500円）。"
+    test_cases:
+      - input: {per_person_amount: 4000, total_amount: 24000, attendee_count: 6}
+        expected_verdict: ALLOW
+      - input: {per_person_amount: 10500, total_amount: 42000, attendee_count: 4}
+        expected_verdict: DENY
+
+  - id: finance_jp_002
+    statement: "3,000円以上の経費精算には領収書またはインボイスの添付を必須とする。"
+    kind: computational
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: finance
+      subject_type: expense_claim
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "税務調査への対応および経費の正当性確認のため、一定額以上の支出には証憑が必要。"
+    body:
+      expression: "amount < 3000 or has_receipt == True"
+      required_inputs:
+        - name: amount
+          type: number
+          description: "経費金額（円）"
+        - name: has_receipt
+          type: boolean
+          description: "領収書の添付有無"
+      unit: JPY
+    following_example: "5,000円のタクシー代に領収書を添付して精算。"
+    violation_example: "8,000円の経費精算に領収書が添付されていない。"
+    test_cases:
+      - input: {amount: 5000, has_receipt: true}
+        expected_verdict: ALLOW
+      - input: {amount: 8000, has_receipt: false}
+        expected_verdict: DENY
+      - input: {amount: 2000, has_receipt: false}
+        expected_verdict: ALLOW
+
+  - id: finance_jp_003
+    statement: "海外出張は出発前に部門長の書面承認を得なければならない。7日間超または50万円超の出張は役員承認を要する。"
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: finance
+      subject_type: expense_claim
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "予算管理の適正化と不正支出防止のため、海外出張には事前承認プロセスが必要。"
+    following_example: "海外出張の計画書を作成し、部門長の承認を得てから航空券を手配。"
+    violation_example: "部門長の承認なく海外出張の航空券とホテルを予約。"
+    test_cases:
+      - input: {travel_type: overseas, department_head_approved: true, days: 5, estimated_cost: 300000}
+        expected_verdict: ALLOW
+      - input: {travel_type: overseas, department_head_approved: false, days: 3, estimated_cost: 200000}
+        expected_verdict: DENY
+
+  - id: finance_jp_004
+    statement: "経費精算は支出日から30日以内に申請しなければならない。60日を超えた申請はVP以上の例外承認が必要。"
+    kind: computational
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: finance
+      subject_type: expense_claim
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "適時の経費計上により正確な期間会計を確保し、古い請求を防止する。"
+    body:
+      expression: "days_since_expense <= 30"
+      required_inputs:
+        - name: days_since_expense
+          type: number
+          description: "支出日からの経過日数"
+      unit: days
+      exception_predicate: "has_vp_exception_approval == True and days_since_expense <= 60"
+    following_example: "出張から帰社後、15日以内に経費精算を提出。"
+    violation_example: "2ヶ月前の会食費用を例外承認なしに精算申請。"
+    test_cases:
+      - input: {days_since_expense: 15}
+        expected_verdict: ALLOW
+      - input: {days_since_expense: 45, has_vp_exception_approval: false}
+        expected_verdict: DENY
+      - input: {days_since_expense: 45, has_vp_exception_approval: true}
+        expected_verdict: ALLOW
+
+  - id: finance_jp_005
+    statement: "社内会議・イベントでのアルコール飲料の経費計上は禁止する。社外接待の場合のみ許可。"
+    kind: normative
+    modality: MUST_NOT
+    severity: MEDIUM
+    scope:
+      domain: finance
+      subject_type: expense_claim
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "社内経費としてのアルコール購入は福利厚生の範囲外とし、コンプライアンスリスクを低減する。"
+    following_example: "顧客接待でのアルコール代を接待交際費として計上。"
+    violation_example: "社内懇親会でのアルコール代を会議費として経費計上。"
+    test_cases:
+      - input: {expense_type: alcohol, event_type: external_entertainment}
+        expected_verdict: ALLOW
+      - input: {expense_type: alcohol, event_type: internal_meeting}
+        expected_verdict: DENY
+
+  - id: finance_jp_006
+    statement: "タクシー利用は、公共交通機関が利用できない場合、または22時以降の深夜帰宅に限り認める。"
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: finance
+      subject_type: expense_claim
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "交通費の適正化のため、タクシー利用には正当な理由が必要。"
+    following_example: "深夜23時の残業後にタクシーで帰宅し、理由を記載して精算。"
+    violation_example: "日中に公共交通機関が利用可能な区間でタクシーを利用し、理由記載なく精算。"
+    test_cases:
+      - input: {transport_type: taxi, reason: late_night_return, time: "23:00"}
+        expected_verdict: ALLOW
+      - input: {transport_type: taxi, reason: none, time: "14:00", public_transit_available: true}
+        expected_verdict: DENY
+
+  - id: finance_jp_007
+    statement: "研修・トレーニング費用は事前に人事部門と所属部門の承認を得なければならない。"
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: finance
+      subject_type: expense_claim
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "研修投資の費用対効果を確認し、予算内での研修参加を確保する。"
+    following_example: "外部研修に申し込む前に、人事部門と所属部門の承認を取得。"
+    violation_example: "上長の承認なく外部セミナーに参加し、事後に費用を精算。"
+    test_cases:
+      - input: {expense_type: training, hr_approved: true, department_approved: true}
+        expected_verdict: ALLOW
+      - input: {expense_type: training, hr_approved: false, department_approved: true}
+        expected_verdict: DENY
+
+  - id: finance_jp_008
+    statement: "外部カンファレンス参加費は、事前に部門長の承認を得なければならない。"
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: finance
+      subject_type: expense_claim
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "カンファレンス参加は業務との関連性を確認し、予算管理を行う必要がある。"
+    following_example: "業界カンファレンスの参加申請を部門長に事前提出し、承認後に申し込み。"
+    violation_example: "部門長の承認なくカンファレンスに参加し、参加費を事後精算。"
+    test_cases:
+      - input: {expense_type: conference, department_head_approved: true}
+        expected_verdict: ALLOW
+      - input: {expense_type: conference, department_head_approved: false}
+        expected_verdict: DENY
+
+  - id: finance_jp_009
+    statement: "社内会議のケータリング費用は1人あたり3,000円以下でなければならない。"
+    kind: computational
+    modality: MUST_NOT
+    severity: MEDIUM
+    scope:
+      domain: finance
+      subject_type: expense_claim
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "社内会議の飲食費を合理的な範囲に抑え、経費の適正化を図る。"
+    body:
+      expression: "catering_per_person <= 3000"
+      required_inputs:
+        - name: catering_per_person
+          type: number
+          description: "1人あたりのケータリング費用（円）"
+      unit: JPY
+    following_example: "10名の会議で合計25,000円のケータリング（1人あたり2,500円）。"
+    violation_example: "5名の会議で合計20,000円のケータリング（1人あたり4,000円）。"
+    test_cases:
+      - input: {catering_per_person: 2500, attendee_count: 10, total_catering: 25000}
+        expected_verdict: ALLOW
+      - input: {catering_per_person: 4000, attendee_count: 5, total_catering: 20000}
+        expected_verdict: DENY
+
+  - id: finance_jp_010
+    statement: "国内出張の日当は会社規定の日当額に従い、実費精算と日当の二重請求をしてはならない。"
+    kind: normative
+    modality: MUST_NOT
+    severity: HIGH
+    scope:
+      domain: finance
+      subject_type: expense_claim
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "日当は食費等の定額支給であり、日当対象の費目について別途実費精算することは二重請求に該当する。"
+    following_example: "国内出張で日当を受給し、日当対象の食事代は別途精算しない。"
+    violation_example: "日当を受給しながら、同じ出張の食事代を別途実費精算。"
+    test_cases:
+      - input: {per_diem_claimed: true, meal_expense_claimed: false}
+        expected_verdict: ALLOW
+      - input: {per_diem_claimed: true, meal_expense_claimed: true}
+        expected_verdict: DENY

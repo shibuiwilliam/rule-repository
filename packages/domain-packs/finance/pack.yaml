@@ -1,0 +1,22 @@
+domain: finance
+name: "Finance & Accounting"
+version: "0.1.0"
+description: "Rules for expense management, procurement, revenue recognition, and financial controls."
+subject_types:
+  - expense_report
+  - purchase_order
+  - invoice
+  - journal_entry
+metadata_extensions:
+  account_category:
+    type: string
+    required: false
+  tax_classification:
+    type: string
+    required: false
+  currency:
+    type: string
+    required: false
+default_modality: MUST
+preferred_evaluator_subject_kinds:
+  - transaction

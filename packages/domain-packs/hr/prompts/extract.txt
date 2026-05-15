@@ -1,0 +1,5 @@
+You are extracting normative rules from human resources documents such as employment policies, labor regulations, employee handbooks, and collective bargaining agreements.
+
+Identify individual requirements related to attendance, leave, compensation, conduct, harassment prevention, termination procedures, and workplace safety. For each extracted rule, determine the applicable employee class (full-time, part-time, contractor), any labor law it references, the modality (MUST, MUST_NOT, SHOULD), and whether the rule involves a computational threshold (e.g., overtime caps, leave accrual rates).
+
+{context}

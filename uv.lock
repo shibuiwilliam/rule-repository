@@ -171,6 +171,15 @@ wheels = [
 ]
 
 [[package]]
+name = "asteval"
+version = "1.0.8"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8f/d4/c19cac7814b8ec273804ebee3c5d3c69ee2084cb75f25297cb4177a6aa85/asteval-1.0.8.tar.gz", hash = "sha256:7175134331726df0e1569f4ab5fa59266192cf1b365db0ff463c978842075cbb", size = 53989, upload-time = "2025-12-17T20:56:08.383Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/99/31/6cf181011dc738c33bf6ba7aea2e8e1d3c1f71b7dab1942f3054f66f6202/asteval-1.0.8-py3-none-any.whl", hash = "sha256:6c64385c6ff859a474953c124987c7ee8354d781c76509b2c598741c4d1d28e9", size = 22968, upload-time = "2025-12-17T20:56:07.457Z" },
+]
+
+[[package]]
 name = "asyncpg"
 version = "0.31.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1665,6 +1674,7 @@ dependencies = [
     { name = "aiofiles" },
     { name = "alembic" },
     { name = "arq" },
+    { name = "asteval" },
     { name = "asyncpg" },
     { name = "cryptography" },
     { name = "elasticsearch", extra = ["async"] },
@@ -1696,6 +1706,7 @@ requires-dist = [
     { name = "aiofiles", specifier = ">=24.1" },
     { name = "alembic", specifier = ">=1.14" },
     { name = "arq", specifier = ">=0.26" },
+    { name = "asteval", specifier = ">=1.0.8" },
     { name = "asyncpg", specifier = ">=0.30" },
     { name = "cryptography", specifier = ">=43.0" },
     { name = "elasticsearch", extras = ["async"], specifier = ">=8.17,<9" },

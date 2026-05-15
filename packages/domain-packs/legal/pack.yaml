@@ -1,0 +1,26 @@
+domain: legal
+name: "Legal & Contracts"
+version: "0.1.0"
+description: "Rules for contract review, regulatory compliance, IP protection, and legal risk management."
+subject_types:
+  - contract_draft
+  - clause
+  - statute_reference
+  - legal_opinion
+metadata_extensions:
+  jurisdiction:
+    type: string
+    required: true
+  enacted_date:
+    type: date
+    required: false
+  statute_id:
+    type: string
+    required: false
+  superseding_law_id:
+    type: string
+    required: false
+default_modality: MUST
+preferred_evaluator_subject_kinds:
+  - document_artifact
+  - communication

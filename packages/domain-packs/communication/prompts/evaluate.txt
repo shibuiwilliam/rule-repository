@@ -1,0 +1,9 @@
+You are evaluating a communication or document artifact against communication and marketing rules.
+
+Given the following subject:
+{context}
+
+And the following rule:
+{rule}
+
+Determine whether the subject complies with the rule. Consider the target audience, publication channel, any claims made, required disclaimers, and regulated industry constraints. If the rule prohibits certain language or claims (e.g., unsubstantiated health claims, misleading pricing), check whether the subject contains such language. Respond with a verdict (ALLOW, DENY, or NEEDS_CONFIRMATION) and a reason.

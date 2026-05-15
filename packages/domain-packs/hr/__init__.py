@@ -1,0 +1,1 @@
+"""Domain Pack: Human Resources."""

@@ -164,6 +164,7 @@ async def challenge_verdict(
     svc: AgentGovernanceService = Depends(_get_service),
 ) -> NegotiationResponse:
     """Challenge a verdict with a counter-argument."""
+    _require_agent_negotiation()
     try:
         result = await svc.challenge_verdict(
             agent_id=body.agent_id,
@@ -187,12 +188,29 @@ async def list_negotiations(
     svc: AgentGovernanceService = Depends(_get_service),
 ) -> dict:
     """List verdict negotiations."""
+    _require_agent_negotiation()
     return await svc.list_negotiations(agent_id=agent_id, resolution=resolution, page=page, page_size=page_size)
 
 
 # ---------------------------------------------------------------------------
 # Governance Sessions (frozen — gated behind MULTI_AGENT_SESSIONS_ENABLED)
 # ---------------------------------------------------------------------------
+
+
+def _require_agent_negotiation() -> None:
+    """Raise 404 if agent negotiation is disabled."""
+    from rulerepo_server.core.feature_flags import get_feature_flags
+
+    if not get_feature_flags().agent_negotiation_enabled:
+        raise HTTPException(status_code=404, detail="Agent negotiation is disabled")
+
+
+def _require_agent_trust_auto_promotion() -> None:
+    """Raise 404 if agent trust auto-promotion is disabled."""
+    from rulerepo_server.core.feature_flags import get_feature_flags
+
+    if not get_feature_flags().agent_trust_auto_promotion_enabled:
+        raise HTTPException(status_code=404, detail="Agent trust auto-promotion is disabled")
 
 
 def _require_multi_agent_sessions() -> None:

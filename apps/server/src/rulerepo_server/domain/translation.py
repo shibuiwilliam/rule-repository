@@ -27,6 +27,19 @@ class RuleTranslation:
     updated_at: datetime = field(default_factory=lambda: datetime.now(tz=_UTC))
 
 
+@dataclass(frozen=True)
+class TranslationLink:
+    """Link between semantically equivalent rules in different languages.
+
+    See PROJECT.md §6.8.
+    """
+
+    sibling_rule_id: str
+    language: str  # ISO 639-1
+    equivalence_verified_at: datetime | None = None
+    equivalence_score: float = 0.0  # 0..1
+
+
 @dataclass
 class TranslationVerification:
     """Result of verifying a translation's accuracy."""

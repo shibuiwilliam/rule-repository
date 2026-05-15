@@ -46,6 +46,24 @@ class FeatureFlags:
         self.gateway_enabled: bool = getattr(settings, "gateway_enabled", False)
         self.advanced_observability_enabled: bool = getattr(settings, "advanced_observability_enabled", False)
 
+        # Deferred subsystems (CLAUDE.md §14.11)
+        self.marketplace_enabled: bool = getattr(settings, "marketplace_enabled", False)
+        self.gateway_external_intake_enabled: bool = getattr(settings, "gateway_external_intake_enabled", False)
+        self.observability_digest_delivery_enabled: bool = getattr(
+            settings, "observability_digest_delivery_enabled", False
+        )
+        self.agent_trust_auto_promotion_enabled: bool = getattr(settings, "agent_trust_auto_promotion_enabled", False)
+        self.agent_negotiation_enabled: bool = getattr(settings, "agent_negotiation_enabled", False)
+
+        # Refocus migration toggles
+        self.evaluation_subject_v2_enabled: bool = getattr(settings, "evaluation_subject_v2_enabled", True)
+        self.structured_scope_enabled: bool = getattr(settings, "structured_scope_enabled", True)
+        self.rule_kind_polymorphism_enabled: bool = getattr(settings, "rule_kind_polymorphism_enabled", True)
+        self.domain_packs_enabled: bool = getattr(settings, "domain_packs_enabled", True)
+        self.hybrid_evaluation_enabled: bool = getattr(settings, "hybrid_evaluation_enabled", True)
+        self.persona_routing_enabled: bool = getattr(settings, "persona_routing_enabled", True)
+        self.abac_governance_enabled: bool = getattr(settings, "abac_governance_enabled", False)
+
         # Alert / Digest delivery mode
         self.alert_output_mode: str = getattr(settings, "alert_output_mode", "local")
         self.digest_output_mode: str = getattr(settings, "digest_output_mode", "local")

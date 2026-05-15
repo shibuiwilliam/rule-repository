@@ -2,19 +2,24 @@
 
 > Operational guide for Claude Code when working on the **Rule Repository** project.
 > For the project vision, domain model, and roadmap, see **PROJECT.md**.
-> For the analysis that led to the v1 direction, see **IMPROVEMENT.md**.
+> For the analytical rationale behind the current refocus, see **IMPROVEMENT.md**.
 
-This file is the working contract between you (Claude Code) and the project. Read it before making changes. When in doubt, follow the rules in this file over your prior conventions. If you find a conflict between this file and the user's request, surface the conflict and ask.
+This file is the working contract between you (Claude Code) and the project. Read it before making changes. When in doubt, follow the rules in this file over your prior conventions.
+
+The project is in a **refocused** state. Existing engineering-centric code paths remain working but are being generalized into a Cross-Organizational Rule Platform. Many sections below describe the **target architecture**; current code may not yet match. Where this file describes a target state, follow that target state when adding new code, and migrate existing code only via the migration discipline described in §15.
 
 ---
 
 ## 1. Project at a Glance
 
-The Rule Repository stores natural-language rules and makes them searchable, evaluable, and enforceable across multiple functional domains: legal, HR, finance, sales, engineering, communication, and beyond. See `PROJECT.md` for the full design.
+The Rule Repository stores natural-language rules (laws, contracts, policies, HR regulations, finance controls, sales policies, communication standards, engineering rules, doc standards) and makes them searchable, evaluable, and enforceable through LLM-assisted services and SDKs across **all** business domains and personas. See `PROJECT.md` for the full design.
 
-**Current focus**: **v1 — Cross-Organizational Generalization**. The system has solid v0 foundations focused on engineering use cases. v1 generalizes those foundations so every functional team can use the same rule corpus and the same evaluation engine.
+**This repository is a monorepo** containing the backend server, frontend, Python client SDKs, Domain Packs, and local dev infrastructure. The first deliverable is a fully working local stack via **Docker Compose**.
 
-**This repository is a monorepo** containing the backend server, frontend, Python client SDKs, CLI tools, domain packs, and local dev infrastructure. The entire stack runs on **Docker Compose**.
+Two strategic facts to internalize:
+
+1. **Code change is one `EvaluationSubject` kind among many**, not the default. Business events, document artifacts, transactions, and communications are equal first-class subjects.
+2. **The system is structured around Domain Packs.** The core engine is domain-agnostic; domain-specific knowledge (prompts, analyzers, templates, metadata extensions) lives in `packages/domain-packs/{legal,hr,finance,sales,communication,engineering}/`. Do not put domain-specific behavior in the core.
 
 ---
 
@@ -25,14 +30,15 @@ The Rule Repository stores natural-language rules and makes them searchable, eva
 | Backend | **Python 3.13** + FastAPI | Library management with **uv** |
 | Frontend | **TypeScript**, **React 19**, **Next.js 15**, **Tailwind CSS** | Library management with **pnpm** |
 | Python clients | **Python 3.13** (Rule Client, Agentic Rule Client) | Library management with **uv** |
-| LLM | **Gemini 3 Flash** (`gemini-3-flash-preview`) and **Gemini 3.1 Pro** (`gemini-3.1-pro-preview`) | via `google-genai` SDK; provider is abstracted behind the `Evaluator` interface |
-| Document parsing | **Gemini Files API** + document understanding | PDF, text, markdown |
-| Relational DB | **PostgreSQL 17** | rules, revisions, audit log; `frozen` schema for disabled features |
-| Search | **Elasticsearch 8.17** | full-text + hybrid search; per-domain indexing |
-| Graph DB | **Neo4j 5** | rule relationships |
-| Job Queue | **arq** + **Redis 7** | Background tasks |
-| Sandbox expression | **`asteval`** | Deterministic evaluation for `COMPUTATIONAL` rules |
-| Local orchestration | **Docker Compose** | dev + integration tests; 8 services |
+| LLM | **Gemini 3 Flash** (`gemini-3-flash-preview`) and **Gemini 3.1 Pro** (`gemini-3.1-pro-preview`) | via `google-genai` SDK |
+| Deterministic eval | **`asteval`** (sandboxed expressions), Pydantic (schema), in-memory state machine | no shell-out, no I/O |
+| Document parsing / OCR | **Gemini Files API** + domain-adaptive structural parsers | PDF, text, markdown |
+| Relational DB | **PostgreSQL 17** | rules, revisions, audit log; `scope` is JSONB |
+| Search | **Elasticsearch 8** | full-text + dense_vector hybrid; `scope` indexed as a structured object |
+| Graph DB | **Neo4j 5** | rule relationships (`refines`, `overrides`, `conflicts_with`, `derives_from`, `succeeds`, `depends_on`, `translates`) |
+| Job Queue | **arq** + **Redis** | health scoring, recommendations, correction analysis, translation verification |
+| MCP | **FastMCP** (`mcp >= 1.9`) | stdio + streamable-http |
+| Local orchestration | **Docker Compose** | dev + integration tests |
 
 Do **not** introduce additional frameworks or services without updating this file and PROJECT.md first.
 
@@ -43,95 +49,85 @@ Do **not** introduce additional frameworks or services without updating this fil
 ```
 rule-repository/
 ├── apps/
-│   ├── server/                 # FastAPI backend (Python 3.13, uv)
+│   ├── server/                       # FastAPI backend (Python 3.13, uv)
 │   │   ├── pyproject.toml
 │   │   ├── src/rulerepo_server/
-│   │   │   ├── api/v1/         # REST routers (rules, search, evaluate, submissions, intent, …)
-│   │   │   ├── core/           # config, logging, errors, auth, middleware, feature_flags, PII
-│   │   │   ├── domain/         # Rule, Scope, RuleKind, EvaluationSubject, Verdict (pure)
+│   │   │   ├── api/v1/               # REST API routers
+│   │   │   ├── core/                 # config, logging, errors, auth, middleware, PII, deps, feature flags
+│   │   │   ├── domain/               # Rule, Evaluation, Verdict, Scope, EvaluationSubject, RuleKind, etc. (pure)
 │   │   │   ├── services/
-│   │   │   │   ├── evaluation/
-│   │   │   │   │   ├── dispatcher.py         # routes subjects to handlers
-│   │   │   │   │   ├── handlers/
-│   │   │   │   │   │   ├── code_change/      # existing engineering logic
-│   │   │   │   │   │   ├── business_event/   # HR / CRM / etc.
-│   │   │   │   │   │   ├── document_artifact/# legal contracts, marketing copy
-│   │   │   │   │   │   ├── transaction/      # finance: expense, procurement
-│   │   │   │   │   │   ├── communication/    # email, chat, public posts
-│   │   │   │   │   │   └── decision_request/ # "should I do X?"
-│   │   │   │   │   ├── deterministic/        # computational/procedural/definitional eval
-│   │   │   │   │   ├── rule_selector.py      # multi-axis scope-aware selection
-│   │   │   │   │   └── llm_judge.py          # shared LLM-call infrastructure
-│   │   │   │   ├── extraction/
-│   │   │   │   │   ├── structural/           # PDF → sections (domain-agnostic)
-│   │   │   │   │   ├── normative/            # normative-sentence detection
-│   │   │   │   │   └── domain/{legal,hr,finance,sales,engineering}/
-│   │   │   │   ├── search.py                 # multi-modal search with scope filter
-│   │   │   │   ├── intent.py                 # intent classification + routing
-│   │   │   │   ├── discovery/                # cold-start rule discovery
-│   │   │   │   ├── feedback/                 # correction loop
-│   │   │   │   ├── intelligence/             # health, effectiveness, per-domain quality
-│   │   │   │   ├── federation/               # org → team → project hierarchy
-│   │   │   │   ├── snapshots/                # versioned rule sets
-│   │   │   │   ├── playground/               # sandbox + test cases
-│   │   │   │   ├── proposals/                # rule change workflow
-│   │   │   │   └── domain_packs/             # pack loader, pack registry
-│   │   │   ├── adapters/                     # postgres, elasticsearch, neo4j, gemini, files
-│   │   │   ├── mcp/                          # MCP server (tools, resources, prompts)
-│   │   │   ├── integrations/                 # optional integrations (gated)
-│   │   │   ├── schemas/                      # Pydantic request/response models
-│   │   │   └── workers/                      # arq workers (cron jobs)
-│   │   ├── alembic/                          # database migrations
-│   │   └── tests/                            # unit, integration, e2e
-│   └── frontend/                             # Next.js + TS + Tailwind (pnpm)
+│   │   │   │   ├── evaluation/       # subject-dispatched evaluation engine
+│   │   │   │   │   ├── service.py    #   orchestrator
+│   │   │   │   │   ├── subjects/     #   per-subject context assemblers
+│   │   │   │   │   ├── deterministic/#   deterministic-layer evaluators (numeric/schema/state/lookup)
+│   │   │   │   │   ├── llm_judge/    #   LLM-layer evaluators
+│   │   │   │   │   ├── rule_selector.py
+│   │   │   │   │   ├── graph_resolver.py
+│   │   │   │   │   └── verdict_aggregator.py
+│   │   │   │   ├── extraction/       # domain-adaptive extraction pipeline
+│   │   │   │   ├── intelligence/     # health, analytics, recommendations (essentials only)
+│   │   │   │   ├── context_delivery/ # rule selection + formatting for agents and persona views
+│   │   │   │   ├── discovery/        # cross-domain discovery (analyzers dispatched by Domain Pack)
+│   │   │   │   ├── feedback/         # correction feedback loop (code + non-code)
+│   │   │   │   ├── federation/       # hierarchical rule composition
+│   │   │   │   ├── playground/       # sandbox + test cases for all subject kinds
+│   │   │   │   ├── snapshots/        # versioning + deployment
+│   │   │   │   ├── proposals/        # collaborative governance workflow
+│   │   │   │   ├── governance/       # ABAC policy resolution
+│   │   │   │   ├── multilingual/     # translation links + equivalence verification
+│   │   │   │   ├── domain_packs/     # Domain Pack loader & registry
+│   │   │   │   ├── search.py
+│   │   │   │   ├── rule_service.py
+│   │   │   │   └── intent.py
+│   │   │   ├── adapters/             # postgres, elasticsearch, neo4j, gemini, files
+│   │   │   ├── mcp/                  # MCP server (tools, resources, prompts)
+│   │   │   ├── integrations/         # GitHub webhook (optional), CI formatters
+│   │   │   ├── schemas/              # Pydantic request/response models
+│   │   │   └── workers/              # background jobs (arq): settings.py, tasks.py
+│   │   ├── alembic/                  # database migrations
+│   │   └── tests/
+│   └── frontend/                     # Next.js + TS + Tailwind (pnpm)
 │       ├── package.json
 │       ├── app/
 │       │   ├── (personas)/
-│       │   │   ├── engineering/              # existing 23 pages, repackaged
-│       │   │   ├── legal/                    # contract review, clause comparison
-│       │   │   ├── hr/                       # policy browser, attendance alerts
-│       │   │   ├── finance/                  # expense review, account mapping
-│       │   │   ├── sales/                    # quote review, discount approval
-│       │   │   └── compliance/               # cross-domain dashboard, audit, risk
-│       │   ├── (shared)/                     # rule detail, search, settings
-│       │   └── layout.tsx                    # persona switcher in top nav
-│       └── components/                       # persona-agnostic UI components
+│       │   │   ├── engineering/      # current engineering pages migrated here
+│       │   │   ├── legal/
+│       │   │   ├── hr/
+│       │   │   ├── finance/
+│       │   │   ├── sales/
+│       │   │   └── compliance/
+│       │   └── (shared)/             # rule detail, search, proposals, settings, notifications
+│       └── components/               # Badge, RuleCard, RuleGraph, Pagination, etc.
 ├── packages/
-│   ├── rule-client/                          # Python SDK (thin wrapper over server APIs)
-│   ├── agentic-client/                       # Python SDK with evaluation, three modes
-│   ├── cli/                                  # rulerepo-check, rulerepo-hook, rulerepo-ingest, rulerepo-export, rulerepo-context
-│   └── domain-packs/                         # Domain Pack contributions
+│   ├── rule-client/                  # Python SDK (thin wrapper over server APIs)
+│   ├── agentic-client/               # Python SDK (wraps rule-client + evaluation)
+│   ├── cli/                          # CLI tools: rulerepo-check, rulerepo-hook, rulerepo-ingest, rulerepo-export, rulerepo-context, rulerepo-policy
+│   └── domain-packs/                 # NEW: business-domain extensions
+│       ├── _core/                    # shared utilities (manifest schema, base prompts)
+│       ├── engineering/              # existing engineering analyzers/prompts/templates migrated here
 │       ├── legal/
 │       ├── hr/
 │       ├── finance/
 │       ├── sales/
-│       └── engineering/                      # the previous core implementation, repackaged
+│       └── communication/
 ├── infra/
-│   ├── docker/                               # Dockerfiles
-│   ├── postgres/                             # init SQL
-│   ├── elasticsearch/                        # index templates
-│   └── neo4j/                                # constraints
-├── sample_rules/
-│   ├── coding_rules/                         # 11 engineering documents
-│   ├── company_rules/                        # 7 corporate policy documents
-│   ├── sales_team_rules/                     # 5 sales team documents
-│   └── templates/                            # YAML templates (engineering + cross-domain)
-├── scripts/                                  # seed_data, reconcile_graph, reindex, reconcile_scope_structured
-├── development/                              # technical development docs
-├── docs/
-│   ├── domains/                              # per-domain-pack documentation
-│   ├── migration/                            # A/B/C migration guide
-│   └── …
-├── docker-compose.yml                        # local dev stack
-├── pyproject.toml                            # uv workspace root
+│   ├── docker/                       # Dockerfiles (server, frontend)
+│   ├── postgres/                     # init SQL
+│   ├── elasticsearch/                # index templates + setup script
+│   └── neo4j/                        # constraints
+├── scripts/                          # seed_data, reconcile_graph, generate_claude_md, reindex_elasticsearch
+├── development/                      # technical development docs
+├── docs/                             # mkdocs documentation site (per-persona sections)
+├── docker-compose.yml                # local dev stack
+├── pyproject.toml                    # uv workspace root
 ├── pnpm-workspace.yaml
 ├── .env.example
-├── PROJECT.md                                # project vision and specification
-├── IMPROVEMENT.md                            # v1 direction analysis and proposals
-└── CLAUDE.md                                 # this file
+├── PROJECT.md                        # project vision and specification (target state)
+├── CLAUDE.md                         # this file — operational guide
+└── IMPROVEMENT.md                    # rationale for the refocus
 ```
 
-When adding a new package, place it under `apps/` (deployable apps) or `packages/` (libraries). Update `pyproject.toml` (uv workspace) or `pnpm-workspace.yaml` accordingly.
+When adding a new package, place it under `apps/` (deployable apps), `packages/` (libraries), or `packages/domain-packs/` (business-domain extensions). Update `pyproject.toml` (uv workspace) or `pnpm-workspace.yaml` accordingly.
 
 ---
 
@@ -141,16 +137,16 @@ The whole stack must come up with one command. If your changes break this, fix i
 
 ```bash
 cp .env.example .env            # then fill in GEMINI_API_KEY
-make up                         # or: docker compose up --build -d
+docker compose up --build       # brings up: server, frontend, postgres, elasticsearch, neo4j, redis, arq-worker, MCP server
 ```
 
 Expected services after `up`:
 
 | Service | URL | Purpose |
 |---|---|---|
-| Backend API | http://localhost:8000 | REST + Submissions + Intent API |
+| Backend API | http://localhost:8000 | REST + Intent + Submissions APIs |
 | API docs (OpenAPI) | http://localhost:8000/docs | FastAPI Swagger UI |
-| Frontend | http://localhost:3000 | Next.js dev server (persona switcher in top nav) |
+| Frontend | http://localhost:3000 | Next.js dev server (persona-aware) |
 | PostgreSQL | localhost:5432 | `ruledb` |
 | Elasticsearch | http://localhost:9200 | search index |
 | Neo4j Browser | http://localhost:7474 | rule graph |
@@ -158,7 +154,7 @@ Expected services after `up`:
 | Redis | localhost:6379 | Job queue (arq) |
 | arq-worker | — | Background task processor |
 
-Frozen features (Marketplace, external gateway webhooks, etc.) are disabled by default. To enable any during development, set the corresponding `FEATURE_*_ENABLED=true` in `.env`.
+The frontend talks to the backend over `NEXT_PUBLIC_API_BASE_URL`. The Python clients talk to the backend over `RULEREPO_SERVER_URL`.
 
 ---
 
@@ -168,13 +164,13 @@ Frozen features (Marketplace, external gateway webhooks, etc.) are disabled by d
 
 ```bash
 cd apps/server
-uv sync                         # install deps
-uv run uvicorn rulerepo_server.main:app --reload   # run dev server
-uv run pytest                   # run tests
-uv run pytest -m "not frozen"   # run all tests EXCEPT frozen-feature tests
-uv run ruff check .             # lint
-uv run ruff format .            # format
-uv run mypy src                 # type check
+uv sync                                                   # install deps
+uv run uvicorn rulerepo_server.main:app --reload          # run dev server
+uv run pytest                                              # run tests
+uv run pytest -m "not live_llm"                            # exclude live-LLM tests
+uv run ruff check .                                        # lint
+uv run ruff format .                                       # format
+uv run mypy src                                            # type check
 ```
 
 ### Frontend (apps/frontend)
@@ -189,42 +185,51 @@ pnpm test                       # Vitest / React Testing Library
 pnpm typecheck                  # tsc --noEmit
 ```
 
-### Python SDKs / CLI (packages/)
+### Python SDKs and CLI
 
 ```bash
 cd packages/rule-client
-uv sync && uv run pytest && uv build
+uv sync
+uv run pytest
+uv build                        # build wheel
+```
 
-# CLI
-rulerepo-check --diff "$(git diff origin/main...HEAD)" --format github-actions
-rulerepo-hook preflight --file src/api/handler.py --agent-id claude-code
-rulerepo-ingest --source claude-md --file ./CLAUDE.md --domain engineering --subject-type code_file
-rulerepo-export --project backend-api --output rules.yaml
-rulerepo-context generate --server http://localhost:8000 --project backend-api
+### CLI Tools (packages/cli)
+
+```bash
+rulerepo-check --diff "$(git diff origin/main...HEAD)" --format github-actions       # CI
+rulerepo-hook preflight --file src/api/handler.py                                     # agent hook: before edit
+rulerepo-hook posthoc  --file src/api/handler.py                                      # agent hook: after edit
+rulerepo-ingest --source claude-md --file ./CLAUDE.md --scope domain=engineering,subject_type=python  # import rules
+rulerepo-export --project backend-api --output rules.yaml                              # export rules
+rulerepo-context update --file CLAUDE.md                                              # refresh CLAUDE.md rules section
+rulerepo-policy list                                                                  # list ABAC policies
+rulerepo-policy grant --principal group:legal-team --action rule.edit --domain legal  # grant policy
 ```
 
 ### MCP Server
 
 ```bash
-uv run rulerepo-mcp                          # stdio (local, for Claude Code)
-MCP_TRANSPORT=streamable-http uv run rulerepo-mcp   # HTTP (remote agents)
+uv run rulerepo-mcp                                              # stdio (local, for Claude Code)
+MCP_TRANSPORT=streamable-http uv run rulerepo-mcp                # HTTP (remote agents)
 ```
 
 ### Whole repo (from root)
 
 ```bash
-make up                         # start full stack
-make down                       # stop
-make reset                      # wipe volumes and rebuild
-make seed                       # load sample rules across domains
-make check                      # format + lint + test (run before committing)
+docker compose up --build
+docker compose down -v          # tear down + wipe volumes
+docker compose logs -f server   # tail server logs
+uv run python -m pytest         # run all tests
+make check                      # format + lint + test
 ```
 
 ---
 
 ## 6. Coding Conventions
 
-### Python (server + clients)
+### 6.1 Python (server + clients)
+
 - **Python 3.13**. Use modern syntax: built-in generics (`list[str]`, `dict[str, int]`), `match` where it improves clarity.
 - **Type hints are mandatory** on all public functions. mypy must pass on `src/`.
 - **Formatter and linter**: `ruff` (both linting and formatting). Configure via `pyproject.toml`. No `black`, no `isort` (ruff covers both).
@@ -232,19 +237,23 @@ make check                      # format + lint + test (run before committing)
 - **Docstrings**: Google style. Required on all public APIs.
 - **Errors**: define a project-specific exception hierarchy under `rulerepo_server.errors` / `rulerepo.errors`. Never raise bare `Exception`.
 - **Logging**: `structlog` with JSON output. Never `print()` outside of one-off scripts.
-- **Pydantic** for all data validation at API boundaries. Use Pydantic v2 idioms.
+- **Pydantic v2** for all data validation at API boundaries.
 - **Tests**: `pytest` + `pytest-asyncio`. Aim for unit tests on pure logic, integration tests against the docker-compose stack.
 
-### TypeScript (frontend)
+### 6.2 TypeScript (frontend)
+
 - **Strict TS**: `"strict": true` in `tsconfig.json`. No `any` without justification.
-- **App Router** (Next.js 14+ idioms). Server Components by default, Client Components only when needed.
+- **App Router** (Next.js 15 idioms). Server Components by default, Client Components only when needed.
 - **Tailwind**: prefer utility classes over custom CSS. Centralize design tokens in `tailwind.config.ts`.
 - **State**: prefer Server Components and URL state. For client state, `zustand`. For server-state caching, `@tanstack/react-query`.
 - **Components**: PascalCase files, one component per file unless tightly coupled.
-- **API calls**: generated TypeScript client from the backend's OpenAPI spec (`openapi-typescript` or `orval`). Do not hand-write types that already exist in the API contract.
+- **API calls**: generated TypeScript client from the backend's OpenAPI spec. Do not hand-write types that exist in the API contract.
+- **Persona awareness**: every page lives under `app/(personas)/{persona}/` or `app/(shared)/`. Persona is derived from the URL prefix. Components imported from `(shared)` must not depend on persona; persona-specific logic lives in the persona directory.
+- **Vocabulary**: per-persona vocabulary maps live in `app/(personas)/{persona}/vocabulary.ts`. Use them via a `usePersonaTerm()` hook in shared components.
 - **Linting**: ESLint + Prettier. `pnpm lint` must pass.
 
-### Commits / branches
+### 6.3 Commits / branches
+
 - Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`.
 - Branch from `main`. Open PRs even for solo work — keeps history reviewable.
 
@@ -255,85 +264,153 @@ make check                      # format + lint + test (run before committing)
 The server is a single FastAPI application that exposes:
 
 - **REST API** at `/api/v1/...` for CRUD on rules, documents, evaluations.
-- **Submissions API** at `/api/v1/submissions` for non-code subjects (the canonical cross-org entry point).
-- **Evaluate API** at `/api/v1/evaluate` for code-aware compliance (now a code-specialized convenience over the dispatcher).
-- **Intent API** at `/api/v1/intent` that classifies natural-language queries and routes to handlers.
-- **Intelligence API** at `/api/v1/intelligence/...` for health, effectiveness, per-domain quality.
-- **Discovery API** at `/api/v1/discover/...` for automatic rule discovery.
-- **Feedback API** at `/api/v1/feedback/...` for the correction loop.
-- **Federation API** at `/api/v1/federations/...` for hierarchical rule composition.
-- **Playground API** at `/api/v1/playground/...` for sandbox evaluation.
-- **Snapshots API** at `/api/v1/snapshots/...` for versioned rule set deployment.
-- **Proposals API** at `/api/v1/proposals/...` for rule change workflow.
-- **MCP Server** on port 8001 for AI agent tool integration.
+- **Universal Submissions API** at `/api/v1/submissions` — the canonical intake for any `EvaluationSubject` kind. Prefer this over `POST /api/v1/evaluate` for new integrations.
+- **Evaluate API** at `/api/v1/evaluate` — legacy entry point for code-aware compliance checking. Internally constructs a `CodeChangeSubject` and forwards to the Submissions pipeline.
+- **Intent API** at `/api/v1/intent` — classifies natural-language queries and routes to handlers.
+- **Intelligence API** at `/api/v1/intelligence/...` — health scoring, analytics, recommendations.
+- **Discovery API** at `/api/v1/discover/...` — automatic rule discovery from code, configs, PR comments, documents.
+- **Feedback API** at `/api/v1/feedback/...` — correction feedback loop.
+- **Federation API** at `/api/v1/federations/...` — cross-project rule federation.
+- **Playground API** at `/api/v1/playground/...` — sandbox evaluation and test cases.
+- **Alerts API** at `/api/v1/alerts/...` — proactive alert management.
+- **Snapshots API** at `/api/v1/snapshots/...` — versioned rule set deployment.
+- **Proposals API** at `/api/v1/proposals/...` — collaborative governance workflow.
+- **Governance API** at `/api/v1/governance/...` — ABAC policy management.
+- **Translations API** at `/api/v1/rules/{id}/translations` — multilingual equivalence.
+- **MCP Server** on a separate port (8001) for AI agent tool integration.
+- **Deferred routers** (feature-flagged off by default): gateway external intake, marketplace, advanced autonomous agent governance.
 
-### 7.1 Layering Rules (Strict)
+### 7.1 Internal Module Layout
 
 ```
-api  →  services  →  domain
-                ↓
-              adapters
+src/rulerepo_server/
+├── main.py                           # FastAPI app factory; loads Domain Packs at startup
+├── api/v1/                           # routers
+├── core/
+│   ├── config.py                     # Settings (feature flags, model IDs, secrets)
+│   ├── feature_flags.py              # central flag registry
+│   ├── logging.py
+│   ├── errors.py
+│   ├── auth.py                       # principal resolution
+│   └── deps.py                       # FastAPI dependencies
+├── domain/
+│   ├── rule.py                       # Rule, RuleKind, RuleBody variants
+│   ├── scope.py                      # Scope (multi-axis)
+│   ├── evaluation_subject.py         # EvaluationSubject base + variants
+│   ├── verdict.py                    # Verdict, ReasonGraph
+│   ├── translation.py                # TranslationLink
+│   └── governance.py                 # GovernancePolicy
+├── services/
+│   ├── evaluation/
+│   │   ├── service.py                # orchestrator — dispatches on subject.kind
+│   │   ├── subjects/
+│   │   │   ├── code_change.py        # context assembler + selector for code
+│   │   │   ├── business_event.py
+│   │   │   ├── document_artifact.py
+│   │   │   ├── transaction.py
+│   │   │   ├── communication.py
+│   │   │   └── decision_request.py
+│   │   ├── deterministic/
+│   │   │   ├── runner.py             # entry point — dispatches on rule.kind
+│   │   │   ├── numeric_evaluator.py  # asteval-based expressions
+│   │   │   ├── schema_evaluator.py   # Pydantic-based predicate
+│   │   │   ├── state_machine_evaluator.py
+│   │   │   └── lookup_evaluator.py   # table-driven lookups
+│   │   ├── llm_judge/
+│   │   │   ├── runner.py             # entry point — handles normative / exception / principle
+│   │   │   ├── batch_evaluator.py
+│   │   │   └── single_evaluator.py
+│   │   ├── rule_selector.py          # scope-based + embedding-based selection
+│   │   ├── graph_resolver.py         # Neo4j relationship resolution
+│   │   └── verdict_aggregator.py
+│   ├── extraction/
+│   │   ├── pipeline.py               # orchestrator
+│   │   ├── structural/               # PDF/MD/text structure parsers
+│   │   ├── normative_detection.py
+│   │   ├── coref_resolution.py
+│   │   ├── metadata_inference.py
+│   │   └── (analyzers live in Domain Packs; loaded via registry)
+│   ├── intelligence/                 # essentials only — health, top violations, basic dashboard
+│   ├── context_delivery/             # smart rule selection + formatting; persona-aware
+│   ├── discovery/                    # cross-domain orchestrator; analyzers from Domain Packs
+│   ├── feedback/                     # correction capture + flywheel for any subject kind
+│   ├── federation/
+│   ├── playground/                   # sandbox + test cases for all subject kinds
+│   ├── snapshots/
+│   ├── proposals/
+│   ├── governance/                   # ABAC policy resolution
+│   ├── multilingual/                 # translation link CRUD + equivalence verification
+│   ├── domain_packs/
+│   │   ├── loader.py                 # scans packages/domain-packs at startup
+│   │   ├── registry.py               # registries: prompts, analyzers, templates, metadata schemas, UI hints
+│   │   └── manifest.py               # pack.yaml schema
+│   ├── search.py
+│   ├── rule_service.py
+│   └── intent.py
+├── adapters/                         # postgres, elasticsearch, neo4j, gemini, files
+├── mcp/                              # MCP server (tools, resources, prompts)
+├── integrations/                     # GitHub webhook (optional), CI formatters
+├── workers/                          # background jobs (arq): settings.py, tasks.py
+└── schemas/                          # Pydantic request/response models
 ```
 
-- `api` depends on `services` (and `schemas`).
-- `services` depends on `domain` and `adapters`.
-- `domain` depends on nothing in the project. Pure data classes, enums, protocols.
-- Never import upward. Never have `domain/` import from `services/` or `adapters/`.
+**Layering rule**: `api` depends on `services`, `services` depends on `domain` and `adapters`. `domain` depends on nothing else in the project. Do not import upward. Domain Packs depend only on a stable `packages/domain-packs/_core/` interface — they must not import from the server's internal modules directly.
 
-### 7.2 The Evaluation Dispatcher
-
-The evaluation engine is a dispatcher over `EvaluationSubject` kinds. **Do not bypass it.** Each subject kind has a handler in `services/evaluation/handlers/{kind}/`.
-
-```python
-# services/evaluation/dispatcher.py
-class EvaluationDispatcher:
-    async def evaluate(self, subject: EvaluationSubject) -> EvaluationResult:
-        handler = self._handlers[subject.kind]
-        normalized = await handler.normalize(subject)
-        rules = await handler.select_rules(normalized)
-        prompt = handler.build_prompt(normalized, rules)
-        verdicts = await self._llm_judge(prompt, handler.verdict_schema)
-        return handler.aggregate(verdicts, rules, normalized)
-```
-
-Each handler implements `SubjectHandler`:
-
-```python
-class SubjectHandler(Protocol):
-    async def normalize(self, subject) -> NormalizedSubject: ...
-    async def select_rules(self, normalized) -> list[Rule]: ...
-    def build_prompt(self, normalized, rules) -> str: ...
-    def aggregate(self, verdicts, rules, normalized) -> EvaluationResult: ...
-    @property
-    def verdict_schema(self) -> dict: ...
-```
-
-**Handlers own only**: prompts (in `handlers/{kind}/prompts/`), rule selection strategy, prompt construction, aggregation.
-
-**Handlers do NOT own**: LLM client creation, model selection, audit logging, caching. These are shared in `services/evaluation/llm_judge.py`.
-
-### 7.3 Hybrid Evaluation
-
-For `COMPUTATIONAL`, `PROCEDURAL`, and `DEFINITIONAL` rule kinds, evaluation begins with `services/evaluation/deterministic/`. The LLM only confirms intent and writes the human-readable reason. If they disagree → `NEEDS_CONFIRMATION`.
-
-### 7.4 Async
-
-The API layer is fully async. DB calls use `asyncpg` (or `sqlalchemy[asyncio]`), Elasticsearch via the async client, Neo4j via the official async driver, Gemini via `google-genai`.
+**Async**: the API layer is fully async. DB calls use `asyncpg` (or `sqlalchemy[asyncio]`), Elasticsearch via the async client, Neo4j via the official async driver, Gemini via `google-genai`.
 
 ---
 
-## 8. Frontend Notes
+## 8. Frontend Notes (Persona-Aware)
 
-The frontend is **persona-aware**. Each persona (Legal, HR, Finance, Sales, Engineering, Compliance) has its own home dashboard, default filters, and navigation under `app/(personas)/{persona}/`.
+The frontend is the operator console for the Rule Repository. **Personas drive everything visible.** Engineering, Legal, HR, Finance, Sales, and Compliance personas each have their own landing dashboard, sidebar, vocabulary, and default filters.
 
-Shared functionality (rule detail, search, settings) is in `app/(shared)/`. A persona switcher in the top nav (`app/layout.tsx`) selects the persona; pages under `(personas)` automatically inherit persona-specific defaults from the layout context.
+```
+apps/frontend/app/
+├── (personas)/
+│   ├── engineering/
+│   │   ├── layout.tsx                # engineer-style sidebar, code-themed
+│   │   ├── page.tsx                  # code compliance dashboard
+│   │   ├── playground/               # code editor playground
+│   │   ├── rules/                    # engineering-domain rules listing
+│   │   ├── discovery/                # engineering discovery (CLAUDE.md, linters)
+│   │   └── ...
+│   ├── legal/
+│   │   ├── layout.tsx                # legal-style sidebar
+│   │   ├── page.tsx                  # contract review queue
+│   │   ├── contracts/                # contract review workflow
+│   │   ├── clauses/                  # clause library
+│   │   ├── jurisdictions/
+│   │   └── ...
+│   ├── hr/
+│   │   ├── page.tsx                  # employee event compliance dashboard
+│   │   ├── events/                   # event review queue
+│   │   └── employees/
+│   ├── finance/
+│   │   ├── page.tsx                  # transaction approval queue
+│   │   ├── transactions/
+│   │   └── policies/
+│   ├── sales/
+│   │   ├── page.tsx                  # deal & discount review
+│   │   └── deals/
+│   └── compliance/
+│       ├── page.tsx                  # cross-domain compliance summary
+│       └── audit/
+└── (shared)/
+    ├── rules/[id]/                   # rule detail (persona-tinted)
+    ├── search/
+    ├── proposals/
+    ├── notifications/
+    ├── settings/
+    └── login/
+```
 
-When adding a new page:
-- If it's persona-specific, put it under `(personas)/{persona}/`.
-- If it's persona-agnostic, put it under `(shared)/`.
-- If you find yourself duplicating a page across personas, extract the shared parts into `components/` and parametrize.
+**Persona switching**: the top-of-page persona switcher updates a `persona` cookie and rewrites the URL prefix. Deep links work across personas.
 
-Use Next.js App Router. Server Components by default. The graph view uses `react-flow` (already chosen; do not introduce `cytoscape` as well).
+**Rule detail page**: shared (`(shared)/rules/[id]/`) but the rule's `scope.domain` and the active persona together drive which sections are highlighted (e.g., legal rules show "jurisdiction" prominently; HR rules show "applicable employee class").
+
+**Playground**: `(shared)/playground/` provides an input-mode switcher: code editor, business event form, document section, transaction, communication. The mode is set by the active persona's default but can be overridden.
+
+**Graph view**: Neo4j-backed; uses `react-flow` or `cytoscape`. Pick one and stick with it.
 
 ---
 
@@ -347,46 +424,40 @@ The LLM layer is the heart of this system. Get this right.
 
 ### 9.2 Models
 
-Two primary models:
-
 | Use case | Model ID | Why |
 |---|---|---|
-| High-throughput routine tasks (search ranking, simple extraction, classification, business-event evaluation) | `gemini-3-flash-preview` | fast, cheap |
-| High-stakes judgment (rule extraction QC, conflict detection, evaluation of CRITICAL rules, principle-rule evaluation) | `gemini-3.1-pro-preview` | strongest reasoning |
+| High-throughput, routine tasks (search ranking, simple extraction, classification) | `gemini-3-flash-preview` | fast, cheap |
+| High-stakes judgment (rule extraction QC, conflict detection, evaluation of CRITICAL rules, principle-level evaluation) | `gemini-3.1-pro-preview` | strongest reasoning |
 
-Centralize model selection in `core/llm.py`. Never hardcode model IDs in business logic — always read from config.
+Centralize model selection in one config module (`core/llm.py`). Never hardcode model IDs in business logic — always read from config.
 
-### 9.3 Mandatory Rules When Calling Gemini
+### 9.3 Mandatory rules when calling Gemini
 
-- **Do NOT change `temperature`** away from the default (1.0). Lower temperatures degrade Gemini 3 reasoning quality and can cause loops.
-- Use **`thinking_level`** (not the legacy `thinking_budget`). Valid values: `minimal`, `low`, `medium`, `high`. Default to `low` for high-throughput tasks, `high` for judgment tasks and principle-rule evaluation.
+- **Do NOT change `temperature`** away from the default (1.0). Lower temperatures degrade Gemini 3 reasoning quality and can cause loops. If a caller insists on determinism, push them to the deterministic evaluation layer (§14.9) instead.
+- Use **`thinking_level`** (not the legacy `thinking_budget`). Valid values: `minimal`, `low`, `medium`, `high`. Default to `low` for high-throughput tasks, `high` for judgment tasks.
 - For function calling, **thought signatures must be cycled through** every turn. The `google-genai` SDK and standard chat history handle this automatically — do not strip signatures from history.
 - For PDFs in document processing, set `media_resolution: "media_resolution_medium"` (560 tokens/page). Going higher rarely helps OCR and increases token cost.
 - Use **structured output** (`response_mime_type="application/json"` + `response_json_schema`) for any call that must return data the system parses. Do not regex out fields from free-form LLM text.
 
-### 9.4 Document Ingestion (PDF, text, markdown)
+### 9.4 Document ingestion (PDF, text, markdown)
 
 - **PDFs**: upload via the **Files API** (`client.files.upload(...)`) for documents > a few pages. Files API is free, files persist 48 hours, max 50 MB / 1000 pages.
 - For small / one-shot PDFs, inline `Part.from_bytes(data=..., mime_type='application/pdf')` is fine.
-- **Text and markdown**: pass as plain text. Note that Gemini "document understanding" only meaningfully renders PDFs; for `.md`/`.txt`, treat them as text-only inputs.
+- **Text and markdown**: pass as plain text. Note that Gemini "document understanding" only meaningfully renders PDFs; for `.md`/`.txt`, treat them as text-only inputs (no charts, no formatting interpretation).
 - Each PDF page is roughly 258 tokens for image content; extracted native text is included free.
-- The extraction pipeline (`services/extraction/`) wraps these calls; do not bypass it.
+- The extraction pipeline is **domain-adaptive**: structural extraction first, then domain-specific metadata inference via Domain Pack prompts. Do not bypass the pipeline from random parts of the codebase.
 
-### 9.5 Cost and Latency Discipline
+### 9.5 Cost and latency discipline
 
 - Cache LLM responses by `hash(inputs + model + prompt_version)` in Postgres. Invalidate on rule revision.
-- For `COMPUTATIONAL` rules, the deterministic layer runs first; the LLM call is only for intent confirmation (cheap, low-thinking).
-- Default to `gemini-3-flash-preview`. Escalate to `gemini-3.1-pro-preview` only for CRITICAL or principle-rule evaluation.
+- Use `gemini-3.1-flash-lite-preview` only if explicitly approved for a use case where Flash is overkill. Default is `gemini-3-flash-preview`.
 - Long-context calls (rule corpus + large doc) should use **context caching** for repeated reuse.
+- **Prefer the deterministic layer for arithmetic, schema, and lookup checks.** Do not send a numeric comparison to the LLM; send it to the `numeric_evaluator`.
 
-### 9.6 Determinism and Audit
+### 9.6 Determinism and audit
 
-- Every LLM call that produces a verdict, a candidate rule, or a relationship suggestion **must** log: model ID, prompt version (content hash), inputs, outputs, latency, timestamp, **subject kind**, **domain**. This goes to the audit log.
-- Prompts live in `services/<area>/prompts/` or `services/evaluation/handlers/{kind}/prompts/` or `packages/domain-packs/{domain}/prompts/`. No inline strings scattered across the codebase.
-
-### 9.7 Pluggable Evaluator
-
-The `Evaluator` interface (`services/evaluation/llm_judge.py`) abstracts the LLM provider. Default implementation uses Gemini. Tests use a mock. Adding a new provider (Anthropic, OpenAI, self-hosted) means implementing the interface — no business-logic changes elsewhere.
+- Every LLM call that produces a verdict, a candidate rule, or a relationship suggestion **must** log: model ID, prompt version (a content hash), inputs, outputs, latency, timestamp. This goes to the audit log.
+- Prompts live in `packages/domain-packs/{domain}/prompts/` (domain-specific) or `services/{area}/prompts/` (cross-cutting). All prompts are versioned in git. No inline strings scattered across the codebase.
 
 ---
 
@@ -394,125 +465,46 @@ The `Evaluator` interface (`services/evaluation/llm_judge.py`) abstracts the LLM
 
 ### 10.1 PostgreSQL (system of record)
 
-- Stores rules, revisions, source documents, evaluations, audit log, proposals, federation hierarchy.
+- Stores rules, revisions, source documents, evaluations, audit log, proposals, governance policies, translation links.
 - Migrations: `alembic`. One head per branch; rebase migrations before merging.
-- The audit log is **append-only**. Enforce with a Postgres trigger that rejects updates/deletes. Hash chain links each row to the previous.
-- Frozen feature tables are in the `frozen` schema (e.g., `frozen.marketplace_packages`). Do not query them in production code paths.
+- The audit log table is **append-only**. Enforce with a Postgres trigger that rejects updates/deletes. Add a hash chain column linking each row to the previous row.
+- **`Rule.scope` is JSONB**. Use:
+  ```sql
+  CREATE INDEX ix_rules_scope_domain        ON rules ((scope->>'domain'));
+  CREATE INDEX ix_rules_scope_subject_type  ON rules ((scope->>'subject_type'));
+  CREATE INDEX ix_rules_scope_org_unit      ON rules ((scope->>'org_unit'));
+  CREATE INDEX ix_rules_scope_attributes    ON rules USING GIN ((scope->'attributes'));
+  ```
 
-### 10.2 Multi-Axis Scope in PostgreSQL
+### 10.2 Elasticsearch (search)
 
-- `rules.scope_structured` is a JSONB column with the shape `{domain, org_unit, subject_type, attributes}`.
-- GIN indexes on `(scope_structured -> 'domain')` and `(scope_structured -> 'subject_type')`.
-- The legacy `rules.scope: str` column is retained during the migration period for backward compatibility, populated by the migration script from `scope_structured`.
-
-### 10.3 Elasticsearch (search)
-
-- Index `rules` with: `statement` (analyzed), `tags`, `scope.domain`, `scope.org_unit`, `scope.subject_type`, `scope.attributes` (flattened), `modality`, `kind`, `effective_period`, `embedding` (dense_vector for hybrid search), `language`.
+- Index `rules` with: `statement` (analyzed by language), `tags`, `scope.domain`, `scope.subject_type`, `scope.org_unit`, `scope.attributes` (flattened), `modality`, `kind`, `effective_period`, `language`, `embedding` (dense_vector).
 - Use BM25 + kNN hybrid scoring. Rerank top-k with the LLM only when the user requests "smart" search.
 - Re-index on rule revision; do not run partial updates that risk drift.
+- Multi-language analyzers: configure `language`-specific analyzers (`japanese`, `english`, etc.) and route based on `Rule.language`.
 
-### 10.4 Neo4j (relationship graph)
+### 10.3 Neo4j (relationship graph)
 
 - One node label: `Rule`. Node `id` matches the Postgres rule ID.
-- Relationships: `REFINES`, `OVERRIDES`, `CONFLICTS_WITH`, `DEPENDS_ON`, `DERIVES_FROM`, `SUCCEEDS`. Direction matters and is documented in PROJECT.md §5.4.
-- Postgres is the source of truth for rule existence; Neo4j is a derived projection. If they disagree, Postgres wins.
+- Relationships: `REFINES`, `OVERRIDES`, `CONFLICTS_WITH`, `DEPENDS_ON`, `DERIVES_FROM`, `SUCCEEDS`, `TRANSLATES`. Direction matters and is documented in PROJECT.md §6.4.
+- Postgres is the source of truth for rule existence; Neo4j is a derived projection of relationships. If they disagree, Postgres wins and Neo4j is rebuilt.
 - Provide a reconciler script (`scripts/reconcile_graph.py`) that rebuilds Neo4j from Postgres.
 
 ---
 
-## 11. Domain Pack Development
+## 11. Testing
 
-### 11.1 What a Domain Pack Provides
-
-A Domain Pack is a self-contained extension for one functional domain (legal, HR, finance, sales, engineering). It provides:
-
-- **`pack.yaml`** — manifest with display names, metadata extensions, default subject types, default rule kinds, extraction strategy hints.
-- **`prompts/`** — domain-specific extraction and evaluation prompt templates.
-- **`analyzers/`** — domain-specific structural parsers (e.g., legal article/paragraph hierarchy).
-- **`templates/`** — YAML rule templates that can be imported.
-- **`samples/`** — sample source documents for testing.
-- **`ui_hints.yaml`** — persona-specific labels, glossary, default filters for the frontend.
-
-### 11.2 Pack Manifest Example
-
-```yaml
-# packages/domain-packs/legal/pack.yaml
-name: legal
-display_name:
-  en: "Legal"
-  ja: "Legal department"
-metadata_extensions:
-  jurisdiction:
-    type: string
-    enum: ["jp", "us", "eu", "uk", "global"]
-  statute_id:
-    type: string
-default_subject_types: [contract, clause, regulation]
-default_rule_kinds: [normative, definitional, principle]
-extraction_strategy:
-  hierarchical_structure: ["Article", "Paragraph", "Item"]
-  reference_resolution: true
-  effective_date_extraction: true
-```
-
-### 11.3 Loading Mechanics
-
-`services/domain_packs/loader.py` discovers packs at server startup, validates manifests, registers prompts and analyzers, and exposes the metadata extensions to API schemas. Pack-specific behavior is injected through registered handlers; the core stays domain-agnostic.
-
-### 11.4 Adding a New Pack
-
-1. Create `packages/domain-packs/{name}/`.
-2. Author `pack.yaml`.
-3. Add extraction and evaluation prompts under `prompts/`.
-4. Add structural analyzers if the domain has unique document structure.
-5. Author at least one YAML rule template.
-6. Add sample documents.
-7. Add tests in `tests/domain_packs/{name}/`.
-8. Register the pack in the integration test suite.
-
-### 11.5 Engineering Pack
-
-The previous "core" engineering implementation has been repackaged as `packages/domain-packs/engineering/`. It is **one pack among five**, not the system's center.
+- **Unit tests**: pure logic in `domain/`. No external services. Fast.
+- **Integration tests**: spin up docker-compose services in CI. Use `testcontainers-python` if running in CI without compose.
+- **LLM tests**: never call the real Gemini API in unit tests. Use a mock client. For integration, gate behind an env flag (`RULEREPO_LIVE_LLM=1`) and a pytest marker (`@pytest.mark.live_llm`).
+- **Frontend tests**: Vitest + React Testing Library for components; Playwright for end-to-end if added later.
+- **Eval harness**: a separate test suite that validates LLM-driven features (rule extraction quality, conflict detection precision/recall, evaluation accuracy) against curated fixtures per Domain Pack. Runs nightly, not on every PR.
+- **Parity tests**: for any pipeline being generalized (e.g., during migration of `CodeChangeSubject` into the subject-dispatched engine), write tests that run the old and new code paths on the same input and assert identical output. Keep parity tests in CI until the old path is removed.
+- **Cross-domain coverage**: at least one integration test per `EvaluationSubject` kind. At least one extraction test per Domain Pack.
 
 ---
 
-## 12. Testing
-
-### 12.1 Test Layers
-
-- **Unit tests** (`tests/unit/`): pure logic in `domain/`. No external services. Fast.
-- **Integration tests** (`tests/integration/`): spin up docker-compose services in CI. Use `testcontainers-python` if running outside compose.
-- **Subject handler tests** (`tests/handlers/{kind}/`): mock the LLM and validate prompt construction, rule selection, verdict aggregation, per kind.
-- **Domain pack tests** (`tests/domain_packs/{name}/`): pack manifest validation, prompt rendering, template loading.
-- **Scenario tests** (`tests/scenarios/`): the five cross-domain validation scenarios from PROJECT.md §8. Mock LLM by default. Enable real Gemini calls with `LIVE_LLM=1` env var.
-- **Eval harness** (`tests/eval/`): per-domain extraction quality (Faithfulness, Atomicity, Modality Accuracy). Runs nightly, not on every PR.
-
-### 12.2 Test Markers
-
-```
-@pytest.mark.unit            # pure unit
-@pytest.mark.integration     # needs docker compose
-@pytest.mark.scenario        # cross-domain validation
-@pytest.mark.eval            # extraction quality (nightly)
-@pytest.mark.frozen          # frozen features (only runs with RUN_FROZEN_TESTS=1)
-@pytest.mark.live_llm        # real Gemini calls (only runs with LIVE_LLM=1)
-```
-
-### 12.3 Coverage Targets
-
-- Per `services/evaluation/handlers/{kind}/`: minimum 80% line coverage.
-- Per `packages/domain-packs/{name}/`: minimum 70% coverage for `analyzers/`, schema validation for `pack.yaml`.
-- Per `services/extraction/domain/{name}/`: minimum 70% coverage with at least 5 sample documents.
-
-### 12.4 LLM Mocking
-
-Never call the real Gemini API in unit or integration tests. Use the mock `Evaluator` in `tests/utils/mock_evaluator.py`. The mock returns scripted verdicts based on input patterns. For new prompts, add fixtures.
-
-For nightly eval tests, real Gemini calls are gated by `LIVE_LLM=1` and a Gemini API key in CI secrets.
-
----
-
-## 13. Environment Variables
+## 12. Environment Variables
 
 All env vars live in `.env.example`. Never commit `.env`. Required for local dev:
 
@@ -539,173 +531,256 @@ MCP_PORT=8001
 # Redis / Background Workers
 REDIS_URL=redis://redis:6379/0
 
-# Feature Flags (frozen features default off)
-FEATURE_MARKETPLACE_ENABLED=false
-FEATURE_GATEWAY_WEBHOOKS_EXTERNAL_ENABLED=false
-FEATURE_GITHUB_INTEGRATION_ENABLED=false
-FEATURE_WEEKLY_DIGEST_DELIVERY_ENABLED=false
-FEATURE_AGENT_TRUST_AUTONOMY_ENABLED=false
-FEATURE_AGENT_TRACKING_ENABLED=true
-FEATURE_PROPOSALS_ENABLED=true
+# Optional GitHub Integration (off by default in local mode)
+GITHUB_APP_ID=
+GITHUB_APP_PRIVATE_KEY=
+GITHUB_WEBHOOK_SECRET=
+GITHUB_TOKEN=
 
-# Domain Packs (all default on; disable to hide a domain)
-FEATURE_DOMAIN_LEGAL_ENABLED=true
-FEATURE_DOMAIN_HR_ENABLED=true
-FEATURE_DOMAIN_FINANCE_ENABLED=true
-FEATURE_DOMAIN_SALES_ENABLED=true
-FEATURE_DOMAIN_ENGINEERING_ENABLED=true
+# Multilingual
+TRANSLATION_VERIFICATION_ENABLED=true
+TRANSLATION_EQUIVALENCE_THRESHOLD=0.85
+
+# Domain Packs
+DOMAIN_PACKS_DIR=/app/packages/domain-packs
+DOMAIN_PACKS_ENABLED=engineering,legal,hr,finance,sales,communication
+
+# Feature Flags — Phase 6 features deferred per refocus
+FEATURE_MARKETPLACE_ENABLED=false
+FEATURE_GATEWAY_EXTERNAL_INTAKE_ENABLED=false
+FEATURE_OBSERVABILITY_DIGEST_DELIVERY_ENABLED=false
+FEATURE_GITHUB_APP_ENABLED=false
+FEATURE_AGENT_TRUST_AUTO_PROMOTION_ENABLED=false
+FEATURE_AGENT_NEGOTIATION_ENABLED=false
+FEATURE_MULTI_AGENT_SESSIONS_ENABLED=false
+
+# Feature Flags — Refocus migration toggles
+FEATURE_EVALUATION_SUBJECT_V2_ENABLED=true
+FEATURE_STRUCTURED_SCOPE_ENABLED=true
+FEATURE_RULE_KIND_POLYMORPHISM_ENABLED=true
+FEATURE_DOMAIN_PACKS_ENABLED=true
+FEATURE_HYBRID_EVALUATION_ENABLED=true
+FEATURE_PERSONA_ROUTING_ENABLED=true
+FEATURE_ABAC_GOVERNANCE_ENABLED=false   # off until Step 4
+
+# Alerts (compute internally; do not deliver externally in local mode)
+ALERT_WEBHOOK_URL=
 ```
 
 When you add a new env var, update `.env.example` in the same change.
 
 ---
 
-## 14. Feature Flags
+## 13. Important Rules for Claude Code
 
-Feature flags live in `core/feature_flags.py` as a Pydantic `BaseSettings` class with `env_prefix="FEATURE_"`. Each flag gates one or more of:
-
-- A router (in `api/v1/__init__.py`): `if flags.marketplace_enabled: app.include_router(marketplace_router)`.
-- MCP tools (in `mcp/tools.py`): conditional registration.
-- arq workers (in `workers/settings.py`): conditional cron registration.
-- Frontend navigation items (via `NEXT_PUBLIC_FEATURE_*` env passthrough).
-
-**Do not delete code** when freezing a feature. The implementation remains available for future re-activation. Tables for frozen features live in the `frozen` Postgres schema.
-
----
-
-## 15. Important Rules for Claude Code
-
-These are non-negotiable. Violating them breaks the system or wastes review time.
+These are non-negotiable. Violating them breaks the system, the refocus, or wastes review time.
 
 1. **Read PROJECT.md before designing anything new.** Domain decisions belong there, not here.
-2. **The Evaluation Dispatcher is the only entry into evaluation logic.** Do not add code paths that bypass it.
-3. **Use the multi-axis `Scope` for any new rule-selection logic.** The legacy `scope: str` is in deprecation; do not extend it.
-4. **Do not add engineering bias to cross-domain code.** Code in `services/evaluation/`, `services/search/`, `domain/`, `adapters/` must work for any subject kind. Engineering-specific behavior goes in `services/evaluation/handlers/code_change/` and `packages/domain-packs/engineering/`.
-5. **Run linters, formatters, and type checkers before claiming a task is done.** `ruff`, `mypy`, `pnpm lint`, `pnpm typecheck`. CI will reject otherwise.
-6. **Never commit secrets.** No API keys, no DB passwords, nothing in code. Use `.env` and `.env.example`.
-7. **Never tweak Gemini `temperature`.** Default 1.0 stays.
-8. **Never use deprecated Gemini params.** Use `thinking_level`, not `thinking_budget`. Use `google-genai`, not `google-generativeai`.
-9. **Never bypass the extraction pipeline** to call Gemini directly from random services. There is one place that talks to Gemini for ingestion.
-10. **Never write to the audit log table from application code.** Only the dispatcher and extraction services write, and only through the audit-log adapter that enforces hash chaining.
-11. **Never make Postgres and Neo4j disagree silently.** If you write to one, write to the other through the same service. If you can only write to one, queue the other change.
-12. **Never delete rules.** Use `effective_period.valid_until` to retire them. Past evaluations must remain re-explainable.
-13. **Keep `make up` working.** If your change breaks the local stack, fix it before merging. The local stack is the developer onboarding path.
-14. **Update PROJECT.md and CLAUDE.md** when introducing a new dependency, service, subject kind, rule kind, or architectural decision. Code without doc updates does not ship.
+2. **Treat code change as one subject kind among many.** Do not assume code in new code. Use `EvaluationSubject` and dispatch on `kind`.
+3. **Put domain-specific behavior in Domain Packs.** If you find yourself writing legal/HR/finance logic in `services/` or the frontend `(shared)/`, stop and move it to the appropriate Domain Pack.
+4. **Run linters, formatters, and type checkers before claiming a task is done.** `ruff`, `mypy`, `pnpm lint`, `pnpm typecheck`. CI will reject otherwise.
+5. **Never commit secrets.** No API keys, no DB passwords, nothing in code. Use `.env` and `.env.example`.
+6. **Never tweak Gemini `temperature`.** Default 1.0 stays. For deterministic answers, use the deterministic evaluation layer, not lower temperature.
+7. **Never use deprecated Gemini params.** Use `thinking_level`, not `thinking_budget`. Use `google-genai`, not `google-generativeai`.
+8. **Never bypass the extraction or evaluation pipelines.** There is one place that talks to Gemini for ingestion, and one orchestrator per pipeline. Random services should not invent their own.
+9. **Never write to the audit log table from application code.** Only the evaluation/extraction services write, and only through the audit-log adapter that enforces hash chaining.
+10. **Never make Postgres and Neo4j (and Elasticsearch) disagree silently.** If you write to one, write to the others through the same service. If you can only write to one, queue the other change.
+11. **Never delete rules.** Use `effective_period.valid_until` to retire them. Past evaluations must remain re-explainable.
+12. **Never re-enable feature-flagged-off subsystems casually.** Marketplace, gateway external intake, observability digest delivery, GitHub App centrality, and advanced agent governance are off by default for a reason. Re-enabling requires a discussion and a PROJECT.md update.
+13. **Keep `docker compose up --build` working.** If your change breaks the local stack, fix it before merging. The local stack is the developer onboarding path.
+14. **Update PROJECT.md, CLAUDE.md, and IMPROVEMENT.md** when introducing a new dependency, service, or architectural decision. Code without doc updates does not ship.
 15. **Prefer fewer dependencies.** Every added library is a long-term cost. Justify additions in the PR description.
 16. **Write structured logs, not `print`.** Logs are operational data.
-17. **Tests for LLM-driven features must mock the LLM** unless the test is explicitly an eval test.
-18. **Frozen features stay frozen.** Do not unfreeze without an explicit decision recorded in the PR. Code in frozen routers/services must continue to compile but should not be invoked in default deployments.
+17. **Tests for LLM-driven features must mock the LLM** unless the test is explicitly an eval test (`@pytest.mark.live_llm`).
+18. **Follow migration discipline (§15).** Schema changes are additive-first; refactors are guarded by parity tests; rollouts are feature-flagged.
 19. **When unsure, ask.** Open an issue or a draft PR with the question. Do not guess on domain semantics — wrong rules are worse than no rules.
 
 ---
 
-## 16. v1 Implementation Guidance
+## 14. Refocus Implementation Guidance
 
-These are the architecture decisions and patterns for ongoing v1 work. Read before implementing any improvement.
+These are architecture decisions and patterns for the ongoing refocus. Read before implementing any work that touches the relevant areas.
 
-### 16.1 Subject Handler Pattern
+### 14.1 `EvaluationSubject` Abstraction
 
-Every subject kind has a handler at `services/evaluation/handlers/{kind}/handler.py` implementing `SubjectHandler`. Handlers share infrastructure (LLM calls, caching, audit) and own only kind-specific logic.
+- `domain/evaluation_subject.py` defines `EvaluationSubject` (abstract) and concrete variants: `CodeChangeSubject`, `BusinessEventSubject`, `DocumentArtifactSubject`, `TransactionSubject`, `CommunicationSubject`, `DecisionRequestSubject`.
+- Each variant has a corresponding context assembler under `services/evaluation/subjects/{kind}.py`.
+- `services/evaluation/service.py` dispatches on `subject.kind`. Do not branch on subject shape inside the orchestrator.
+- API: `POST /api/v1/submissions` accepts any subject kind via a Pydantic discriminated union on `kind`. `POST /api/v1/evaluate` (legacy) constructs `CodeChangeSubject` internally.
+- For new integrations, prefer the Submissions API. Legacy `/evaluate` remains for backward compatibility.
 
-**Template for a new handler:**
+### 14.2 Structured `Scope` Migration
 
-```python
-class BusinessEventHandler:
-    async def normalize(self, subject: BusinessEventSubject) -> NormalizedBusinessEvent:
-        # Hydrate actor, look up org_unit context, resolve attributes
-        ...
+- `domain/scope.py` defines `Scope` with `domain`, `org_unit`, `subject_type`, `attributes`.
+- Database: `scope` is JSONB. Migration adds the column, backfills from legacy string, and switches reads to the new column.
+- During the migration window, `rule_service.py` reads from `scope_v2` (the new JSONB column) and falls back to the legacy string if absent. Writes go to both.
+- Elasticsearch mappings include `scope.domain`, `scope.subject_type`, `scope.org_unit`, `scope.attributes`. Reindex on switch.
+- Federation continues to walk `org_unit` ancestry; update the federation resolver to use the structured form.
+- Legacy string scopes (`"engineering/python"`) normalize as `{domain: "engineering", subject_type: "python_source"}`.
 
-    async def select_rules(self, normalized) -> list[Rule]:
-        # Use multi-axis Scope to filter; query rule_selector with
-        # domain=<inferred>, subject_type=<event_type related>, attributes=<actor attrs>
-        ...
+### 14.3 Rule Kind Polymorphism
 
-    def build_prompt(self, normalized, rules) -> str:
-        # Load prompt template from handlers/business_event/prompts/evaluate.txt
-        # Render with normalized event + rules
-        ...
+- `domain/rule.py` defines `RuleKind` enum: `NORMATIVE`, `COMPUTATIONAL`, `PROCEDURAL`, `DEFINITIONAL`, `PRINCIPLE`.
+- `Rule.body` is a discriminated union of `NormativeBody`, `ComputationalBody`, `ProceduralBody`, `DefinitionalBody`, `PrincipleBody`. Migration adds `kind` (default `NORMATIVE`) and `body` (derived from existing fields for backfill).
+- Evaluator dispatch: `services/evaluation/deterministic/runner.py` routes by `rule.kind`. `computational` always uses `numeric_evaluator`. `normative` may use the deterministic layer for its embedded predicate, then fall through to the LLM layer. `principle` skips the deterministic layer entirely.
+- `ComputationalBody` carries `expression`, `required_inputs`, `unit`, optional `exception_predicate`. Expressions are evaluated by `asteval` (no I/O, no imports, no attribute access).
+- New rule kinds added in this order: `computational` first, then `definitional`, then `procedural`, then `principle`. Each goes through a vertical slice with one real rule before stabilization.
 
-    def aggregate(self, verdicts, rules, normalized) -> EvaluationResult:
-        # Combine per-rule verdicts, build reason graph, surface remediations
-        ...
+### 14.4 Domain Pack Architecture
 
-    @property
-    def verdict_schema(self) -> dict:
-        # JSON schema for the LLM's structured output
-        ...
-```
+- Domain Packs live under `packages/domain-packs/{domain}/`.
+- Manifest (`pack.yaml`) declares `domain`, `name`, `version`, `subject_types`, `metadata_extensions`, `default_modality`, `preferred_evaluator_subject_kinds`.
+- Pack contributions are registered at server startup by `services/domain_packs/loader.py`:
+  - **Prompts**: registered into the prompt registry, keyed by `(domain, purpose)` (e.g., `(legal, evaluate)`).
+  - **Analyzers**: registered into the discovery analyzer registry.
+  - **Templates**: registered into the template catalog (importable via `POST /api/v1/rules/import`).
+  - **Metadata schema extensions**: registered into the `domain_attributes` JSON schema validator.
+  - **(Optional) UI hints**: registered into a key→component-name map; the frontend looks them up by `(domain, view)`.
+- A Domain Pack must depend only on `packages/domain-packs/_core/`. It must not import from `apps/server/`.
+- The `engineering` pack is the **second** implementation, not the reference. Test the abstraction against `legal` first; if the manifest cannot express `legal`, fix the abstraction before declaring it stable.
 
-### 16.2 Scope Migration
+### 14.5 Domain-Adaptive Extraction Pipeline
 
-The `scope_structured` JSONB column was added in migration 023 (Phase A). To migrate an existing rule:
+- `services/extraction/pipeline.py` is the orchestrator. Stages: structural → normative detection → coreference resolution → domain-specific metadata inference → relationship suggestion → human review.
+- The structural stage uses Gemini File API. For PDFs, a two-call pattern:
+  1. First call: extract section hierarchy as structured JSON.
+  2. Second call: for each leaf section, extract normative sentences with cross-references resolved.
+- Domain-specific behavior (Japanese legal 条/項/号 anchoring, Subcontracting Act metadata, HR applicable-employee-class extraction) lives in the Domain Pack's analyzers, dispatched by the pipeline based on the detected (or declared) domain.
+- For `.md`/`.txt`, skip the structural PDF stages and use markdown/text section parsers in `services/extraction/structural/`.
 
-1. Parse the legacy `scope: str` (e.g., `"engineering/python"`) into `{domain: "engineering", subject_type: "code_file"}`.
-2. Run `scripts/reconcile_scope_structured.py` for bulk migration. Output is a YAML preview file; review before commit.
-3. New rule creation requires `scope_structured`. The system synthesizes `scope: str` from it for backward compatibility.
+### 14.6 Persona-Aware Frontend
 
-### 16.3 Hybrid Evaluation
+- App Router structure: `app/(personas)/{persona}/` and `app/(shared)/`.
+- Persona switcher updates a `persona` cookie and the URL prefix. Deep links work across personas.
+- Each persona's `layout.tsx` defines sidebar, header, and persona-specific theme.
+- Vocabulary per persona is in `app/(personas)/{persona}/vocabulary.ts`. Shared components access vocabulary via `usePersonaTerm("compliance_rate")`.
+- Default landing page per persona is `app/(personas)/{persona}/page.tsx`. Use Server Components for SSR-fetched dashboard data.
+- Rule detail page is shared but adapts: the rule's `scope.domain` together with the active persona drives which sections are emphasized.
+- Playground accepts all subject kinds; input mode selector is on the playground page.
 
-When implementing a `COMPUTATIONAL` rule's deterministic check:
+### 14.7 Universal Submissions Endpoint
 
-1. Add the expression to `evaluation_spec.expression` (validated against an allowlist of safe operations).
-2. The deterministic layer evaluates the expression in `services/evaluation/deterministic/computational.py` using `asteval`.
-3. The LLM is then called with the deterministic verdict and asked: "Does the rule's intent agree with this verdict?"
-4. If yes → return the deterministic verdict with the LLM's human-readable reason.
-5. If no (disagreement) → return `NEEDS_CONFIRMATION` with both verdicts logged.
+- `POST /api/v1/submissions` is the canonical intake. Request body schema uses Pydantic discriminated unions on `subject.kind`.
+- Response: `verdict`, `violations[]`, `reason_graph`, `suggested_fix`, `applied_rules[]`, `deterministic_results[]`, `llm_results[]`.
+- Idempotency: accept an optional `submission_id`; return the same verdict for the same id within a configurable window.
+- The legacy `POST /api/v1/evaluate` wraps the submissions endpoint by constructing a `CodeChangeSubject`. Do not duplicate logic across the two endpoints.
+- `services/evaluation/service.py` exposes a single `evaluate(subject, ...)` method. Routers translate HTTP requests into `EvaluationSubject` and call this method.
 
-### 16.4 ABAC Authorization
+### 14.8 Multilingual Rules
 
-Authorization is enforced in API middleware (`core/auth.py`). For each request:
+- `domain/rule.py`: `Rule.language` (default `en`) and `Rule.translations: list[TranslationLink]`.
+- Storage: `rule_translations(rule_id, sibling_rule_id, language, verified_at, score)` join table.
+- API: `GET /api/v1/rules?language=ja`, `GET /api/v1/rules/{id}/translations`, `POST /api/v1/rules/{id}/translations`.
+- Background worker (`verify_translations`, cron daily): re-runs Gemini equivalence checks; updates scores; flags drops below `TRANSLATION_EQUIVALENCE_THRESHOLD`.
+- Evaluation accepts `Accept-Language` and prefers same-language rules; falls back to translation sibling when no native match exists.
+- Search analyzer is selected by `Rule.language` (Elasticsearch `japanese`, `english`, etc.).
 
-1. Resolve the principal (user, group, role).
-2. For each rule or evaluation result being returned, compute the allowed actions.
-3. Filter out rules the principal is not authorized to see.
-4. For mutations, reject if the action is not in the principal's allowed set for the rule's scope.
+### 14.9 Hybrid Evaluation Architecture
 
-### 16.5 Frozen Feature Discipline
+- Two layers: deterministic and LLM. `services/evaluation/deterministic/` and `services/evaluation/llm_judge/`.
+- For each selected rule, the orchestrator first calls the deterministic runner. The runner dispatches on `rule.kind` and the rule body's contents:
+  - `kind=computational` → `numeric_evaluator` evaluates `expression` via `asteval`.
+  - `kind=normative` with numeric/schema predicate → partial deterministic check, partial LLM follow-up.
+  - `kind=definitional` → reference lookup.
+  - `kind=procedural` → state machine check.
+  - `kind=principle` → skip deterministic, go straight to LLM.
+- LLM layer receives the deterministic result as context: "The deterministic check found X. Confirm whether any exception applies and produce the final verdict."
+- Both layers contribute to the audit log: which layer ran, what each produced, and the final aggregated verdict.
+- `asteval` configuration: no I/O, no imports, no attribute access, no `__builtins__` exposure. Reject anything else.
 
-If your work touches a frozen feature:
+### 14.10 ABAC Governance Model
 
-- Confirm it remains gated by its feature flag.
-- If you must modify the code, document why in the PR description.
-- Do not add new functionality to frozen features.
-- If you find a bug that affects core code while looking at frozen code, fix the core code, not the frozen feature.
+- `domain/governance.py`: `GovernancePolicy` with `domain`, `org_unit`, `action`, `principals`, `effect`.
+- Resolution order: explicit deny > explicit allow > inherited allow > default deny.
+- `services/governance/resolver.py` evaluates policies. Cache by `(principal, action, domain, org_unit)` for the request lifetime.
+- Migration: legacy per-rule Owner/Approver/Reader continues to function as a derived view. New writes go to ABAC policies. After a release, deprecate the legacy form.
+- CLI: `rulerepo-policy list/grant/revoke`.
+- Feature flag: `FEATURE_ABAC_GOVERNANCE_ENABLED=false` until Step 4 of the roadmap.
 
-### 16.6 Persona-Aware Frontend Development
+### 14.11 Phase 6 De-Scoping & Feature Flags
 
-When adding a new frontend page:
+The following subsystems exist in code but are flagged off by default. Do not silently re-enable them.
 
-1. Identify which personas need it. If multiple, check if the differences are substantial (different data, different UX) or cosmetic (different labels).
-2. Substantial differences → separate pages under each persona dir.
-3. Cosmetic differences → one shared page, with `usePersona()` hook for labels and defaults.
-4. Always populate the engineering persona first (the existing baseline). Other personas can ship as skeletons that grow over sprints.
+| Subsystem | Flag | Action if disabled |
+|---|---|---|
+| Marketplace | `FEATURE_MARKETPLACE_ENABLED` | Router returns 404. Sidebar entry hidden. Models persist for re-enablement. |
+| Gateway external intake | `FEATURE_GATEWAY_EXTERNAL_INTAKE_ENABLED` | Webhook ingress endpoints return 404. Internal-API gateway flow remains. |
+| Observability digest delivery | `FEATURE_OBSERVABILITY_DIGEST_DELIVERY_ENABLED` | Compute metrics; do not deliver. Team comparison page hidden. |
+| GitHub App | `FEATURE_GITHUB_APP_ENABLED` | Webhook endpoints return 404. CLI `rulerepo-check` remains. |
+| Agent trust auto-promotion | `FEATURE_AGENT_TRUST_AUTO_PROMOTION_ENABLED` | Trust level remains manual. Profile creation still works. |
+| Agent negotiation | `FEATURE_AGENT_NEGOTIATION_ENABLED` | Negotiation endpoints return 404. |
+| Multi-agent sessions | `FEATURE_MULTI_AGENT_SESSIONS_ENABLED` | Session endpoints return 404. |
 
-### 16.7 New Domain Pack Workflow
+When adding code that interacts with these subsystems, gate it behind the flag and ensure the subsystem is not a hard dependency of any default code path.
 
-To add a new domain pack:
+### 14.12 Domain Template Library
 
-1. Create `packages/domain-packs/{name}/` with `pack.yaml`, `prompts/`, `analyzers/` (optional), `templates/`, `samples/`.
-2. Add tests in `tests/domain_packs/{name}/`.
-3. Add a frontend persona in `apps/frontend/app/(personas)/{name}/` (skeleton is fine initially).
-4. Add a `FEATURE_DOMAIN_{NAME}_ENABLED` flag (default true).
-5. Update `docs/domains/{name}.md`.
-6. Update PROJECT.md §6.8 if the pack introduces new architectural concepts.
+Each Domain Pack ships at least one YAML template under `packages/domain-packs/{domain}/templates/`. Initial targets:
 
-### 16.8 Per-Domain Quality Metrics
+| Template | Pack | Rules | Modality | Notes |
+|---|---|---|---|---|
+| `legal-contracts-jp` | legal | 10 | MUST/MUST_NOT | NDA, anti-social-forces clause, governing law, etc. |
+| `legal-contracts-en-us` | legal | 10 | MUST/MUST_NOT | Limitation of liability, indemnification, etc. |
+| `hr-attendance-jp` | hr | 10 | MUST + computational | 45h/month cap, 36-agreement clauses |
+| `hr-conduct` | hr | 8 | MUST | Harassment, conflict of interest, social media |
+| `finance-expense-jp` | finance | 10 | MUST + computational | Entertainment limits, receipt thresholds |
+| `finance-procurement` | finance | 8 | MUST | Subcontracting Act compliance, three-quote rule |
+| `sales-pricing` | sales | 8 | MUST + MUST_NOT | Discount limits, resale price maintenance |
+| `communication-marketing-jp` | communication | 8 | MUST_NOT | 景品表示法, 薬機法, regulated industries |
 
-When working on extraction or evaluation in a domain:
-
-- The Intelligence view reports Faithfulness, Atomicity, Modality Accuracy per domain.
-- If your change touches extraction for `domain X`, run the eval harness against at least 20 documents in that domain.
-- Quality must not regress. If it does, the change needs a corresponding prompt or analyzer improvement.
-
-### 16.9 v0 Legacy Sections
-
-Earlier phases (Phase 1–5, Phase 6a) have implementation notes in `development/`. These remain accurate for their respective subsystems and should be consulted for areas not affected by v1 generalization. v1-affected areas have their guidance here in §16.
+All non-engineering templates ship as `maturity_level=experimental` (shadow mode). Each rule includes statement, modality, severity, structured scope, rationale, following example, violation example, and at least one playground test case. Computational rules include a structured `body` with `expression` and `required_inputs`.
 
 ---
 
-## 17. References
+## 15. Migration Discipline
+
+Several refocus items involve schema or pipeline changes. Follow this discipline to avoid disrupting the working system.
+
+### 15.1 Additive-First Migrations
+
+For every schema change:
+
+1. Add the new column / table without dropping the old one.
+2. Backfill data using a one-off migration script.
+3. Deploy code that reads from new and writes to both old and new (dual-write).
+4. After verification, switch reads to new.
+5. Stop writing to old.
+6. Drop the old column / table only after a stable period (one release minimum).
+
+This applies particularly to:
+- `Rule.scope` (string → JSONB): use `scope_v2 JSONB` alongside `scope` initially.
+- `Rule.kind` and `Rule.body`: add as nullable; default to `normative` with body derived from existing fields.
+- `Rule.language`: add as nullable; default to `"en"`.
+- Translation links: new join table; no overwrite of existing data.
+
+### 15.2 Feature-Flag-Driven Rollouts
+
+Every new subsystem ships behind a flag, default off in production-style envs, default on in development. The flag registry lives in `core/feature_flags.py` and is reflected in `.env.example`.
+
+### 15.3 Parity Tests
+
+For any pipeline being generalized, write a "parity test" that runs the old code path and new code path on the same input and asserts identical output. Keep parity tests in CI until the old path is removed.
+
+Examples:
+- During the `EvaluationSubject` migration, parity test: legacy `POST /api/v1/evaluate` with a diff vs. new `POST /api/v1/submissions` with the same diff as `CodeChangeSubject`.
+- During the `Scope` migration, parity test: legacy string scope filter vs. new structured `Scope` filter producing the same rule selection.
+
+### 15.4 Documentation Co-Evolution
+
+Update `PROJECT.md` and `CLAUDE.md` with every architectural change (Rule 14 in §13). Specifically:
+
+- `PROJECT.md` §6 (Domain Model) tracks `Scope`, `RuleKind`, `EvaluationSubject`, `Domain Pack` shapes.
+- `CLAUDE.md` §14 tracks implementation guidance for the same areas.
+- When a Domain Pack is added, both files note it.
+- When a feature flag's default flips, both files note it.
+
+### 15.5 Removal of Legacy Paths
+
+After Step 5 (stabilization) in the roadmap, legacy paths that have been parity-tested and superseded should be removed in a dedicated `chore: remove legacy X` PR. Do not bundle removal with new features.
+
+---
+
+## 16. References
 
 - Gemini 3 developer guide: https://ai.google.dev/gemini-api/docs/gemini-3
 - Gemini document processing: https://ai.google.dev/gemini-api/docs/document-processing
@@ -717,8 +792,10 @@ Earlier phases (Phase 1–5, Phase 6a) have implementation notes in `development
 - Next.js App Router: https://nextjs.org/docs/app
 - Neo4j Python driver: https://neo4j.com/docs/api/python-driver/current/
 - Elasticsearch Python client: https://elasticsearch-py.readthedocs.io/
-- asteval: https://newville.github.io/asteval/
+- asteval (sandboxed expression evaluation): https://lmfit.github.io/asteval/
+- arq (Redis-backed job queue): https://arq-docs.helpmanual.io/
+- FastMCP: https://github.com/jlowin/fastmcp
 
 ---
 
-*This file is a contract. If you (Claude Code) find a conflict between this file and the user's request, surface the conflict and ask. Do not silently override.*
+*This file is a contract. If you (Claude Code) find a conflict between this file and the user's request, surface the conflict and ask. Do not silently override. The contract evolves as the refocus progresses — propose changes through PRs that update this file alongside the code.*

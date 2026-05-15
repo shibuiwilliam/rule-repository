@@ -1,0 +1,19 @@
+domain: sales
+name: "Sales & Pricing"
+version: "0.1.0"
+description: "Rules for pricing policies, discount approvals, deal compliance, and resale controls."
+subject_types:
+  - deal_proposal
+  - discount_request
+  - pricing_change
+metadata_extensions:
+  customer_segment:
+    type: string
+    required: false
+  deal_size_tier:
+    type: string
+    required: false
+default_modality: MUST
+preferred_evaluator_subject_kinds:
+  - business_event
+  - decision_request

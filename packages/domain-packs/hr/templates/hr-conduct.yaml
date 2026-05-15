@@ -1,0 +1,166 @@
+name: hr-conduct
+domain: hr
+description: "Employee conduct rules covering harassment, conflicts of interest, gifts, social media, and confidentiality"
+maturity_level: experimental
+language: en
+rules:
+  - id: hr_conduct_001
+    statement: "Employees must not engage in any form of harassment, discrimination, or bullying in the workplace, including verbal, physical, and digital conduct."
+    kind: normative
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope:
+      domain: hr
+      subject_type: employee_conduct
+      attributes:
+        regulation: company_policy
+    rationale: "Harassment violates employment law in most jurisdictions and creates hostile work environments. Zero-tolerance policies protect employees and reduce organizational legal liability."
+    following_example: "An employee reports a concern through the official reporting channel and the company initiates an investigation within 48 hours."
+    violation_example: "A manager repeatedly makes demeaning comments about a team member's background in team meetings without any corrective action taken."
+    test_cases:
+      - input: {conduct_type: professional_feedback, reported_through_channel: true}
+        expected_verdict: ALLOW
+      - input: {conduct_type: repeated_demeaning_comments, target: colleague}
+        expected_verdict: DENY
+
+  - id: hr_conduct_002
+    statement: "Employees must disclose any actual or potential conflict of interest to their manager and the compliance department before engaging in the conflicting activity."
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: hr
+      subject_type: employee_conduct
+      attributes:
+        regulation: company_policy
+    rationale: "Undisclosed conflicts of interest can lead to biased decision-making, financial loss, and reputational damage. Early disclosure enables the organization to manage conflicts appropriately."
+    following_example: "An employee who holds stock in a vendor company discloses this to their manager before participating in vendor selection."
+    violation_example: "An employee approves a contract with a company owned by their spouse without disclosing the relationship."
+    test_cases:
+      - input: {conflict_exists: true, disclosed_to_manager: true, disclosed_to_compliance: true}
+        expected_verdict: ALLOW
+      - input: {conflict_exists: true, disclosed_to_manager: false, disclosed_to_compliance: false}
+        expected_verdict: DENY
+
+  - id: hr_conduct_003
+    statement: "Employees must not accept gifts, hospitality, or entertainment from business partners exceeding 5,000 JPY (or local currency equivalent) in value per instance."
+    kind: computational
+    modality: MUST_NOT
+    severity: MEDIUM
+    scope:
+      domain: hr
+      subject_type: employee_conduct
+      attributes:
+        regulation: company_policy
+    rationale: "Gift acceptance above a threshold creates the appearance of impropriety and may constitute bribery under anti-corruption laws. A clear monetary limit provides objective guidance."
+    body:
+      expression: "gift_value <= 5000"
+      required_inputs:
+        - name: gift_value
+          type: number
+          description: "Monetary value of the gift in JPY or local currency equivalent"
+      unit: JPY
+    following_example: "An employee receives a branded pen worth 1,000 JPY from a vendor at a conference."
+    violation_example: "An employee accepts a 30,000 JPY dinner invitation from a vendor currently in a bidding process."
+    test_cases:
+      - input: {gift_value: 1000}
+        expected_verdict: ALLOW
+      - input: {gift_value: 30000}
+        expected_verdict: DENY
+      - input: {gift_value: 5000}
+        expected_verdict: ALLOW
+
+  - id: hr_conduct_004
+    statement: "Employees must disclose any outside employment, board membership, or consulting engagement to their manager and HR before commencing the activity."
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: hr
+      subject_type: employee_conduct
+      attributes:
+        regulation: company_policy
+    rationale: "Outside employment may create conflicts of interest, reduce productivity, or involve competitors. Pre-disclosure allows the company to assess and manage potential risks."
+    following_example: "An employee submits an outside employment disclosure form to HR before starting weekend consulting work for a non-competing firm."
+    violation_example: "An employee works part-time for a competitor without informing their employer."
+    test_cases:
+      - input: {outside_employment: true, disclosed_to_hr: true, disclosed_to_manager: true}
+        expected_verdict: ALLOW
+      - input: {outside_employment: true, disclosed_to_hr: false, disclosed_to_manager: false}
+        expected_verdict: DENY
+
+  - id: hr_conduct_005
+    statement: "Employees should refrain from posting confidential company information, disparaging remarks about the company, or content that could be attributed to the company on personal social media accounts."
+    kind: normative
+    modality: SHOULD
+    severity: MEDIUM
+    scope:
+      domain: hr
+      subject_type: employee_conduct
+      attributes:
+        regulation: company_policy
+    rationale: "Social media posts can reach wide audiences and be permanently archived. Posts that disclose trade secrets, disparage the employer, or appear to represent the company can cause legal and reputational harm."
+    following_example: "An employee shares a personal opinion on an industry trend without referencing their employer or confidential projects."
+    violation_example: "An employee posts screenshots of an unreleased product roadmap on their personal Twitter account."
+    test_cases:
+      - input: {post_contains_confidential_info: false, post_disparages_company: false}
+        expected_verdict: ALLOW
+      - input: {post_contains_confidential_info: true, post_disparages_company: false}
+        expected_verdict: DENY
+
+  - id: hr_conduct_006
+    statement: "Employees must handle confidential information according to the company's information classification policy, including proper storage, transmission, and disposal."
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: hr
+      subject_type: employee_conduct
+      attributes:
+        regulation: company_policy
+    rationale: "Improper handling of confidential information can result in data breaches, regulatory penalties, and loss of competitive advantage. Clear handling rules reduce the risk of accidental disclosure."
+    following_example: "An employee encrypts a confidential report before emailing it to an authorized recipient using the company's secure email system."
+    violation_example: "An employee stores confidential customer data on a personal USB drive and takes it home."
+    test_cases:
+      - input: {information_classification: confidential, stored_in_approved_system: true, encrypted: true}
+        expected_verdict: ALLOW
+      - input: {information_classification: confidential, stored_in_approved_system: false, encrypted: false}
+        expected_verdict: DENY
+
+  - id: hr_conduct_007
+    statement: "Employees must return all company property, including devices, access badges, documents, and data, upon termination or resignation."
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: hr
+      subject_type: employee_conduct
+      attributes:
+        regulation: company_policy
+    rationale: "Unreturned company property represents financial loss and a security risk. Ensuring return of all assets during offboarding protects company interests and data."
+    following_example: "An employee returns their laptop, badge, and all printed materials on their last day and signs the asset return form."
+    violation_example: "A departing employee retains their company laptop and access badge for two weeks after their last day without authorization."
+    test_cases:
+      - input: {termination: true, all_property_returned: true, return_form_signed: true}
+        expected_verdict: ALLOW
+      - input: {termination: true, all_property_returned: false, return_form_signed: false}
+        expected_verdict: DENY
+
+  - id: hr_conduct_008
+    statement: "Former employees should refrain from making disparaging public statements about the company, its employees, or its products."
+    kind: normative
+    modality: SHOULD
+    severity: LOW
+    scope:
+      domain: hr
+      subject_type: employee_conduct
+      attributes:
+        regulation: company_policy
+    rationale: "Non-disparagement expectations preserve professional relationships and protect the company's reputation. While enforceability varies by jurisdiction, setting the expectation reduces post-employment disputes."
+    following_example: "A former employee provides a neutral reference for the company when asked by peers."
+    violation_example: "A former employee publishes a blog post containing false and defamatory claims about company leadership."
+    test_cases:
+      - input: {former_employee: true, public_statement: neutral}
+        expected_verdict: ALLOW
+      - input: {former_employee: true, public_statement: defamatory_false_claims}
+        expected_verdict: DENY

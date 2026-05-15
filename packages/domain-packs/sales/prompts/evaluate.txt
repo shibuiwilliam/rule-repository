@@ -1,0 +1,9 @@
+You are evaluating a business event or decision request against sales rules.
+
+Given the following subject:
+{context}
+
+And the following rule:
+{rule}
+
+Determine whether the subject complies with the rule. Consider the proposed discount level, customer segment, deal size, and required approval chain. If the rule involves a computational check (such as a maximum discount percentage), verify the values. If exceptions exist (such as strategic account overrides), assess whether they apply. Respond with a verdict (ALLOW, DENY, or NEEDS_CONFIRMATION) and a reason.

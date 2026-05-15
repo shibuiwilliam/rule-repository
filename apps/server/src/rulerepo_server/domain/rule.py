@@ -115,6 +115,63 @@ class RuleKind(str, enum.Enum):
     PRINCIPLE = "principle"
 
 
+# ---------------------------------------------------------------------------
+# Rule Body Variants (per PROJECT.md §6.3 / CLAUDE.md §14.3)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class NormativeBody:
+    """Body for normative rules — evaluated by LLM judge."""
+
+    predicate: str | None = None  # Optional numeric/schema predicate for partial deterministic check
+
+
+@dataclass(frozen=True)
+class ComputationalBody:
+    """Body for computational rules — evaluated by sandboxed expression engine.
+
+    The expression is evaluated deterministically via asteval.
+    The LLM only checks whether exception_predicate applies.
+    """
+
+    expression: str = ""
+    required_inputs: list[str] = field(default_factory=list)
+    unit: str | None = None
+    exception_predicate: str | None = None
+
+
+@dataclass(frozen=True)
+class ProceduralBody:
+    """Body for procedural rules — evaluated by state machine validator."""
+
+    states: list[str] = field(default_factory=list)
+    transitions: list[dict[str, str]] = field(default_factory=list)
+    initial_state: str = ""
+    terminal_states: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class DefinitionalBody:
+    """Body for definitional rules — evaluated by reference lookup + LLM."""
+
+    term: str = ""
+    definition: str = ""
+    lookup_table: str | None = None  # Reference to a lookup table name
+
+
+@dataclass(frozen=True)
+class PrincipleBody:
+    """Body for principle-level rules — evaluated by LLM with high context."""
+
+    guidance: str = ""
+    derived_rule_ids: list[str] = field(default_factory=list)
+
+
+# Type alias for the discriminated body union
+RuleBody = NormativeBody | ComputationalBody | ProceduralBody | DefinitionalBody | PrincipleBody
+
+
 class NormTier(str, enum.Enum):
     """Position of a rule in the norm-lineage hierarchy.
 
@@ -196,6 +253,7 @@ class Rule:
     severity: Severity = Severity.MEDIUM
     status: RuleStatus = RuleStatus.DRAFT
     kind: RuleKind = RuleKind.NORMATIVE
+    body: RuleBody = field(default_factory=NormativeBody)
 
     # Deterministic constraints (Proposal 9: Hybrid Evaluation Architecture)
     constraints: list[dict] = field(default_factory=list)
@@ -225,6 +283,9 @@ class Rule:
     legal_force: str = "policy"
     review_cadence: str | None = None
     governance: Governance = field(default_factory=lambda: Governance(owner="system"))
+
+    # Multilingual (CLAUDE.md §14.8)
+    language: str = "en"  # ISO 639-1
 
     # Phase 8 — Surface-aware fields (CLAUDE.md §14.2.1)
     applies_to_surfaces: list[str] = field(default_factory=lambda: ["generic"])

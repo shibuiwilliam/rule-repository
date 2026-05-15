@@ -103,6 +103,22 @@ class Settings(BaseSettings):
     gateway_enabled: bool = False
     advanced_observability_enabled: bool = False
 
+    # --- Deferred features (Phase 6 — default OFF) ---
+    marketplace_enabled: bool = False
+    gateway_external_intake_enabled: bool = False
+    observability_digest_delivery_enabled: bool = False
+    agent_trust_auto_promotion_enabled: bool = False
+    agent_negotiation_enabled: bool = False
+
+    # --- Refocus migration toggles (default ON except ABAC) ---
+    evaluation_subject_v2_enabled: bool = True
+    structured_scope_enabled: bool = True
+    rule_kind_polymorphism_enabled: bool = True
+    domain_packs_enabled: bool = True
+    hybrid_evaluation_enabled: bool = True
+    persona_routing_enabled: bool = True
+    abac_governance_enabled: bool = False
+
     # --- Alert / Digest delivery mode ---
     alert_output_mode: str = "local"  # "local" | "webhook" | "both"
     digest_output_mode: str = "local"  # "local" | "webhook" | "both"

@@ -1,0 +1,5 @@
+You are inferring metadata for a sales rule extracted from a document.
+
+Given the rule statement and its source context, determine the following metadata fields: customer_segment (the target customer category, e.g., "enterprise", "SMB", "government", "all") and deal_size_tier (the deal size classification the rule applies to, e.g., "small", "medium", "large", "strategic"). Return only the fields that can be confidently determined from the source text.
+
+{context}

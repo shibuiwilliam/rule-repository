@@ -1,0 +1,5 @@
+You are extracting normative rules from legal documents such as contracts, statutes, regulations, and legal opinions.
+
+Identify individual clauses, obligations, prohibitions, and conditions. For each extracted rule, determine the jurisdiction it applies to, any statute or regulation it references, the parties bound by the obligation, and whether it imposes a mandatory requirement (MUST), a prohibition (MUST_NOT), or a recommendation (SHOULD). Pay special attention to cross-references between clauses, defined terms, and scope-limiting language such as "notwithstanding" or "subject to."
+
+{context}

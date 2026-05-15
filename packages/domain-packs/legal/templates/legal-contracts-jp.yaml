@@ -1,0 +1,177 @@
+name: legal-contracts-jp
+domain: legal
+description: "Standard contract review rules for Japanese business contracts"
+maturity_level: experimental
+language: ja
+rules:
+  - id: legal_jp_001
+    statement: "契約書には反社会的勢力排除条項を含めなければならない。"
+    kind: normative
+    modality: MUST
+    severity: CRITICAL
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: JP
+    rationale: "反社会的勢力との関係遮断は企業コンプライアンスの基本要件。各都道府県の暴力団排除条例に基づく。"
+    following_example: "本契約の当事者は、自己または関連会社が反社会的勢力に該当しないことを表明し保証する。"
+    violation_example: "反社会的勢力に関する条項が契約書に含まれていない。"
+    test_cases:
+      - input: {sections: [{title: "反社会的勢力排除", content: "当事者は反社会的勢力に該当しないことを保証する"}]}
+        expected_verdict: ALLOW
+      - input: {sections: [{title: "一般条項", content: "本契約は両当事者の合意に基づく"}]}
+        expected_verdict: DENY
+
+  - id: legal_jp_002
+    statement: "損害賠償の上限額を明示しなければならない。"
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: JP
+    rationale: "損害賠償の無制限条項はリスクが高く、上限を明示することで予測可能性を確保する。"
+    following_example: "損害賠償の総額は、本契約に基づく報酬総額を上限とする。"
+    violation_example: "損害賠償条項に上限額の記載がない。"
+    test_cases:
+      - input: {sections: [{title: "損害賠償", content: "損害賠償は契約金額を上限とする"}]}
+        expected_verdict: ALLOW
+
+  - id: legal_jp_003
+    statement: "準拠法を明記しなければならない。"
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: JP
+    rationale: "準拠法の不明確さは紛争時の法的リスクを増大させる。"
+    following_example: "本契約は日本法を準拠法とする。"
+    violation_example: "準拠法に関する条項が存在しない。"
+    test_cases:
+      - input: {sections: [{title: "準拠法", content: "本契約は日本法に準拠する"}]}
+        expected_verdict: ALLOW
+
+  - id: legal_jp_004
+    statement: "秘密保持期間の上限を設定しなければならない。"
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: JP
+    rationale: "無期限の秘密保持義務は実務上の負担が大きく、合理的な期間設定が必要。"
+    following_example: "秘密保持義務は本契約終了後3年間存続する。"
+    violation_example: "秘密保持義務が無期限に設定されている。"
+    test_cases:
+      - input: {sections: [{title: "秘密保持", content: "秘密保持義務は契約終了後5年間とする"}]}
+        expected_verdict: ALLOW
+
+  - id: legal_jp_005
+    statement: "契約の譲渡制限条項を含めなければならない。"
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: JP
+    rationale: "無断譲渡を防止し、契約当事者の信頼関係を保護する。"
+    following_example: "いずれの当事者も、相手方の書面による事前の同意なく本契約を譲渡してはならない。"
+    violation_example: "譲渡制限に関する条項がない。"
+    test_cases:
+      - input: {sections: [{title: "譲渡禁止", content: "書面による同意なく譲渡できない"}]}
+        expected_verdict: ALLOW
+
+  - id: legal_jp_006
+    statement: "監査権条項を含めなければならない。"
+    kind: normative
+    modality: SHOULD
+    severity: MEDIUM
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: JP
+    rationale: "委託先の業務遂行状況を確認する権利を確保する。"
+    following_example: "甲は乙の業務遂行状況について監査を実施する権利を有する。"
+    violation_example: "監査権に関する規定がない。"
+    test_cases:
+      - input: {sections: [{title: "監査", content: "甲は監査を実施できる"}]}
+        expected_verdict: ALLOW
+
+  - id: legal_jp_007
+    statement: "可分性条項（一部無効時の残存条項有効性）を含めなければならない。"
+    kind: normative
+    modality: SHOULD
+    severity: LOW
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: JP
+    rationale: "一部条項が無効となった場合でも契約全体の有効性を維持する。"
+    following_example: "本契約のいずれかの条項が無効となった場合でも、残りの条項は引き続き有効とする。"
+    violation_example: "可分性条項がない。"
+    test_cases:
+      - input: {sections: [{title: "一般条項", content: "いずれかの条項が無効でも残りは有効"}]}
+        expected_verdict: ALLOW
+
+  - id: legal_jp_008
+    statement: "紛争解決方法を明記しなければならない。"
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: JP
+    rationale: "紛争発生時の解決手段を予め合意しておくことで、迅速な解決を可能にする。"
+    following_example: "本契約に関する紛争は、東京地方裁判所を第一審の専属的合意管轄裁判所とする。"
+    violation_example: "紛争解決条項がない。"
+    test_cases:
+      - input: {sections: [{title: "管轄", content: "東京地方裁判所を管轄とする"}]}
+        expected_verdict: ALLOW
+
+  - id: legal_jp_009
+    statement: "契約期間と更新条件を明記しなければならない。"
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: JP
+    rationale: "契約期間の不明確さは意図しない自動更新や解約困難を招く。"
+    following_example: "本契約の有効期間は1年間とし、期間満了の3ヶ月前までに書面による通知がない限り同条件で1年間更新される。"
+    violation_example: "契約期間や更新条件の記載がない。"
+    test_cases:
+      - input: {sections: [{title: "契約期間", content: "有効期間は1年、自動更新あり"}]}
+        expected_verdict: ALLOW
+
+  - id: legal_jp_010
+    statement: "契約終了後の義務を明記しなければならない。"
+    kind: normative
+    modality: SHOULD
+    severity: MEDIUM
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: JP
+    rationale: "契約終了後も存続する義務（秘密保持、競業避止等）を明確にする。"
+    following_example: "契約終了後も、秘密保持義務および競業避止義務は2年間存続する。"
+    violation_example: "契約終了後の残存義務に関する規定がない。"
+    test_cases:
+      - input: {sections: [{title: "残存義務", content: "秘密保持は終了後2年間存続"}]}
+        expected_verdict: ALLOW

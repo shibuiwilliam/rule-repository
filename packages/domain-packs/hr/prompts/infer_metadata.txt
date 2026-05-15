@@ -1,0 +1,5 @@
+You are inferring metadata for an HR rule extracted from a document.
+
+Given the rule statement and its source context, determine the following metadata fields: employee_class (the category of employees the rule applies to, e.g., "full-time", "part-time", "all"), applicable_agreement_id (the identifier of any referenced collective bargaining or labor agreement), and labor_law_reference (the specific labor law or regulation cited, e.g., "Labor Standards Act Art. 36"). Return only the fields that can be confidently determined from the source text.
+
+{context}

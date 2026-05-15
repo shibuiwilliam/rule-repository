@@ -1,0 +1,5 @@
+You are inferring metadata for a legal rule extracted from a document.
+
+Given the rule statement and its source context, determine the following metadata fields: jurisdiction (the legal jurisdiction where the rule applies, e.g., "JP", "US-CA", "EU"), enacted_date (the date the law or regulation was enacted, if identifiable), statute_id (the identifier of the referenced statute or regulation, e.g., "Act No. 120 of 2009"), and superseding_law_id (if the rule has been superseded by a newer law). Return only the fields that can be confidently determined from the source text.
+
+{context}

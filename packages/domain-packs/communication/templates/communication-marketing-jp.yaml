@@ -1,0 +1,174 @@
+name: communication-marketing-jp
+domain: communication
+description: "日本のマーケティング・広告コンプライアンスルール（景品表示法・薬機法・各業法準拠）"
+maturity_level: experimental
+language: ja
+rules:
+  - id: comm_jp_001
+    statement: "優良誤認表示を行ってはならない。商品・サービスの品質、規格その他の内容について、実際のものよりも著しく優良であると示す表示を禁止する。"
+    kind: normative
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope:
+      domain: communication
+      subject_type: marketing_content
+      attributes:
+        jurisdiction: JP
+        regulation: "景品表示法第5条第1号"
+    rationale: "景品表示法第5条第1号により、優良誤認表示は不当表示として禁止される。違反した場合、措置命令および課徴金（対象売上の3%）が課される。"
+    following_example: "「当社独自の特許技術により、従来品と比較して30%の効率改善を実現（当社試験結果に基づく）」と根拠データを明示。"
+    violation_example: "「業界No.1の性能」と表示しているが、客観的な根拠データが存在しない。"
+    test_cases:
+      - input: {claim_type: performance, evidence_provided: true, evidence_verified: true}
+        expected_verdict: ALLOW
+      - input: {claim_type: performance, evidence_provided: false, claim_text: "業界No.1"}
+        expected_verdict: DENY
+
+  - id: comm_jp_002
+    statement: "医薬品・医療機器等に該当しない製品について、疾病の治療・予防効果を標榜してはならない。"
+    kind: normative
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope:
+      domain: communication
+      subject_type: marketing_content
+      attributes:
+        jurisdiction: JP
+        regulation: "薬機法第68条（未承認医薬品等の広告禁止）"
+    rationale: "薬機法により、医薬品として承認されていない製品が治療・予防効果を謳うことは禁止されている。健康食品やサプリメントでの医薬品的効能効果の標榜は行政処分の対象。"
+    following_example: "健康食品について「健康維持をサポート」と表現し、特定の疾病への効果は記載しない。"
+    violation_example: "健康食品の広告で「がんの予防に効果的」「糖尿病が治る」と記載。"
+    test_cases:
+      - input: {product_type: health_food, claim_type: health_maintenance, medical_claim: false}
+        expected_verdict: ALLOW
+      - input: {product_type: health_food, claim_type: disease_treatment, medical_claim: true}
+        expected_verdict: DENY
+
+  - id: comm_jp_003
+    statement: "比較広告において、競合他社の製品を不当に貶める表現を用いてはならない。比較は客観的データに基づくものに限る。"
+    kind: normative
+    modality: MUST_NOT
+    severity: HIGH
+    scope:
+      domain: communication
+      subject_type: marketing_content
+      attributes:
+        jurisdiction: JP
+        regulation: "景品表示法・不正競争防止法第2条第1項第21号"
+    rationale: "公正取引委員会の比較広告ガイドラインにより、比較広告は客観的データに基づき、公正な方法で行う必要がある。虚偽の比較は不正競争防止法にも抵触する。"
+    following_example: "「第三者機関のテスト結果に基づき、当社製品はA社製品と比較して処理速度が20%向上」とデータ出典を明示。"
+    violation_example: "「競合製品は品質が悪く信頼できない」と根拠なく貶める表現を使用。"
+    test_cases:
+      - input: {comparison_ad: true, objective_data_cited: true, disparaging_language: false}
+        expected_verdict: ALLOW
+      - input: {comparison_ad: true, objective_data_cited: false, disparaging_language: true}
+        expected_verdict: DENY
+
+  - id: comm_jp_004
+    statement: "口コミ・体験談を広告に使用する場合、広告である旨および提供者との関係（報酬の有無等）を明示しなければならない。"
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: communication
+      subject_type: marketing_content
+      attributes:
+        jurisdiction: JP
+        regulation: "景品表示法・ステルスマーケティング告示（令和5年10月施行）"
+    rationale: "2023年10月施行のステルスマーケティング規制により、事業者の表示であるにもかかわらず第三者の感想であるかのように見せる表示は不当表示となる。"
+    following_example: "インフルエンサーの投稿に「PR」「広告」「提供：○○社」と明記。"
+    violation_example: "報酬を支払ったインフルエンサーに、広告表記なしで商品を推薦させる。"
+    test_cases:
+      - input: {testimonial: true, disclosure_present: true, relationship_disclosed: true}
+        expected_verdict: ALLOW
+      - input: {testimonial: true, disclosure_present: false, paid_promotion: true}
+        expected_verdict: DENY
+
+  - id: comm_jp_005
+    statement: "ネイティブ広告・記事広告には、広告であることを消費者が認識できるよう「広告」「PR」「Sponsored」等の表記を明示しなければならない。"
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: communication
+      subject_type: marketing_content
+      attributes:
+        jurisdiction: JP
+        regulation: "JIAA（日本インタラクティブ広告協会）ネイティブ広告ガイドライン"
+    rationale: "ネイティブ広告は編集コンテンツと見た目が似ているため、広告表記がないと消費者が広告と認識できず、景品表示法上の問題となる。"
+    following_example: "記事広告のタイトル横に「Sponsored」バッジを表示し、記事冒頭にも「この記事は○○社の提供です」と明記。"
+    violation_example: "広告主から費用を受け取ったウェブ記事に、広告表記が一切ない。"
+    test_cases:
+      - input: {native_ad: true, ad_label_present: true, label_text: "Sponsored"}
+        expected_verdict: ALLOW
+      - input: {native_ad: true, ad_label_present: false}
+        expected_verdict: DENY
+
+  - id: comm_jp_006
+    statement: "懸賞景品の価格は、取引価額の20倍または50,000円のいずれか低い額を超えてはならない（一般懸賞の場合）。"
+    kind: computational
+    modality: MUST_NOT
+    severity: HIGH
+    scope:
+      domain: communication
+      subject_type: marketing_content
+      attributes:
+        jurisdiction: JP
+        regulation: "景品表示法・景品類の制限に関する告示"
+    rationale: "景品表示法に基づく景品規制により、過大な景品による不当な顧客誘引を防止する。一般懸賞では取引価額の20倍または5万円の低い方が上限。"
+    body:
+      expression: "prize_value <= 50000"
+      required_inputs:
+        - name: prize_value
+          type: number
+          description: "景品の価格（円）"
+      unit: JPY
+    following_example: "商品購入者向けの抽選で最高賞品を30,000円相当のギフトカードに設定。"
+    violation_example: "500円の商品購入者向けキャンペーンで100,000円の旅行券を景品とする。"
+    test_cases:
+      - input: {prize_value: 30000, transaction_value: 5000}
+        expected_verdict: ALLOW
+      - input: {prize_value: 100000, transaction_value: 500}
+        expected_verdict: DENY
+      - input: {prize_value: 50000, transaction_value: 10000}
+        expected_verdict: ALLOW
+
+  - id: comm_jp_007
+    statement: "食品の広告において、栄養成分・原材料に関する表示は食品表示法に準拠しなければならない。アレルゲン情報の省略は禁止する。"
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: communication
+      subject_type: marketing_content
+      attributes:
+        jurisdiction: JP
+        regulation: "食品表示法第5条"
+    rationale: "食品表示法により、消費者に正確な食品情報を提供することが義務付けられている。特にアレルゲン情報の欠如は健康被害に直結する重大なリスクがある。"
+    following_example: "食品広告に栄養成分表示を記載し、特定原材料（小麦・卵・乳等）のアレルゲン情報を明示。"
+    violation_example: "食品のオンライン広告でアレルゲン情報を記載せず、「詳細はパッケージを参照」とのみ表示。"
+    test_cases:
+      - input: {product_type: food, nutrition_label_present: true, allergen_info_present: true}
+        expected_verdict: ALLOW
+      - input: {product_type: food, nutrition_label_present: false, allergen_info_present: false}
+        expected_verdict: DENY
+
+  - id: comm_jp_008
+    statement: "金融商品、医療サービス、不動産の広告は、各業法に定められた必要表示事項（リスク説明、免許番号等）をすべて含めなければならない。"
+    kind: normative
+    modality: MUST
+    severity: CRITICAL
+    scope:
+      domain: communication
+      subject_type: marketing_content
+      attributes:
+        jurisdiction: JP
+        regulation: "金融商品取引法第37条・医療法第6条の5・宅地建物取引業法第32条"
+    rationale: "金融・医療・不動産は特別法により広告規制が厳格に定められている業界。必要表示事項の欠如は行政処分や業務停止の対象となる。"
+    following_example: "投資信託の広告に元本割れリスクの説明、手数料、金融商品取引業者の登録番号を明記。"
+    violation_example: "投資商品の広告で「確実に利益が出る」と表示し、リスク説明や免許番号を省略。"
+    test_cases:
+      - input: {industry: finance, risk_disclosure_present: true, license_number_present: true, required_disclosures_complete: true}
+        expected_verdict: ALLOW
+      - input: {industry: finance, risk_disclosure_present: false, license_number_present: false, required_disclosures_complete: false}
+        expected_verdict: DENY

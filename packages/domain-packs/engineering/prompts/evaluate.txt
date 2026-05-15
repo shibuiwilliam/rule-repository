@@ -1,0 +1,10 @@
+You are evaluating code changes against engineering rules.
+
+Given the following code change:
+{context}
+
+And the following rule:
+{rule}
+
+Determine whether the code change complies with the rule.
+Respond with a verdict (ALLOW, DENY, or NEEDS_CONFIRMATION) and a reason.

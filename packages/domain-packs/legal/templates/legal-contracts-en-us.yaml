@@ -1,0 +1,195 @@
+name: legal-contracts-en-us
+domain: legal
+description: "Standard contract review rules for US commercial contracts"
+maturity_level: experimental
+language: en
+rules:
+  - id: legal_us_001
+    statement: "The contract must include a limitation of liability clause that caps aggregate liability."
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: US
+    rationale: "Unlimited liability exposes the company to disproportionate risk. A liability cap aligned with contract value is industry standard in US commercial agreements."
+    following_example: "Neither party's aggregate liability under this Agreement shall exceed the total fees paid or payable during the twelve (12) months preceding the claim."
+    violation_example: "The contract contains no limitation of liability clause, leaving both parties exposed to unlimited damages."
+    test_cases:
+      - input: {sections: [{title: "Limitation of Liability", content: "Aggregate liability shall not exceed the total fees paid in the prior 12 months."}]}
+        expected_verdict: ALLOW
+      - input: {sections: [{title: "General Terms", content: "The parties agree to cooperate in good faith."}]}
+        expected_verdict: DENY
+
+  - id: legal_us_002
+    statement: "The contract must include an indemnification clause defining each party's indemnification obligations."
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: US
+    rationale: "Indemnification provisions allocate risk for third-party claims. Without them, a party may bear unintended liability for the other's negligence or IP infringement."
+    following_example: "Each party shall indemnify and hold harmless the other from and against any third-party claims arising from its breach of this Agreement."
+    violation_example: "The contract does not address indemnification, leaving third-party claim liability undefined."
+    test_cases:
+      - input: {sections: [{title: "Indemnification", content: "Provider shall indemnify Client against third-party IP infringement claims."}]}
+        expected_verdict: ALLOW
+      - input: {sections: [{title: "Payment Terms", content: "Invoices are due net 30."}]}
+        expected_verdict: DENY
+
+  - id: legal_us_003
+    statement: "The contract must clearly define intellectual property ownership and assignment of work product."
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: US
+    rationale: "Ambiguous IP ownership leads to disputes over work product, especially in software and creative services. Under US law, IP rights default to the creator absent a written assignment."
+    following_example: "All work product created by Contractor under this Agreement shall be 'work made for hire' and, to the extent not qualifying as such, Contractor assigns all rights therein to Client."
+    violation_example: "The contract references deliverables but does not specify who owns the intellectual property."
+    test_cases:
+      - input: {sections: [{title: "Intellectual Property", content: "All IP developed under this Agreement is assigned to the Client upon creation."}]}
+        expected_verdict: ALLOW
+      - input: {sections: [{title: "Deliverables", content: "Contractor will deliver the software by Q3."}]}
+        expected_verdict: DENY
+
+  - id: legal_us_004
+    statement: "The contract must define confidentiality obligations including scope, duration, and permitted disclosures."
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: US
+    rationale: "Confidentiality provisions protect trade secrets and proprietary information. Clear scope and duration prevent overreaching obligations and ensure enforceability."
+    following_example: "Each party agrees to hold Confidential Information in strict confidence for a period of three (3) years following disclosure, disclosing only to employees with a need to know."
+    violation_example: "The contract mentions 'proprietary information' but does not define confidentiality obligations."
+    test_cases:
+      - input: {sections: [{title: "Confidentiality", content: "Each party shall maintain confidentiality of the other's proprietary information for 3 years."}]}
+        expected_verdict: ALLOW
+      - input: {sections: [{title: "General", content: "Both parties agree to work together."}]}
+        expected_verdict: DENY
+
+  - id: legal_us_005
+    statement: "The contract must include term and termination provisions specifying initial term, renewal, and termination rights."
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: US
+    rationale: "Clear term and termination provisions prevent indefinite obligations and ensure both parties understand exit rights. Termination for cause and convenience should be distinguished."
+    following_example: "This Agreement shall have an initial term of one (1) year and shall automatically renew for successive one-year periods unless either party provides 90 days' written notice of non-renewal. Either party may terminate for cause upon 30 days' written notice of material breach."
+    violation_example: "The contract has no termination clause, implying it could be perpetual without an exit mechanism."
+    test_cases:
+      - input: {sections: [{title: "Term and Termination", content: "Initial term of 1 year with 90-day notice for non-renewal. Either party may terminate for material breach."}]}
+        expected_verdict: ALLOW
+      - input: {sections: [{title: "Services", content: "Provider will perform the services described in Exhibit A."}]}
+        expected_verdict: DENY
+
+  - id: legal_us_006
+    statement: "The contract must specify the governing law and jurisdiction."
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: US
+    rationale: "Governing law determines which state's laws apply to contract interpretation. Without it, a dispute may trigger costly choice-of-law litigation."
+    following_example: "This Agreement shall be governed by and construed in accordance with the laws of the State of Delaware, without regard to conflict of laws principles."
+    violation_example: "The contract does not specify governing law or jurisdiction."
+    test_cases:
+      - input: {sections: [{title: "Governing Law", content: "This Agreement is governed by the laws of the State of New York."}]}
+        expected_verdict: ALLOW
+      - input: {sections: [{title: "Miscellaneous", content: "Notices shall be sent to the addresses listed in Exhibit B."}]}
+        expected_verdict: DENY
+
+  - id: legal_us_007
+    statement: "The contract must include a dispute resolution mechanism specifying litigation, arbitration, or mediation."
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: US
+    rationale: "A predetermined dispute resolution mechanism reduces uncertainty and cost when disagreements arise. Arbitration clauses can limit discovery costs; litigation preserves jury rights."
+    following_example: "Any dispute arising under this Agreement shall be resolved by binding arbitration administered by JAMS under its Comprehensive Arbitration Rules in San Francisco, California."
+    violation_example: "The contract does not address how disputes will be resolved."
+    test_cases:
+      - input: {sections: [{title: "Dispute Resolution", content: "Disputes shall be resolved by binding arbitration under AAA rules."}]}
+        expected_verdict: ALLOW
+      - input: {sections: [{title: "Notices", content: "All notices must be in writing."}]}
+        expected_verdict: DENY
+
+  - id: legal_us_008
+    statement: "The contract should include a force majeure clause excusing non-performance for events beyond the parties' control."
+    kind: normative
+    modality: SHOULD
+    severity: MEDIUM
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: US
+    rationale: "Unlike civil law jurisdictions, US common law does not imply force majeure. Without an express clause, a party may be liable for non-performance caused by pandemics, natural disasters, or government actions."
+    following_example: "Neither party shall be liable for failure to perform due to causes beyond its reasonable control, including acts of God, pandemics, war, terrorism, or government actions."
+    violation_example: "The contract does not include a force majeure provision despite a multi-year term with performance obligations."
+    test_cases:
+      - input: {sections: [{title: "Force Majeure", content: "Neither party is liable for delays caused by events beyond reasonable control."}]}
+        expected_verdict: ALLOW
+      - input: {sections: [{title: "Performance", content: "Provider shall meet all SLAs without exception."}]}
+        expected_verdict: DENY
+
+  - id: legal_us_009
+    statement: "The contract should include assignment restrictions requiring written consent for assignment or delegation."
+    kind: normative
+    modality: SHOULD
+    severity: LOW
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: US
+    rationale: "Without assignment restrictions, a party may transfer its obligations to an unknown third party, undermining the reliance on the original counterparty's capabilities and creditworthiness."
+    following_example: "Neither party may assign this Agreement without the prior written consent of the other party, except in connection with a merger or sale of substantially all assets."
+    violation_example: "The contract does not restrict assignment, allowing either party to transfer obligations without notice."
+    test_cases:
+      - input: {sections: [{title: "Assignment", content: "Neither party may assign without prior written consent of the other."}]}
+        expected_verdict: ALLOW
+      - input: {sections: [{title: "General", content: "This Agreement constitutes the entire agreement."}]}
+        expected_verdict: DENY
+
+  - id: legal_us_010
+    statement: "The contract should include an entire agreement clause superseding prior negotiations and agreements."
+    kind: normative
+    modality: SHOULD
+    severity: LOW
+    scope:
+      domain: legal
+      subject_type: contract_draft
+      attributes:
+        jurisdiction: US
+    rationale: "An entire agreement (integration) clause prevents parties from claiming that oral promises or prior drafts modify the written contract, providing certainty under the parol evidence rule."
+    following_example: "This Agreement constitutes the entire agreement between the parties and supersedes all prior negotiations, representations, and agreements, whether written or oral."
+    violation_example: "The contract does not include an integration clause, leaving room for claims based on prior oral representations."
+    test_cases:
+      - input: {sections: [{title: "Entire Agreement", content: "This Agreement constitutes the entire agreement and supersedes all prior agreements."}]}
+        expected_verdict: ALLOW
+      - input: {sections: [{title: "Signatures", content: "IN WITNESS WHEREOF the parties have executed this Agreement."}]}
+        expected_verdict: DENY

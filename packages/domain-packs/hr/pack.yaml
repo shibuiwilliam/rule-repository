@@ -1,0 +1,22 @@
+domain: hr
+name: "Human Resources"
+version: "0.1.0"
+description: "Rules for employment regulations, attendance, leave management, conduct, and HR compliance."
+subject_types:
+  - employee_event
+  - attendance_record
+  - leave_request
+  - conduct_report
+metadata_extensions:
+  employee_class:
+    type: string
+    required: false
+  applicable_agreement_id:
+    type: string
+    required: false
+  labor_law_reference:
+    type: string
+    required: false
+default_modality: MUST
+preferred_evaluator_subject_kinds:
+  - business_event

@@ -1,0 +1,185 @@
+name: sales-pricing-jp
+domain: sales
+description: "販売価格・値引きに関するルール（独占禁止法・景品表示法準拠）"
+maturity_level: experimental
+language: ja
+rules:
+  - id: sales_jp_001
+    statement: "標準値引率は20%を超えてはならない。20%超の値引きには営業部長以上の承認が必要。"
+    kind: computational
+    modality: MUST_NOT
+    severity: HIGH
+    scope:
+      domain: sales
+      subject_type: pricing_decision
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "過度な値引きは利益率を圧迫し、ダンピング（不当廉売）のリスクを生む。上限を設けることで収益管理と独禁法遵守を両立する。"
+    body:
+      expression: "discount_pct <= 20"
+      required_inputs:
+        - name: discount_pct
+          type: number
+          description: "適用する値引率（%）"
+      unit: percent
+      exception_predicate: "has_director_approval == True"
+    following_example: "顧客に15%の値引きを提示し、標準権限内で承認。"
+    violation_example: "営業担当が独断で30%の値引きを約束し、上長承認を取得していない。"
+    test_cases:
+      - input: {discount_pct: 15, has_director_approval: false}
+        expected_verdict: ALLOW
+      - input: {discount_pct: 30, has_director_approval: false}
+        expected_verdict: DENY
+      - input: {discount_pct: 30, has_director_approval: true}
+        expected_verdict: ALLOW
+
+  - id: sales_jp_002
+    statement: "20%を超える特別値引きは、営業部長の書面承認を事前に取得しなければならない。"
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: sales
+      subject_type: pricing_decision
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "特別値引きは収益への影響が大きいため、承認権限を明確にして組織的な意思決定を確保する。"
+    following_example: "25%値引きの提案書を作成し、営業部長の書面承認を得てから顧客に提示。"
+    violation_example: "営業担当が顧客との交渉中に口頭で25%値引きを約束し、事後に承認を依頼。"
+    test_cases:
+      - input: {discount_pct: 25, director_written_approval: true}
+        expected_verdict: ALLOW
+      - input: {discount_pct: 25, director_written_approval: false}
+        expected_verdict: DENY
+
+  - id: sales_jp_003
+    statement: "再販売価格の拘束を行ってはならない。販売先の再販売価格を指定・強制する行為は独占禁止法違反となる。"
+    kind: normative
+    modality: MUST_NOT
+    severity: CRITICAL
+    scope:
+      domain: sales
+      subject_type: pricing_decision
+      attributes:
+        jurisdiction: JP
+        regulation: "独占禁止法第2条第9項第4号"
+    rationale: "再販売価格維持行為は独占禁止法上の不公正な取引方法に該当し、公正取引委員会による排除措置命令・課徴金の対象となる。"
+    following_example: "販売代理店に参考価格を提示するが、最終販売価格は代理店の自由裁量に委ねる。"
+    violation_example: "代理店契約で「当社が指定する小売価格以外での販売を禁止する」と明記。"
+    test_cases:
+      - input: {price_type: suggested_retail_price, enforcement: none}
+        expected_verdict: ALLOW
+      - input: {price_type: mandatory_retail_price, enforcement: contract_clause}
+        expected_verdict: DENY
+
+  - id: sales_jp_004
+    statement: "複数見積もりが提出される案件では、各見積もりの比較表を作成し記録として保管しなければならない。"
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: sales
+      subject_type: pricing_decision
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "見積もり比較の記録は、価格決定の合理性を説明する証跡となり、社内監査や取引先からの問い合わせに対応できる。"
+    following_example: "3社の見積もりを比較表にまとめ、選定理由とともに案件管理システムに登録。"
+    violation_example: "複数の見積もりを受領したが、比較表を作成せず口頭で選定を決定。"
+    test_cases:
+      - input: {num_quotes: 3, comparison_table_created: true, records_stored: true}
+        expected_verdict: ALLOW
+      - input: {num_quotes: 3, comparison_table_created: false, records_stored: false}
+        expected_verdict: DENY
+
+  - id: sales_jp_005
+    statement: "特定顧客向けの個別価格設定には、合理的な理由の文書化と営業マネージャーの承認が必要である。"
+    kind: normative
+    modality: MUST
+    severity: MEDIUM
+    scope:
+      domain: sales
+      subject_type: pricing_decision
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "顧客ごとの価格差別は、合理的な理由なく行われると不公正な取引方法に該当する可能性がある。理由の文書化により透明性を確保する。"
+    following_example: "大口顧客向けのボリュームディスカウントを、取引量に基づく理由書とともに申請し、営業マネージャーの承認を取得。"
+    violation_example: "特定顧客にのみ特別価格を適用しているが、理由が文書化されておらず、他の同規模顧客との価格差を説明できない。"
+    test_cases:
+      - input: {custom_pricing: true, justification_documented: true, manager_approved: true}
+        expected_verdict: ALLOW
+      - input: {custom_pricing: true, justification_documented: false, manager_approved: false}
+        expected_verdict: DENY
+
+  - id: sales_jp_006
+    statement: "最低広告価格（MAP）ポリシーに基づき、販売パートナーは指定された最低広告価格を下回る価格で広告を掲載してはならない。"
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: sales
+      subject_type: pricing_decision
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "MAPポリシーはブランド価値と販売チャネル間の公平性を保護する。ただし、実際の販売価格の拘束は独禁法違反となるため、広告価格に限定する。"
+    following_example: "販売パートナーがウェブサイトにMAP価格以上で商品を掲載し、店頭では独自の販売価格を設定。"
+    violation_example: "販売パートナーがMAP価格を下回る価格でオンライン広告を掲載。"
+    test_cases:
+      - input: {advertised_price: 10000, map_price: 8000}
+        expected_verdict: ALLOW
+      - input: {advertised_price: 5000, map_price: 8000}
+        expected_verdict: DENY
+
+  - id: sales_jp_007
+    statement: "バンドル販売を行う場合、個別商品の価格と比較した割引率を明示し、顧客が個別購入を選択できるようにするべきである。"
+    kind: normative
+    modality: SHOULD
+    severity: MEDIUM
+    scope:
+      domain: sales
+      subject_type: pricing_decision
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "バンドル販売は顧客メリットを提供するが、抱き合わせ販売として不公正取引方法に該当しないよう、個別購入の選択肢を維持する必要がある。"
+    following_example: "3製品バンドルパッケージを提案する際に、各製品の個別価格とバンドル割引率を明示し、個別購入も可能と記載。"
+    violation_example: "複数製品をバンドルでのみ販売し、個別購入を拒否。個別価格の情報も提供しない。"
+    test_cases:
+      - input: {bundle_sale: true, individual_prices_disclosed: true, individual_purchase_available: true}
+        expected_verdict: ALLOW
+      - input: {bundle_sale: true, individual_prices_disclosed: false, individual_purchase_available: false}
+        expected_verdict: DENY
+
+  - id: sales_jp_008
+    statement: "デモ・トライアル期間は90日を超えてはならない。延長には営業マネージャーの承認が必要。"
+    kind: computational
+    modality: MUST_NOT
+    severity: MEDIUM
+    scope:
+      domain: sales
+      subject_type: pricing_decision
+      attributes:
+        jurisdiction: JP
+        regulation: company_policy
+    rationale: "過度に長いトライアル期間は、無償利用の常態化と収益機会の喪失を招く。上限を設けることで適切な営業サイクル管理を行う。"
+    body:
+      expression: "trial_days <= 90"
+      required_inputs:
+        - name: trial_days
+          type: number
+          description: "トライアル期間の日数"
+      unit: days
+      exception_predicate: "has_manager_approval == True"
+    following_example: "新規顧客に30日間の無償トライアルを提供。"
+    violation_example: "営業マネージャーの承認なく、顧客に120日間のトライアルを提供。"
+    test_cases:
+      - input: {trial_days: 30, has_manager_approval: false}
+        expected_verdict: ALLOW
+      - input: {trial_days: 120, has_manager_approval: false}
+        expected_verdict: DENY
+      - input: {trial_days: 120, has_manager_approval: true}
+        expected_verdict: ALLOW

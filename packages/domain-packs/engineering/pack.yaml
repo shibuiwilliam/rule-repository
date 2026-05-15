@@ -1,0 +1,21 @@
+domain: engineering
+name: "Software Engineering"
+version: "0.1.0"
+description: "Rules for software engineering practices including code review, API design, testing, and security."
+subject_types:
+  - code_file
+  - python_source
+  - typescript_source
+  - react_component
+  - api_endpoint
+  - test_file
+metadata_extensions:
+  language:
+    type: string
+    required: false
+  framework:
+    type: string
+    required: false
+default_modality: SHOULD
+preferred_evaluator_subject_kinds:
+  - code_change

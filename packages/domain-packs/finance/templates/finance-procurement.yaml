@@ -1,0 +1,178 @@
+name: finance-procurement
+domain: finance
+description: "Procurement compliance rules covering quotation requirements, supplier due diligence, payment terms, and vendor management"
+maturity_level: experimental
+language: en
+rules:
+  - id: finance_proc_001
+    statement: "Purchases exceeding 100,000 in value must obtain at least three independent quotations before vendor selection."
+    kind: computational
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: finance
+      subject_type: purchase_order
+      attributes:
+        regulation: company_policy
+    rationale: "Multi-quote requirements ensure competitive pricing, reduce favoritism, and demonstrate fiduciary responsibility. This is a standard procurement control in most organizations."
+    body:
+      expression: "amount <= 100000 or num_quotes >= 3"
+      required_inputs:
+        - name: amount
+          type: number
+          description: "Total purchase amount in local currency"
+        - name: num_quotes
+          type: number
+          description: "Number of independent quotations obtained"
+      unit: currency
+    following_example: "A 150,000 purchase order is submitted with three vendor quotations attached, and the selected vendor offers the best value."
+    violation_example: "A 200,000 purchase order is approved with only one quotation from the incumbent vendor."
+    test_cases:
+      - input: {amount: 150000, num_quotes: 3}
+        expected_verdict: ALLOW
+      - input: {amount: 200000, num_quotes: 1}
+        expected_verdict: DENY
+      - input: {amount: 50000, num_quotes: 1}
+        expected_verdict: ALLOW
+
+  - id: finance_proc_002
+    statement: "Sole-source procurement must include a written justification approved by the procurement manager and the requesting department head."
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: finance
+      subject_type: purchase_order
+      attributes:
+        regulation: company_policy
+    rationale: "Sole-source purchases bypass competitive bidding and carry higher risk of overpayment. A documented justification creates an audit trail and ensures the decision is deliberate."
+    following_example: "A sole-source request for a proprietary software license includes a written justification citing the vendor's exclusive IP, approved by both procurement and the department head."
+    violation_example: "A sole-source purchase of 500,000 is processed without any written justification or managerial approval."
+    test_cases:
+      - input: {sole_source: true, written_justification: true, procurement_manager_approved: true, department_head_approved: true}
+        expected_verdict: ALLOW
+      - input: {sole_source: true, written_justification: false, procurement_manager_approved: false}
+        expected_verdict: DENY
+
+  - id: finance_proc_003
+    statement: "Any transaction involving a related party (officer, director, employee, or their family member with a financial interest in the vendor) must receive board-level or executive committee approval."
+    kind: normative
+    modality: MUST
+    severity: CRITICAL
+    scope:
+      domain: finance
+      subject_type: purchase_order
+      attributes:
+        regulation: corporate_governance
+    rationale: "Related-party transactions present inherent conflicts of interest and are subject to heightened scrutiny under corporate governance standards and securities regulations."
+    following_example: "A purchase from a vendor partially owned by a board member is disclosed, and the board member recuses themselves while the remaining board approves the transaction."
+    violation_example: "An employee awards a contract to a company owned by their sibling without disclosing the relationship or obtaining executive approval."
+    test_cases:
+      - input: {related_party: true, board_approval: true, conflict_disclosed: true}
+        expected_verdict: ALLOW
+      - input: {related_party: true, board_approval: false, conflict_disclosed: false}
+        expected_verdict: DENY
+
+  - id: finance_proc_004
+    statement: "Payment to subcontractors must be made within 60 days of receiving the invoice, in compliance with the Subcontracting Act."
+    kind: computational
+    modality: MUST
+    severity: CRITICAL
+    scope:
+      domain: finance
+      subject_type: purchase_order
+      attributes:
+        regulation: "Subcontracting Act (下請法)"
+    rationale: "The Subcontracting Act (下請法) mandates that parent companies pay subcontractors within 60 days of receiving goods or services. Violations can result in regulatory action by the Japan Fair Trade Commission."
+    body:
+      expression: "payment_days <= 60"
+      required_inputs:
+        - name: payment_days
+          type: number
+          description: "Number of days between invoice receipt and payment"
+      unit: days
+    following_example: "A subcontractor invoice received on March 1 is paid on April 15 (45 days)."
+    violation_example: "A subcontractor invoice received on January 10 is not paid until April 30 (110 days)."
+    test_cases:
+      - input: {payment_days: 45}
+        expected_verdict: ALLOW
+      - input: {payment_days: 110}
+        expected_verdict: DENY
+      - input: {payment_days: 60}
+        expected_verdict: ALLOW
+
+  - id: finance_proc_005
+    statement: "All new vendors must complete Know Your Customer (KYC) due diligence, including identity verification and sanctions screening, before any purchase order is issued."
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: finance
+      subject_type: purchase_order
+      attributes:
+        regulation: aml_compliance
+    rationale: "Vendor KYC prevents the organization from inadvertently transacting with sanctioned entities, shell companies, or money-laundering fronts. It is a regulatory requirement under anti-money laundering frameworks."
+    following_example: "A new vendor submits registration documents, passes sanctions screening, and is approved in the vendor management system before the first PO is issued."
+    violation_example: "A purchase order is issued to a newly identified vendor that has not undergone any KYC screening."
+    test_cases:
+      - input: {new_vendor: true, kyc_completed: true, sanctions_clear: true}
+        expected_verdict: ALLOW
+      - input: {new_vendor: true, kyc_completed: false, sanctions_clear: false}
+        expected_verdict: DENY
+
+  - id: finance_proc_006
+    statement: "All procurement agreements exceeding 50,000 in value must be documented in a written contract signed by both parties before work begins."
+    kind: normative
+    modality: MUST
+    severity: HIGH
+    scope:
+      domain: finance
+      subject_type: purchase_order
+      attributes:
+        regulation: company_policy
+    rationale: "Written contracts above material thresholds protect both parties by documenting scope, price, delivery terms, and remedies. Verbal agreements for significant amounts create unacceptable legal risk."
+    following_example: "A 75,000 consulting engagement is formalized with a signed Master Services Agreement and Statement of Work before the consultant begins work."
+    violation_example: "A vendor begins a 120,000 project based on an email exchange without a signed contract."
+    test_cases:
+      - input: {amount: 75000, written_contract_signed: true}
+        expected_verdict: ALLOW
+      - input: {amount: 120000, written_contract_signed: false}
+        expected_verdict: DENY
+
+  - id: finance_proc_007
+    statement: "Recurring expenses and vendor contracts should be reviewed at least annually to assess continued need, pricing competitiveness, and contract compliance."
+    kind: normative
+    modality: SHOULD
+    severity: MEDIUM
+    scope:
+      domain: finance
+      subject_type: purchase_order
+      attributes:
+        regulation: company_policy
+    rationale: "Annual reviews of recurring expenses prevent cost creep, identify unused subscriptions, and ensure vendors continue to meet performance standards."
+    following_example: "The procurement team conducts an annual review of all SaaS subscriptions, canceling three unused licenses and renegotiating two contracts for a 15% cost reduction."
+    violation_example: "A vendor contract auto-renews for the third consecutive year without any review of pricing or utilization."
+    test_cases:
+      - input: {recurring_expense: true, annual_review_completed: true}
+        expected_verdict: ALLOW
+      - input: {recurring_expense: true, annual_review_completed: false}
+        expected_verdict: DENY
+
+  - id: finance_proc_008
+    statement: "All vendors must be screened against applicable sanctions lists (OFAC SDN, EU sanctions, UN sanctions) before onboarding and annually thereafter."
+    kind: normative
+    modality: MUST
+    severity: CRITICAL
+    scope:
+      domain: finance
+      subject_type: purchase_order
+      attributes:
+        regulation: sanctions_compliance
+    rationale: "Transacting with sanctioned entities exposes the organization to severe penalties, including criminal prosecution, fines, and reputational damage. Continuous screening is required as sanctions lists are updated frequently."
+    following_example: "The compliance team runs quarterly sanctions screening on all active vendors and flags a newly sanctioned entity for immediate contract suspension."
+    violation_example: "A vendor that was added to the OFAC SDN list six months ago continues to receive payments because no re-screening was performed."
+    test_cases:
+      - input: {vendor_sanctions_screened: true, sanctions_clear: true}
+        expected_verdict: ALLOW
+      - input: {vendor_sanctions_screened: false, sanctions_clear: false}
+        expected_verdict: DENY

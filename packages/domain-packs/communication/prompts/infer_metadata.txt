@@ -1,0 +1,5 @@
+You are inferring metadata for a communication rule extracted from a document.
+
+Given the rule statement and its source context, determine the following metadata fields: target_audience (the intended audience, e.g., "consumers", "investors", "employees", "general_public"), regulated_industry (the industry subject to specific advertising regulations, e.g., "pharmaceutical", "financial_services", "alcohol", "none"), and publication_channel (the medium the rule applies to, e.g., "web", "print", "social_media", "broadcast", "all"). Return only the fields that can be confidently determined from the source text.
+
+{context}

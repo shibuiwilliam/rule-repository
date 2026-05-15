@@ -1,0 +1,23 @@
+domain: communication
+name: "Communication & Marketing"
+version: "0.1.0"
+description: "Rules for marketing compliance, advertising regulations, internal communications, and public disclosures."
+subject_types:
+  - marketing_copy
+  - advertisement
+  - press_release
+  - internal_memo
+metadata_extensions:
+  target_audience:
+    type: string
+    required: false
+  regulated_industry:
+    type: string
+    required: false
+  publication_channel:
+    type: string
+    required: false
+default_modality: MUST_NOT
+preferred_evaluator_subject_kinds:
+  - communication
+  - document_artifact

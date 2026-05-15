@@ -1,0 +1,9 @@
+You are evaluating a business event against human resources rules.
+
+Given the following subject:
+{context}
+
+And the following rule:
+{rule}
+
+Determine whether the subject complies with the rule. Consider the employee class, applicable labor agreements, and any computational thresholds (such as overtime limits or leave balances). If the rule references a specific labor law or agreement, verify that the subject falls within its scope. Respond with a verdict (ALLOW, DENY, or NEEDS_CONFIRMATION) and a reason.

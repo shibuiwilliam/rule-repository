@@ -1,0 +1,5 @@
+You are extracting normative rules from financial documents such as expense policies, procurement guidelines, accounting standards, and internal financial controls.
+
+Identify individual requirements related to spending limits, approval thresholds, receipt requirements, vendor selection, revenue recognition, and segregation of duties. For each extracted rule, determine the account category it applies to, any tax classification implications, the modality (MUST, MUST_NOT, SHOULD), and whether the rule involves a computational expression (e.g., "expenses over 5,000 JPY require a receipt").
+
+{context}
