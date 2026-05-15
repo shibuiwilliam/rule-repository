@@ -12,13 +12,15 @@ Technical documentation for developing and extending the Rule Repository.
 
 **IMPROVEMENT.md Proposals: SUBSTANTIALLY IMPLEMENTED** -- Key proposals from IMPROVEMENT.md implemented:
 - Proposal 2: Multi-axis structured scope (domain, org_unit, subject_type dimensions)
-- Proposal 3: Rule kind polymorphism (normative, computational, procedural, definitional, principle)
-- Proposal 4: Domain Pack architecture (9 packs with loader, prompts, analyzers, samples)
+- Proposal 3: Rule kind polymorphism (normative, computational, procedural, definitional, principle) with JSONB body storage (migration 039)
+- Proposal 4: Domain Pack architecture (6 packs under `packages/domain-packs/` with loader, prompts, analyzers, samples)
 - Proposal 6: Persona-based frontend (9 portal route groups with PersonaSwitcher)
 - Proposal 9: Hybrid evaluation (deterministic constraint layer + LLM)
+- Proposal 10: Multilingual rules with language column (migration 040)
 - Proposal 11: Phase 6 feature freeze (gateway, advanced observability disabled by default)
+- ABAC governance policies table added (migration 041, feature-flagged off)
 
-**Test suite: 1,184+ tests across 117 test files**, all linters clean. See [testing.md](testing.md).
+**Test suite: 1,184+ tests across 102 test files**, all linters clean. See [testing.md](testing.md).
 
 ---
 
@@ -26,15 +28,15 @@ Technical documentation for developing and extending the Rule Repository.
 
 | Document | Description |
 |---|---|
-| [architecture.md](architecture.md) | System architecture: 10 services, 40 API routers, 8 domain modules, 7 evaluation surfaces, 9 domain packs, 37 migrations, 37 ORM models, Tier 1/2/3 infrastructure |
+| [architecture.md](architecture.md) | System architecture: 10 services, 40 API routers, 8 domain modules, 7 evaluation surfaces, 6 domain packs, 40 migrations, 37 ORM models, Tier 1/2/3 infrastructure |
 | [evaluation-engine.md](evaluation-engine.md) | How the evaluation engine works: subject-polymorphic batched evaluation with kind-based dispatch (5 rule kinds), deterministic constraint layer (numeric/date/enum), surface-based template routing, 6 domain-specific location types, structured remediations, 8 subject kinds with adapters |
 | [api-reference.md](api-reference.md) | All API endpoints (40 routers): rules, search, evaluation, extraction, intent, intelligence, relationships, discovery, feedback, federation, playground, alerts, snapshots, projects, proposals, agent-governance, review, audit, departments, contracts, events, approval-workflows, attestation, compliance, cost, facts, operability, regulatory, risks, translations, upcoming-changes, lineage, ask, assistant, cockpit, events-ingest, onboarding, submissions |
 | [mcp-server.md](mcp-server.md) | MCP tools (24 tools including domain-specific retrieval and evaluation), resources, prompts, and transport configuration (stdio + streamable-HTTP) |
 | [integrations.md](integrations.md) | GitHub App, CI CLI, agent hooks, rule ingestion, background workers (arq + Redis, 9 cron jobs), webhook gateway |
-| [testing.md](testing.md) | Test strategy (117 test files, 1,184+ tests), running tests, writing new tests, LLM mocking, deterministic evaluator tests, domain pack structure tests, classification bidirectional tests, safety tests, eval harness (90 golden cases across 8 domains), and linting |
+| [testing.md](testing.md) | Test strategy (102 test files, 1,184+ tests), running tests, writing new tests, LLM mocking, deterministic evaluator tests, domain pack structure tests, classification bidirectional tests, safety tests, eval harness (90 golden cases across 8 domains), and linting |
 | [feedback-flywheel.md](feedback-flywheel.md) | Correction capture -> analysis -> auto-drafting -> rule improvement loop (flywheel with clustering + proposals + auto-promotion) |
 | [rule-registration-workflows.md](rule-registration-workflows.md) | Sequence diagrams for all 4 rule registration paths: manual, extraction, discovery, feedback. Data store sync matrix |
-| [database-schema.md](database-schema.md) | Database schema: 37 ORM models across 37 Alembic migrations, ER diagram, design decisions |
+| [database-schema.md](database-schema.md) | Database schema: 37 ORM models across 40 Alembic migrations, ER diagram, design decisions |
 | [intelligence-dashboard-plan.md](intelligence-dashboard-plan.md) | Intelligence Dashboard implementation plan (completed) |
 | [playground-enhancement-plan.md](playground-enhancement-plan.md) | Playground multi-mode input support (completed) -- Code + Scenario evaluation, rule picker, suggest-by-LLM |
 | [project-entity-plan.md](project-entity-plan.md) | Project entity as top-level organizational boundary (completed) |

@@ -176,4 +176,4 @@ The major refocus commit finalized the pivot from engineering-centric tool to cr
 - Universal submissions endpoint (`POST /api/v1/submissions`)
 - SCIM 2.0 identity provisioning (`api/v1/scim.py`)
 
-**Current metrics:** 40 API routers, 37 ORM models, 37 Alembic migrations, 24 MCP tools, 117 test files, 61 frontend pages, 9 persona portals, 6 domain packs.
+**Current metrics:** 40 API routers, 37 ORM models, 40 Alembic migrations, 24 MCP tools, 102 test files, 61 frontend pages, 9 persona portals, 6 domain packs.

@@ -46,7 +46,7 @@ Once all containers are healthy, the following services are available:
 
 | Service | URL | Purpose |
 |---|---|---|
-| Backend API | [http://localhost:8000](http://localhost:8000) | 38 API routers (rules, evaluation, search, governance, compliance, etc.) |
+| Backend API | [http://localhost:8000](http://localhost:8000) | 40 API routers (rules, evaluation, search, submissions, governance, compliance, etc.) |
 | API docs (Swagger) | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive OpenAPI documentation |
 | Frontend | [http://localhost:3000](http://localhost:3000) | Operator console (browse, search, upload, evaluate, govern) |
 | PostgreSQL | localhost:5432 | Relational store (`ruledb`, user `rule`) with Row-Level Security |

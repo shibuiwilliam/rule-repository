@@ -32,6 +32,14 @@ After setup, verify the services are running:
 | PostgreSQL | localhost:5432 |
 | Elasticsearch | http://localhost:9200 |
 | Neo4j Browser | http://localhost:7474 |
+| MCP Server | http://localhost:8001 |
+| Redis | localhost:6379 |
+
+For minimal development (Tier 1, Postgres only):
+
+```bash
+docker compose -f infra/compose/tier1.yml up --build
+```
 
 ## Coding Conventions
 
@@ -98,9 +106,12 @@ This runs:
 - **Never delete rules** in the database. Use `effective_period.valid_until` to retire them.
 - **Never bypass RLS context.** Use `with_user_context()` before every query against classified tables.
 - **Never put domain logic in the evaluation orchestrator.** Subject-specific logic belongs in `services/evaluation/subjects/`.
+- **Put domain-specific behavior in Domain Packs.** If writing legal/HR/finance logic, it belongs in `packages/domain-packs/{domain}/`, not in `services/`.
 - **Update PROJECT.md and CLAUDE.md** when introducing new dependencies, services, or architectural decisions.
 - **Mock the LLM in tests.** Never call Gemini in unit tests. Gate live LLM tests behind `RULEREPO_LIVE_LLM=1`.
 - **Test classification in both directions.** High-clearance users see all data; low-clearance users see only what they should.
+- **Never tweak Gemini temperature.** Default 1.0 stays. For deterministic answers, use the deterministic evaluation layer.
+- **Gate new features behind feature flags.** See `core/feature_flags.py` and `.env.example`.
 
 ## See Also
 

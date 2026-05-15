@@ -92,3 +92,10 @@
 2026-05-15 — feat: Universal submissions endpoint (POST /api/v1/submissions) and SCIM 2.0 provisioning (api/v1/scim.py). API routers: 38→40.
 2026-05-15 — test: Acceptance tests added (contract_review, cross_department_rbac, expense_roundtrip, hr_attendance, multilingual_rule, sales_email). Test files: 117 total.
 2026-05-15 — docs: Comprehensive documentation update across docs/ and development/ to reflect refocus completion. All metrics verified against codebase.
+
+## Post-Refocus Additions
+
+2026-05-16 — migration 039: body JSONB column for rule kind polymorphism (NormativeBody, ComputationalBody, ProceduralBody, DefinitionalBody, PrincipleBody).
+2026-05-16 — migration 040: language column on rules for multilingual support (default 'en').
+2026-05-16 — migration 041: governance_policies table for ABAC (feature-flagged off).
+2026-05-16 — docs: Third comprehensive pass — aligned migration count (37→40), test file count (117→102), added Submissions and Governance sections to REST API docs, updated LLM provider status from "planned" to "implemented", added post-Phase 8 migration notes.

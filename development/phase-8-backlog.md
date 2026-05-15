@@ -160,9 +160,17 @@ The following IMPROVEMENT.md proposals were implemented after Phase 8 closure:
 |---|---|---|
 | P2: Multi-Axis Structured Scope | `StructuredScope` with `domain`, `org_unit`, `subject_type` + generic attributes. ES index updated with `scope_domain`, `scope_org_unit`, `scope_subject_type`. Migration 033 backfills from legacy scope. | DONE |
 | P3: Rule Kind Polymorphism | `RuleKind` enum (normative/computational/procedural/definitional/principle). Kind-based dispatch in `batch_evaluator.py` via `kind_dispatch.py`. Migration 034. | DONE |
-| P4: Domain Pack Architecture | 9 packs (4 new: legal, sales, it_security, governance). `PackManifest` with prompts/analyzers/samples dirs. `DomainPackLoader` at startup. Tests validate all 9 packs. | DONE |
+| P4: Domain Pack Architecture | 6 packs under `packages/domain-packs/` (engineering, legal, hr, finance, sales, communication). `PackManifest` with prompts/analyzers/samples dirs. `DomainPackLoader` at startup. Tests validate all packs. | DONE |
 | P6: Persona Frontend | Sales portal (`(sales)/` route group). `PersonaSwitcher` expanded to 9 personas. | DONE |
 | P9: Hybrid Evaluation | `DeterministicEvaluator` with `NumericConstraint`, `DateConstraint`, `EnumConstraint`. `constraints` JSONB column (migration 035). Evaluates before LLM; PASS/FAIL skip LLM. | DONE |
 | P11: Feature Freeze | Gateway and advanced observability frozen via feature flags. `FEATURES.md` documents all flags. | DONE |
 | CC-2: Documentation Alignment | PROJECT.md, CLAUDE.md, FEATURES.md, .env.example updated for all changes. | DONE |
 | CC-3: Feature Flag Cleanup | All flags audited for consistency. 1,184 tests pass with all flags disabled. | DONE |
+
+### Post-IMPROVEMENT.md Additions (2026-05-16)
+
+| Item | Description | Migration | Status |
+|---|---|---|---|
+| Rule Body JSONB | Flexible body storage for rule kind polymorphism (`NormativeBody`, `ComputationalBody`, `ProceduralBody`, `DefinitionalBody`, `PrincipleBody`) | 039 | DONE |
+| Language Column | Language tracking on rules for multilingual support (default `en`) | 040 | DONE |
+| Governance Policies Table | ABAC governance policies table (`governance_policies`) for attribute-based access control. Feature-flagged off (`FEATURE_ABAC_GOVERNANCE_ENABLED=false`) | 041 | DONE |

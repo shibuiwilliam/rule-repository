@@ -362,9 +362,27 @@ See [Federation API](federation.md) for detailed request/response documentation.
 |---|---|---|
 | POST | `/api/v1/events/ingest` | Universal business event ingestion. Resolves scope from event_type, selects rules, dispatches to the correct subject evaluator. |
 
+## Submissions (Universal Intake)
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/submissions` | Universal intake endpoint for any `EvaluationSubject` kind. Accepts a discriminated union on `subject.kind` (CODE_DIFF, CLAUSE_SET, EVENT, TRANSACTION, CREATIVE, DECISION, IDENTITY, DOCUMENT). Preferred over `POST /api/v1/evaluate` for new integrations. |
+| GET | `/api/v1/submissions` | List past submissions with pagination and filters. |
+
+See [Submissions API](submissions.md) for detailed request/response documentation.
+
 ## Onboarding
 
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/v1/onboarding/status` | Get onboarding progress for the current project. |
 | POST | `/api/v1/onboarding/complete-step` | Mark an onboarding step as complete. |
+
+## Governance (ABAC)
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/v1/governance/policies` | Create an ABAC governance policy (requires `FEATURE_ABAC_GOVERNANCE_ENABLED=true`). |
+| GET | `/api/v1/governance/policies` | List governance policies. |
+| GET | `/api/v1/governance/policies/{policy_id}` | Get a governance policy by ID. |
+| DELETE | `/api/v1/governance/policies/{policy_id}` | Delete a governance policy. |

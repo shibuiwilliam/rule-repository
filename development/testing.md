@@ -2,7 +2,7 @@
 
 Comprehensive guide to running, writing, and maintaining tests in the Rule Repository.
 
-> **Current test count**: 1,184+ unit tests across 117 test files. All pass with zero regressions.
+> **Current test count**: 1,184+ unit tests across 102 test files. All pass with zero regressions.
 
 ---
 
@@ -49,7 +49,7 @@ cd packages/rule-client && uv run pytest
 
 ## Test Structure
 
-The project has **1,184+ test functions** across 117 test files in five locations (unit + integration + safety + e2e + SDK). Test count grew significantly through Phase 7 (subject polymorphism, classification RLS), the RR-001–040 improvements (domain modules, safety, operability, eval harness), Phase 8 additions (surface-based template routing, domain SDK resources, MCP domain tools), and post-Phase 8 enhancements (deterministic evaluator, domain pack loader, structured scope matching, kind dispatch).
+The project has **1,184+ test functions** across 102 test files in five locations (unit + integration + safety + e2e + SDK). Test count grew significantly through Phase 7 (subject polymorphism, classification RLS), the RR-001–040 improvements (domain modules, safety, operability, eval harness), Phase 8 additions (surface-based template routing, domain SDK resources, MCP domain tools), and post-Phase 8 enhancements (deterministic evaluator, domain pack loader, structured scope matching, kind dispatch).
 
 ### Unit Tests (`apps/server/tests/unit/`)
 

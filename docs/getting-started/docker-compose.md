@@ -109,7 +109,7 @@ Redis serves as the job queue and result backend for the arq background worker. 
 | Command | `arq rulerepo_server.workers.WorkerSettings` |
 | Depends on | `redis` (healthy), `server` (healthy) |
 
-Runs 7 scheduled cron jobs (health scoring, recommendations, translation drift, rule promotion, correction clustering, correction stats, weekly digest) plus on-demand tasks. Shares the same Docker image as the backend server but uses the arq entrypoint.
+Runs 9 scheduled cron jobs (health scoring, recommendations, translation drift, rule promotion, verdict drift, correction clustering, correction stats, polyglot validation, weekly digest) plus on-demand tasks. Shares the same Docker image as the backend server but uses the arq entrypoint.
 
 ## Volumes
 
@@ -144,3 +144,26 @@ docker compose build server
 # Restart a single service
 docker compose restart frontend
 ```
+
+## Tiered Deployment
+
+The repository provides three Docker Compose configurations for different deployment tiers:
+
+| Tier | File | Services | Use Case |
+|---|---|---|---|
+| **Tier 1** | `infra/compose/tier1.yml` | Postgres, server, frontend | Minimal: dev machines, CI, demos |
+| **Tier 2** | `infra/compose/tier2.yml` | Postgres, Elasticsearch, Redis, server, arq-worker, frontend | Standard production without graph |
+| **Tier 3** | `docker-compose.yml` | All services (default) | Full-featured production |
+
+```bash
+# Tier 1 (Postgres only)
+docker compose -f infra/compose/tier1.yml up --build
+
+# Tier 2 (+ Elasticsearch, Redis)
+docker compose -f infra/compose/tier2.yml up --build
+
+# Tier 3 (full stack, default)
+docker compose up --build
+```
+
+Feature flags (`ELASTICSEARCH_ENABLED`, `NEO4J_ENABLED`, `REDIS_ENABLED`) control graceful degradation. Tier 1 uses Postgres FTS for search, adjacency tables for graph queries, and in-process scheduling for background jobs.

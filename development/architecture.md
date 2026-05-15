@@ -9,7 +9,7 @@ The Rule Repository is a monorepo with 10 services orchestrated via Docker Compo
 | Backend API | Python 3.13 + FastAPI | 8000 | 40 API routers covering rules, evaluation, search, discovery, governance, compliance, and more |
 | MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 24 tools) |
 | Frontend | TypeScript + Next.js 15 | 3000 | Operator console with 61 pages across 9 persona route groups, English/Japanese i18n |
-| PostgreSQL | 17-alpine | 5432 | System of record (37 ORM models, 37 migrations) with Row-Level Security |
+| PostgreSQL | 17-alpine | 5432 | System of record (37 ORM models, 40 migrations) with Row-Level Security |
 | Elasticsearch | 8.17 | 9200 | Full-text + vector search with document-level security |
 | Neo4j | 5-community | 7474/7687 | Rule relationship graph |
 | Redis | 7-alpine | 6379 | Job queue for arq background worker |
@@ -291,7 +291,7 @@ src/rulerepo_server/
 │   └── contract_compare.py         # Contract diff and comparison
 ├── mcp/
 │   ├── server.py                   # FastMCP app factory
-│   ├── tools.py                    # 12+ MCP tools (clearance-filtered)
+│   ├── tools.py                    # 24 MCP tools (clearance-filtered)
 │   ├── resources.py                # rule:// and ruleset:// resources
 │   └── prompts.py                  # MCP prompt workflows
 ├── gateway/
@@ -584,7 +584,7 @@ Docker Compose files:
 
 ## Alembic Migrations
 
-37 migrations in `apps/server/alembic/versions/` (001-038, skipping 020):
+40 migrations in `apps/server/alembic/versions/` (001-041, skipping 020):
 
 | Migration | Description |
 |---|---|
@@ -625,6 +625,9 @@ Docker Compose files:
 | `036_create_rule_translations_table` | Multilingual rule translations table |
 | `037_move_frozen_tables_to_schema` | Move frozen feature tables to `frozen` schema |
 | `038_add_structured_scope_gin_indexes` | GIN indexes on `scope_structured` JSONB for fast multi-axis scope queries |
+| `039_add_body_jsonb_column` | Flexible JSONB body storage for rule kind polymorphism (NormativeBody, ComputationalBody, etc.) |
+| `040_add_language_column` | Language tracking column on rules for multilingual support |
+| `041_create_governance_policies_table` | ABAC governance policies table for attribute-based access control |
 
 ---
 
@@ -639,7 +642,7 @@ Docker Compose files:
 
 Temperature is always 1.0 (default). Never change it -- degrades Gemini 3 reasoning.
 
-LLM provider is pluggable via `adapters/llm/base.py` (`LLMProvider` Protocol). Gemini is the default; Anthropic, OpenAI, and self-hosted implementations are planned.
+LLM provider is pluggable via `adapters/llm/base.py` (`LLMProvider` Protocol). Gemini is the default; Anthropic Claude (`adapters/llm/anthropic.py`), OpenAI (`adapters/llm/openai.py`), and self-hosted (`adapters/llm/local.py`) are implemented. The LLM router (`adapters/llm/router.py`) provides fallback chains, circuit breaker pattern, and per-tenant provider overrides.
 
 ---
 

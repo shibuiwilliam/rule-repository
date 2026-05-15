@@ -57,20 +57,20 @@ Where traditional rule engines require translating human rules into formal logic
 - **Contract review CLI**: `rulerepo-review-contract` evaluates contracts from the command line against organizational clause rules.
 - **Action check CLI**: `rulerepo-check-action` evaluates human actions (overtime registration, leave requests) against applicable rules.
 
-## Platform Metrics (as of 2026-05-15)
+## Platform Metrics (as of 2026-05-16)
 
 | Metric | Value |
 |--------|-------|
 | API Routers | 40 |
 | ORM Models | 37 |
-| Alembic Migrations | 37 |
+| Alembic Migrations | 40 |
 | MCP Tools | 24 |
 | Frontend Pages | 61 |
 | Persona Portals | 9 |
 | Domain Packs | 6 |
 | Domain Modules (server) | 8 |
 | Background Workers (cron) | 9 |
-| Test Files | 117 |
+| Test Files | 102 |
 | Evaluation Surfaces | 7 |
 | Subject Kinds | 8 |
 | Rule Kinds | 5 |
