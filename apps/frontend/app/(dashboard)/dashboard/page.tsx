@@ -12,9 +12,16 @@ interface SummaryData {
   total_rules: number;
   compliance_rate: number;
   evaluations_today: number;
-  pending_actions: number;
+  pending_actions: number | Record<string, number>;
   rules_by_status: Record<string, number>;
   top_violated_rules: Array<{ rule_id: string; statement: string; deny_count: number }>;
+}
+
+/** Resolve pending_actions to a number — the API may return an object with sub-counts. */
+function resolvePendingActions(val: number | Record<string, number> | undefined): number {
+  if (val == null) return 0;
+  if (typeof val === "number") return val;
+  return Object.values(val).reduce((a, b) => a + b, 0);
 }
 
 function useSummary() {
@@ -67,7 +74,7 @@ function ComplianceDashboard({ data }: { data: SummaryData | null }) {
         <KpiCard label="Compliance Rate" value={`${rate}%`} color={rate >= 90 ? "text-green-600" : rate >= 70 ? "text-yellow-600" : "text-red-600"} />
         <KpiCard label="Active Rules" value={data?.total_rules ?? 0} />
         <KpiCard label="Evaluations Today" value={data?.evaluations_today ?? 0} />
-        <KpiCard label="Pending Actions" value={data?.pending_actions ?? 0} />
+        <KpiCard label="Pending Actions" value={resolvePendingActions(data?.pending_actions)} />
       </div>
       <QuickLinks links={[
         { href: "/audit", label: "Audit Log", desc: "View hash-chained audit trail" },
@@ -86,7 +93,7 @@ function LegalDashboard({ data }: { data: SummaryData | null }) {
       <p className="mt-1 text-sm text-gray-500">Contract review, NDA compliance, and regulatory tracking</p>
       <div className="mt-6 grid grid-cols-3 gap-4">
         <KpiCard label="Active Rules" value={data?.total_rules ?? 0} />
-        <KpiCard label="Pending Reviews" value={data?.pending_actions ?? 0} />
+        <KpiCard label="Pending Reviews" value={resolvePendingActions(data?.pending_actions)} />
         <KpiCard label="Evaluations Today" value={data?.evaluations_today ?? 0} />
       </div>
       <QuickLinks links={[
@@ -107,7 +114,7 @@ function HrDashboard({ data }: { data: SummaryData | null }) {
       <div className="mt-6 grid grid-cols-3 gap-4">
         <KpiCard label="Active HR Rules" value={data?.total_rules ?? 0} />
         <KpiCard label="Evaluations Today" value={data?.evaluations_today ?? 0} />
-        <KpiCard label="Pending Actions" value={data?.pending_actions ?? 0} />
+        <KpiCard label="Pending Actions" value={resolvePendingActions(data?.pending_actions)} />
       </div>
       <QuickLinks links={[
         { href: "/rules?scope=hr", label: "HR Rules", desc: "Attendance, overtime, and leave rules" },
@@ -127,7 +134,7 @@ function FinanceDashboard({ data }: { data: SummaryData | null }) {
       <div className="mt-6 grid grid-cols-3 gap-4">
         <KpiCard label="Active Rules" value={data?.total_rules ?? 0} />
         <KpiCard label="Evaluations Today" value={data?.evaluations_today ?? 0} />
-        <KpiCard label="Pending Actions" value={data?.pending_actions ?? 0} />
+        <KpiCard label="Pending Actions" value={resolvePendingActions(data?.pending_actions)} />
       </div>
       <QuickLinks links={[
         { href: "/rules?scope=finance", label: "Finance Rules", desc: "Expense, invoice, and revenue rules" },
@@ -150,7 +157,7 @@ function EngineeringDashboard({ data }: { data: SummaryData | null }) {
         <KpiCard label="Compliance Rate" value={`${rate}%`} color={rate >= 90 ? "text-green-600" : "text-yellow-600"} />
         <KpiCard label="Active Rules" value={data?.total_rules ?? 0} />
         <KpiCard label="Evaluations Today" value={data?.evaluations_today ?? 0} />
-        <KpiCard label="Pending Actions" value={data?.pending_actions ?? 0} />
+        <KpiCard label="Pending Actions" value={resolvePendingActions(data?.pending_actions)} />
       </div>
       {data?.top_violated_rules && data.top_violated_rules.length > 0 && (
         <div className="mt-8">
@@ -185,7 +192,7 @@ function ExecutiveDashboard({ data }: { data: SummaryData | null }) {
         <KpiCard label="Overall Compliance" value={`${rate}%`} color={rate >= 90 ? "text-green-600" : rate >= 70 ? "text-yellow-600" : "text-red-600"} />
         <KpiCard label="Total Rules" value={data?.total_rules ?? 0} />
         <KpiCard label="Daily Evaluations" value={data?.evaluations_today ?? 0} />
-        <KpiCard label="Action Items" value={data?.pending_actions ?? 0} />
+        <KpiCard label="Action Items" value={resolvePendingActions(data?.pending_actions)} />
       </div>
       {data?.rules_by_status && (
         <div className="mt-8">
@@ -218,7 +225,7 @@ function DefaultDashboard({ data }: { data: SummaryData | null }) {
         <KpiCard label="Compliance Rate" value={`${rate}%`} />
         <KpiCard label="Active Rules" value={data?.total_rules ?? 0} />
         <KpiCard label="Evaluations Today" value={data?.evaluations_today ?? 0} />
-        <KpiCard label="Pending Actions" value={data?.pending_actions ?? 0} />
+        <KpiCard label="Pending Actions" value={resolvePendingActions(data?.pending_actions)} />
       </div>
     </div>
   );
