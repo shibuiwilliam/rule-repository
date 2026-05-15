@@ -49,13 +49,31 @@ Where traditional rule engines require translating human rules into formal logic
 - **Verdict drift detection**: weekly replay of canary inputs detects unexpected LLM behavior changes.
 - **Polyglot rules**: rules can have translations in multiple locales with consistency verification.
 - **Surface abstraction**: 7 evaluation surfaces (code, contract, document, human_action, message, transaction, generic) normalize different input types into a common pipeline. Adding a new surface means implementing one adapter.
-- **Domain Packs**: 9 bundled rule packs with scopes, UI routes, prompts, analyzers, and sample data per domain (code, contract, HR attendance, expense, communication, legal, sales, IT security, governance). Loaded at startup by `DomainPackLoader`, controlled by `ENABLED_PACKS` env var.
+- **Domain Packs**: 6 domain packs under `packages/domain-packs/` (engineering, legal, hr, finance, sales, communication), each with `pack.yaml`, prompts, analyzers, templates, and sample data. Loaded at startup by `DomainPackLoader`, controlled by `DOMAIN_PACKS_ENABLED` env var.
 - **Hybrid evaluation**: rules with `kind=computational` and structured `constraints` are evaluated deterministically before the LLM. Numeric thresholds (expense caps, overtime limits), date comparisons, and enum checks run without LLM calls — only ambiguous cases fall through.
 - **Structured scope**: multi-axis scope with `domain`, `org_unit`, `subject_type` dimensions plus ad-hoc attributes (jurisdiction, role, confidentiality). Enables precise cross-organizational rule matching like "US managers' expense policy".
 - **Feature flags**: comprehensive flag system (see `FEATURES.md` at the repository root) controlling infrastructure tiers, cross-org features, opt-in features, and frozen features. All flags verified for graceful degradation.
 - **Norm lineage**: trace rule derivation chains from source laws/regulations down to operational rules (and vice versa). Background propagation of upstream norm amendments.
 - **Contract review CLI**: `rulerepo-review-contract` evaluates contracts from the command line against organizational clause rules.
 - **Action check CLI**: `rulerepo-check-action` evaluates human actions (overtime registration, leave requests) against applicable rules.
+
+## Platform Metrics (as of 2026-05-15)
+
+| Metric | Value |
+|--------|-------|
+| API Routers | 40 |
+| ORM Models | 37 |
+| Alembic Migrations | 37 |
+| MCP Tools | 24 |
+| Frontend Pages | 61 |
+| Persona Portals | 9 |
+| Domain Packs | 6 |
+| Domain Modules (server) | 8 |
+| Background Workers (cron) | 9 |
+| Test Files | 117 |
+| Evaluation Surfaces | 7 |
+| Subject Kinds | 8 |
+| Rule Kinds | 5 |
 
 ## Get Started
 

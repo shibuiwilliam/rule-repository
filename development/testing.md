@@ -2,7 +2,7 @@
 
 Comprehensive guide to running, writing, and maintaining tests in the Rule Repository.
 
-> **Current test count**: 1,184+ unit tests across 100+ test files. All pass with zero regressions.
+> **Current test count**: 1,184+ unit tests across 117 test files. All pass with zero regressions.
 
 ---
 
@@ -49,7 +49,7 @@ cd packages/rule-client && uv run pytest
 
 ## Test Structure
 
-The project has **1,184+ test functions** across 100+ test files in five locations (unit + integration + safety + e2e + SDK). Test count grew significantly through Phase 7 (subject polymorphism, classification RLS), the RR-001–040 improvements (domain modules, safety, operability, eval harness), Phase 8 additions (surface-based template routing, domain SDK resources, MCP domain tools), and post-Phase 8 enhancements (deterministic evaluator, domain pack loader, structured scope matching, kind dispatch).
+The project has **1,184+ test functions** across 117 test files in five locations (unit + integration + safety + e2e + SDK). Test count grew significantly through Phase 7 (subject polymorphism, classification RLS), the RR-001–040 improvements (domain modules, safety, operability, eval harness), Phase 8 additions (surface-based template routing, domain SDK resources, MCP domain tools), and post-Phase 8 enhancements (deterministic evaluator, domain pack loader, structured scope matching, kind dispatch).
 
 ### Unit Tests (`apps/server/tests/unit/`)
 
@@ -91,6 +91,31 @@ Pure logic tests with no external services. Fast (sub-second per file).
 | `test_deterministic_evaluator.py` | 33 | Deterministic constraint evaluation: `NumericConstraint` (pass/fail/missing/GE), `DateConstraint` (pass/fail/missing), `EnumConstraint` (pass/fail), constraint serialization roundtrips, dot-path resolution, `evaluate_from_dicts()`, real-world scenarios (overtime 45h cap, entertainment 5000 JPY cap) |
 | `test_domain_pack_loader.py` | 84 | Domain pack loader: discovery (all 9 packs), `ENABLED_PACKS` filtering, `get_pack()`, `get_packs_for_surface()`, `get_packs_for_persona()`, prompt file listing, `PackManifest` construction/defaults, parametrized structure validation (pack.yaml, rules/, prompts/, samples/, analyzers/, `__init__.py`, required rule fields) for all 9 packs |
 | `test_evaluation/test_kind_dispatch.py` | varies | Kind-based dispatch: partition normative vs. local rules, evaluate computational/procedural/definitional/principle rules locally without LLM |
+
+### Acceptance Tests (`apps/server/tests/acceptance/`)
+
+End-to-end scenario tests that verify cross-cutting business workflows.
+
+| File | What it covers |
+|---|---|
+| `test_contract_review.py` | Contract review workflow: upload, extract clauses, evaluate against legal rules |
+| `test_cross_department_rbac.py` | Cross-department RBAC enforcement: role-based access across org units |
+| `test_expense_roundtrip.py` | Expense policy roundtrip: submit transaction, evaluate against finance rules, verdict |
+| `test_hr_attendance.py` | HR attendance compliance: overtime caps, 36-agreement checks |
+| `test_multilingual_rule.py` | Multilingual rule lifecycle: create, translate, verify equivalence |
+| `test_sales_email.py` | Sales email compliance: communication subject evaluation against sales policies |
+
+### Deterministic Evaluator Tests
+
+Covered by `test_deterministic_evaluator.py` (listed under unit tests above). Tests numeric, date, and enum constraints, serialization roundtrips, dot-path resolution, and real-world scenarios (overtime 45h cap, entertainment 5000 JPY cap).
+
+### Domain Pack Scaffolding Tests
+
+Covered by `test_domain_pack_loader.py` (listed under unit tests above). Validates discovery of all 9 packs, filtering by `ENABLED_PACKS`, manifest construction, and parametrized structure validation (pack.yaml, rules/, prompts/, samples/, analyzers/, `__init__.py`, required rule fields) for every pack.
+
+### Cross-Domain Coverage Tests
+
+Tests spanning multiple `EvaluationSubject` kinds and domain packs to ensure the subject-dispatched evaluation engine handles all subject types correctly. Includes `test_subjects.py` (SubjectKind enum, adapters, registry) and acceptance tests that exercise different domains (legal, HR, finance, sales) through the submissions pipeline.
 
 ### Safety Tests (`apps/server/tests/safety/`)
 

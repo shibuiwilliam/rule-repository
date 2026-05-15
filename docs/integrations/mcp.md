@@ -65,13 +65,7 @@ Returns a list of candidate rules discovered from the provided files, with confi
 
 Evaluate a code change or action against applicable rules.
 
-**Parameters:** `diff` (string), `file_path` (string), `intent` (string, optional), `environment` (string, optional -- when provided, evaluates against the snapshot deployed to this environment instead of the live rule corpus; valid values: `production`, `staging`, `development`)
-
-#### `submit_feedback`
-
-Submit a correction when an agent disagrees with or improves upon a rule verdict. Feeds the self-improving flywheel.
-
-**Parameters:** `rule_id` (string), `evaluation_id` (string, optional), `correction` (string), `reason` (string, optional)
+**Parameters:** `diff` (string), `file_paths` (array of strings, optional), `intended_action` (string, optional), `scope` (string, optional), `facts` (string, optional -- JSON key-value context), `environment` (string, optional -- when provided, evaluates against the snapshot deployed to this environment instead of the live rule corpus; valid values: `production`, `staging`, `development`)
 
 ### Governance
 
@@ -277,6 +271,10 @@ A coding agent can register, receive personalized rules, and challenge verdicts:
 4. challenge_verdict(verdict_id="v-123", reason="Rule does not apply to internal endpoints")
    -> Challenge recorded; if pattern accumulates, may auto-draft rule amendment
 ```
+
+---
+
+> **Tool count accuracy note (2026-05-15):** The 24 tools listed above have been verified against the `async def` function definitions in `apps/server/src/rulerepo_server/mcp/tools.py`. If tools are added or removed in the code, update this document accordingly.
 
 ## See Also
 

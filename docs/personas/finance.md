@@ -45,3 +45,10 @@ The Finance persona provides a transaction- and expense-centric view of the Rule
 ## Templates
 - `finance-expense-jp` -- Japanese expense compliance (entertainment limits, receipt thresholds, computational rules)
 - `finance-procurement` -- Procurement compliance (Subcontracting Act, three-quote rule)
+
+## Implementation Status
+
+- **Route group**: `(finance)`
+- **Pages**: Dashboard + 4 sub-pages
+- **Integration level**: Fully API-integrated
+- **Notable sub-pages**: expenses, controls, audit, transactions/[id]

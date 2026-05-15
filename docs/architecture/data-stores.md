@@ -41,7 +41,7 @@ PostgreSQL 17 holds the canonical data. All writes go through PostgreSQL first. 
 | `governance_sessions` | Multi-agent governance session tracking. |
 | `rule_translations` | Multilingual rule translations (per-locale statement, rationale, examples). |
 
-37 ORM models across 38 Alembic migrations (001–038, skipping 020). Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
+37 ORM models across 37 Alembic migrations (001–038, skipping 020). Extensions: `uuid-ossp` and `pgcrypto` are installed on first start.
 
 Note: The `rules` table includes `maturity_level` (experimental/stable/proven), `false_positive_count`, `true_positive_count`, `classification`, `subject_kinds`, `jurisdiction`, `kind` (normative/computational/procedural/definitional/principle), `constraints` (JSONB for deterministic evaluation), and `structured_scope` (JSONB with domain/org_unit/subject_type dimensions) columns.
 

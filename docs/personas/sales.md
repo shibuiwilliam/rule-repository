@@ -44,3 +44,10 @@ The Sales persona provides a deal- and pricing-centric view of the Rule Reposito
 
 ## Templates
 - `sales-pricing-jp` -- Japanese pricing compliance (discount limits, resale price maintenance)
+
+## Implementation Status
+
+- **Route group**: `(sales)`
+- **Pages**: Dashboard only
+- **Integration level**: Partially integrated
+- **Notable sub-pages**: None yet; only the main dashboard page is implemented

@@ -44,3 +44,10 @@ The HR persona provides an employee- and workplace-centric view of the Rule Repo
 ## Templates
 - `hr-attendance-jp` -- Japanese attendance and overtime compliance (45h/month cap, 36-agreement clauses, computational rules)
 - `hr-conduct` -- Workplace conduct standards (harassment, conflict of interest, social media)
+
+## Implementation Status
+
+- **Route group**: `(hr)`
+- **Pages**: Dashboard + 6 sub-pages
+- **Integration level**: Fully API-integrated
+- **Notable sub-pages**: attendance, leave, lifecycle, violations, policies, events/[id]

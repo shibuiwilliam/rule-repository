@@ -44,3 +44,10 @@ The Legal persona provides a contract- and regulation-centric view of the Rule R
 ## Templates
 - `legal-contracts-jp` -- Japanese contract compliance (NDA, anti-social-forces clause, governing law, etc.)
 - `legal-contracts-en-us` -- US contract compliance (limitation of liability, indemnification, etc.)
+
+## Implementation Status
+
+- **Route group**: `(legal)`
+- **Pages**: Dashboard + 4 sub-pages
+- **Integration level**: Partially integrated
+- **Notable sub-pages**: clauses, lineage, redlines, contracts/review/[id]

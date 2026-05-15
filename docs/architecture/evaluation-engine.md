@@ -53,6 +53,7 @@ This dispatch reduces LLM token consumption significantly for quantitative rules
 - `NumericConstraint`: `{field_path, operator, threshold, unit}` — e.g., `{field_path: "monthly_overtime_hours", operator: "<=", threshold: 45, unit: "hours"}`
 - `DateConstraint`: `{field_path, operator, reference_date}`
 - `EnumConstraint`: `{field_path, allowed_values}`
+- `LookupConstraint`: `{field_path, lookup_table, key_column, result_column}` — table-driven lookups evaluated by the `lookup_evaluator`
 
 ### 4. LLM Judgment (Batched)
 

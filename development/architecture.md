@@ -6,10 +6,10 @@ The Rule Repository is a monorepo with 10 services orchestrated via Docker Compo
 
 | Component | Tech | Port | Purpose |
 |---|---|---|---|
-| Backend API | Python 3.13 + FastAPI | 8000 | 38 API routers covering rules, evaluation, search, discovery, governance, compliance, and more |
+| Backend API | Python 3.13 + FastAPI | 8000 | 40 API routers covering rules, evaluation, search, discovery, governance, compliance, and more |
 | MCP Server | Python 3.13 + FastMCP | 8001 | AI agent tool integration (MCP protocol, 24 tools) |
 | Frontend | TypeScript + Next.js 15 | 3000 | Operator console with 61 pages across 9 persona route groups, English/Japanese i18n |
-| PostgreSQL | 17-alpine | 5432 | System of record (37 ORM models, 38 migrations) with Row-Level Security |
+| PostgreSQL | 17-alpine | 5432 | System of record (37 ORM models, 37 migrations) with Row-Level Security |
 | Elasticsearch | 8.17 | 9200 | Full-text + vector search with document-level security |
 | Neo4j | 5-community | 7474/7687 | Rule relationship graph |
 | Redis | 7-alpine | 6379 | Job queue for arq background worker |
@@ -25,7 +25,7 @@ The Rule Repository is a monorepo with 10 services orchestrated via Docker Compo
 src/rulerepo_server/
 ├── main.py                         # FastAPI app factory, router registration
 ├── api/
-│   └── v1/                         # 38 API routers
+│   └── v1/                         # 40 API routers
 │       ├── rules.py                #   CRUD, retire, revisions, relationships, graph
 │       ├── search.py               #   fulltext, vector, hybrid, category, context
 │       ├── evaluation.py           #   evaluate, quick, applicable-rules, get by ID
@@ -57,6 +57,7 @@ src/rulerepo_server/
 │       ├── regulatory.py           #   regulatory source management (RR-012)
 │       ├── risks.py                #   risk register (RR-019)
 │       ├── scim.py                 #   SCIM 2.0 protocol (RR-007)
+│       ├── submissions.py          #   universal submissions intake (any EvaluationSubject kind)
 │       ├── tenants.py              #   tenant management (RR-007)
 │       ├── translations.py         #   polyglot translation management (RR-020)
 │       ├── upcoming_changes.py     #   scheduled rule changes (RR-036)
@@ -319,16 +320,13 @@ src/rulerepo_server/
 │   ├── archival.py                 # Rule archival and retention
 │   ├── norm_lineage_propagation.py # Propagate norm changes downstream
 │   └── translation_drift.py       # Detect translation locale drift
-├── domain_packs/                   # Bundled rule packs per domain (9 packs)
-│   ├── code/                       #   Engineering rules pack
+├── domain_packs/                   # Bundled rule packs per domain (6 packs)
 │   ├── communication/              #   Communications policy pack
-│   ├── contract/                   #   Legal contract rules pack
-│   ├── expense/                    #   Finance expense/invoice pack
-│   ├── governance/                 #   Corporate governance pack (new)
-│   ├── hr_attendance/              #   HR attendance/leave pack
-│   ├── it_security/                #   IT security pack (new)
-│   ├── legal/                      #   Legal/regulatory pack (new)
-│   └── sales/                      #   Sales/pricing pack (new)
+│   ├── engineering/                #   Engineering rules pack
+│   ├── finance/                    #   Finance expense/invoice pack
+│   ├── hr/                         #   HR attendance/leave pack
+│   ├── legal/                      #   Legal/regulatory pack
+│   └── sales/                      #   Sales/pricing pack
 └── schemas/                        # Pydantic request/response models
     ├── rule.py, common.py, search.py, evaluation.py, extraction.py
     ├── intent.py, intelligence.py, discovery.py, feedback.py
@@ -586,7 +584,7 @@ Docker Compose files:
 
 ## Alembic Migrations
 
-38 migrations in `apps/server/alembic/versions/` (001-038, skipping 020):
+37 migrations in `apps/server/alembic/versions/` (001-038, skipping 020):
 
 | Migration | Description |
 |---|---|

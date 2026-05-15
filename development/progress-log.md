@@ -81,3 +81,14 @@
 2026-05-14 — ORM models: 37 total (added DepartmentModel, CapacityAssignmentModel, RuleOwnershipModel, RuleTranslationModel, EvaluationDailyAggModel).
 2026-05-14 — Frontend: 61 pages across 9 persona route groups, 12 shared components, 65+ API functions in lib/api.ts.
 2026-05-14 — docs: Second comprehensive pass — aligned all counts (38 routers, 38 migrations, 37 ORM models, 61 pages, 9 cron jobs, 24 MCP tools).
+
+## Cross-Organizational Refocus
+
+2026-05-15 — feat: Cross-organizational refocus completion. Removed external connectors (DocuSign, Salesforce, SAP, Workday, etc.), business system integrations, discovery connectors (Confluence, e-Gov, EUR-Lex, etc.), and observability instrumentation (Prometheus, Jaeger, OpenTelemetry).
+2026-05-15 — refactor: Domain protocol implementations replaced by 6 domain packs (engineering, legal, hr, finance, sales, communication) under packages/domain-packs/.
+2026-05-15 — feat: Deterministic evaluation module finalized (numeric_evaluator, schema_evaluator, lookup_evaluator) under services/evaluation/deterministic/.
+2026-05-15 — feat: 6 subject context assemblers (business_event, code_change, communication, decision_request, document_artifact, transaction) under services/evaluation/subjects/.
+2026-05-15 — feat: 6 new extractors (contract, email_archive, handbook, minutes, regulation, tabular) under services/extraction/extractors/.
+2026-05-15 — feat: Universal submissions endpoint (POST /api/v1/submissions) and SCIM 2.0 provisioning (api/v1/scim.py). API routers: 38→40.
+2026-05-15 — test: Acceptance tests added (contract_review, cross_department_rbac, expense_roundtrip, hr_attendance, multilingual_rule, sales_email). Test files: 117 total.
+2026-05-15 — docs: Comprehensive documentation update across docs/ and development/ to reflect refocus completion. All metrics verified against codebase.

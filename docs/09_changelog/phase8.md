@@ -209,3 +209,70 @@ All pages pass `pnpm typecheck` and `pnpm lint` with zero new warnings.
 ### Structured Scope Performance
 
 - **Migration 038** (`add_structured_scope_gin_indexes`): Added GIN indexes on `scope_structured` JSONB column for fast multi-axis scope queries (domain, org_unit, subject_type).
+
+---
+
+## 2026-05-15 — Cross-Organizational Refocus Completion
+
+### Connector & Integration Cleanup
+
+The refocus commit removed over-engineered external integrations that were not core to the cross-organizational rule platform:
+
+- **Removed connectors**: DocuSign, Email, GitHub, Kintone, Salesforce, SAP, Slack, Teams, Webhook, Workday adapters deleted from `adapters/connectors/`.
+- **Removed business system integrations**: Attendance, contract, and expense business system adapters removed from `integrations/business_systems/`.
+- **Removed discovery connectors**: Confluence, e-Gov, EUR-Lex, Google Drive, Notion, SharePoint connectors removed.
+- **Removed domain protocol implementations**: Moved to domain pack architecture.
+- **Removed observability**: Prometheus metrics, Jaeger tracing, and OpenTelemetry instrumentation removed.
+
+### Domain Pack Architecture (Final)
+
+Six domain packs finalized under `packages/domain-packs/`:
+
+| Pack | Subject Types | Key Templates |
+|------|--------------|---------------|
+| **engineering** | code_file, python_source, typescript_source, react_component, api_endpoint, test_file | python-fastapi, typescript-react |
+| **legal** | contract_draft, clause, statute_reference, legal_opinion | legal-contracts-jp, legal-contracts-en-us |
+| **hr** | employee_event, attendance_record, leave_request, conduct_report | hr-attendance-jp, hr-conduct |
+| **finance** | expense_report, purchase_order, invoice, journal_entry | finance-expense-jp, finance-procurement |
+| **sales** | deal_proposal, discount_request, pricing_change | sales-pricing-jp |
+| **communication** | marketing_copy, advertisement, press_release, internal_memo | communication-marketing-jp |
+
+Each pack includes `pack.yaml` manifest, `prompts/` (evaluate, extract, infer_metadata), `analyzers/`, and `templates/`.
+
+### Deterministic Evaluation Expansion
+
+- **`services/evaluation/deterministic/`**: Full module with runner, numeric_evaluator, schema_evaluator, lookup_evaluator, and constraint definitions.
+- **`services/evaluation/subjects/`**: Six subject context assemblers (business_event, code_change, communication, decision_request, document_artifact, transaction).
+
+### Extraction Pipeline Expansion
+
+New extractors added under `services/extraction/extractors/`:
+- `contract.py`, `email_archive.py`, `handbook.py`, `minutes.py`, `regulation.py`, `tabular.py`
+
+### New API Routers (38 → 40)
+
+Added: `submissions.py` (universal intake endpoint) and `scim.py` (SCIM 2.0 identity provisioning).
+
+### New Schemas
+
+- `schemas/submissions.py`: Pydantic models for the universal submissions endpoint.
+
+### Test Suite Updates
+
+- Acceptance tests added: contract_review, cross_department_rbac, expense_roundtrip, hr_attendance, multilingual_rule, sales_email.
+- New unit tests: deterministic_evaluator, evaluation_subject, extraction_pipeline, governance, lookup_evaluator, schema_evaluator, submissions_schema.
+- Integration tests: cross_domain_coverage, domain_pack_scaffolding, domain_packs_all, multilingual, scope.
+- Removed: connector-related tests (test_connectors, test_connector_hub, test_business_connectors).
+- **Total: 117 test files.**
+
+### Updated Metrics
+
+| Metric | Before Refocus | After Refocus |
+|--------|---------------|---------------|
+| API Routers | 38 | 40 |
+| ORM Models | 37 | 37 |
+| Alembic Migrations | 38 | 37 |
+| Test Files | ~100 | 117 |
+| Domain Packs (packages/) | 9 (mixed) | 6 (clean) |
+| MCP Tools | 24 | 24 |
+| Frontend Pages | 61 | 61 |

@@ -2,14 +2,14 @@
 
 ## Deployable Components
 
-The Rule Repository consists of ten services (plus setup containers), all orchestrated locally via Docker Compose. The backend exposes 38 API routers backed by 30+ service directories. Rules are scoped to projects and departments for multi-team, cross-organizational governance.
+The Rule Repository consists of ten services (plus setup containers), all orchestrated locally via Docker Compose. The backend exposes 40 API routers backed by 30+ service directories. Rules are scoped to projects and departments for multi-team, cross-organizational governance.
 
 | Component | Technology | Port | Role |
 |---|---|---|---|
-| **Backend API** | Python 3.13 / FastAPI | 8000 | System of record. 38 API routers covering rules, evaluation, search, discovery, governance, compliance, and more. |
+| **Backend API** | Python 3.13 / FastAPI | 8000 | System of record. 40 API routers covering rules, evaluation, submissions, search, discovery, governance, SCIM provisioning, compliance, and more. |
 | **MCP Server** | Python / FastMCP | 8001 | Exposes rule search, evaluation, governance, and context delivery to AI agents via the Model Context Protocol (24 tools including domain-specific retrieval and evaluation). |
 | **Frontend** | TypeScript / Next.js 15 / Tailwind | 3000 | Operator console with 61 pages across 9 persona route groups for browsing, searching, uploading documents, reviewing evaluations, governance proposals, agent management, department-specific dashboards (Finance 505 LOC, HR 649 LOC, Legal 926 LOC, Marketing 681 LOC), and more. Persona-aware navigation with English/Japanese i18n. |
-| **PostgreSQL** | PostgreSQL 17 | 5432 | Relational store (37 ORM models, 38 migrations) with Row-Level Security for classification-based access control. Stores rules, revisions, relationships, documents, audit log, policies, evaluations, proposals, agent profiles, snapshots, federations, departments, capacities, translations, and cache. |
+| **PostgreSQL** | PostgreSQL 17 | 5432 | Relational store (37 ORM models, 37 migrations) with Row-Level Security for classification-based access control. Stores rules, revisions, relationships, documents, audit log, policies, evaluations, proposals, agent profiles, snapshots, federations, departments, capacities, translations, and cache. |
 | **Elasticsearch** | Elasticsearch 8.17 | 9200 | Full-text (BM25) and vector (768-dim cosine) search index for rules and documents, with document-level security filtering. |
 | **Neo4j** | Neo4j 5 Community | 7474 / 7687 | Directed graph of rule relationships (REFINES, OVERRIDES, CONFLICTS_WITH, DEPENDS_ON, DERIVES_FROM, SUCCEEDS, LOCALIZES). |
 | **Redis** | Redis 7 Alpine | 6379 | Job queue and result backend for background workers. |

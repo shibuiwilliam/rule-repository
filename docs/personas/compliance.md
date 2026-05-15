@@ -63,3 +63,10 @@ All domain templates are accessible from the Compliance persona:
 - `finance-procurement` -- Procurement compliance
 - `sales-pricing-jp` -- Japanese pricing compliance
 - `communication-marketing-jp` -- Japanese marketing compliance (Act against Unjustifiable Premiums and Misleading Representations, Pharmaceutical and Medical Device Act)
+
+## Implementation Status
+
+- **Route group**: `(compliance)`
+- **Pages**: Dashboard + 4 sub-pages
+- **Integration level**: Partially integrated (mostly static data)
+- **Notable sub-pages**: bundles, exceptions, audit-packets, regulatory

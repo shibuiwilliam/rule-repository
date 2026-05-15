@@ -1,5 +1,7 @@
 # Evaluate API
 
+> **Note:** For new integrations, prefer the [Universal Submissions API](submissions.md) (`POST /api/v1/submissions`), which accepts any `EvaluationSubject` kind (code changes, business events, documents, transactions, communications, decision requests). The `/evaluate` endpoint below remains for backward compatibility and internally constructs a `code_change` subject forwarded to the submissions pipeline.
+
 ## POST /api/v1/evaluate
 
 The core evaluation endpoint. Accepts code changes, file information, or free-form facts and returns per-rule verdicts with code locations and fix suggestions.

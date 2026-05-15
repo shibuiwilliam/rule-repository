@@ -55,14 +55,14 @@ After about a minute:
 
 | Service | URL | Purpose |
 |---|---|---|
-| Backend API | http://localhost:8000 | FastAPI server (41 API routers) |
+| Backend API | http://localhost:8000 | FastAPI server (40 API routers) |
 | Swagger UI | http://localhost:8000/docs | Interactive API explorer |
 | Frontend | http://localhost:3000 | Persona-specific consoles (61 pages, 9 route groups) |
 | PostgreSQL | localhost:5432 | Source of truth with Row-Level Security |
 | Elasticsearch | localhost:9200 | Full-text + vector hybrid search |
 | Neo4j | localhost:7474 | Rule relationship graph + norm lineage |
 | Redis | localhost:6379 | Background job queue (arq, 9 cron jobs) |
-| MCP Server | localhost:8001 | AI agent tool integration (25 tools) |
+| MCP Server | localhost:8001 | AI agent tool integration (24 tools) |
 
 ### Start with Postgres only (Tier 1)
 
@@ -186,7 +186,7 @@ Each rule carries structured metadata: modality (MUST / MUST_NOT / SHOULD / MAY 
 
 4. **Track norm lineage.** Rules don't exist in isolation. A department overtime policy *derives from* the Labor Standards Act. When the law changes, every downstream rule is automatically flagged for review.
 
-5. **Act on the results.** Integrate via REST API, MCP tools for AI agents, CLI commands in CI/CD, or the Conversational Assistant for end users. Each persona (Legal, HR, Finance, Engineering, Compliance) has a dedicated console.
+5. **Act on the results.** Integrate via REST API, MCP tools for AI agents, CLI commands in CI/CD, or the Conversational Assistant for end users. Each persona (Legal, HR, Finance, Engineering, Compliance, Marketing, Security, Sales, Admin) has a dedicated console.
 
 ---
 
@@ -220,48 +220,51 @@ A **Domain Pack** bundles rules, prompt hints, samples, and frontend route decla
 | **Communication** | Message | Compliance | 20 communication policies |
 | **Expense** | Transaction | Finance | 15 fiscal policy rules |
 
+There are also domain packs for IT Security, Sales, Governance, and Legal, each with their own prompts, templates, and analyzers.
+
 ---
 
 ## Architecture
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                     Rule Repository Server                      │
-│                                                                 │
-│  ┌──────────────────┐  ┌────────────────────────────────────┐  │
-│  │ Domain-Neutral    │  │ Surfaces (8)                       │  │
-│  │ Core              │  │                                    │  │
-│  │                   │  │ Code  Contract  Human Action       │  │
-│  │ Rule CRUD+Search  │  │ Transaction  Document  Message     │  │
-│  │ Evaluation Engine │  │ Generic                            │  │
-│  │ Norm Lineage      │  │                                    │  │
-│  │ Audit + Compliance│  │ Each: adapter, subject dataclass,  │  │
-│  │ Intelligence      │  │ prompt hints, PII config           │  │
-│  │ Proposals + Gov.  │  ├────────────────────────────────────┤  │
-│  │ Fact Store        │  │ Domain Packs (5)                   │  │
-│  │ Department RBAC   │  │                                    │  │
-│  │ Risk + Attestation│  │ Code  Contract  HR Attendance      │  │
-│  │ Multi-tenant      │  │ Communication  Expense             │  │
-│  └──────────────────┘  └────────────────────────────────────┘  │
-│                                                                 │
-│  ┌──────────────────┐  ┌────────────────────────────────────┐  │
-│  │ LLM Abstraction  │  │ Integration Layer                  │  │
-│  │                   │  │                                    │  │
-│  │ Primary/fallback  │  │ 41 REST API routers                │  │
-│  │ Gemini, Anthropic │  │ MCP Server (25 tools)              │  │
-│  │ OpenAI, self-host │  │ Business Event Ingestion           │  │
-│  └──────────────────┘  │ Gateway + GitHub (opt-in)           │  │
-│                         └────────────────────────────────────┘  │
-│                                                                 │
-│  PostgreSQL 17     Elasticsearch 8     Neo4j 5     Redis 7     │
-│  (source of truth) (search index)      (graph)     (jobs)      │
-└─────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------+
+|                     Rule Repository Server                      |
+|                                                                 |
+|  +------------------+  +------------------------------------+  |
+|  | Domain-Neutral   |  | Surfaces (7)                       |  |
+|  | Core             |  |                                    |  |
+|  |                  |  | Code  Contract  Human Action       |  |
+|  | Rule CRUD+Search |  | Transaction  Document  Message     |  |
+|  | Evaluation Engine|  | Generic                            |  |
+|  | Norm Lineage     |  |                                    |  |
+|  | Audit+Compliance |  | Each: adapter, subject dataclass,  |  |
+|  | Intelligence     |  | prompt hints, PII config           |  |
+|  | Proposals+Gov.   |  +------------------------------------+  |
+|  | Fact Store       |  | Domain Packs (9)                   |  |
+|  | Department RBAC  |  |                                    |  |
+|  | Risk+Attestation |  | Code  Contract  HR Attendance      |  |
+|  | Multi-tenant     |  | Communication  Expense  Legal      |  |
+|  +------------------+  | Sales  IT Security  Governance     |  |
+|                         +------------------------------------+  |
+|                                                                 |
+|  +------------------+  +------------------------------------+  |
+|  | LLM Abstraction  |  | Integration Layer                  |  |
+|  |                  |  |                                    |  |
+|  | Primary/fallback |  | 40 REST API routers                |  |
+|  | Gemini, Anthropic|  | MCP Server (24 tools)              |  |
+|  | OpenAI, self-host|  | Business Event Ingestion           |  |
+|  +------------------+  | CLI (8 commands)                   |  |
+|                         +------------------------------------+  |
+|                                                                 |
+|  PostgreSQL 17     Elasticsearch 8     Neo4j 5     Redis 7     |
+|  (source of truth) (search index)      (graph)     (jobs)      |
++-----------------------------------------------------------------+
 ```
 
 **Design principles:**
 
 - **Postgres is the source of truth.** Elasticsearch and Neo4j are derived projections. If they disagree, Postgres wins and projections are rebuilt.
-- **The evaluation core is surface-agnostic.** No surface-specific code lives in `services/evaluation/core/`. An import-boundary test enforces this.
+- **The evaluation core is surface-agnostic.** No surface-specific code lives in the evaluation core. Surface adapters own all domain knowledge: scope resolution, prompt hints, PII fields.
 - **All LLM calls go through a single router** with primary/fallback chains and per-scope provider overrides. No business logic calls a provider directly.
 - **Department RBAC is non-bypassable.** Every endpoint that returns or mutates rules applies department visibility filtering.
 - **Multi-tenant by construction.** Every entity carries `tenant_id`. Postgres Row-Level Security enforces isolation at the data layer.
@@ -313,8 +316,14 @@ The MCP (Model Context Protocol) server lets AI agents interact with the rule re
 | `find_conflicts` | Detect conflicts between rules |
 | `evaluate_compliance` | Evaluate a code change against applicable rules |
 | `evaluate_subject` | Evaluate any subject (contract, HR event, etc.) against rules |
+| `evaluate_contract` | Evaluate a contract clause against rules |
+| `evaluate_transaction` | Evaluate a financial transaction against rules |
+| `evaluate_communication` | Evaluate a message against communication policies |
 | `discover_rules` | Propose rules from code, configs, or documents |
 | `get_rules_for_context` | Get rules relevant to a coding context |
+| `get_rules_for_contract_review` | Get rules relevant to a contract review |
+| `get_rules_for_transaction` | Get rules relevant to a financial transaction |
+| `get_rules_for_communication` | Get rules relevant to communications |
 | `list_available_surfaces` | List all registered evaluation surfaces |
 | `lookup_norm_lineage` | Walk the norm hierarchy upstream or downstream |
 | `find_clause_conflicts` | Detect conflicts in contract clauses |
@@ -365,6 +374,12 @@ rulerepo export --project backend-api --output rules.yaml
 
 # Zero-config project setup
 rulerepo init --name my-project
+
+# Check system health
+rulerepo doctor
+
+# Verify audit chain integrity
+rulerepo audit verify
 ```
 
 ---
@@ -375,16 +390,17 @@ A Next.js 15 + React 19 + Tailwind CSS frontend with 61 pages organized into 9 p
 
 | Console | Route | Key pages |
 |---|---|---|
-| **Main Dashboard** | `/dashboard` | Rules, search, proposals, playground, agents, intelligence, audit |
+| **Main Dashboard** | `/dashboard` | Rules, search, proposals, playground, agents, intelligence, audit, assistant, departments |
 | **Legal** | `/legal` | Contract review, clause library, redlines, norm lineage |
 | **HR** | `/hr` | Violations, attendance, leave, lifecycle, policies |
 | **Finance** | `/finance` | Transactions, expense policies, audit reports, controls |
 | **Compliance** | `/compliance` | Bundles, audit packets, exception tracking, regulatory feed |
 | **Security** | `/security` | Classification overview |
-| **Marketing** | `/marketing` | Creative review |
+| **Marketing** | `/marketing` | Creative review, guidelines |
+| **Sales** | `/sales` | Dashboard |
 | **Admin** | `/admin` | Tenant management, user provisioning |
 
-Additional pages in the main dashboard: `/assistant` (conversational rule assistant with chat UI and inline citations), `/compliance` (compliance cockpit with department violation trends), `/departments` (department and membership management), `/onboarding` (3-step wizard: select domain, choose templates, scan sources).
+Additional pages in the main dashboard: `/assistant` (conversational rule assistant with chat UI and inline citations), `/compliance` (compliance cockpit with department violation trends), `/departments` (department and membership management), `/onboarding` (select domain, choose templates, scan sources).
 
 The sidebar is organized into sections: **Observe** (dashboard, intelligence, compliance cockpit, feedback, notifications, agents, audit), **Manage** (rules, discover, documents, proposals, snapshots, departments), **Use** (assistant, ask, search, playground), **Enforce** (review, gateway, federations), and **Settings** (projects, onboarding, integrations).
 
@@ -401,9 +417,9 @@ The evaluation pipeline works the same regardless of the surface:
 3. **Kind dispatch** -- rules are partitioned by `kind`. Computational, procedural, and definitional rules are resolved deterministically without LLM calls. Only normative rules proceed to step 5.
 4. **Fact resolution** -- the Fact Store resolves external facts (employee grade, 36-agreement status, contract value). Context Providers (`StaticFileProvider`, `HttpProvider`) can supply missing facts automatically
 5. **LLM evaluation** -- the selected normative rules and the subject are sent to the LLM with surface-specific prompt hints. Cross-locale fallback selects translated rule statements when available
-5. **Verdict aggregation** -- per-rule verdicts are aggregated into ALLOW / DENY / NEEDS_CONFIRMATION / ALLOW_WITH_CONDITIONS / REQUIRES_DISCLOSURE
-6. **Remediation** -- typed remediation proposals: `code_edit` (line-level patches), `text_rewrite` (document span replacement), `field_change` (transaction field correction), `approval_add` (escalate to approver), `process_reroute` (redirect workflow), `clarification` (request missing information), `block` (requires human judgment)
-7. **Audit persistence** -- model ID, prompt version, inputs, outputs, latency, surface, actor, and locale are logged to the append-only, hash-chained audit log
+6. **Verdict aggregation** -- per-rule verdicts are aggregated into ALLOW / DENY / NEEDS_CONFIRMATION / ALLOW_WITH_CONDITIONS / REQUIRES_DISCLOSURE
+7. **Remediation** -- typed remediation proposals: `code_edit` (line-level patches), `text_rewrite` (document span replacement), `field_change` (transaction field correction), `approval_add` (escalate to approver), `process_reroute` (redirect workflow), `clarification` (request missing information), `block` (requires human judgment)
+8. **Audit persistence** -- model ID, prompt version, inputs, outputs, latency, surface, actor, and locale are logged to the append-only, hash-chained audit log
 
 Additional features:
 - **Multi-judge consensus** for CRITICAL-severity rules (a second LLM provider confirms)
@@ -411,6 +427,7 @@ Additional features:
 - **Verdict drift detection** alerts when the same rule + input produces different verdicts over time (daily cron, 30-day windows, 20pp threshold)
 - **Prompt injection defense** wraps user content in delimiters and screens for known injection patterns
 - **Cost guardrails** with per-tenant monthly budget, 80% warning, and 100% hard cap
+- **Data classification routing**: RESTRICTED-sensitivity rules are evaluated on self-hosted LLMs only; logs purge after 90 days
 
 ---
 
@@ -481,10 +498,8 @@ Rules can be authored in any language and linked to translations in other langua
 4. **Search by language** using the `language` query parameter or the `Accept-Language` HTTP header on search endpoints.
 
 **Background workers** run automatically:
-- **Translation drift checker** (daily, 3:30 AM) -- compares each rule's `statement_translations` JSONB against the canonical statement
-- **Polyglot equivalence validator** (weekly, Sunday 6 AM) -- groups rules by `equivalence_id` and verifies pairwise semantic equivalence
-
-The `rule_translations` table stores `source_rule_id`, `target_rule_id`, `target_language`, `equivalence_score`, `verified_at`, and `verified_by`.
+- **Translation drift checker** (daily) -- compares each rule's `statement_translations` JSONB against the canonical statement
+- **Polyglot equivalence validator** (weekly) -- groups rules by `equivalence_id` and verifies pairwise semantic equivalence
 
 ---
 
@@ -541,13 +556,16 @@ Japanese-language rules are included for labor law (Labor Standards Act), privac
 
 ## Compliance and Privacy
 
-- **Department RBAC**: 10 department types (Legal, HR, Finance, Sales, Marketing, IT, Operations, R&D, Executive, Custom) with 4 capacity levels (Owner, Reviewer, Auditor, Subscriber). Every endpoint enforces department visibility.
+- **Department RBAC**: 10 department types (Legal, HR, Finance, Sales, Marketing, IT, Operations, R&D, Executive, Custom) with 4 capacity levels (Owner, Reviewer, Auditor, Subscriber). Every endpoint enforces department visibility -- this is non-bypassable.
+- **Data classification**: PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED. RESTRICTED-sensitivity rules are routed to self-hosted LLMs only.
 - **PII scrubbing**: Each surface declares its PII-sensitive fields. The evaluation pipeline redacts them before they reach the LLM.
 - **Surface-aware retention**: Audit records are retained per surface (e.g., 1 year for code evaluations, 10 years for contract evaluations).
 - **Prompt injection defense**: All LLM-bound user content is wrapped in stable delimiters and screened against known injection patterns.
 - **Audit trail**: Append-only, hash-chained audit log in Postgres. Each entry links to the previous via SHA-256.
-- **Classification levels**: PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED -- enforced via Postgres Row-Level Security.
+- **Multi-tenant isolation**: Every entity carries `tenant_id`. Postgres Row-Level Security enforces isolation at the data layer.
 - **Compliance Cockpit**: Department violation trends, per-policy fire/deny rates, regulatory propagation view, and an action queue for compliance officers.
+- **GDPR erasure support**: Right-to-be-forgotten data deletion.
+- **Regional data routing**: Data residency enforcement for JP, US, and EU regions.
 
 ---
 
@@ -561,7 +579,7 @@ make eval.domain DOMAIN=legal # run one domain
 make eval.json                # output JSON report
 ```
 
-90 golden test cases across 8 domains (engineering, legal, HR, finance, IT security, sales, communications, governance). A CI workflow runs the harness on PRs that touch prompts or evaluators and fails if precision drops more than 5%.
+Golden test cases across 8 domains (engineering, legal, HR, finance, IT security, sales, communications, governance). A CI workflow runs the harness on PRs that touch prompts or evaluators and fails if precision drops more than 5%.
 
 ---
 
@@ -573,15 +591,17 @@ make eval.json                # output JSON report
 make help                     # list all make targets
 make up                       # start full stack (Tier 3)
 make up.tier1                 # start with Postgres only
+make up.tier2                 # start with Postgres + Elasticsearch + Redis
 make seed                     # load sample rules + templates
 make check                    # format + lint + test (run before committing)
-make crossorg.acceptance      # run the 6 cross-organizational acceptance tests (64 cases)
 make eval                     # run eval harness
 make dev.server               # FastAPI with hot-reload
 make dev.frontend             # Next.js with hot-reload
 make test                     # all tests
 make test.unit                # unit tests only
 make test.cov                 # with coverage report
+make db.migrate               # run database migrations
+make reconcile                # rebuild Neo4j graph from Postgres
 ```
 
 ### Tech stack
@@ -593,7 +613,7 @@ make test.cov                 # with coverage report
 | LLM | Gemini via `google-genai` (pluggable: Anthropic, OpenAI, self-hosted) |
 | Data | PostgreSQL 17 (RLS), Elasticsearch 8, Neo4j 5, Redis 7 (arq) |
 | MCP | FastMCP (mcp >= 1.9) |
-| Quality | ruff + mypy, ESLint + Prettier, eval harness (90 golden cases) |
+| Quality | ruff + mypy, ESLint + Prettier, eval harness |
 | Packages | uv (Python), pnpm (frontend) |
 
 ### Repository layout
@@ -603,36 +623,55 @@ rule-repository/
 ├── apps/
 │   ├── server/                        # FastAPI backend
 │   │   ├── src/rulerepo_server/
-│   │   │   ├── api/v1/                # 41 REST API routers
-│   │   │   ├── domain/                # Pure domain models (Rule, Subject, Department, Remediation)
+│   │   │   ├── api/v1/                # 40 REST API routers
+│   │   │   ├── core/                  # Config, auth, PII, feature flags, LLM safety
+│   │   │   ├── domain/               # Pure domain models (29 files)
 │   │   │   ├── services/
 │   │   │   │   ├── evaluation/        # Surface-agnostic evaluation engine
-│   │   │   │   │   ├── core/          # Universal pipeline (no surface imports)
-│   │   │   │   │   └── surfaces/      # 8 per-surface adapters
+│   │   │   │   │   ├── surfaces/      # 7 surface adapters (code, contract, human_action, ...)
+│   │   │   │   │   └── deterministic/ # Numeric, schema, state-machine evaluators
 │   │   │   │   ├── extraction/        # Document ingestion + 6 domain extractors
 │   │   │   │   ├── intelligence/      # Health scoring, drift detection, analytics
 │   │   │   │   ├── norm_lineage/      # Upstream/downstream lineage walker
 │   │   │   │   ├── assistant/         # Conversational rule assistant
-│   │   │   │   ├── compliance/        # Compliance cockpit
+│   │   │   │   ├── compliance/        # Compliance cockpit, erasure, regional routing
 │   │   │   │   ├── departments/       # Department RBAC + authorization
-│   │   │   │   ├── events/            # Business event ingestion
+│   │   │   │   ├── events/            # Business event ingestion + scope resolution
 │   │   │   │   ├── polyglot/          # Multilingual rule verification
-│   │   │   │   ├── context/           # Context provider abstraction
-│   │   │   │   ├── discovery/         # Rule discovery from documents and code
-│   │   │   │   ├── feedback/          # Correction-to-rule flywheel
-│   │   │   │   └── ...               # 20+ more service modules
-│   │   │   ├── domain_packs/          # Code, Contract, HR, Communication, Expense
-│   │   │   ├── adapters/              # Postgres, ES, Neo4j, Gemini, LLM router
-│   │   │   ├── mcp/                   # MCP server (25 tools)
+│   │   │   │   ├── domains/           # 7 domain modules (hr, legal, finance, ...)
+│   │   │   │   └── ...               # 25+ more service modules
+│   │   │   ├── domain_packs/          # Code, Contract, HR, Communication, Expense, ...
+│   │   │   ├── adapters/              # Postgres, ES, Neo4j, LLM router (Gemini/Anthropic/OpenAI)
+│   │   │   ├── mcp/                   # MCP server (24 tools)
 │   │   │   └── workers/               # 9 background cron jobs
-│   │   └── tests/                     # 86 test files (1180+ tests)
+│   │   └── tests/                     # 105 test files
 │   └── frontend/                      # Next.js 15 (61 pages, 9 route groups)
+│       ├── app/
+│       │   ├── (dashboard)/           # Main dashboard (27 pages)
+│       │   ├── (legal)/               # Legal console (5 pages)
+│       │   ├── (hr)/                  # HR console (7 pages)
+│       │   ├── (finance)/             # Finance console (5 pages)
+│       │   ├── (compliance)/          # Compliance console (5 pages)
+│       │   ├── (marketing)/           # Marketing console (4 pages)
+│       │   ├── (security)/            # Security console (1 page)
+│       │   ├── (sales)/               # Sales console (1 page)
+│       │   └── (admin)/               # Admin console (3 pages)
+│       ├── components/                # Badge, RuleCard, RuleGraph, PersonaSwitcher, ...
+│       └── messages/                  # en.json, ja.json (i18n)
 ├── packages/
 │   ├── rule-client/                   # Python SDK
 │   ├── agentic-client/                # Python agentic SDK
-│   └── cli/                           # CLI tools (12 commands)
+│   ├── cli/                           # CLI tools (8 commands)
+│   └── domain-packs/                  # Domain pack prompts, templates, analyzers
+│       ├── _core/                     # Shared manifest + registry
+│       ├── engineering/
+│       ├── legal/
+│       ├── hr/
+│       ├── finance/
+│       ├── sales/
+│       └── communication/
 ├── sample_rules/                      # 33 templates (300+ rules)
-├── infra/                             # Docker, Postgres init, ES templates
+├── infra/                             # Docker, Postgres init, ES templates, Neo4j constraints
 ├── scripts/                           # Seeding, graph reconciliation, audit verification
 ├── PROJECT.md                         # Vision, domain model, roadmap
 ├── CLAUDE.md                          # Operational guide for contributors
@@ -652,7 +691,7 @@ async with RuleClient("http://localhost:8000") as client:
 |---|---|---|
 | `rule-client` | `packages/rule-client/` | Python SDK for rule CRUD and search |
 | `agentic-client` | `packages/agentic-client/` | Python SDK wrapping evaluation for AI agents |
-| `cli` | `packages/cli/` | CLI tools (check, hook, ingest, export, review-contract, check-action, init, doctor, context, audit) |
+| `cli` | `packages/cli/` | CLI tools (check, hook, ingest, export, review-contract, check-action, init, doctor, audit) |
 
 ---
 
@@ -670,4 +709,4 @@ async with RuleClient("http://localhost:8000") as client:
 
 ## License
 
-See [LICENSE](./LICENSE).
+Apache License 2.0. See [LICENSE](./LICENSE).

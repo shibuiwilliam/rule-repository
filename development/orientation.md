@@ -156,3 +156,24 @@ Phase 8 is complete. All core deliverables shipped. Post-Phase 8 enhancements fr
 **1,184 tests pass.** `ruff check`, `ruff format --check`, `pnpm lint`, `pnpm typecheck` all clean. 9 domain packs load via `ENABLED_PACKS`. All feature flags verified for graceful degradation.
 
 See [phase-8-backlog.md](phase-8-backlog.md) for the detailed completion record and [../FEATURES.md](../FEATURES.md) for the feature flag reference.
+
+### Cross-Organizational Refocus [COMPLETE] — as of 2026-05-15
+
+The major refocus commit finalized the pivot from engineering-centric tool to cross-organizational platform:
+
+**Removed over-engineering:**
+- External connectors (DocuSign, Salesforce, SAP, Workday, etc.) deleted
+- Business system integrations removed
+- Discovery connectors (Confluence, e-Gov, EUR-Lex, Google Drive, Notion, SharePoint) removed
+- Prometheus/Jaeger/OpenTelemetry instrumentation removed
+- Domain protocol implementations replaced by domain pack architecture
+
+**Finalized architecture:**
+- 6 domain packs in `packages/domain-packs/` (engineering, legal, hr, finance, sales, communication)
+- Deterministic evaluation module (`services/evaluation/deterministic/`) with numeric, schema, and lookup evaluators
+- 6 subject context assemblers (`services/evaluation/subjects/`)
+- 6 new extractors (contract, email_archive, handbook, minutes, regulation, tabular)
+- Universal submissions endpoint (`POST /api/v1/submissions`)
+- SCIM 2.0 identity provisioning (`api/v1/scim.py`)
+
+**Current metrics:** 40 API routers, 37 ORM models, 37 Alembic migrations, 24 MCP tools, 117 test files, 61 frontend pages, 9 persona portals, 6 domain packs.

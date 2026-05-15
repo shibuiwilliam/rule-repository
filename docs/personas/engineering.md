@@ -41,3 +41,10 @@ The Engineering persona provides a code-centric view of the Rule Repository, foc
 - `security-owasp` -- OWASP security checklist
 - `api-design` -- API design conventions
 - `testing-standards` -- Test coverage and quality
+
+## Implementation Status
+
+- **Route group**: `(dashboard)`
+- **Pages**: Full dashboard with all sub-pages functional
+- **Integration level**: Fully API-integrated
+- **Notable sub-pages**: Code compliance dashboard, rules listing, playground, discovery, intelligence
