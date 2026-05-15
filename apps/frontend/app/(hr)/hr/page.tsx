@@ -209,16 +209,16 @@ export default function HrDashboardPage() {
 
   const complianceRate = dashboard ? Math.round(dashboard.compliance_rate * 100) : 0;
 
-  const trendMax = dashboard
+  const trendMax = dashboard?.violation_trend?.length
     ? Math.max(...dashboard.violation_trend.map((t) => t.count), 1)
     : 1;
 
-  const verdictDistTotal = dashboard
+  const verdictDistTotal = dashboard?.verdict_distribution
     ? Object.values(dashboard.verdict_distribution).reduce((a, b) => a + b, 0)
     : 0;
 
-  const topViolatedMax = dashboard
-    ? Math.max(...(dashboard.top_violated_rules.map((r) => r.violation_count) || [1]), 1)
+  const topViolatedMax = dashboard?.top_violated_rules?.length
+    ? Math.max(...dashboard.top_violated_rules.map((r) => r.violation_count), 1)
     : 1;
 
   // --- render --------------------------------------------------------------
@@ -363,7 +363,7 @@ export default function HrDashboardPage() {
             <h2 className="text-base font-semibold text-gray-900">Overtime Violation Trend</h2>
             <p className="mt-1 text-sm text-gray-500">Daily violations over the selected period</p>
             <div className="mt-4 flex items-end gap-0.5" style={{ height: "80px" }}>
-              {dashboard.violation_trend.map((day) => {
+              {(dashboard.violation_trend ?? []).map((day) => {
                 const heightPct = trendMax > 0 ? (day.count / trendMax) * 100 : 0;
                 return (
                   <div
@@ -408,7 +408,7 @@ export default function HrDashboardPage() {
             {verdictDistTotal > 0 ? (
               <>
                 <div className="mt-4 flex h-6 overflow-hidden rounded-full">
-                  {Object.entries(dashboard.verdict_distribution).map(([verdict, count]) => {
+                  {Object.entries(dashboard.verdict_distribution ?? {}).map(([verdict, count]) => {
                     const pct = (count / verdictDistTotal) * 100;
                     const colorMap: Record<string, string> = {
                       allow: "bg-green-400",
@@ -427,7 +427,7 @@ export default function HrDashboardPage() {
                   })}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-4 text-xs">
-                  {Object.entries(dashboard.verdict_distribution).map(([verdict, count]) => (
+                  {Object.entries(dashboard.verdict_distribution ?? {}).map(([verdict, count]) => (
                     <div key={verdict} className="flex items-center gap-1.5">
                       <VerdictBadge verdict={verdict} />
                       <span className="text-gray-500">
@@ -447,8 +447,8 @@ export default function HrDashboardPage() {
             <h2 className="text-base font-semibold text-gray-900">Top Violated Rules</h2>
             <p className="mt-1 text-sm text-gray-500">Most frequently violated HR rules</p>
             <div className="mt-4 space-y-3">
-              {dashboard.top_violated_rules.length > 0 ? (
-                dashboard.top_violated_rules.map((rule) => {
+              {(dashboard.top_violated_rules ?? []).length > 0 ? (
+                (dashboard.top_violated_rules ?? []).map((rule) => {
                   const pct = (rule.violation_count / topViolatedMax) * 100;
                   return (
                     <div key={rule.rule_id}>
