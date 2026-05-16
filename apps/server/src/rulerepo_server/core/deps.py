@@ -53,6 +53,15 @@ def require_department_action(action: Action):
         user: CurrentUser = Depends(get_current_user),
         session: AsyncSession = Depends(get_db_session),
     ) -> None:
+        # When auth is not required (local dev), anonymous OWNER bypasses
+        # department RBAC to allow seeding and testing without capacity setup.
+        if not get_feature_flags().department_rbac_enabled:
+            return
+        from rulerepo_server.core.config import get_settings as _get_settings
+
+        if not _get_settings().auth_required and user.user_id == "anonymous":
+            return
+
         from rulerepo_server.services.departments.authz import check_permission
 
         department_id = await _resolve_department(request, session)
