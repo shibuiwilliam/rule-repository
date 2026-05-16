@@ -165,13 +165,15 @@ class RuleModel(Base):
     )
 
     # Phase 8: Surface-aware fields
-    applies_to_surfaces: Mapped[list] = mapped_column(JSONB, nullable=False, default=lambda: ["generic"])
+    # Note: applies_to_surfaces, tech_scope, org_scope are ARRAY(Text) in the DB
+    # (created by migration 030), not JSONB.
+    applies_to_surfaces: Mapped[list] = mapped_column(ARRAY(Text), nullable=False, server_default="{}")
     norm_tier: Mapped[str] = mapped_column(String(30), nullable=False, default="OPERATIONAL_RULE")
     norm_authority: Mapped[str | None] = mapped_column(Text, nullable=True)
     locale: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
     statement_translations: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    tech_scope: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    org_scope: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    tech_scope: Mapped[list] = mapped_column(ARRAY(Text), nullable=False, server_default="{}")
+    org_scope: Mapped[list] = mapped_column(ARRAY(Text), nullable=False, server_default="{}")
 
     # Embedding stored as float array (for pgvector compatibility later)
     embedding: Mapped[list | None] = mapped_column(ARRAY(Float), nullable=True)
