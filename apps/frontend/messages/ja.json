@@ -4,6 +4,7 @@
     "tagline": "自然言語ルールの管理・検索・施行"
   },
   "nav": {
+    "start": "",
     "manage": "管理",
     "observe": "監視",
     "use": "利用",

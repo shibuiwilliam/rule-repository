@@ -4,6 +4,7 @@
     "tagline": "Manage, search, and enforce natural-language rules"
   },
   "nav": {
+    "start": "",
     "manage": "Manage",
     "observe": "Observe",
     "use": "Use",
