@@ -78,6 +78,29 @@ class ActionItemResponse(BaseModel):
     priority: str = "normal"
 
 
+class EvaluationItemResponse(BaseModel):
+    """A single evaluation record for the compliance evaluations list."""
+
+    id: str
+    subject_type: str = ""
+    verdict: str
+    confidence: float = 0.0
+    rule_id: str
+    rule_statement: str = ""
+    issue_description: str = ""
+    fix_suggestion: str | None = None
+    summary: str | None = None
+    created_at: str
+    details: dict = Field(default_factory=dict)
+
+
+class EvaluationsPageResponse(BaseModel):
+    """Paginated list of evaluations."""
+
+    items: list[EvaluationItemResponse] = Field(default_factory=list)
+    total: int = 0
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -178,3 +201,69 @@ async def get_action_queue(
         )
         for item in items
     ]
+
+
+@router.get("/evaluations", response_model=EvaluationsPageResponse)
+async def list_evaluations(
+    department: str = Query(..., description="Department scope to filter evaluations"),
+    verdict: str | None = Query(default=None, description="Filter by verdict (allow/deny/needs_confirmation)"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    session: AsyncSession = Depends(get_db_session),
+) -> EvaluationsPageResponse:
+    """List evaluation records filtered by department scope.
+
+    Used by persona dashboards (HR, Legal, Finance, etc.) to show
+    recent evaluations relevant to their department.
+    """
+    _require_cockpit_enabled()
+
+    from sqlalchemy import func, select
+
+    from rulerepo_server.adapters.postgres.models import EvaluationRecordModel, RuleModel
+
+    # Base query: join evaluations with rules to get rule statements
+    query = (
+        select(EvaluationRecordModel, RuleModel.statement)
+        .outerjoin(RuleModel, EvaluationRecordModel.rule_id == RuleModel.id)
+        .where(EvaluationRecordModel.scope.ilike(f"%{department}%"))
+        .order_by(EvaluationRecordModel.created_at.desc())
+    )
+    count_query = (
+        select(func.count())
+        .select_from(EvaluationRecordModel)
+        .where(EvaluationRecordModel.scope.ilike(f"%{department}%"))
+    )
+
+    if verdict:
+        query = query.where(EvaluationRecordModel.verdict.ilike(verdict))
+        count_query = count_query.where(EvaluationRecordModel.verdict.ilike(verdict))
+
+    # Get total
+    total_result = await session.execute(count_query)
+    total = total_result.scalar() or 0
+
+    # Paginate
+    offset = (page - 1) * page_size
+    query = query.offset(offset).limit(page_size)
+    result = await session.execute(query)
+    rows = result.all()
+
+    items = [
+        EvaluationItemResponse(
+            id=str(ev.id),
+            subject_type=ev.subject_type or "",
+            verdict=ev.verdict,
+            confidence=ev.confidence,
+            rule_id=str(ev.rule_id),
+            rule_statement=stmt or "",
+            issue_description=f"{ev.verdict} on rule evaluation",
+            fix_suggestion=None,
+            summary=None,
+            created_at=ev.created_at.isoformat() if ev.created_at else "",
+            details={"scope": ev.scope, "model_id": ev.model_id, "cached": ev.cached},
+        )
+        for ev, stmt in rows
+    ]
+
+    return EvaluationsPageResponse(items=items, total=total)
