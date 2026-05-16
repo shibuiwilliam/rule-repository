@@ -69,7 +69,7 @@ down.tier2: ## Stop Tier 2 stack
 down.clean: ## Stop the full stack and wipe all volumes
 	docker compose down -v
 
-reset: ## Reset all data to initial state (wipe volumes + rebuild + migrate + seed)
+reset: ## Reset all data to initial state (wipe volumes + rebuild + seed)
 	docker compose down -v
 	docker compose up --build -d
 	@echo "Waiting for server to be ready..."
@@ -79,8 +79,7 @@ reset: ## Reset all data to initial state (wipe volumes + rebuild + migrate + se
 		sleep 3; \
 	done
 	@curl -sf http://localhost:8000/readyz > /dev/null 2>&1 || { echo "Error: server did not become ready"; exit 1; }
-	@echo "Server is ready. Running Alembic migrations..."
-	cd $(SERVER_DIR) && uv run alembic upgrade head
+	@echo "Server is ready (migrations ran at container startup)."
 	@echo "Seeding sample rules..."
 	uv run python scripts/seed_data.py
 	@echo "Reset complete. Stack is running with fresh data."
@@ -212,17 +211,17 @@ crossorg.acceptance: ## Run the 4 cross-organizational acceptance tests (Phase 7
 # ===========================================================================
 .PHONY: db.migrate db.rollback db.heads db.history db.revision
 
-db.migrate: ## Run Alembic migrations to latest
-	cd $(SERVER_DIR) && uv run alembic upgrade head
+db.migrate: ## Run Alembic migrations to latest (inside container)
+	docker compose exec server python -m alembic upgrade head
 
-db.rollback: ## Roll back one Alembic migration
-	cd $(SERVER_DIR) && uv run alembic downgrade -1
+db.rollback: ## Roll back one Alembic migration (inside container)
+	docker compose exec server python -m alembic downgrade -1
 
-db.heads: ## Show current Alembic heads
-	cd $(SERVER_DIR) && uv run alembic heads
+db.heads: ## Show current Alembic heads (inside container)
+	docker compose exec server python -m alembic heads
 
-db.history: ## Show Alembic migration history
-	cd $(SERVER_DIR) && uv run alembic history --verbose
+db.history: ## Show Alembic migration history (inside container)
+	docker compose exec server python -m alembic history --verbose
 
 db.revision: ## Create a new Alembic migration (usage: make db.revision MSG="add foo table")
 	cd $(SERVER_DIR) && uv run alembic revision --autogenerate -m "$(MSG)"
