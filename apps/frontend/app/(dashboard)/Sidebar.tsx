@@ -10,8 +10,9 @@ import { ProjectSelector } from "./ProjectSelector";
 const GATEWAY_ENABLED = process.env.NEXT_PUBLIC_GATEWAY_ENABLED === "true";
 
 const NAV_ITEMS = [
-  // Get Started (pinned to top)
+  // Pinned to top
   { href: "/onboarding", key: "onboarding", section: "start" },
+  { href: "/projects", key: "projects", section: "start" },
   // Observe
   { href: "/dashboard", key: "dashboard", section: "observe" },
   { href: "/intelligence", key: "intelligence", section: "observe" },
@@ -37,7 +38,6 @@ const NAV_ITEMS = [
   ...(GATEWAY_ENABLED ? [{ href: "/gateway", key: "gateway", section: "enforce" }] : []),
   { href: "/federations", key: "federations", section: "enforce" },
   // Settings
-  { href: "/projects", key: "projects", section: "settings" },
   { href: "/integrations", key: "integrations", section: "settings" },
 ];
 
