@@ -111,9 +111,21 @@ class AssistantOrchestrator:
         department_filter: list[str] | None = None,
     ) -> list[dict[str, Any]]:
         """Search for rules relevant to the query."""
+        from rulerepo_server.core.feature_flags import get_feature_flags
         from rulerepo_server.services.search import SearchService
 
-        search_svc = SearchService(self._session)
+        flags = get_feature_flags()
+        if flags.elasticsearch_enabled:
+            from rulerepo_server.adapters.elasticsearch.client import get_es_client
+            from rulerepo_server.adapters.elasticsearch.rule_index import ElasticsearchRuleIndex
+
+            search_index = ElasticsearchRuleIndex(get_es_client())
+        else:
+            from rulerepo_server.adapters.search.postgres_fts import PostgresFTSIndex
+
+            search_index = PostgresFTSIndex(self._session)
+
+        search_svc = SearchService(self._session, search_index)
         results = await search_svc.hybrid_search(query=query, limit=10)
 
         # Apply department filter if provided
