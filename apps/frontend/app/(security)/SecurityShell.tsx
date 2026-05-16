@@ -3,18 +3,18 @@
 import { PersonaLayout, type NavItem } from "@/components/PersonaLayout";
 
 const SECURITY_NAV: NavItem[] = [
-  { label: "Dashboard", href: "/security", icon: "\ud83d\udcca" },
-  { label: "Classification", href: "/security/classification", icon: "\ud83c\udff7\ufe0f" },
-  { label: "Encryption", href: "/security/encryption", icon: "\ud83d\udd10" },
-  { label: "Eval Harness", href: "/security/eval-harness", icon: "\ud83e\uddea" },
-  { label: "Access Logs", href: "/security/access-logs", icon: "\ud83d\udcdd" },
+  { label: "Dashboard", href: "/security", icon: "📊" },
+  { label: "Classification", href: "/security/classification", icon: "🏷️" },
+  { label: "Encryption", href: "/security/encryption", icon: "🔐" },
+  { label: "Eval Harness", href: "/security/eval-harness", icon: "🧪" },
+  { label: "Access Logs", href: "/security/access-logs", icon: "📝" },
 ];
 
 export function SecurityShell({ children }: { children: React.ReactNode }) {
   return (
     <PersonaLayout
       persona="Security"
-      personaIcon="\ud83d\udd12"
+      personaIcon="🔒"
       accentColor="bg-red-100 text-red-800"
       accentHover="hover:bg-red-100"
       navItems={SECURITY_NAV}

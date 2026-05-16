@@ -3,20 +3,20 @@
 import { PersonaLayout, type NavItem } from "@/components/PersonaLayout";
 
 const LEGAL_NAV: NavItem[] = [
-  { label: "Dashboard", href: "/legal", icon: "\ud83d\udcca" },
-  { label: "Contract Review", href: "/legal/contracts", icon: "\ud83d\udcdd" },
-  { label: "Clause Library", href: "/legal/clauses", icon: "\ud83d\udcda" },
-  { label: "Redlines", href: "/legal/redlines", icon: "\ud83d\uddd2\ufe0f" },
-  { label: "Norm Lineage", href: "/legal/lineage", icon: "\ud83d\uddc2\ufe0f" },
-  { label: "Regulatory Horizon", href: "/legal/regulatory", icon: "\ud83c\udf10" },
-  { label: "Citations", href: "/legal/citations", icon: "\ud83d\udd17" },
+  { label: "Dashboard", href: "/legal", icon: "📊" },
+  { label: "Contract Review", href: "/legal/contracts", icon: "📝" },
+  { label: "Clause Library", href: "/legal/clauses", icon: "📚" },
+  { label: "Redlines", href: "/legal/redlines", icon: "🗒️" },
+  { label: "Norm Lineage", href: "/legal/lineage", icon: "🗂️" },
+  { label: "Regulatory Horizon", href: "/legal/regulatory", icon: "🌐" },
+  { label: "Citations", href: "/legal/citations", icon: "🔗" },
 ];
 
 export function LegalShell({ children }: { children: React.ReactNode }) {
   return (
     <PersonaLayout
       persona="Legal"
-      personaIcon="\u2696\ufe0f"
+      personaIcon="⚖️"
       accentColor="bg-slate-200 text-slate-800"
       accentHover="hover:bg-slate-200"
       navItems={LEGAL_NAV}

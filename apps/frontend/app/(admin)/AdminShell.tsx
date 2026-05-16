@@ -3,18 +3,18 @@
 import { PersonaLayout, type NavItem } from "@/components/PersonaLayout";
 
 const ADMIN_NAV: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: "\ud83d\udcca" },
-  { label: "Tenants", href: "/admin/tenants", icon: "\ud83c\udfe2" },
-  { label: "Users", href: "/admin/users", icon: "\ud83d\udc64" },
-  { label: "Settings", href: "/admin/settings", icon: "\u2699\ufe0f" },
-  { label: "Billing", href: "/admin/billing", icon: "\ud83d\udcb3" },
+  { label: "Dashboard", href: "/admin", icon: "📊" },
+  { label: "Tenants", href: "/admin/tenants", icon: "🏢" },
+  { label: "Users", href: "/admin/users", icon: "👤" },
+  { label: "Settings", href: "/admin/settings", icon: "⚙️" },
+  { label: "Billing", href: "/admin/billing", icon: "💳" },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <PersonaLayout
       persona="Admin"
-      personaIcon="\ud83d\udd27"
+      personaIcon="🔧"
       accentColor="bg-gray-200 text-gray-800"
       accentHover="hover:bg-gray-200"
       navItems={ADMIN_NAV}
