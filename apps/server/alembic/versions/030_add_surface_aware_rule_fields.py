@@ -90,31 +90,34 @@ def upgrade() -> None:
     # Backfill: existing rules get applies_to_surfaces based on
     # applicable_subject_types. Rules with code_diff get ['code'],
     # others get ['generic'].
+    # Note: applicable_subject_types is JSONB, so use JSONB containment.
     op.execute("""
         UPDATE rules
         SET applies_to_surfaces = CASE
-            WHEN applicable_subject_types @> ARRAY['code_diff']::text[]
+            WHEN applicable_subject_types @> '["code_diff"]'::jsonb
             THEN ARRAY['code']::text[]
             ELSE ARRAY['generic']::text[]
         END
         WHERE applies_to_surfaces = '{}'
     """)
 
-    # Backfill tech_scope and org_scope from legacy scope field
-    # engineering/* → tech_scope, everything else → org_scope
+    # Backfill tech_scope and org_scope from legacy scope field (JSONB array).
+    # engineering/* → tech_scope, everything else → org_scope.
+    # Uses jsonb_array_elements_text() since scope is JSONB, not text[].
     op.execute("""
         UPDATE rules
         SET tech_scope = (
             SELECT COALESCE(array_agg(s), ARRAY[]::text[])
-            FROM unnest(scope) AS s
+            FROM jsonb_array_elements_text(scope) AS s
             WHERE s LIKE 'engineering/%'
         ),
         org_scope = (
             SELECT COALESCE(array_agg(s), ARRAY[]::text[])
-            FROM unnest(scope) AS s
+            FROM jsonb_array_elements_text(scope) AS s
             WHERE s NOT LIKE 'engineering/%'
         )
         WHERE tech_scope = '{}' AND org_scope = '{}'
+            AND jsonb_typeof(scope) = 'array' AND jsonb_array_length(scope) > 0
     """)
 
 

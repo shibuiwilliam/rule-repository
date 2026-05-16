@@ -52,10 +52,12 @@ def upgrade() -> None:
 
     op.execute(f"""
         UPDATE rules
-        SET applicable_subject_types = ARRAY['code_diff']::text[]
+        SET applicable_subject_types = '["code_diff"]'::jsonb
         WHERE applicable_subject_types IS NULL
+          AND jsonb_typeof(scope) = 'array'
+          AND jsonb_array_length(scope) > 0
           AND EXISTS (
-              SELECT 1 FROM unnest(scope) AS s
+              SELECT 1 FROM jsonb_array_elements_text(scope) AS s
               WHERE {scope_conditions}
           )
     """)
@@ -66,5 +68,5 @@ def downgrade() -> None:
     op.execute("""
         UPDATE rules
         SET applicable_subject_types = NULL
-        WHERE applicable_subject_types = ARRAY['code_diff']::text[]
+        WHERE applicable_subject_types = '["code_diff"]'::jsonb
     """)

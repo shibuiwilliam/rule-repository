@@ -50,11 +50,11 @@ def upgrade() -> None:
                 UPDATE rules
                 SET applicable_subject_types = (
                     SELECT jsonb_agg(
-                        CASE WHEN elem::text = :old_quoted THEN :new_val::jsonb ELSE elem END
+                        CASE WHEN elem::text = :old_quoted THEN CAST(:new_val AS jsonb) ELSE elem END
                     )
                     FROM jsonb_array_elements(applicable_subject_types) AS elem
                 )
-                WHERE applicable_subject_types @> :old_array::jsonb
+                WHERE applicable_subject_types @> CAST(:old_array AS jsonb)
                 """
             ),
             {
@@ -90,11 +90,11 @@ def downgrade() -> None:
                 UPDATE rules
                 SET applicable_subject_types = (
                     SELECT jsonb_agg(
-                        CASE WHEN elem::text = :new_quoted THEN :old_val::jsonb ELSE elem END
+                        CASE WHEN elem::text = :new_quoted THEN CAST(:old_val AS jsonb) ELSE elem END
                     )
                     FROM jsonb_array_elements(applicable_subject_types) AS elem
                 )
-                WHERE applicable_subject_types @> :new_array::jsonb
+                WHERE applicable_subject_types @> CAST(:new_array AS jsonb)
                 """
             ),
             {

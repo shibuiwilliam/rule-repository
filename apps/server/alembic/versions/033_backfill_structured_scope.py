@@ -14,7 +14,9 @@ Revision ID: 033
 Revises: 032
 """
 
+import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects.postgresql import JSONB
 
 revision = "033"
 down_revision = "032"
@@ -22,22 +24,49 @@ branch_labels = None
 depends_on = None
 
 
+def _column_exists(table: str, column: str) -> bool:
+    """Check if a column exists (idempotent migration support)."""
+    conn = op.get_bind()
+    result = conn.execute(
+        sa.text("SELECT 1 FROM information_schema.columns WHERE table_name = :table AND column_name = :column"),
+        {"table": table, "column": column},
+    )
+    return result.scalar() is not None
+
+
 def upgrade() -> None:
-    """Backfill structured_scope from legacy scope column."""
-    # Only update rows whose structured_scope is the empty default
+    """Add structured_scope column and backfill from legacy scope."""
+    # Step 1: Create the column if it doesn't exist
+    if not _column_exists("rules", "structured_scope"):
+        op.add_column(
+            "rules",
+            sa.Column(
+                "structured_scope",
+                JSONB(),
+                nullable=True,
+                server_default='{"path": "", "dimensions": {}}',
+            ),
+        )
+
+    # Step 2: Backfill from the legacy scope JSONB array.
+    # scope is JSONB (an array of strings), NOT a Postgres text[].
+    # Use jsonb_array_elements_text to iterate.
     op.execute("""
         UPDATE rules
         SET structured_scope = jsonb_build_object(
-            'path', array_to_string(scope, '/'),
+            'path', (
+                SELECT string_agg(elem, '/')
+                FROM jsonb_array_elements_text(scope) AS elem
+            ),
             'dimensions', CASE
-                WHEN array_length(scope, 1) >= 2
+                WHEN jsonb_array_length(scope) >= 2
                 THEN jsonb_build_object(
-                    'domain', scope[1],
-                    'subject_type', scope[2]
+                    'domain', scope->>0,
+                    'subject_type', scope->>1
                 )
-                WHEN array_length(scope, 1) = 1
+                WHEN jsonb_array_length(scope) = 1
                 THEN jsonb_build_object(
-                    'domain', scope[1]
+                    'domain', scope->>0
                 )
                 ELSE '{}'::jsonb
             END
@@ -45,7 +74,8 @@ def upgrade() -> None:
         WHERE (structured_scope IS NULL
                OR structured_scope = '{"path": "", "dimensions": {}}'::jsonb)
           AND scope IS NOT NULL
-          AND array_length(scope, 1) > 0
+          AND jsonb_typeof(scope) = 'array'
+          AND jsonb_array_length(scope) > 0
     """)
 
 

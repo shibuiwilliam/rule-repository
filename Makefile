@@ -79,7 +79,9 @@ reset: ## Reset all data to initial state (wipe volumes + rebuild + migrate + se
 		sleep 3; \
 	done
 	@curl -sf http://localhost:8000/readyz > /dev/null 2>&1 || { echo "Error: server did not become ready"; exit 1; }
-	@echo "Server is ready. Seeding sample rules..."
+	@echo "Server is ready. Running Alembic migrations..."
+	cd $(SERVER_DIR) && uv run alembic upgrade head
+	@echo "Seeding sample rules..."
 	uv run python scripts/seed_data.py
 	@echo "Reset complete. Stack is running with fresh data."
 
