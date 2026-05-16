@@ -1,20 +1,29 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePersonaTerm } from "@/lib/use-persona-term";
+import { fetchSeedData } from "@/lib/seed-data";
 
-const BUNDLES = [
-  { id: "B-001", name: "J-SOX Internal Controls", framework: "J-SOX", totalControls: 42, implementedControls: 38, lastAudit: "2026-04-15", status: "on-track" as const },
-  { id: "B-002", name: "GDPR Data Protection", framework: "GDPR", totalControls: 35, implementedControls: 28, lastAudit: "2026-03-20", status: "at-risk" as const },
-  { id: "B-003", name: "EU AI Act Compliance", framework: "EU AI Act", totalControls: 18, implementedControls: 8, lastAudit: "2026-04-01", status: "behind" as const },
-  { id: "B-004", name: "ISO 27001 Security", framework: "ISO 27001", totalControls: 93, implementedControls: 87, lastAudit: "2026-04-28", status: "on-track" as const },
-];
+interface Bundle {
+  id: string;
+  name: string;
+  framework: string;
+  totalControls: number;
+  implementedControls: number;
+  lastAudit: string;
+  status: string;
+}
 
-const EXCEPTIONS = [
-  { id: "EX-101", rule: "All PII must be encrypted at rest", department: "Engineering", reason: "Legacy migration in progress", grantedBy: "CISO", expiresAt: "2026-06-30", status: "active" as const },
-  { id: "EX-102", rule: "Overtime must not exceed 45h/month", department: "Operations", reason: "Seasonal peak processing", grantedBy: "HR Director", expiresAt: "2026-05-31", status: "pending-renewal" as const },
-  { id: "EX-103", rule: "Vendor payments require dual approval", department: "Finance", reason: "Temporary staffing shortage", grantedBy: "CFO", expiresAt: "2026-05-15", status: "active" as const },
-];
+interface Exception {
+  id: string;
+  rule: string;
+  department: string;
+  reason: string;
+  grantedBy: string;
+  expiresAt: string;
+  status: string;
+}
 
 const STATUS_BADGE: Record<string, string> = {
   "on-track": "bg-green-100 text-green-700", "at-risk": "bg-yellow-100 text-yellow-700", behind: "bg-red-100 text-red-700",
@@ -23,6 +32,22 @@ const STATUS_BADGE: Record<string, string> = {
 
 export default function ComplianceDashboardPage() {
   const t = usePersonaTerm();
+  const [bundles, setBundles] = useState<Bundle[]>([]);
+  const [exceptions, setExceptions] = useState<Exception[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ bundles: Bundle[]; exceptions: Exception[] }>("compliance").then((d) => {
+      setBundles(d.bundles ?? []);
+      setExceptions(d.exceptions ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
@@ -33,7 +58,7 @@ export default function ComplianceDashboardPage() {
       <div>
         <h2 className="mb-3 text-base font-semibold text-gray-900">Bundle Progress</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {BUNDLES.map((b) => {
+          {bundles.map((b) => {
             const pct = Math.round((b.implementedControls / b.totalControls) * 100);
             return (
               <div key={b.id} className="rounded-xl border bg-white p-5">
@@ -88,7 +113,7 @@ export default function ComplianceDashboardPage() {
           <Link href="/compliance/exceptions" className="text-sm text-blue-600 hover:underline">View all</Link>
         </div>
         <div className="divide-y">
-          {EXCEPTIONS.map((ex) => (
+          {exceptions.map((ex) => (
             <div key={ex.id} className="flex items-start gap-4 px-5 py-4">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-900">{ex.rule}</p>

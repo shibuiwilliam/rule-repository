@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { usePersonaTerm } from "@/lib/use-persona-term";
+import { fetchSeedData } from "@/lib/seed-data";
 
 interface RegulatoryItem {
   id: string;
@@ -12,13 +14,6 @@ interface RegulatoryItem {
   affected_rules: number;
 }
 
-const SAMPLE_ITEMS: RegulatoryItem[] = [
-  { id: "REG-001", title: "Revised APPI Guidelines", authority: "PPC (Japan)", effective_date: "2026-07-01", impact: "high", status: "upcoming", affected_rules: 12 },
-  { id: "REG-002", title: "EU AI Act — High-Risk System Requirements", authority: "European Commission", effective_date: "2026-08-01", impact: "high", status: "upcoming", affected_rules: 8 },
-  { id: "REG-003", title: "Updated Subcontract Act Enforcement Standards", authority: "JFTC (Japan)", effective_date: "2026-06-15", impact: "medium", status: "upcoming", affected_rules: 5 },
-  { id: "REG-004", title: "J-SOX Annual Reporting Deadline", authority: "FSA (Japan)", effective_date: "2026-12-31", impact: "high", status: "upcoming", affected_rules: 15 },
-  { id: "REG-005", title: "Labor Standards Act Amendment (Overtime)", authority: "MHLW (Japan)", effective_date: "2026-04-01", impact: "medium", status: "effective", affected_rules: 9 },
-];
 
 const IMPACT_BADGE: Record<string, string> = {
   high: "bg-red-100 text-red-700",
@@ -34,6 +29,19 @@ const STATUS_BADGE: Record<string, string> = {
 
 export default function RegulatoryHorizonPage() {
   const t = usePersonaTerm();
+  const [items, setItems] = useState<RegulatoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ regulatory: RegulatoryItem[] }>("legal").then((d) => {
+      setItems(d.regulatory ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
@@ -46,7 +54,7 @@ export default function RegulatoryHorizonPage() {
 
       <div className="rounded-xl border bg-white">
         <div className="divide-y">
-          {SAMPLE_ITEMS.map((item) => (
+          {items.map((item) => (
             <div key={item.id} className="flex items-start gap-4 px-5 py-4">
               <div className="w-24 shrink-0 pt-0.5">
                 <p className="text-sm font-semibold text-gray-900">

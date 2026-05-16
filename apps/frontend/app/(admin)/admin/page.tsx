@@ -1,6 +1,41 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { fetchSeedData } from "@/lib/seed-data";
+
+interface ServiceHealth {
+  service: string;
+  status: string;
+  latency: string;
+  uptime: string;
+}
+
+interface TenantActivity {
+  tenant: string;
+  users: number;
+  evals: number;
+  rules: number;
+  plan: string;
+}
 
 export default function AdminDashboardPage() {
+  const [systemHealth, setSystemHealth] = useState<ServiceHealth[]>([]);
+  const [tenantActivity, setTenantActivity] = useState<TenantActivity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ system_health: ServiceHealth[]; tenant_activity: TenantActivity[] }>("admin").then((d) => {
+      setSystemHealth(d.system_health ?? []);
+      setTenantActivity(d.tenant_activity ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
@@ -34,14 +69,7 @@ export default function AdminDashboardPage() {
       <div className="rounded-xl border bg-white p-5">
         <h2 className="text-base font-semibold text-gray-900">System Health</h2>
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            { service: "API Server", status: "healthy", latency: "12ms", uptime: "99.98%" },
-            { service: "PostgreSQL", status: "healthy", latency: "3ms", uptime: "99.99%" },
-            { service: "Elasticsearch", status: "healthy", latency: "8ms", uptime: "99.95%" },
-            { service: "Neo4j", status: "healthy", latency: "5ms", uptime: "99.97%" },
-            { service: "Redis", status: "healthy", latency: "1ms", uptime: "99.99%" },
-            { service: "arq Worker", status: "degraded", latency: "45ms", uptime: "99.80%" },
-          ].map((s) => (
+          {systemHealth.map((s) => (
             <div key={s.service} className="flex items-center gap-3 rounded-lg border p-3">
               <span className={`flex h-8 w-8 items-center justify-center rounded-full ${s.status === "healthy" ? "bg-green-100" : "bg-yellow-100"}`}>
                 <span className={`h-3 w-3 rounded-full ${s.status === "healthy" ? "bg-green-500" : "bg-yellow-500"}`} />
@@ -70,12 +98,7 @@ export default function AdminDashboardPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {[
-              { tenant: "Acme Corp", users: 45, evals: 1240, rules: 312, plan: "Enterprise" },
-              { tenant: "TechStart Inc.", users: 22, evals: 820, rules: 156, plan: "Business" },
-              { tenant: "Global Finance", users: 18, evals: 650, rules: 245, plan: "Enterprise" },
-              { tenant: "NewCo (Trial)", users: 5, evals: 42, rules: 18, plan: "Trial" },
-            ].map((t) => (
+            {tenantActivity.map((t) => (
               <tr key={t.tenant} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-medium text-gray-900">{t.tenant}</td>
                 <td className="px-5 py-3 text-gray-600">{t.users}</td>

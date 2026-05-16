@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
 
 type RevisionStatus = "all" | "pending" | "approved" | "rejected";
 
@@ -16,13 +17,6 @@ interface ContractRevision {
   status: Exclude<RevisionStatus, "all">;
 }
 
-const REVISIONS: ContractRevision[] = [
-  { id: "REV-001", contractName: "ACME Corp Master Services Agreement", counterparty: "ACME Corp", version: { from: "2.3", to: "2.4" }, changedClauses: 4, riskFlags: 2, submittedAt: "2026-05-06", submittedBy: "T. Nakamura", status: "pending" },
-  { id: "REV-002", contractName: "GlobalTech NDA", counterparty: "GlobalTech Inc.", version: { from: "1.0", to: "1.1" }, changedClauses: 2, riskFlags: 0, submittedAt: "2026-05-04", submittedBy: "S. Tanaka", status: "approved" },
-  { id: "REV-003", contractName: "DataFlow Processing Agreement", counterparty: "DataFlow Ltd.", version: { from: "3.1", to: "4.0" }, changedClauses: 8, riskFlags: 5, submittedAt: "2026-05-03", submittedBy: "K. Yamada", status: "pending" },
-  { id: "REV-004", contractName: "Vendor SOW - Q2 Deliverables", counterparty: "BuildRight LLC", version: { from: "1.2", to: "1.3" }, changedClauses: 3, riskFlags: 1, submittedAt: "2026-04-28", submittedBy: "M. Sato", status: "approved" },
-  { id: "REV-005", contractName: "Cloud Infrastructure License", counterparty: "CloudScale Inc.", version: { from: "5.0", to: "5.1" }, changedClauses: 1, riskFlags: 0, submittedAt: "2026-04-25", submittedBy: "H. Lee", status: "rejected" },
-];
 
 const STATUS_BADGE: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -38,12 +32,6 @@ interface RedlineChange {
   riskLevel: "low" | "medium" | "high";
 }
 
-const SAMPLE_CHANGES: RedlineChange[] = [
-  { clause: "Section 4.2 — Limitation of Liability", type: "modified", oldText: "Total liability shall not exceed the fees paid in the preceding 12 months.", newText: "Total liability shall not exceed the fees paid in the preceding 24 months.", riskLevel: "high" },
-  { clause: "Section 7.1 — Governing Law", type: "modified", oldText: "This Agreement shall be governed by the laws of Tokyo, Japan.", newText: "This Agreement shall be governed by the laws of the State of Delaware, USA.", riskLevel: "high" },
-  { clause: "Section 9.3 — Data Retention", type: "added", newText: "The Processor shall retain personal data for no longer than 36 months following termination, unless required by applicable law.", riskLevel: "medium" },
-  { clause: "Section 2.1 — Definitions", type: "modified", oldText: "\"Confidential Information\" means any non-public information disclosed by either party.", newText: "\"Confidential Information\" means any non-public information disclosed by either party, including trade secrets, algorithms, and customer lists.", riskLevel: "low" },
-];
 
 const RISK_COLORS: Record<string, string> = {
   low: "bg-green-100 text-green-800",
@@ -52,10 +40,25 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 export default function RedlinesPage() {
+  const [revisions, setRevisions] = useState<ContractRevision[]>([]);
+  const [sampleChanges, setSampleChanges] = useState<RedlineChange[]>([]);
+  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<RevisionStatus>("all");
   const [selectedRevision, setSelectedRevision] = useState<string | null>(null);
 
-  const filtered = REVISIONS.filter((r) => statusFilter === "all" || r.status === statusFilter);
+  useEffect(() => {
+    fetchSeedData<{ redlines: { revisions: ContractRevision[]; changes: RedlineChange[] } }>("legal").then((d) => {
+      setRevisions(d.redlines?.revisions ?? []);
+      setSampleChanges(d.redlines?.changes ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = revisions.filter((r) => statusFilter === "all" || r.status === statusFilter);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -67,10 +70,10 @@ export default function RedlinesPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         {[
-          { label: "Pending Reviews", value: REVISIONS.filter((r) => r.status === "pending").length, color: "text-yellow-600" },
-          { label: "Total Risk Flags", value: REVISIONS.reduce((a, r) => a + r.riskFlags, 0), color: "text-red-600" },
-          { label: "Approved This Month", value: REVISIONS.filter((r) => r.status === "approved").length, color: "text-green-600" },
-          { label: "Avg. Changed Clauses", value: (REVISIONS.reduce((a, r) => a + r.changedClauses, 0) / REVISIONS.length).toFixed(1), color: "text-blue-600" },
+          { label: "Pending Reviews", value: revisions.filter((r) => r.status === "pending").length, color: "text-yellow-600" },
+          { label: "Total Risk Flags", value: revisions.reduce((a, r) => a + r.riskFlags, 0), color: "text-red-600" },
+          { label: "Approved This Month", value: revisions.filter((r) => r.status === "approved").length, color: "text-green-600" },
+          { label: "Avg. Changed Clauses", value: revisions.length > 0 ? (revisions.reduce((a, r) => a + r.changedClauses, 0) / revisions.length).toFixed(1) : "0", color: "text-blue-600" },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl border bg-white p-5">
             <p className="text-xs font-medium text-gray-500">{stat.label}</p>
@@ -115,7 +118,7 @@ export default function RedlinesPage() {
             {selectedRevision === rev.id && (
               <div className="mt-4 space-y-3 border-t pt-4" onClick={(e) => e.stopPropagation()}>
                 <h4 className="text-xs font-semibold uppercase text-gray-500">Clause Changes</h4>
-                {SAMPLE_CHANGES.map((change, i) => (
+                {sampleChanges.map((change, i) => (
                   <div key={i} className="rounded-lg border bg-gray-50 p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-700">{change.clause}</span>

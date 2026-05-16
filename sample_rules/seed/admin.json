@@ -1,0 +1,36 @@
+{
+  "dashboard_stats": {
+    "active_tenants": { "total": 8, "detail": "2 trial, 6 production" },
+    "total_rules": 1247,
+    "evaluations_today": { "count": 3842, "change": "+12% vs. yesterday" },
+    "active_users_24h": 124
+  },
+  "system_health": [
+    { "service": "API Server", "status": "healthy", "latency": "12ms", "uptime": "99.98%" },
+    { "service": "PostgreSQL", "status": "healthy", "latency": "3ms", "uptime": "99.99%" },
+    { "service": "Elasticsearch", "status": "healthy", "latency": "8ms", "uptime": "99.95%" },
+    { "service": "Neo4j", "status": "healthy", "latency": "5ms", "uptime": "99.97%" },
+    { "service": "Redis", "status": "healthy", "latency": "1ms", "uptime": "99.99%" },
+    { "service": "arq Worker", "status": "degraded", "latency": "45ms", "uptime": "99.80%" }
+  ],
+  "tenant_activity": [
+    { "tenant": "Acme Corp", "users": 45, "evals": 1240, "rules": 312, "plan": "Enterprise" },
+    { "tenant": "TechStart Inc.", "users": 22, "evals": 820, "rules": 156, "plan": "Business" },
+    { "tenant": "Global Finance", "users": 18, "evals": 650, "rules": 245, "plan": "Enterprise" },
+    { "tenant": "NewCo (Trial)", "users": 5, "evals": 42, "rules": 18, "plan": "Trial" }
+  ],
+  "recent_access_logs": [
+    { "time": "09:42:15", "user": "admin@company.co.jp", "action": "Viewed RESTRICTED rule R-1401", "result": "allowed" },
+    { "time": "09:38:02", "user": "hr-manager@company.co.jp", "action": "Exported CONFIDENTIAL audit packet", "result": "allowed" },
+    { "time": "09:30:11", "user": "intern@company.co.jp", "action": "Attempted RESTRICTED rule access", "result": "denied" },
+    { "time": "09:25:03", "user": "legal@company.co.jp", "action": "Downloaded regulator export (J-SOX)", "result": "allowed" }
+  ],
+  "users": [
+    { "id": "U-001", "name": "Tanaka Yuki", "email": "tanaka@acme.co.jp", "roles": ["admin", "owner"], "departments": ["Engineering"], "lastActive": "2026-05-08 09:45", "status": "active", "scimManaged": true },
+    { "id": "U-002", "name": "Suzuki Hana", "email": "suzuki@acme.co.jp", "roles": ["reviewer", "owner"], "departments": ["Legal"], "lastActive": "2026-05-08 09:30", "status": "active", "scimManaged": true },
+    { "id": "U-003", "name": "Yamamoto Ken", "email": "yamamoto@acme.co.jp", "roles": ["reviewer"], "departments": ["HR"], "lastActive": "2026-05-07 17:20", "status": "active", "scimManaged": true },
+    { "id": "U-004", "name": "Sato Mei", "email": "sato@acme.co.jp", "roles": ["auditor"], "departments": ["Finance", "Compliance"], "lastActive": "2026-05-08 08:15", "status": "active", "scimManaged": true },
+    { "id": "U-005", "name": "Watanabe Ryo", "email": "watanabe@acme.co.jp", "roles": ["subscriber"], "departments": ["Marketing"], "lastActive": "2026-05-06 14:00", "status": "active", "scimManaged": false },
+    { "id": "U-006", "name": "Nakamura Taro", "email": "nakamura@acme.co.jp", "roles": ["reviewer"], "departments": ["Sales"], "lastActive": "-", "status": "invited", "scimManaged": false }
+  ]
+}

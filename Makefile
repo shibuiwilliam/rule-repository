@@ -69,7 +69,7 @@ down.tier2: ## Stop Tier 2 stack
 down.clean: ## Stop the full stack and wipe all volumes
 	docker compose down -v
 
-reset: ## Reset all data to initial state (wipe volumes + rebuild + seed)
+reset: ## Reset all data to initial state (wipe volumes + rebuild)
 	docker compose down -v
 	docker compose up --build -d
 	@echo "Waiting for server to be ready..."
@@ -80,9 +80,6 @@ reset: ## Reset all data to initial state (wipe volumes + rebuild + seed)
 	done
 	@curl -sf http://localhost:8000/readyz > /dev/null 2>&1 || { echo "Error: server did not become ready"; exit 1; }
 	@echo "Server is ready (migrations ran at container startup)."
-	@echo "Seeding sample rules..."
-	RULEREPO_SERVER_URL=http://localhost:8000 uv run python scripts/seed_data.py
-	@echo "Reset complete. Stack is running with fresh data."
 
 restart: down up ## Restart the full stack
 

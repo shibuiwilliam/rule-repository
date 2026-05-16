@@ -13,16 +13,14 @@ const NAV_ITEMS = [
   // Pinned to top
   { href: "/onboarding", key: "onboarding", section: "start" },
   { href: "/projects", key: "projects", section: "start" },
+  { href: "/dashboard", key: "dashboard", section: "start" },
+  { href: "/rules", key: "rules", section: "start" },
   // Observe
-  { href: "/dashboard", key: "dashboard", section: "observe" },
   { href: "/intelligence", key: "intelligence", section: "observe" },
   { href: "/compliance-cockpit", key: "compliance", section: "observe" },
   { href: "/feedback", key: "feedback", section: "observe" },
-  { href: "/notifications", key: "notifications", section: "observe" },
-  { href: "/agents", key: "agents", section: "observe" },
   { href: "/audit", key: "audit", section: "observe" },
   // Manage
-  { href: "/rules", key: "rules", section: "manage" },
   { href: "/discover", key: "discover", section: "manage" },
   { href: "/documents", key: "documents", section: "manage" },
   { href: "/proposals", key: "proposals", section: "manage" },
@@ -37,8 +35,6 @@ const NAV_ITEMS = [
   { href: "/review", key: "review", section: "enforce" },
   ...(GATEWAY_ENABLED ? [{ href: "/gateway", key: "gateway", section: "enforce" }] : []),
   { href: "/federations", key: "federations", section: "enforce" },
-  // Settings
-  { href: "/integrations", key: "integrations", section: "settings" },
 ];
 
 export function Sidebar() {

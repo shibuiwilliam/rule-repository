@@ -26,6 +26,7 @@ async def generate_embedding(client: genai.Client, text: str) -> list[float]:
         result = client.models.embed_content(
             model=EMBEDDING_MODEL,
             contents=text,
+            config={"output_dimensionality": EMBEDDING_DIMENSION},
         )
         embedding = list(result.embeddings[0].values)
         logger.info("embedding_generated", text_length=len(text), dim=len(embedding))
@@ -52,6 +53,7 @@ async def generate_embeddings_batch(client: genai.Client, texts: list[str]) -> l
         result = client.models.embed_content(
             model=EMBEDDING_MODEL,
             contents=texts,
+            config={"output_dimensionality": EMBEDDING_DIMENSION},
         )
         embeddings = [list(e.values) for e in result.embeddings]
         logger.info("batch_embeddings_generated", count=len(embeddings))

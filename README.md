@@ -57,7 +57,7 @@ After about a minute:
 |---|---|---|
 | Backend API | http://localhost:8000 | FastAPI server (40 API routers) |
 | Swagger UI | http://localhost:8000/docs | Interactive API explorer |
-| Frontend | http://localhost:3000 | Persona-specific consoles (61 pages, 9 route groups) |
+| Frontend | http://localhost:3000 | Persona-specific consoles (57 pages, 9 route groups) |
 | PostgreSQL | localhost:5432 | Source of truth with Row-Level Security |
 | Elasticsearch | localhost:9200 | Full-text + vector hybrid search |
 | Neo4j | localhost:7474 | Rule relationship graph + norm lineage |
@@ -401,11 +401,11 @@ rulerepo audit verify
 
 ## Frontend
 
-A Next.js 15 + React 19 + Tailwind CSS frontend with 61 pages organized into 9 persona-specific route groups. Each persona sees a dashboard aligned to their workflow, not a generic engineering view. The frontend supports English and Japanese via `next-intl`, with a locale switcher in every console.
+A Next.js 15 + React 19 + Tailwind CSS frontend with 57 pages organized into 9 persona-specific route groups. Each persona sees a dashboard aligned to their workflow, not a generic engineering view. The frontend supports English and Japanese via `next-intl`, with a locale switcher in every console.
 
 | Console | Route group | Pages | Key features |
 |---|---|---|---|
-| **Main Dashboard** | `(dashboard)` | 29 | Rules, search, proposals, playground, agents, intelligence, audit, assistant, departments, onboarding |
+| **Main Dashboard** | `(dashboard)` | 25 | Rules, search, proposals, playground, intelligence, audit, assistant, departments, onboarding |
 | **Legal** | `(legal)` | 5 | Contract review, clause library, redlines, norm lineage |
 | **HR** | `(hr)` | 7 | Violations, attendance, leave, lifecycle, policies, event detail |
 | **Finance** | `(finance)` | 5 | Transaction detail, expense policies, audit reports, controls |
@@ -415,7 +415,7 @@ A Next.js 15 + React 19 + Tailwind CSS frontend with 61 pages organized into 9 p
 | **Sales** | `(sales)` | 1 | Sales dashboard |
 | **Security** | `(security)` | 1 | Classification overview |
 
-The sidebar is organized into sections: **Observe** (dashboard, intelligence, compliance cockpit, feedback, notifications, agents, audit), **Manage** (rules, discover, documents, proposals, snapshots, departments), **Use** (assistant, ask, search, playground), **Enforce** (review, gateway, federations), and **Settings** (projects, onboarding, integrations).
+The sidebar is organized into sections: **Observe** (dashboard, intelligence, compliance cockpit, feedback, audit), **Manage** (rules, discover, documents, proposals, snapshots, departments), **Use** (assistant, ask, search, playground), and **Enforce** (review, gateway, federations).
 
 Each persona console has a themed layout with its own accent color, sidebar navigation, and vocabulary. Shared components like `PersonaSwitcher`, `NormLineageViewer`, `RuleGraph`, and `RelationshipManager` adapt to the active persona context.
 
@@ -672,9 +672,9 @@ rule-repository/
 │   │   │   └── workers/               # 9 cron jobs + on-demand tasks
 │   │   ├── eval_harness/              # Golden datasets (8 domains) + metrics + regression gates
 │   │   └── tests/                     # 105 test files (unit, integration, e2e, acceptance, safety)
-│   └── frontend/                      # Next.js 15 (61 pages, 9 route groups)
+│   └── frontend/                      # Next.js 15 (57 pages, 9 route groups)
 │       ├── app/
-│       │   ├── (dashboard)/           # Main dashboard (29 pages)
+│       │   ├── (dashboard)/           # Main dashboard (25 pages)
 │       │   ├── (legal)/               # Legal console (5 pages)
 │       │   ├── (hr)/                  # HR console (7 pages)
 │       │   ├── (finance)/             # Finance console (5 pages)

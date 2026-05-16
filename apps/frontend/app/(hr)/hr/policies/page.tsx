@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
 
 type PolicyCategory = "all" | "attendance" | "leave" | "overtime" | "childcare" | "safety" | "conduct";
 
@@ -16,16 +17,6 @@ interface HRPolicy {
   status: "active" | "under_review" | "pending_amendment";
 }
 
-const POLICIES: HRPolicy[] = [
-  { id: "POL-HR-001", title: "Standard Working Hours and Overtime", category: "overtime", normTier: "REGULATION", normAuthority: "Labor Standards Act, Art. 32-36", activeRules: 10, lastUpdated: "2026-04-15", locale: "ja", status: "active" },
-  { id: "POL-HR-002", title: "Annual Paid Leave Policy", category: "leave", normTier: "CORPORATE_POLICY", normAuthority: "Labor Standards Act, Art. 39", activeRules: 8, lastUpdated: "2026-03-20", locale: "ja", status: "active" },
-  { id: "POL-HR-003", title: "Child-Care and Family Leave", category: "childcare", normTier: "REGULATION", normAuthority: "Child Care and Family Care Leave Act", activeRules: 12, lastUpdated: "2026-04-01", locale: "ja", status: "pending_amendment" },
-  { id: "POL-HR-004", title: "36 Agreement Compliance Framework", category: "overtime", normTier: "REGULATION", normAuthority: "Labor Standards Act, Art. 36", activeRules: 7, lastUpdated: "2026-05-01", locale: "ja", status: "active" },
-  { id: "POL-HR-005", title: "Attendance Recording and Verification", category: "attendance", normTier: "CORPORATE_POLICY", normAuthority: "Internal HR Policy v4.0", activeRules: 5, lastUpdated: "2026-02-10", locale: "en", status: "active" },
-  { id: "POL-HR-006", title: "Workplace Safety and Health", category: "safety", normTier: "REGULATION", normAuthority: "Industrial Safety and Health Act", activeRules: 9, lastUpdated: "2026-01-15", locale: "ja", status: "under_review" },
-  { id: "POL-HR-007", title: "Employee Code of Conduct", category: "conduct", normTier: "CORPORATE_POLICY", normAuthority: null, activeRules: 15, lastUpdated: "2026-03-01", locale: "en", status: "active" },
-  { id: "POL-HR-008", title: "Sick Leave and Special Leave", category: "leave", normTier: "CORPORATE_POLICY", normAuthority: "Employment Regulations, Ch. 7", activeRules: 6, lastUpdated: "2026-04-20", locale: "ja", status: "active" },
-];
 
 const CATEGORY_LABELS: Record<PolicyCategory, string> = {
   all: "All Categories", attendance: "Attendance", leave: "Leave",
@@ -57,10 +48,19 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function PoliciesPage() {
+  const [policies, setPolicies] = useState<HRPolicy[]>([]);
+  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<PolicyCategory>("all");
   const [search, setSearch] = useState("");
 
-  const filtered = POLICIES.filter((p) => {
+  useEffect(() => {
+    fetchSeedData<{ policies: HRPolicy[] }>("hr").then((d) => {
+      setPolicies(d.policies ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = policies.filter((p) => {
     if (category !== "all" && p.category !== category) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -68,6 +68,10 @@ export default function PoliciesPage() {
     }
     return true;
   });
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -79,10 +83,10 @@ export default function PoliciesPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         {[
-          { label: "Total Policies", value: POLICIES.length, color: "text-blue-600" },
-          { label: "Active Rules", value: POLICIES.reduce((a, p) => a + p.activeRules, 0), color: "text-green-600" },
-          { label: "Under Review", value: POLICIES.filter((p) => p.status === "under_review").length, color: "text-yellow-600" },
-          { label: "Pending Amendment", value: POLICIES.filter((p) => p.status === "pending_amendment").length, color: "text-orange-600" },
+          { label: "Total Policies", value: policies.length, color: "text-blue-600" },
+          { label: "Active Rules", value: policies.reduce((a, p) => a + p.activeRules, 0), color: "text-green-600" },
+          { label: "Under Review", value: policies.filter((p) => p.status === "under_review").length, color: "text-yellow-600" },
+          { label: "Pending Amendment", value: policies.filter((p) => p.status === "pending_amendment").length, color: "text-orange-600" },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl border bg-white p-5">
             <p className="text-xs font-medium text-gray-500">{stat.label}</p>
@@ -101,7 +105,7 @@ export default function PoliciesPage() {
 
       <div className="flex flex-wrap gap-2">
         {(Object.keys(CATEGORY_LABELS) as PolicyCategory[]).map((cat) => {
-          const count = cat === "all" ? POLICIES.length : POLICIES.filter((p) => p.category === cat).length;
+          const count = cat === "all" ? policies.length : policies.filter((p) => p.category === cat).length;
           return (
             <button key={cat} type="button" onClick={() => setCategory(cat)}
               className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${category === cat ? "border-indigo-400 bg-indigo-100 text-indigo-800" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"}`}>

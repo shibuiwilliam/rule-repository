@@ -1,5 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
+
 interface ExceptionRecord {
   id: string;
   ruleId: string;
@@ -12,13 +15,6 @@ interface ExceptionRecord {
   expiresAt: string;
 }
 
-const EXCEPTIONS: ExceptionRecord[] = [
-  { id: "EXC-001", ruleId: "R-OT-001", ruleStatement: "Monthly overtime MUST NOT exceed 45 hours", requester: "K. Watanabe", department: "Engineering", justification: "Critical production incident response — temporary 2-week exception", status: "approved", requestedAt: "2026-05-01", expiresAt: "2026-05-15" },
-  { id: "EXC-002", ruleId: "R-LV-003", ruleStatement: "Leave requests MUST be submitted 14 days in advance", requester: "S. Kim", department: "Marketing", justification: "Family emergency — retroactive leave approval", status: "approved", requestedAt: "2026-05-05", expiresAt: "2026-05-06" },
-  { id: "EXC-003", ruleId: "R-FIN-002", ruleStatement: "Expenses over JPY 100,000 require dual approval", requester: "M. Tanaka", department: "Finance", justification: "Urgent vendor payment — second approver on leave", status: "pending", requestedAt: "2026-05-08", expiresAt: "2026-05-10" },
-  { id: "EXC-004", ruleId: "R-COM-005", ruleStatement: "External communications require comms department review", requester: "A. Suzuki", department: "Sales", justification: "Time-sensitive client response — post-hoc review requested", status: "denied", requestedAt: "2026-05-04", expiresAt: "2026-05-04" },
-];
-
 const STATUS_BADGE: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
   approved: "bg-green-100 text-green-800",
@@ -27,6 +23,20 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function ExceptionsPage() {
+  const [exceptions, setExceptions] = useState<ExceptionRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ exceptions: ExceptionRecord[] }>("compliance").then((d) => {
+      setExceptions(d.exceptions ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
@@ -37,7 +47,7 @@ export default function ExceptionsPage() {
         {(["pending", "approved", "denied", "expired"] as const).map((s) => (
           <div key={s} className="rounded-xl border bg-white p-5">
             <p className="text-xs font-medium text-gray-500">{s.charAt(0).toUpperCase() + s.slice(1)}</p>
-            <p className={`mt-1 text-2xl font-bold ${STATUS_BADGE[s].split(" ")[1]}`}>{EXCEPTIONS.filter((e) => e.status === s).length}</p>
+            <p className={`mt-1 text-2xl font-bold ${STATUS_BADGE[s].split(" ")[1]}`}>{exceptions.filter((e) => e.status === s).length}</p>
           </div>
         ))}
       </div>
@@ -54,7 +64,7 @@ export default function ExceptionsPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {EXCEPTIONS.map((e) => (
+            {exceptions.map((e) => (
               <tr key={e.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3">
                   <p className="text-sm text-gray-900">{e.ruleStatement}</p>

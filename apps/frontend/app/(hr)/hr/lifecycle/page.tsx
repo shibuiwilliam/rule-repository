@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
 
 type EventType = "all" | "onboarding" | "transfer" | "promotion" | "leave" | "termination";
 
@@ -17,14 +18,6 @@ interface LifecycleEvent {
   flaggedRules: number;
 }
 
-const EVENTS: LifecycleEvent[] = [
-  { id: "EVT-001", employeeId: "E-1042", employeeName: "A. Suzuki", department: "Engineering", eventType: "onboarding", description: "New hire onboarding - Senior Backend Engineer", date: "2026-05-08", complianceStatus: "compliant", rulesChecked: 12, flaggedRules: 0 },
-  { id: "EVT-002", employeeId: "E-0831", employeeName: "K. Watanabe", department: "Sales", eventType: "transfer", description: "Transfer from Tokyo HQ to Osaka branch", date: "2026-05-07", complianceStatus: "warning", rulesChecked: 8, flaggedRules: 1 },
-  { id: "EVT-003", employeeId: "E-0215", employeeName: "M. Tanaka", department: "Finance", eventType: "promotion", description: "Promotion to Finance Manager - requires updated signing authority", date: "2026-05-05", complianceStatus: "compliant", rulesChecked: 15, flaggedRules: 0 },
-  { id: "EVT-004", employeeId: "E-0567", employeeName: "T. Nakamura", department: "Legal", eventType: "leave", description: "Child-care leave application - 6 months", date: "2026-05-04", complianceStatus: "compliant", rulesChecked: 10, flaggedRules: 0 },
-  { id: "EVT-005", employeeId: "E-1103", employeeName: "S. Kim", department: "Marketing", eventType: "termination", description: "Voluntary resignation - 30-day notice period", date: "2026-05-02", complianceStatus: "violation", rulesChecked: 9, flaggedRules: 2 },
-  { id: "EVT-006", employeeId: "E-0923", employeeName: "R. Yamamoto", department: "Engineering", eventType: "transfer", description: "Transfer to overseas subsidiary (Singapore)", date: "2026-04-28", complianceStatus: "warning", rulesChecked: 18, flaggedRules: 3 },
-];
 
 const EVENT_TYPE_LABELS: Record<EventType, string> = {
   all: "All Events", onboarding: "Onboarding", transfer: "Transfer",
@@ -43,10 +36,19 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function LifecyclePage() {
+  const [events, setEvents] = useState<LifecycleEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<EventType>("all");
   const [search, setSearch] = useState("");
 
-  const filtered = EVENTS.filter((e) => {
+  useEffect(() => {
+    fetchSeedData<{ lifecycle_events: LifecycleEvent[] }>("hr").then((d) => {
+      setEvents(d.lifecycle_events ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = events.filter((e) => {
     if (typeFilter !== "all" && e.eventType !== typeFilter) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -54,6 +56,10 @@ export default function LifecyclePage() {
     }
     return true;
   });
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -65,10 +71,10 @@ export default function LifecyclePage() {
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         {[
-          { label: "Events This Month", value: EVENTS.length, color: "text-blue-600" },
-          { label: "Compliant", value: EVENTS.filter((e) => e.complianceStatus === "compliant").length, color: "text-green-600" },
-          { label: "Warnings", value: EVENTS.filter((e) => e.complianceStatus === "warning").length, color: "text-yellow-600" },
-          { label: "Violations", value: EVENTS.filter((e) => e.complianceStatus === "violation").length, color: "text-red-600" },
+          { label: "Events This Month", value: events.length, color: "text-blue-600" },
+          { label: "Compliant", value: events.filter((e) => e.complianceStatus === "compliant").length, color: "text-green-600" },
+          { label: "Warnings", value: events.filter((e) => e.complianceStatus === "warning").length, color: "text-yellow-600" },
+          { label: "Violations", value: events.filter((e) => e.complianceStatus === "violation").length, color: "text-red-600" },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl border bg-white p-5">
             <p className="text-xs font-medium text-gray-500">{stat.label}</p>
@@ -87,7 +93,7 @@ export default function LifecyclePage() {
 
       <div className="flex flex-wrap gap-2">
         {(Object.keys(EVENT_TYPE_LABELS) as EventType[]).map((t) => {
-          const count = t === "all" ? EVENTS.length : EVENTS.filter((e) => e.eventType === t).length;
+          const count = t === "all" ? events.length : events.filter((e) => e.eventType === t).length;
           return (
             <button key={t} type="button" onClick={() => setTypeFilter(t)}
               className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${typeFilter === t ? "border-indigo-400 bg-indigo-100 text-indigo-800" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"}`}>

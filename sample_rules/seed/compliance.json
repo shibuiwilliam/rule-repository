@@ -1,0 +1,182 @@
+{
+  "bundles": [
+    {
+      "id": "B-001",
+      "name": "J-SOX Internal Controls",
+      "framework": "J-SOX",
+      "description": "Financial reporting internal controls required under the Japanese Financial Instruments and Exchange Act.",
+      "totalControls": 42,
+      "implementedControls": 38,
+      "rules": [
+        { "ruleId": "R-1001", "statement": "All financial transactions require dual approval above JPY 1M", "controlId": "JSOX-AC-01", "status": "implemented", "lastEvaluated": "2026-05-07", "complianceRate": 96 },
+        { "ruleId": "R-1002", "statement": "Revenue recognition must follow IFRS 15 five-step model", "controlId": "JSOX-RR-01", "status": "implemented", "lastEvaluated": "2026-05-06", "complianceRate": 100 },
+        { "ruleId": "R-1003", "statement": "Journal entries require supporting documentation", "controlId": "JSOX-JE-01", "status": "implemented", "lastEvaluated": "2026-05-07", "complianceRate": 92 },
+        { "ruleId": "R-1004", "statement": "Bank reconciliation within 3 business days", "controlId": "JSOX-BR-01", "status": "in-progress", "lastEvaluated": null, "complianceRate": null }
+      ]
+    },
+    {
+      "id": "B-002",
+      "name": "GDPR Data Protection",
+      "framework": "GDPR",
+      "description": "EU General Data Protection Regulation compliance controls.",
+      "totalControls": 35,
+      "implementedControls": 28,
+      "rules": [
+        { "ruleId": "R-2001", "statement": "Personal data processing requires documented legal basis", "controlId": "GDPR-LB-01", "status": "implemented", "lastEvaluated": "2026-05-05", "complianceRate": 88 },
+        { "ruleId": "R-2002", "statement": "Data subject access requests within 30 days", "controlId": "GDPR-DSAR-01", "status": "implemented", "lastEvaluated": "2026-05-04", "complianceRate": 95 },
+        { "ruleId": "R-2003", "statement": "Cross-border transfers require SCCs", "controlId": "GDPR-CBT-01", "status": "in-progress", "lastEvaluated": null, "complianceRate": null }
+      ]
+    },
+    {
+      "id": "B-003",
+      "name": "EU AI Act Compliance",
+      "framework": "EU AI Act",
+      "description": "Controls for AI systems classified as high-risk.",
+      "totalControls": 18,
+      "implementedControls": 8,
+      "rules": [
+        { "ruleId": "R-3001", "statement": "AI system risk classification must be documented", "controlId": "EUAI-RC-01", "status": "implemented", "lastEvaluated": "2026-05-01", "complianceRate": 100 },
+        { "ruleId": "R-3002", "statement": "High-risk AI systems require human oversight", "controlId": "EUAI-HO-01", "status": "in-progress", "lastEvaluated": null, "complianceRate": null },
+        { "ruleId": "R-3003", "statement": "AI training data must be bias-tested", "controlId": "EUAI-TD-01", "status": "not-started", "lastEvaluated": null, "complianceRate": null }
+      ]
+    }
+  ],
+  "exceptions": [
+    {
+      "id": "EXC-001",
+      "ruleId": "R-OT-001",
+      "ruleStatement": "Monthly overtime MUST NOT exceed 45 hours",
+      "requester": "K. Watanabe",
+      "department": "Engineering",
+      "justification": "Critical production incident response \u2014 temporary 2-week exception",
+      "status": "approved",
+      "requestedAt": "2026-05-01",
+      "expiresAt": "2026-05-15"
+    },
+    {
+      "id": "EXC-002",
+      "ruleId": "R-LV-003",
+      "ruleStatement": "Leave requests MUST be submitted 14 days in advance",
+      "requester": "S. Kim",
+      "department": "Marketing",
+      "justification": "Family emergency \u2014 retroactive leave approval",
+      "status": "approved",
+      "requestedAt": "2026-05-05",
+      "expiresAt": "2026-05-06"
+    },
+    {
+      "id": "EXC-003",
+      "ruleId": "R-FIN-002",
+      "ruleStatement": "Expenses over JPY 100,000 require dual approval",
+      "requester": "M. Tanaka",
+      "department": "Finance",
+      "justification": "Urgent vendor payment \u2014 second approver on leave",
+      "status": "pending",
+      "requestedAt": "2026-05-08",
+      "expiresAt": "2026-05-10"
+    },
+    {
+      "id": "EXC-004",
+      "ruleId": "R-COM-005",
+      "ruleStatement": "External communications require comms department review",
+      "requester": "A. Suzuki",
+      "department": "Sales",
+      "justification": "Time-sensitive client response \u2014 post-hoc review requested",
+      "status": "denied",
+      "requestedAt": "2026-05-04",
+      "expiresAt": "2026-05-04"
+    }
+  ],
+  "regulatory_updates": [
+    {
+      "id": "REG-001",
+      "title": "Amendment to Labor Standards Act Article 36 (overtime caps)",
+      "source": "Ministry of Health, Labour and Welfare",
+      "normTier": "LAW",
+      "publishedAt": "2026-04-15",
+      "effectiveAt": "2026-10-01",
+      "impactedRules": 8,
+      "status": "assessed",
+      "summary": "Monthly overtime cap revised from 45 to 40 hours for companies with 50+ employees. Special clause thresholds unchanged."
+    },
+    {
+      "id": "REG-002",
+      "title": "APPI Enforcement Regulation Amendment",
+      "source": "Personal Information Protection Commission",
+      "normTier": "REGULATION",
+      "publishedAt": "2026-04-20",
+      "effectiveAt": "2026-07-01",
+      "impactedRules": 5,
+      "status": "new",
+      "summary": "New breach notification requirements: 72-hour reporting window, expanded scope of reportable incidents."
+    },
+    {
+      "id": "REG-003",
+      "title": "Revised Invoice System Qualification Requirements",
+      "source": "National Tax Agency",
+      "normTier": "REGULATION",
+      "publishedAt": "2026-03-01",
+      "effectiveAt": "2026-04-01",
+      "impactedRules": 3,
+      "status": "propagated",
+      "summary": "Qualified invoice issuer registration requirements updated. Small business transitional period extended."
+    },
+    {
+      "id": "REG-004",
+      "title": "Child Care and Family Care Leave Act Amendment",
+      "source": "Ministry of Health, Labour and Welfare",
+      "normTier": "LAW",
+      "publishedAt": "2026-05-01",
+      "effectiveAt": "2027-04-01",
+      "impactedRules": 6,
+      "status": "new",
+      "summary": "Extended childcare leave eligibility to include part-time workers. New employer disclosure requirements."
+    }
+  ],
+  "audit_packets": [
+    {
+      "id": "AP-2026-Q1",
+      "title": "Q1 2026 Compliance Audit \u2014 HR",
+      "scope": "hr/attendance, hr/overtime",
+      "period": "2026-01 to 2026-03",
+      "status": "finalized",
+      "rulesIncluded": 25,
+      "evaluationsIncluded": 342,
+      "createdAt": "2026-04-05",
+      "reviewer": "M. Tanaka"
+    },
+    {
+      "id": "AP-2026-Q1-FIN",
+      "title": "Q1 2026 Compliance Audit \u2014 Finance",
+      "scope": "finance/expense, finance/tax",
+      "period": "2026-01 to 2026-03",
+      "status": "in_review",
+      "rulesIncluded": 18,
+      "evaluationsIncluded": 156,
+      "createdAt": "2026-04-10",
+      "reviewer": "K. Sato"
+    },
+    {
+      "id": "AP-2026-Q1-LEGAL",
+      "title": "Q1 2026 Contract Review Audit",
+      "scope": "legal/contract",
+      "period": "2026-01 to 2026-03",
+      "status": "in_review",
+      "rulesIncluded": 30,
+      "evaluationsIncluded": 47,
+      "createdAt": "2026-04-12",
+      "reviewer": "T. Yamada"
+    },
+    {
+      "id": "AP-2026-Q2-HR",
+      "title": "Q2 2026 Compliance Audit \u2014 HR (Draft)",
+      "scope": "hr/attendance, hr/overtime, hr/leave",
+      "period": "2026-04 to 2026-06",
+      "status": "draft",
+      "rulesIncluded": 25,
+      "evaluationsIncluded": 0,
+      "createdAt": "2026-05-01",
+      "reviewer": ""
+    }
+  ]
+}

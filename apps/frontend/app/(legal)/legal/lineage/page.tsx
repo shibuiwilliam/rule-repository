@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
 import NormLineageViewer from "@/components/NormLineageViewer";
 import type { LineageChain } from "@/components/NormLineageViewer";
 
@@ -16,33 +17,6 @@ interface TrackedRule {
   pendingReview: boolean;
 }
 
-const TRACKED_RULES: TrackedRule[] = [
-  { id: "R-LAW-001", statement: "Personal information shall not be provided to third parties without consent of the individual.", norm_tier: "LAW", norm_authority: "Act on the Protection of Personal Information (APPI), Art. 27", upstreamCount: 0, downstreamCount: 4, pendingReview: false },
-  { id: "R-REG-003", statement: "Overtime work shall not exceed 45 hours per month and 360 hours per year.", norm_tier: "REGULATION", norm_authority: "Labor Standards Act, Art. 36", upstreamCount: 1, downstreamCount: 3, pendingReview: true },
-  { id: "R-POL-012", statement: "All vendor contracts exceeding JPY 10M require dual legal review before execution.", norm_tier: "CORPORATE_POLICY", norm_authority: "Internal Procurement Policy v3.2", upstreamCount: 2, downstreamCount: 2, pendingReview: false },
-  { id: "R-DEPT-045", statement: "Engineering pull requests modifying authentication modules require security-team approval.", norm_tier: "DEPARTMENT_RULE", norm_authority: "Engineering Security Handbook, Ch. 4", upstreamCount: 3, downstreamCount: 0, pendingReview: false },
-  { id: "R-POL-018", statement: "Customer data must be encrypted at rest using AES-256 or equivalent.", norm_tier: "CORPORATE_POLICY", norm_authority: "Data Protection Policy v2.1", upstreamCount: 1, downstreamCount: 5, pendingReview: true },
-];
-
-const DEMO_UPSTREAM: LineageChain = {
-  root_rule_id: "R-POL-012",
-  direction: "upstream",
-  nodes: [
-    { rule_id: "R-LAW-JP-COMP", statement: "Companies Act requires proper internal controls for corporate transactions.", norm_tier: "LAW", norm_authority: "Companies Act (Japan), Art. 362", depth: 2 },
-    { rule_id: "R-REG-PROC", statement: "Procurement of services above regulatory thresholds shall follow competitive bidding procedures.", norm_tier: "REGULATION", norm_authority: "Internal Audit Standards, Sect. 4.1", depth: 1 },
-    { rule_id: "R-POL-012", statement: "All vendor contracts exceeding JPY 10M require dual legal review before execution.", norm_tier: "CORPORATE_POLICY", norm_authority: "Internal Procurement Policy v3.2", depth: 0 },
-  ],
-};
-
-const DEMO_DOWNSTREAM: LineageChain = {
-  root_rule_id: "R-POL-012",
-  direction: "downstream",
-  nodes: [
-    { rule_id: "R-POL-012", statement: "All vendor contracts exceeding JPY 10M require dual legal review before execution.", norm_tier: "CORPORATE_POLICY", norm_authority: "Internal Procurement Policy v3.2", depth: 0 },
-    { rule_id: "R-DEPT-PROC-1", statement: "Engineering vendor contracts must include SLA and data-handling appendices.", norm_tier: "DEPARTMENT_RULE", norm_authority: "Eng Procurement SOP", depth: 1 },
-    { rule_id: "R-OP-PROC-1", statement: "Cloud infrastructure vendor agreements must specify uptime guarantees of 99.9% or higher.", norm_tier: "OPERATIONAL_RULE", norm_authority: null, depth: 2 },
-  ],
-};
 
 const TIER_BADGE: Record<string, string> = {
   LAW: "bg-red-100 text-red-800",
@@ -63,7 +37,24 @@ const TIER_LABELS: Record<string, string> = {
 };
 
 export default function LineagePage() {
+  const [trackedRules, setTrackedRules] = useState<TrackedRule[]>([]);
+  const [upstream, setUpstream] = useState<LineageChain | undefined>(undefined);
+  const [downstream, setDownstream] = useState<LineageChain | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
   const [selectedRule, setSelectedRule] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchSeedData<{ lineage: { tracked_rules: TrackedRule[]; upstream: LineageChain; downstream: LineageChain } }>("legal").then((d) => {
+      setTrackedRules(d.lineage?.tracked_rules ?? []);
+      setUpstream(d.lineage?.upstream);
+      setDownstream(d.lineage?.downstream);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -75,10 +66,10 @@ export default function LineagePage() {
       {/* Summary stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         {[
-          { label: "Tracked Norms", value: TRACKED_RULES.length, color: "text-blue-600" },
-          { label: "Pending Norm Reviews", value: TRACKED_RULES.filter((r) => r.pendingReview).length, color: "text-yellow-600" },
-          { label: "Laws / Regulations", value: TRACKED_RULES.filter((r) => r.norm_tier === "LAW" || r.norm_tier === "REGULATION").length, color: "text-red-600" },
-          { label: "Total Derivatives", value: TRACKED_RULES.reduce((a, r) => a + r.downstreamCount, 0), color: "text-green-600" },
+          { label: "Tracked Norms", value: trackedRules.length, color: "text-blue-600" },
+          { label: "Pending Norm Reviews", value: trackedRules.filter((r) => r.pendingReview).length, color: "text-yellow-600" },
+          { label: "Laws / Regulations", value: trackedRules.filter((r) => r.norm_tier === "LAW" || r.norm_tier === "REGULATION").length, color: "text-red-600" },
+          { label: "Total Derivatives", value: trackedRules.reduce((a, r) => a + r.downstreamCount, 0), color: "text-green-600" },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl border bg-white p-5">
             <p className="text-xs font-medium text-gray-500">{stat.label}</p>
@@ -89,7 +80,7 @@ export default function LineagePage() {
 
       {/* Rule list */}
       <div className="space-y-3">
-        {TRACKED_RULES.map((rule) => (
+        {trackedRules.map((rule) => (
           <button key={rule.id} type="button" onClick={() => setSelectedRule(selectedRule === rule.id ? null : rule.id)}
             className="w-full rounded-xl border bg-white p-5 text-left transition-colors hover:border-slate-300">
             <div className="flex items-start justify-between">
@@ -118,8 +109,8 @@ export default function LineagePage() {
           <h2 className="text-lg font-semibold text-gray-900">Lineage for {selectedRule}</h2>
           <NormLineageViewer
             ruleId={selectedRule}
-            upstream={selectedRule === "R-POL-012" ? DEMO_UPSTREAM : undefined}
-            downstream={selectedRule === "R-POL-012" ? DEMO_DOWNSTREAM : undefined}
+            upstream={selectedRule === "R-POL-012" ? upstream : undefined}
+            downstream={selectedRule === "R-POL-012" ? downstream : undefined}
           />
         </div>
       )}

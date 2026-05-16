@@ -1,26 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
 
-const USERS = [
-  { id: "U-001", name: "Tanaka Yuki", email: "tanaka@acme.co.jp", roles: ["admin", "owner"], departments: ["Engineering"], lastActive: "2026-05-08 09:45", status: "active" as const, scimManaged: true },
-  { id: "U-002", name: "Suzuki Hana", email: "suzuki@acme.co.jp", roles: ["reviewer", "owner"], departments: ["Legal"], lastActive: "2026-05-08 09:30", status: "active" as const, scimManaged: true },
-  { id: "U-003", name: "Yamamoto Ken", email: "yamamoto@acme.co.jp", roles: ["reviewer"], departments: ["HR"], lastActive: "2026-05-07 17:20", status: "active" as const, scimManaged: true },
-  { id: "U-004", name: "Sato Mei", email: "sato@acme.co.jp", roles: ["auditor"], departments: ["Finance", "Compliance"], lastActive: "2026-05-08 08:15", status: "active" as const, scimManaged: true },
-  { id: "U-005", name: "Watanabe Ryo", email: "watanabe@acme.co.jp", roles: ["subscriber"], departments: ["Marketing"], lastActive: "2026-05-06 14:00", status: "active" as const, scimManaged: false },
-  { id: "U-006", name: "Nakamura Taro", email: "nakamura@acme.co.jp", roles: ["reviewer"], departments: ["Sales"], lastActive: "-", status: "invited" as const, scimManaged: false },
-];
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  roles: string[];
+  departments: string[];
+  lastActive: string;
+  status: string;
+  scimManaged: boolean;
+}
 
 const ROLE_BADGE: Record<string, string> = { admin: "bg-purple-100 text-purple-700", owner: "bg-blue-100 text-blue-700", reviewer: "bg-green-100 text-green-700", auditor: "bg-amber-100 text-amber-700", subscriber: "bg-gray-100 text-gray-600" };
 const STATUS_BADGE: Record<string, string> = { active: "bg-green-100 text-green-700", inactive: "bg-gray-100 text-gray-600", invited: "bg-blue-100 text-blue-700" };
 
 export default function UsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const filtered = USERS.filter((u) => {
+
+  useEffect(() => {
+    fetchSeedData<{ users: User[] }>("admin").then((d) => {
+      setUsers(d.users ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = users.filter((u) => {
     if (!search) return true;
     const q = search.toLowerCase();
     return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
   });
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">

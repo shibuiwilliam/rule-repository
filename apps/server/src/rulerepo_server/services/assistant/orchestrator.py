@@ -126,7 +126,8 @@ class AssistantOrchestrator:
             search_index = PostgresFTSIndex(self._session)
 
         search_svc = SearchService(self._session, search_index)
-        results = await search_svc.hybrid_search(query=query, limit=10)
+        search_result = await search_svc.hybrid_search(query=query, page_size=10)
+        results = search_result.get("items", [])
 
         # Apply department filter if provided
         if department_filter:

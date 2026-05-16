@@ -1,18 +1,26 @@
-const DEPT_LEAVE = [
-  { department: "Engineering", totalEmployees: 45, avgBalance: 12.3, compulsoryMet: 38, compulsoryTotal: 45 },
-  { department: "Sales", totalEmployees: 22, avgBalance: 8.5, compulsoryMet: 18, compulsoryTotal: 22 },
-  { department: "Marketing", totalEmployees: 15, avgBalance: 14.1, compulsoryMet: 15, compulsoryTotal: 15 },
-  { department: "Operations", totalEmployees: 30, avgBalance: 6.2, compulsoryMet: 22, compulsoryTotal: 30 },
-  { department: "Finance", totalEmployees: 12, avgBalance: 10.8, compulsoryMet: 12, compulsoryTotal: 12 },
-];
+"use client";
 
-const LEAVE_REQUESTS = [
-  { id: "LR-301", employee: "Employee A", department: "Engineering", type: "Annual Leave", startDate: "2026-05-15", endDate: "2026-05-19", days: 5, status: "pending" as const },
-  { id: "LR-302", employee: "Employee B", department: "Sales", type: "Annual Leave", startDate: "2026-05-20", endDate: "2026-05-21", days: 2, status: "pending" as const },
-  { id: "LR-303", employee: "Employee C", department: "Operations", type: "Sick Leave", startDate: "2026-05-08", endDate: "2026-05-09", days: 2, status: "approved" as const },
-  { id: "LR-304", employee: "Employee D", department: "Marketing", type: "Annual Leave", startDate: "2026-06-01", endDate: "2026-06-05", days: 5, status: "pending" as const },
-  { id: "LR-305", employee: "Employee E", department: "Finance", type: "Special Leave", startDate: "2026-05-12", endDate: "2026-05-12", days: 1, status: "approved" as const },
-];
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
+
+interface DeptLeave {
+  department: string;
+  totalEmployees: number;
+  avgBalance: number;
+  compulsoryMet: number;
+  compulsoryTotal: number;
+}
+
+interface LeaveRequest {
+  id: string;
+  employee: string;
+  department: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  status: "pending" | "approved" | "denied";
+}
 
 const STATUS_BADGE: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700",
@@ -21,6 +29,22 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function LeavePage() {
+  const [deptLeave, setDeptLeave] = useState<DeptLeave[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ leave: { dept_leave: DeptLeave[]; leave_requests: LeaveRequest[] } }>("hr").then((d) => {
+      setDeptLeave(d.leave?.dept_leave ?? []);
+      setLeaveRequests(d.leave?.leave_requests ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
@@ -36,7 +60,7 @@ export default function LeavePage() {
           <h2 className="text-base font-semibold text-gray-900">Leave Balance Overview by Department</h2>
         </div>
         <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
-          {DEPT_LEAVE.map((d) => {
+          {deptLeave.map((d) => {
             const pct = Math.round((d.compulsoryMet / d.compulsoryTotal) * 100);
             return (
               <div key={d.department} className="rounded-lg border p-4">
@@ -113,7 +137,7 @@ export default function LeavePage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {LEAVE_REQUESTS.map((lr) => (
+              {leaveRequests.map((lr) => (
                 <tr key={lr.id} className="hover:bg-gray-50">
                   <td className="px-5 py-3 font-mono text-xs text-gray-500">{lr.id}</td>
                   <td className="px-5 py-3 font-medium text-gray-900">{lr.employee}</td>

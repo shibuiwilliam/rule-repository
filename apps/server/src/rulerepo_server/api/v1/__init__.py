@@ -36,6 +36,7 @@ from rulerepo_server.api.v1.review import router as review_router
 from rulerepo_server.api.v1.risks import router as risks_router
 from rulerepo_server.api.v1.rules import router as rules_router
 from rulerepo_server.api.v1.search import router as search_router
+from rulerepo_server.api.v1.seed import router as seed_router
 from rulerepo_server.api.v1.snapshots import router as snapshots_router
 from rulerepo_server.api.v1.submissions import router as submissions_router
 from rulerepo_server.api.v1.translations import router as translations_router
@@ -56,8 +57,10 @@ v1_router.include_router(rules_router)
 v1_router.include_router(search_router)
 v1_router.include_router(contract_router)
 v1_router.include_router(event_router)
+v1_router.include_router(
+    review_router
+)  # before evaluation_router: its /evaluate/review must not be caught by /{surface}
 v1_router.include_router(evaluation_router)
-v1_router.include_router(review_router)
 v1_router.include_router(risks_router)
 v1_router.include_router(relationships_router)
 v1_router.include_router(extraction_router)
@@ -81,6 +84,7 @@ v1_router.include_router(assistant_router)
 v1_router.include_router(cockpit_router)
 v1_router.include_router(events_ingest_router)
 v1_router.include_router(submissions_router)
+v1_router.include_router(seed_router)
 
 
 @v1_router.get("/health", tags=["health"])

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
 
 interface AccessLog {
   id: string;
@@ -12,22 +13,28 @@ interface AccessLog {
   result: "allowed" | "denied";
 }
 
-const SAMPLE_LOGS: AccessLog[] = [
-  { id: "AL-001", timestamp: "2026-05-16 09:15:23", actor: "user:alice@acme.co", action: "READ", resource: "rule:R-L002 (Anti-social forces clause)", classification: "CONFIDENTIAL", result: "allowed" },
-  { id: "AL-002", timestamp: "2026-05-16 09:12:10", actor: "agent:claude-code-1", action: "EVALUATE", resource: "ruleset:hr/attendance", classification: "INTERNAL", result: "allowed" },
-  { id: "AL-003", timestamp: "2026-05-16 09:10:45", actor: "user:bob@acme.co", action: "EXPORT", resource: "ruleset:finance/expense", classification: "RESTRICTED", result: "denied" },
-  { id: "AL-004", timestamp: "2026-05-16 08:55:01", actor: "user:carol@acme.co", action: "READ", resource: "rule:R-F010 (Procurement threshold)", classification: "INTERNAL", result: "allowed" },
-  { id: "AL-005", timestamp: "2026-05-16 08:42:33", actor: "agent:ci-pipeline", action: "EVALUATE", resource: "ruleset:engineering/python", classification: "PUBLIC", result: "allowed" },
-];
-
 const RESULT_BADGE: Record<string, string> = {
   allowed: "bg-green-100 text-green-700",
   denied: "bg-red-100 text-red-700",
 };
 
 export default function AccessLogsPage() {
+  const [logs, setLogs] = useState<AccessLog[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "denied">("all");
-  const filtered = filter === "all" ? SAMPLE_LOGS : SAMPLE_LOGS.filter((l) => l.result === "denied");
+
+  useEffect(() => {
+    fetchSeedData<{ access_logs: AccessLog[] }>("security").then((d) => {
+      setLogs(d.access_logs ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = filter === "all" ? logs : logs.filter((l) => l.result === "denied");
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">

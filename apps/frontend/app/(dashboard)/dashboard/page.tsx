@@ -174,9 +174,8 @@ function EngineeringDashboard({ data }: { data: SummaryData | null }) {
       )}
       <QuickLinks links={[
         { href: "/rules?scope=engineering", label: "Engineering Rules", desc: "Python, API, security, testing rules" },
-        { href: "/agents", label: "Agent Governance", desc: "AI agent compliance and trust levels" },
-        { href: "/integrations", label: "CI/CD Integration", desc: "GitHub, hooks, and pipelines" },
         { href: "/feedback", label: "Correction Flywheel", desc: "Review human corrections" },
+        { href: "/playground", label: "Playground", desc: "Test rules against sample inputs" },
       ]} />
     </div>
   );

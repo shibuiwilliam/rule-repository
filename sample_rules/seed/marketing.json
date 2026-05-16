@@ -1,0 +1,199 @@
+{
+  "campaigns": [
+    {
+      "id": "cmp-001",
+      "name": "Summer Sale 2026 - Display Ads",
+      "channel": "Display",
+      "launchDate": "2026-06-01",
+      "status": "approved",
+      "rulesChecked": 12,
+      "violations": 0
+    },
+    {
+      "id": "cmp-002",
+      "name": "New Product Launch - Social Media",
+      "channel": "Social",
+      "launchDate": "2026-05-20",
+      "status": "violations_found",
+      "rulesChecked": 15,
+      "violations": 3
+    },
+    {
+      "id": "cmp-003",
+      "name": "Q3 Email Newsletter Series",
+      "channel": "Email",
+      "launchDate": "2026-07-01",
+      "status": "pending_review",
+      "rulesChecked": 8,
+      "violations": 0
+    },
+    {
+      "id": "cmp-004",
+      "name": "Brand Awareness - Video Campaign",
+      "channel": "Video",
+      "launchDate": "2026-06-15",
+      "status": "approved",
+      "rulesChecked": 18,
+      "violations": 0
+    },
+    {
+      "id": "cmp-005",
+      "name": "Holiday Promotion - Landing Pages",
+      "channel": "Web",
+      "launchDate": "2026-12-01",
+      "status": "draft",
+      "rulesChecked": 0,
+      "violations": 0
+    },
+    {
+      "id": "cmp-006",
+      "name": "Partner Co-Marketing - Print & Digital",
+      "channel": "Multi-channel",
+      "launchDate": "2026-08-10",
+      "status": "pending_review",
+      "rulesChecked": 22,
+      "violations": 0
+    }
+  ],
+  "ad_compliance_checkpoints": [
+    {
+      "id": 1,
+      "regulation": "\u666f\u54c1\u8868\u793a\u6cd5 (Act against Unjustifiable Premiums and Misleading Representations)",
+      "description": "Prohibits misleading representations about products and services. All advertising claims must be substantiated and not create false impressions of superior quality or value.",
+      "severity": "critical",
+      "checks": [
+        "No\u512a\u826f\u8aa4\u8a8d\u8868\u793a (misleading superior quality claims)",
+        "No\u6709\u5229\u8aa4\u8a8d\u8868\u793a (misleading advantageous claims)",
+        "Proper disclosure of conditions and limitations",
+        "Substantiation for all comparative claims"
+      ]
+    },
+    {
+      "id": 2,
+      "regulation": "\u85ac\u6a5f\u6cd5 (Act on Securing Quality, Efficacy and Safety of Products)",
+      "description": "Regulates advertising of pharmaceuticals, medical devices, cosmetics, and quasi-drugs. Restricts health-related claims in non-medical product advertising.",
+      "severity": "critical",
+      "checks": [
+        "No unapproved efficacy or effect claims",
+        "No before/after imagery implying medical effects",
+        "Proper categorization of product claims (cosmetic vs. quasi-drug vs. pharmaceutical)",
+        "Required disclaimers for health-related products"
+      ]
+    },
+    {
+      "id": 3,
+      "regulation": "\u7279\u5b9a\u5546\u53d6\u5f15\u6cd5 (Specified Commercial Transactions Act)",
+      "description": "Governs mail-order sales, telemarketing, and online transactions. Requires specific disclosures in advertising materials.",
+      "severity": "high",
+      "checks": [
+        "Price and payment terms clearly stated",
+        "Return/cancellation policy disclosed",
+        "Seller identity and contact information included",
+        "Delivery timeline and conditions specified"
+      ]
+    },
+    {
+      "id": 4,
+      "regulation": "\u8457\u4f5c\u6a29\u6cd5 (Copyright Act)",
+      "description": "Protects creative works used in advertising. All third-party content must be properly licensed or fall under fair use exceptions.",
+      "severity": "high",
+      "checks": [
+        "Licensed stock imagery and fonts",
+        "Music and audio rights cleared",
+        "User-generated content permissions obtained",
+        "Proper attribution where required"
+      ]
+    },
+    {
+      "id": 5,
+      "regulation": "\u500b\u4eba\u60c5\u5831\u4fdd\u8b77\u6cd5 (Act on Protection of Personal Information)",
+      "description": "Governs the use of personal data in targeted advertising and customer communications.",
+      "severity": "high",
+      "checks": [
+        "Consent obtained for personalized advertising",
+        "Opt-out mechanism provided",
+        "Data usage purpose clearly communicated",
+        "Third-party data sharing disclosed"
+      ]
+    }
+  ],
+  "brand_rules": [
+    {
+      "id": 1,
+      "category": "Logo Usage",
+      "title": "Minimum clear space around logo",
+      "description": "The primary logo must maintain a clear space equal to the height of the logomark on all sides. No other graphical elements, text, or edges may encroach on this space.",
+      "modality": "MUST",
+      "examples": [
+        "Logo placed with adequate padding in email headers",
+        "Violation: logo cropped at the edge of a social media banner"
+      ]
+    },
+    {
+      "id": 2,
+      "category": "Logo Usage",
+      "title": "Do not alter logo colors or proportions",
+      "description": "The logo must not be stretched, rotated, recolored, or modified in any way. Only approved color variants (full color, monochrome white, monochrome black) are permitted.",
+      "modality": "MUST_NOT",
+      "examples": [
+        "Using the monochrome white variant on dark backgrounds",
+        "Violation: applying a gradient overlay to the full-color logo"
+      ]
+    },
+    {
+      "id": 3,
+      "category": "Color Palette",
+      "title": "Use approved brand colors only",
+      "description": "All marketing materials must use colors from the approved brand palette. Primary: #1A73E8 (Blue), #202124 (Dark Gray). Secondary: #34A853 (Green), #FBBC04 (Yellow), #EA4335 (Red). Neutral: #F8F9FA, #DADCE0, #5F6368.",
+      "modality": "MUST",
+      "examples": [
+        "Landing page using primary blue for CTAs and dark gray for body text",
+        "Violation: using an off-brand purple as a primary accent color"
+      ]
+    },
+    {
+      "id": 4,
+      "category": "Color Palette",
+      "title": "Maintain sufficient contrast ratios",
+      "description": "Text over colored backgrounds must meet WCAG 2.1 AA contrast requirements: at least 4.5:1 for normal text and 3:1 for large text.",
+      "modality": "MUST",
+      "examples": [
+        "White text (#FFFFFF) on primary blue (#1A73E8) passes at 4.6:1",
+        "Violation: light gray text on white background at 2.1:1 ratio"
+      ]
+    },
+    {
+      "id": 5,
+      "category": "Tone of Voice",
+      "title": "Use active, clear, and confident language",
+      "description": "Marketing copy should be written in active voice, avoid jargon, and convey confidence without arrogance. Sentences should be concise and scannable.",
+      "modality": "SHOULD",
+      "examples": [
+        "\"Start building in minutes\" (active, clear, confident)",
+        "Violation: \"It is possible that utilization of our solution may potentially yield results\" (passive, vague)"
+      ]
+    },
+    {
+      "id": 6,
+      "category": "Tone of Voice",
+      "title": "Do not use superlatives without substantiation",
+      "description": "Claims such as \"best\", \"fastest\", \"#1\", or \"industry-leading\" must be backed by verifiable data or third-party validation. Unsubstantiated superlatives violate both brand guidelines and advertising regulations.",
+      "modality": "MUST_NOT",
+      "examples": [
+        "\"Rated #1 by Gartner in 2025\" (substantiated with source)",
+        "Violation: \"The best platform on the market\" (no supporting evidence)"
+      ]
+    },
+    {
+      "id": 7,
+      "category": "Typography",
+      "title": "Use approved typefaces",
+      "description": "All marketing materials must use the approved typeface family. Primary: Inter for digital, Noto Sans JP for Japanese content. Fallback: system sans-serif. Display sizes follow the type scale defined in the brand guide.",
+      "modality": "MUST",
+      "examples": [
+        "Website headings set in Inter Bold at 32px / 40px line height",
+        "Violation: using a decorative script font for body copy in a product brochure"
+      ]
+    }
+  ]
+}

@@ -1,5 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
+
 interface Campaign {
   id: string;
   name: string;
@@ -10,63 +13,6 @@ interface Campaign {
   violations: number;
 }
 
-const SAMPLE_CAMPAIGNS: Campaign[] = [
-  {
-    id: "cmp-001",
-    name: "Summer Sale 2026 - Display Ads",
-    channel: "Display",
-    launchDate: "2026-06-01",
-    status: "approved",
-    rulesChecked: 12,
-    violations: 0,
-  },
-  {
-    id: "cmp-002",
-    name: "New Product Launch - Social Media",
-    channel: "Social",
-    launchDate: "2026-05-20",
-    status: "violations_found",
-    rulesChecked: 15,
-    violations: 3,
-  },
-  {
-    id: "cmp-003",
-    name: "Q3 Email Newsletter Series",
-    channel: "Email",
-    launchDate: "2026-07-01",
-    status: "pending_review",
-    rulesChecked: 8,
-    violations: 0,
-  },
-  {
-    id: "cmp-004",
-    name: "Brand Awareness - Video Campaign",
-    channel: "Video",
-    launchDate: "2026-06-15",
-    status: "approved",
-    rulesChecked: 18,
-    violations: 0,
-  },
-  {
-    id: "cmp-005",
-    name: "Holiday Promotion - Landing Pages",
-    channel: "Web",
-    launchDate: "2026-12-01",
-    status: "draft",
-    rulesChecked: 0,
-    violations: 0,
-  },
-  {
-    id: "cmp-006",
-    name: "Partner Co-Marketing - Print & Digital",
-    channel: "Multi-channel",
-    launchDate: "2026-08-10",
-    status: "pending_review",
-    rulesChecked: 22,
-    violations: 0,
-  },
-];
-
 const STATUS_STYLES: Record<string, { bg: string; label: string }> = {
   approved: { bg: "bg-green-100 text-green-800", label: "Approved" },
   pending_review: { bg: "bg-yellow-100 text-yellow-800", label: "Pending Review" },
@@ -75,6 +21,20 @@ const STATUS_STYLES: Record<string, { bg: string; label: string }> = {
 };
 
 export default function CampaignAuditPage() {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ campaigns: Campaign[] }>("marketing").then((d) => {
+      setCampaigns(d.campaigns ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
       <div>
@@ -87,24 +47,24 @@ export default function CampaignAuditPage() {
 
       <div className="grid grid-cols-4 gap-4">
         <div className="rounded-xl border bg-white p-4 text-center">
-          <p className="text-2xl font-bold text-gray-900">{SAMPLE_CAMPAIGNS.length}</p>
+          <p className="text-2xl font-bold text-gray-900">{campaigns.length}</p>
           <p className="text-xs text-gray-500">Total Campaigns</p>
         </div>
         <div className="rounded-xl border bg-white p-4 text-center">
           <p className="text-2xl font-bold text-green-600">
-            {SAMPLE_CAMPAIGNS.filter((c) => c.status === "approved").length}
+            {campaigns.filter((c) => c.status === "approved").length}
           </p>
           <p className="text-xs text-gray-500">Approved</p>
         </div>
         <div className="rounded-xl border bg-white p-4 text-center">
           <p className="text-2xl font-bold text-yellow-600">
-            {SAMPLE_CAMPAIGNS.filter((c) => c.status === "pending_review").length}
+            {campaigns.filter((c) => c.status === "pending_review").length}
           </p>
           <p className="text-xs text-gray-500">Pending Review</p>
         </div>
         <div className="rounded-xl border bg-white p-4 text-center">
           <p className="text-2xl font-bold text-red-600">
-            {SAMPLE_CAMPAIGNS.filter((c) => c.status === "violations_found").length}
+            {campaigns.filter((c) => c.status === "violations_found").length}
           </p>
           <p className="text-xs text-gray-500">Violations Found</p>
         </div>
@@ -123,7 +83,7 @@ export default function CampaignAuditPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {SAMPLE_CAMPAIGNS.map((campaign) => {
+            {campaigns.map((campaign) => {
               const style = STATUS_STYLES[campaign.status];
               return (
                 <tr key={campaign.id} className="hover:bg-gray-50">

@@ -121,6 +121,12 @@ services:
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
       INTERNAL_API_URL: http://server:8000
+    volumes:
+      - ./apps/frontend/app:/app/apps/frontend/app
+      - ./apps/frontend/components:/app/apps/frontend/components
+      - ./apps/frontend/lib:/app/apps/frontend/lib
+      - ./apps/frontend/messages:/app/apps/frontend/messages
+      - ./apps/frontend/i18n:/app/apps/frontend/i18n
     ports:
       - "3000:3000"
     healthcheck:

@@ -1,72 +1,15 @@
 "use client";
 
-const COMPLIANCE_CHECKPOINTS = [
-  {
-    id: 1,
-    regulation: "景品表示法 (Act against Unjustifiable Premiums and Misleading Representations)",
-    description:
-      "Prohibits misleading representations about products and services. All advertising claims must be substantiated and not create false impressions of superior quality or value.",
-    severity: "critical",
-    checks: [
-      "No優良誤認表示 (misleading superior quality claims)",
-      "No有利誤認表示 (misleading advantageous claims)",
-      "Proper disclosure of conditions and limitations",
-      "Substantiation for all comparative claims",
-    ],
-  },
-  {
-    id: 2,
-    regulation: "薬機法 (Act on Securing Quality, Efficacy and Safety of Products)",
-    description:
-      "Regulates advertising of pharmaceuticals, medical devices, cosmetics, and quasi-drugs. Restricts health-related claims in non-medical product advertising.",
-    severity: "critical",
-    checks: [
-      "No unapproved efficacy or effect claims",
-      "No before/after imagery implying medical effects",
-      "Proper categorization of product claims (cosmetic vs. quasi-drug vs. pharmaceutical)",
-      "Required disclaimers for health-related products",
-    ],
-  },
-  {
-    id: 3,
-    regulation: "特定商取引法 (Specified Commercial Transactions Act)",
-    description:
-      "Governs mail-order sales, telemarketing, and online transactions. Requires specific disclosures in advertising materials.",
-    severity: "high",
-    checks: [
-      "Price and payment terms clearly stated",
-      "Return/cancellation policy disclosed",
-      "Seller identity and contact information included",
-      "Delivery timeline and conditions specified",
-    ],
-  },
-  {
-    id: 4,
-    regulation: "著作権法 (Copyright Act)",
-    description:
-      "Protects creative works used in advertising. All third-party content must be properly licensed or fall under fair use exceptions.",
-    severity: "high",
-    checks: [
-      "Licensed stock imagery and fonts",
-      "Music and audio rights cleared",
-      "User-generated content permissions obtained",
-      "Proper attribution where required",
-    ],
-  },
-  {
-    id: 5,
-    regulation: "個人情報保護法 (Act on Protection of Personal Information)",
-    description:
-      "Governs the use of personal data in targeted advertising and customer communications.",
-    severity: "high",
-    checks: [
-      "Consent obtained for personalized advertising",
-      "Opt-out mechanism provided",
-      "Data usage purpose clearly communicated",
-      "Third-party data sharing disclosed",
-    ],
-  },
-];
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
+
+interface AdComplianceCheckpoint {
+  id: number;
+  regulation: string;
+  description: string;
+  severity: string;
+  checks: string[];
+}
 
 const SEVERITY_STYLES: Record<string, string> = {
   critical: "bg-red-100 text-red-800",
@@ -75,6 +18,20 @@ const SEVERITY_STYLES: Record<string, string> = {
 };
 
 export default function AdCompliancePage() {
+  const [checkpoints, setCheckpoints] = useState<AdComplianceCheckpoint[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ ad_compliance_checkpoints: AdComplianceCheckpoint[] }>("marketing").then((d) => {
+      setCheckpoints(d.ad_compliance_checkpoints ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
       <div>
@@ -92,7 +49,7 @@ export default function AdCompliancePage() {
       </div>
 
       <div className="space-y-4">
-        {COMPLIANCE_CHECKPOINTS.map((cp) => (
+        {checkpoints.map((cp) => (
           <div key={cp.id} className="rounded-xl border bg-white p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
 
 type ClauseCategory = "all" | "nda" | "liability" | "indemnity" | "ip" | "termination" | "data-processing" | "payment";
 
@@ -15,15 +16,6 @@ interface StandardClause {
   deviationCount: number;
 }
 
-const CLAUSES: StandardClause[] = [
-  { id: "SC-001", category: "nda", title: "Mutual NDA - Standard Confidentiality", summary: "Mutual obligations to protect confidential information. 2-year survival period.", version: "3.1", lastUpdated: "2026-04-15", usageCount: 142, deviationCount: 3 },
-  { id: "SC-002", category: "liability", title: "Limitation of Liability - Capped", summary: "Total liability capped at 12 months of fees paid. Excludes IP infringement and data breach.", version: "4.2", lastUpdated: "2026-04-01", usageCount: 98, deviationCount: 8 },
-  { id: "SC-003", category: "indemnity", title: "Mutual Indemnification", summary: "Each party indemnifies the other for third-party claims arising from breach of representations.", version: "2.3", lastUpdated: "2026-02-28", usageCount: 85, deviationCount: 5 },
-  { id: "SC-004", category: "ip", title: "IP Ownership - Work for Hire", summary: "All deliverables created under the agreement are owned by the commissioning party.", version: "3.0", lastUpdated: "2026-01-15", usageCount: 67, deviationCount: 2 },
-  { id: "SC-005", category: "termination", title: "Termination for Convenience", summary: "Either party may terminate with 30 days written notice. Includes wind-down obligations.", version: "2.1", lastUpdated: "2026-03-10", usageCount: 120, deviationCount: 4 },
-  { id: "SC-006", category: "data-processing", title: "Data Processing Agreement (JP APPI)", summary: "Compliance with Japan APPI for personal data processing. Includes cross-border transfer provisions.", version: "2.5", lastUpdated: "2026-04-20", usageCount: 45, deviationCount: 6 },
-  { id: "SC-007", category: "payment", title: "Net 30 Payment Terms", summary: "Payment due 30 days from invoice date. 1.5% monthly late payment interest.", version: "1.2", lastUpdated: "2026-02-01", usageCount: 200, deviationCount: 12 },
-];
 
 const CATEGORY_LABELS: Record<ClauseCategory, string> = {
   all: "All Categories", nda: "NDA / Confidentiality", liability: "Limitation of Liability",
@@ -32,10 +24,19 @@ const CATEGORY_LABELS: Record<ClauseCategory, string> = {
 };
 
 export default function ClausesPage() {
+  const [clauses, setClauses] = useState<StandardClause[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<ClauseCategory>("all");
 
-  const filtered = CLAUSES.filter((c) => {
+  useEffect(() => {
+    fetchSeedData<{ clauses: StandardClause[] }>("legal").then((d) => {
+      setClauses(d.clauses ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = clauses.filter((c) => {
     if (category !== "all" && c.category !== category) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -43,6 +44,10 @@ export default function ClausesPage() {
     }
     return true;
   });
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -68,7 +73,7 @@ export default function ClausesPage() {
 
       <div className="flex flex-wrap gap-2">
         {(Object.keys(CATEGORY_LABELS) as ClauseCategory[]).filter((c) => c !== "all").map((cat) => {
-          const count = CLAUSES.filter((c) => c.category === cat).length;
+          const count = clauses.filter((c) => c.category === cat).length;
           return (
             <button key={cat} type="button" onClick={() => setCategory(cat === category ? "all" : cat)}
               className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${category === cat ? "border-slate-400 bg-slate-100 text-slate-800" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"}`}>

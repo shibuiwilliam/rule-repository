@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
 
 interface BundleRule {
   ruleId: string;
@@ -21,44 +22,25 @@ interface Bundle {
   rules: BundleRule[];
 }
 
-const BUNDLES: Bundle[] = [
-  {
-    id: "B-001", name: "J-SOX Internal Controls", framework: "J-SOX",
-    description: "Financial reporting internal controls required under the Japanese Financial Instruments and Exchange Act.",
-    totalControls: 42, implementedControls: 38,
-    rules: [
-      { ruleId: "R-1001", statement: "All financial transactions require dual approval above JPY 1M", controlId: "JSOX-AC-01", status: "implemented", lastEvaluated: "2026-05-07", complianceRate: 96 },
-      { ruleId: "R-1002", statement: "Revenue recognition must follow IFRS 15 five-step model", controlId: "JSOX-RR-01", status: "implemented", lastEvaluated: "2026-05-06", complianceRate: 100 },
-      { ruleId: "R-1003", statement: "Journal entries require supporting documentation", controlId: "JSOX-JE-01", status: "implemented", lastEvaluated: "2026-05-07", complianceRate: 92 },
-      { ruleId: "R-1004", statement: "Bank reconciliation within 3 business days", controlId: "JSOX-BR-01", status: "in-progress", lastEvaluated: null, complianceRate: null },
-    ],
-  },
-  {
-    id: "B-002", name: "GDPR Data Protection", framework: "GDPR",
-    description: "EU General Data Protection Regulation compliance controls.",
-    totalControls: 35, implementedControls: 28,
-    rules: [
-      { ruleId: "R-2001", statement: "Personal data processing requires documented legal basis", controlId: "GDPR-LB-01", status: "implemented", lastEvaluated: "2026-05-05", complianceRate: 88 },
-      { ruleId: "R-2002", statement: "Data subject access requests within 30 days", controlId: "GDPR-DSAR-01", status: "implemented", lastEvaluated: "2026-05-04", complianceRate: 95 },
-      { ruleId: "R-2003", statement: "Cross-border transfers require SCCs", controlId: "GDPR-CBT-01", status: "in-progress", lastEvaluated: null, complianceRate: null },
-    ],
-  },
-  {
-    id: "B-003", name: "EU AI Act Compliance", framework: "EU AI Act",
-    description: "Controls for AI systems classified as high-risk.",
-    totalControls: 18, implementedControls: 8,
-    rules: [
-      { ruleId: "R-3001", statement: "AI system risk classification must be documented", controlId: "EUAI-RC-01", status: "implemented", lastEvaluated: "2026-05-01", complianceRate: 100 },
-      { ruleId: "R-3002", statement: "High-risk AI systems require human oversight", controlId: "EUAI-HO-01", status: "in-progress", lastEvaluated: null, complianceRate: null },
-      { ruleId: "R-3003", statement: "AI training data must be bias-tested", controlId: "EUAI-TD-01", status: "not-started", lastEvaluated: null, complianceRate: null },
-    ],
-  },
-];
-
 const STATUS_BADGE: Record<string, string> = { implemented: "bg-green-100 text-green-700", "in-progress": "bg-yellow-100 text-yellow-700", "not-started": "bg-gray-100 text-gray-600" };
 
 export default function BundlesPage() {
-  const [expanded, setExpanded] = useState<string | null>(BUNDLES[0]?.id ?? null);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchSeedData<{ bundles: Bundle[] }>("compliance").then((d) => {
+      const data = d.bundles ?? [];
+      setBundles(data);
+      setExpanded(data[0]?.id ?? null);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -68,7 +50,7 @@ export default function BundlesPage() {
       </div>
 
       <div className="space-y-4">
-        {BUNDLES.map((bundle) => {
+        {bundles.map((bundle) => {
           const pct = Math.round((bundle.implementedControls / bundle.totalControls) * 100);
           const isOpen = expanded === bundle.id;
           return (

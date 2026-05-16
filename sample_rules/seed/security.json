@@ -1,0 +1,38 @@
+{
+  "encryption_keys": [
+    { "id": "K-001", "purpose": "Audit log encryption", "alg": "AES-256-GCM", "rotation": "2026-07-15", "status": "active" },
+    { "id": "K-002", "purpose": "PII field encryption", "alg": "AES-256-GCM", "rotation": "2026-08-01", "status": "active" },
+    { "id": "K-003", "purpose": "Evidence storage", "alg": "AES-256-GCM", "rotation": "2026-06-01", "status": "rotation-due" },
+    { "id": "K-004", "purpose": "API token signing", "alg": "Ed25519", "rotation": "2026-09-10", "status": "active" }
+  ],
+  "eval_harness_scores": [
+    { "domain": "Code Diff Evaluation", "score": 94, "tests": 212, "passed": 199 },
+    { "domain": "Contract Clause Analysis", "score": 87, "tests": 85, "passed": 74 },
+    { "domain": "HR Event Compliance", "score": 91, "tests": 56, "passed": 51 },
+    { "domain": "Transaction Screening", "score": 82, "tests": 38, "passed": 31 },
+    { "domain": "Creative Content Review", "score": 78, "tests": 24, "passed": 19 }
+  ],
+  "classification_levels": [
+    { "level": "PUBLIC", "description": "No restrictions \u2014 visible to all users and external parties", "ruleCount": 42 },
+    { "level": "INTERNAL", "description": "Visible to authenticated users within the organization", "ruleCount": 185 },
+    { "level": "CONFIDENTIAL", "description": "Restricted access \u2014 evaluation logs masked on frontend", "ruleCount": 67 },
+    { "level": "RESTRICTED", "description": "Self-hosted LLM only \u2014 logs purge after 90 days", "ruleCount": 23 }
+  ],
+  "access_logs": [
+    { "id": "AL-001", "timestamp": "2026-05-16 09:15:23", "actor": "user:alice@acme.co", "action": "READ", "resource": "rule:R-L002 (Anti-social forces clause)", "classification": "CONFIDENTIAL", "result": "allowed" },
+    { "id": "AL-002", "timestamp": "2026-05-16 09:12:10", "actor": "agent:claude-code-1", "action": "EVALUATE", "resource": "ruleset:hr/attendance", "classification": "INTERNAL", "result": "allowed" },
+    { "id": "AL-003", "timestamp": "2026-05-16 09:10:45", "actor": "user:bob@acme.co", "action": "EXPORT", "resource": "ruleset:finance/expense", "classification": "RESTRICTED", "result": "denied" },
+    { "id": "AL-004", "timestamp": "2026-05-16 08:55:01", "actor": "user:carol@acme.co", "action": "READ", "resource": "rule:R-F010 (Procurement threshold)", "classification": "INTERNAL", "result": "allowed" },
+    { "id": "AL-005", "timestamp": "2026-05-16 08:42:33", "actor": "agent:ci-pipeline", "action": "EVALUATE", "resource": "ruleset:engineering/python", "classification": "PUBLIC", "result": "allowed" }
+  ],
+  "eval_harness_domains": [
+    { "name": "Engineering", "cases": 15, "lastRun": "2026-05-14", "pass": 14, "fail": 1 },
+    { "name": "Legal", "cases": 12, "lastRun": "2026-05-14", "pass": 11, "fail": 1 },
+    { "name": "HR", "cases": 10, "lastRun": "2026-05-14", "pass": 10, "fail": 0 },
+    { "name": "Finance", "cases": 12, "lastRun": "2026-05-14", "pass": 12, "fail": 0 },
+    { "name": "IT Security", "cases": 10, "lastRun": "2026-05-14", "pass": 9, "fail": 1 },
+    { "name": "Sales", "cases": 8, "lastRun": "2026-05-14", "pass": 8, "fail": 0 },
+    { "name": "Communications", "cases": 10, "lastRun": "2026-05-14", "pass": 10, "fail": 0 },
+    { "name": "Governance", "cases": 13, "lastRun": "2026-05-14", "pass": 12, "fail": 1 }
+  ]
+}

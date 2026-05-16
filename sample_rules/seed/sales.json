@@ -1,0 +1,23 @@
+{
+  "proposals": [
+    { "id": "SP-001", "title": "Increase volume discount cap to 25%", "status": "under_review", "author": "Tanaka", "created": "2026-05-10" },
+    { "id": "SP-002", "title": "Add resale price maintenance exception for partners", "status": "approved", "author": "Suzuki", "created": "2026-05-05" },
+    { "id": "SP-003", "title": "Update competitive bid threshold to \u00a52M", "status": "draft", "author": "Sato", "created": "2026-05-14" }
+  ],
+  "discount_rules": [
+    { "tier": "Up to 10%", "authority": "Sales Rep", "approval": "Self-approved", "conditions": "Standard deals" },
+    { "tier": "11\u201320%", "authority": "Sales Manager", "approval": "Manager sign-off", "conditions": "Must justify in CRM" },
+    { "tier": "21\u201330%", "authority": "Sales Director", "approval": "Director + Finance review", "conditions": "Competitive bid required" },
+    { "tier": "Over 30%", "authority": "VP Sales + CFO", "approval": "Executive approval", "conditions": "Board notification required" }
+  ],
+  "pricing_approvals": [
+    { "id": "PA-001", "deal": "Acme Corp \u2014 Enterprise License", "rep": "Tanaka", "listPrice": 5000000, "requestedPrice": 4250000, "discountPct": 15, "approver": "Sales Director", "status": "pending" },
+    { "id": "PA-002", "deal": "Beta Inc \u2014 Annual Subscription", "rep": "Suzuki", "listPrice": 1200000, "requestedPrice": 1080000, "discountPct": 10, "approver": "Sales Manager", "status": "pending" },
+    { "id": "PA-003", "deal": "Gamma Ltd \u2014 Volume Deal", "rep": "Sato", "listPrice": 8000000, "requestedPrice": 6400000, "discountPct": 20, "approver": "VP Sales", "status": "escalated" }
+  ],
+  "communication_reviews": [
+    { "id": "CR-001", "subject": "Follow-up email to Acme Corp", "channel": "Email", "verdict": "ALLOW", "issues": 0, "reviewed": "2026-05-15" },
+    { "id": "CR-002", "subject": "Pricing proposal deck for Beta Inc", "channel": "Document", "verdict": "ALLOW_WITH_CONDITIONS", "issues": 1, "reviewed": "2026-05-14" },
+    { "id": "CR-003", "subject": "Cold outreach template v3", "channel": "Email", "verdict": "DENY", "issues": 2, "reviewed": "2026-05-13" }
+  ]
+}

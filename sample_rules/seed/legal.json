@@ -1,0 +1,355 @@
+{
+  "clauses": [
+    {
+      "id": "SC-001",
+      "category": "nda",
+      "title": "Mutual NDA - Standard Confidentiality",
+      "summary": "Mutual obligations to protect confidential information. 2-year survival period.",
+      "version": "3.1",
+      "lastUpdated": "2026-04-15",
+      "usageCount": 142,
+      "deviationCount": 3
+    },
+    {
+      "id": "SC-002",
+      "category": "liability",
+      "title": "Limitation of Liability - Capped",
+      "summary": "Total liability capped at 12 months of fees paid. Excludes IP infringement and data breach.",
+      "version": "4.2",
+      "lastUpdated": "2026-04-01",
+      "usageCount": 98,
+      "deviationCount": 8
+    },
+    {
+      "id": "SC-003",
+      "category": "indemnity",
+      "title": "Mutual Indemnification",
+      "summary": "Each party indemnifies the other for third-party claims arising from breach of representations.",
+      "version": "2.3",
+      "lastUpdated": "2026-02-28",
+      "usageCount": 85,
+      "deviationCount": 5
+    },
+    {
+      "id": "SC-004",
+      "category": "ip",
+      "title": "IP Ownership - Work for Hire",
+      "summary": "All deliverables created under the agreement are owned by the commissioning party.",
+      "version": "3.0",
+      "lastUpdated": "2026-01-15",
+      "usageCount": 67,
+      "deviationCount": 2
+    },
+    {
+      "id": "SC-005",
+      "category": "termination",
+      "title": "Termination for Convenience",
+      "summary": "Either party may terminate with 30 days written notice. Includes wind-down obligations.",
+      "version": "2.1",
+      "lastUpdated": "2026-03-10",
+      "usageCount": 120,
+      "deviationCount": 4
+    },
+    {
+      "id": "SC-006",
+      "category": "data-processing",
+      "title": "Data Processing Agreement (JP APPI)",
+      "summary": "Compliance with Japan APPI for personal data processing. Includes cross-border transfer provisions.",
+      "version": "2.5",
+      "lastUpdated": "2026-04-20",
+      "usageCount": 45,
+      "deviationCount": 6
+    },
+    {
+      "id": "SC-007",
+      "category": "payment",
+      "title": "Net 30 Payment Terms",
+      "summary": "Payment due 30 days from invoice date. 1.5% monthly late payment interest.",
+      "version": "1.2",
+      "lastUpdated": "2026-02-01",
+      "usageCount": 200,
+      "deviationCount": 12
+    }
+  ],
+  "redlines": {
+    "revisions": [
+      {
+        "id": "REV-001",
+        "contractName": "ACME Corp Master Services Agreement",
+        "counterparty": "ACME Corp",
+        "version": { "from": "2.3", "to": "2.4" },
+        "changedClauses": 4,
+        "riskFlags": 2,
+        "submittedAt": "2026-05-06",
+        "submittedBy": "T. Nakamura",
+        "status": "pending"
+      },
+      {
+        "id": "REV-002",
+        "contractName": "GlobalTech NDA",
+        "counterparty": "GlobalTech Inc.",
+        "version": { "from": "1.0", "to": "1.1" },
+        "changedClauses": 2,
+        "riskFlags": 0,
+        "submittedAt": "2026-05-04",
+        "submittedBy": "S. Tanaka",
+        "status": "approved"
+      },
+      {
+        "id": "REV-003",
+        "contractName": "DataFlow Processing Agreement",
+        "counterparty": "DataFlow Ltd.",
+        "version": { "from": "3.1", "to": "4.0" },
+        "changedClauses": 8,
+        "riskFlags": 5,
+        "submittedAt": "2026-05-03",
+        "submittedBy": "K. Yamada",
+        "status": "pending"
+      },
+      {
+        "id": "REV-004",
+        "contractName": "Vendor SOW - Q2 Deliverables",
+        "counterparty": "BuildRight LLC",
+        "version": { "from": "1.2", "to": "1.3" },
+        "changedClauses": 3,
+        "riskFlags": 1,
+        "submittedAt": "2026-04-28",
+        "submittedBy": "M. Sato",
+        "status": "approved"
+      },
+      {
+        "id": "REV-005",
+        "contractName": "Cloud Infrastructure License",
+        "counterparty": "CloudScale Inc.",
+        "version": { "from": "5.0", "to": "5.1" },
+        "changedClauses": 1,
+        "riskFlags": 0,
+        "submittedAt": "2026-04-25",
+        "submittedBy": "H. Lee",
+        "status": "rejected"
+      }
+    ],
+    "changes": [
+      {
+        "clause": "Section 4.2 \u2014 Limitation of Liability",
+        "type": "modified",
+        "oldText": "Total liability shall not exceed the fees paid in the preceding 12 months.",
+        "newText": "Total liability shall not exceed the fees paid in the preceding 24 months.",
+        "riskLevel": "high"
+      },
+      {
+        "clause": "Section 7.1 \u2014 Governing Law",
+        "type": "modified",
+        "oldText": "This Agreement shall be governed by the laws of Tokyo, Japan.",
+        "newText": "This Agreement shall be governed by the laws of the State of Delaware, USA.",
+        "riskLevel": "high"
+      },
+      {
+        "clause": "Section 9.3 \u2014 Data Retention",
+        "type": "added",
+        "oldText": null,
+        "newText": "The Processor shall retain personal data for no longer than 36 months following termination, unless required by applicable law.",
+        "riskLevel": "medium"
+      },
+      {
+        "clause": "Section 2.1 \u2014 Definitions",
+        "type": "modified",
+        "oldText": "\"Confidential Information\" means any non-public information disclosed by either party.",
+        "newText": "\"Confidential Information\" means any non-public information disclosed by either party, including trade secrets, algorithms, and customer lists.",
+        "riskLevel": "low"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "rule_id": "R-L001",
+      "rule_statement": "NDA must include a 2-year minimum confidentiality period",
+      "source_title": "Corporate NDA Template v3",
+      "source_section": "Section 5.1",
+      "norm_tier": "CORPORATE_POLICY",
+      "jurisdiction": "Global"
+    },
+    {
+      "rule_id": "R-L002",
+      "rule_statement": "Anti-social forces exclusion clause is mandatory",
+      "source_title": "Civil Code (JP)",
+      "source_section": "Article 90",
+      "norm_tier": "LAW",
+      "jurisdiction": "JP"
+    },
+    {
+      "rule_id": "R-L003",
+      "rule_statement": "Limitation of liability must not exceed contract value",
+      "source_title": "Standard MSA Template",
+      "source_section": "Section 8.2",
+      "norm_tier": "CORPORATE_POLICY",
+      "jurisdiction": "Global"
+    },
+    {
+      "rule_id": "R-L004",
+      "rule_statement": "Personal data handling must comply with APPI",
+      "source_title": "Act on Protection of Personal Information",
+      "source_section": "Chapter 4",
+      "norm_tier": "LAW",
+      "jurisdiction": "JP"
+    },
+    {
+      "rule_id": "R-L005",
+      "rule_statement": "Governing law must be specified in all contracts",
+      "source_title": "Legal Department Guidelines",
+      "source_section": "Section 2.3",
+      "norm_tier": "DEPARTMENT_RULE",
+      "jurisdiction": "Global"
+    }
+  ],
+  "regulatory": [
+    {
+      "id": "REG-001",
+      "title": "Revised APPI Guidelines",
+      "authority": "PPC (Japan)",
+      "effective_date": "2026-07-01",
+      "impact": "high",
+      "status": "upcoming",
+      "affected_rules": 12
+    },
+    {
+      "id": "REG-002",
+      "title": "EU AI Act \u2014 High-Risk System Requirements",
+      "authority": "European Commission",
+      "effective_date": "2026-08-01",
+      "impact": "high",
+      "status": "upcoming",
+      "affected_rules": 8
+    },
+    {
+      "id": "REG-003",
+      "title": "Updated Subcontract Act Enforcement Standards",
+      "authority": "JFTC (Japan)",
+      "effective_date": "2026-06-15",
+      "impact": "medium",
+      "status": "upcoming",
+      "affected_rules": 5
+    },
+    {
+      "id": "REG-004",
+      "title": "J-SOX Annual Reporting Deadline",
+      "authority": "FSA (Japan)",
+      "effective_date": "2026-12-31",
+      "impact": "high",
+      "status": "upcoming",
+      "affected_rules": 15
+    },
+    {
+      "id": "REG-005",
+      "title": "Labor Standards Act Amendment (Overtime)",
+      "authority": "MHLW (Japan)",
+      "effective_date": "2026-04-01",
+      "impact": "medium",
+      "status": "effective",
+      "affected_rules": 9
+    }
+  ],
+  "lineage": {
+    "tracked_rules": [
+      {
+        "id": "R-LAW-001",
+        "statement": "Personal information shall not be provided to third parties without consent of the individual.",
+        "norm_tier": "LAW",
+        "norm_authority": "Act on the Protection of Personal Information (APPI), Art. 27",
+        "upstreamCount": 0,
+        "downstreamCount": 4,
+        "pendingReview": false
+      },
+      {
+        "id": "R-REG-003",
+        "statement": "Overtime work shall not exceed 45 hours per month and 360 hours per year.",
+        "norm_tier": "REGULATION",
+        "norm_authority": "Labor Standards Act, Art. 36",
+        "upstreamCount": 1,
+        "downstreamCount": 3,
+        "pendingReview": true
+      },
+      {
+        "id": "R-POL-012",
+        "statement": "All vendor contracts exceeding JPY 10M require dual legal review before execution.",
+        "norm_tier": "CORPORATE_POLICY",
+        "norm_authority": "Internal Procurement Policy v3.2",
+        "upstreamCount": 2,
+        "downstreamCount": 2,
+        "pendingReview": false
+      },
+      {
+        "id": "R-DEPT-045",
+        "statement": "Engineering pull requests modifying authentication modules require security-team approval.",
+        "norm_tier": "DEPARTMENT_RULE",
+        "norm_authority": "Engineering Security Handbook, Ch. 4",
+        "upstreamCount": 3,
+        "downstreamCount": 0,
+        "pendingReview": false
+      },
+      {
+        "id": "R-POL-018",
+        "statement": "Customer data must be encrypted at rest using AES-256 or equivalent.",
+        "norm_tier": "CORPORATE_POLICY",
+        "norm_authority": "Data Protection Policy v2.1",
+        "upstreamCount": 1,
+        "downstreamCount": 5,
+        "pendingReview": true
+      }
+    ],
+    "upstream": {
+      "root_rule_id": "R-POL-012",
+      "direction": "upstream",
+      "nodes": [
+        {
+          "rule_id": "R-LAW-JP-COMP",
+          "statement": "Companies Act requires proper internal controls for corporate transactions.",
+          "norm_tier": "LAW",
+          "norm_authority": "Companies Act (Japan), Art. 362",
+          "depth": 2
+        },
+        {
+          "rule_id": "R-REG-PROC",
+          "statement": "Procurement of services above regulatory thresholds shall follow competitive bidding procedures.",
+          "norm_tier": "REGULATION",
+          "norm_authority": "Internal Audit Standards, Sect. 4.1",
+          "depth": 1
+        },
+        {
+          "rule_id": "R-POL-012",
+          "statement": "All vendor contracts exceeding JPY 10M require dual legal review before execution.",
+          "norm_tier": "CORPORATE_POLICY",
+          "norm_authority": "Internal Procurement Policy v3.2",
+          "depth": 0
+        }
+      ]
+    },
+    "downstream": {
+      "root_rule_id": "R-POL-012",
+      "direction": "downstream",
+      "nodes": [
+        {
+          "rule_id": "R-POL-012",
+          "statement": "All vendor contracts exceeding JPY 10M require dual legal review before execution.",
+          "norm_tier": "CORPORATE_POLICY",
+          "norm_authority": "Internal Procurement Policy v3.2",
+          "depth": 0
+        },
+        {
+          "rule_id": "R-DEPT-PROC-1",
+          "statement": "Engineering vendor contracts must include SLA and data-handling appendices.",
+          "norm_tier": "DEPARTMENT_RULE",
+          "norm_authority": "Eng Procurement SOP",
+          "depth": 1
+        },
+        {
+          "rule_id": "R-OP-PROC-1",
+          "statement": "Cloud infrastructure vendor agreements must specify uptime guarantees of 99.9% or higher.",
+          "norm_tier": "OPERATIONAL_RULE",
+          "norm_authority": null,
+          "depth": 2
+        }
+      ]
+    }
+  }
+}

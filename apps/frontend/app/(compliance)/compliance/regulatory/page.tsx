@@ -1,5 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
+
 interface RegulatoryUpdate {
   id: string;
   title: string;
@@ -12,17 +15,24 @@ interface RegulatoryUpdate {
   summary: string;
 }
 
-const UPDATES: RegulatoryUpdate[] = [
-  { id: "REG-001", title: "Amendment to Labor Standards Act Article 36 (overtime caps)", source: "Ministry of Health, Labour and Welfare", normTier: "LAW", publishedAt: "2026-04-15", effectiveAt: "2026-10-01", impactedRules: 8, status: "assessed", summary: "Monthly overtime cap revised from 45 to 40 hours for companies with 50+ employees. Special clause thresholds unchanged." },
-  { id: "REG-002", title: "APPI Enforcement Regulation Amendment", source: "Personal Information Protection Commission", normTier: "REGULATION", publishedAt: "2026-04-20", effectiveAt: "2026-07-01", impactedRules: 5, status: "new", summary: "New breach notification requirements: 72-hour reporting window, expanded scope of reportable incidents." },
-  { id: "REG-003", title: "Revised Invoice System Qualification Requirements", source: "National Tax Agency", normTier: "REGULATION", publishedAt: "2026-03-01", effectiveAt: "2026-04-01", impactedRules: 3, status: "propagated", summary: "Qualified invoice issuer registration requirements updated. Small business transitional period extended." },
-  { id: "REG-004", title: "Child Care and Family Care Leave Act Amendment", source: "Ministry of Health, Labour and Welfare", normTier: "LAW", publishedAt: "2026-05-01", effectiveAt: "2027-04-01", impactedRules: 6, status: "new", summary: "Extended childcare leave eligibility to include part-time workers. New employer disclosure requirements." },
-];
-
 const TIER_BADGE: Record<string, string> = { LAW: "bg-red-100 text-red-800", REGULATION: "bg-orange-100 text-orange-800", GUIDELINE: "bg-yellow-100 text-yellow-800" };
 const STATUS_BADGE: Record<string, string> = { new: "bg-blue-100 text-blue-800", assessed: "bg-yellow-100 text-yellow-800", propagated: "bg-green-100 text-green-800", resolved: "bg-gray-100 text-gray-700" };
 
 export default function RegulatoryFeedPage() {
+  const [updates, setUpdates] = useState<RegulatoryUpdate[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ regulatory_updates: RegulatoryUpdate[] }>("compliance").then((d) => {
+      setUpdates(d.regulatory_updates ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
@@ -31,10 +41,10 @@ export default function RegulatoryFeedPage() {
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         {[
-          { label: "New Updates", value: UPDATES.filter((u) => u.status === "new").length, color: "text-blue-600" },
-          { label: "Being Assessed", value: UPDATES.filter((u) => u.status === "assessed").length, color: "text-yellow-600" },
-          { label: "Propagated", value: UPDATES.filter((u) => u.status === "propagated").length, color: "text-green-600" },
-          { label: "Total Impacted Rules", value: UPDATES.reduce((a, u) => a + u.impactedRules, 0), color: "text-red-600" },
+          { label: "New Updates", value: updates.filter((u) => u.status === "new").length, color: "text-blue-600" },
+          { label: "Being Assessed", value: updates.filter((u) => u.status === "assessed").length, color: "text-yellow-600" },
+          { label: "Propagated", value: updates.filter((u) => u.status === "propagated").length, color: "text-green-600" },
+          { label: "Total Impacted Rules", value: updates.reduce((a, u) => a + u.impactedRules, 0), color: "text-red-600" },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border bg-white p-5">
             <p className="text-xs font-medium text-gray-500">{s.label}</p>
@@ -43,7 +53,7 @@ export default function RegulatoryFeedPage() {
         ))}
       </div>
       <div className="space-y-3">
-        {UPDATES.map((u) => (
+        {updates.map((u) => (
           <div key={u.id} className="rounded-xl border bg-white p-5 hover:border-amber-300 transition-colors">
             <div className="flex items-center gap-2">
               <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${TIER_BADGE[u.normTier] ?? "bg-gray-100 text-gray-700"}`}>{u.normTier}</span>

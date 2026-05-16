@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { usePersonaTerm } from "@/lib/use-persona-term";
+import { fetchSeedData } from "@/lib/seed-data";
 
 interface Citation {
   rule_id: string;
@@ -11,13 +13,6 @@ interface Citation {
   jurisdiction: string;
 }
 
-const SAMPLE_CITATIONS: Citation[] = [
-  { rule_id: "R-L001", rule_statement: "NDA must include a 2-year minimum confidentiality period", source_title: "Corporate NDA Template v3", source_section: "Section 5.1", norm_tier: "CORPORATE_POLICY", jurisdiction: "Global" },
-  { rule_id: "R-L002", rule_statement: "Anti-social forces exclusion clause is mandatory", source_title: "Civil Code (JP)", source_section: "Article 90", norm_tier: "LAW", jurisdiction: "JP" },
-  { rule_id: "R-L003", rule_statement: "Limitation of liability must not exceed contract value", source_title: "Standard MSA Template", source_section: "Section 8.2", norm_tier: "CORPORATE_POLICY", jurisdiction: "Global" },
-  { rule_id: "R-L004", rule_statement: "Personal data handling must comply with APPI", source_title: "Act on Protection of Personal Information", source_section: "Chapter 4", norm_tier: "LAW", jurisdiction: "JP" },
-  { rule_id: "R-L005", rule_statement: "Governing law must be specified in all contracts", source_title: "Legal Department Guidelines", source_section: "Section 2.3", norm_tier: "DEPARTMENT_RULE", jurisdiction: "Global" },
-];
 
 const TIER_BADGE: Record<string, string> = {
   LAW: "bg-red-100 text-red-700",
@@ -28,6 +23,19 @@ const TIER_BADGE: Record<string, string> = {
 
 export default function CitationsPage() {
   const t = usePersonaTerm();
+  const [citations, setCitations] = useState<Citation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ citations: Citation[] }>("legal").then((d) => {
+      setCitations(d.citations ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
@@ -49,7 +57,7 @@ export default function CitationsPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {SAMPLE_CITATIONS.map((c) => (
+            {citations.map((c) => (
               <tr key={c.rule_id}>
                 <td className="px-5 py-3">
                   <p className="font-medium text-gray-900">{c.rule_statement}</p>

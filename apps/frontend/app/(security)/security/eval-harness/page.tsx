@@ -1,19 +1,33 @@
 "use client";
 
-const DOMAINS = [
-  { name: "Engineering", cases: 15, lastRun: "2026-05-14", pass: 14, fail: 1 },
-  { name: "Legal", cases: 12, lastRun: "2026-05-14", pass: 11, fail: 1 },
-  { name: "HR", cases: 10, lastRun: "2026-05-14", pass: 10, fail: 0 },
-  { name: "Finance", cases: 12, lastRun: "2026-05-14", pass: 12, fail: 0 },
-  { name: "IT Security", cases: 10, lastRun: "2026-05-14", pass: 9, fail: 1 },
-  { name: "Sales", cases: 8, lastRun: "2026-05-14", pass: 8, fail: 0 },
-  { name: "Communications", cases: 10, lastRun: "2026-05-14", pass: 10, fail: 0 },
-  { name: "Governance", cases: 13, lastRun: "2026-05-14", pass: 12, fail: 1 },
-];
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
+
+interface EvalHarnessDomain {
+  name: string;
+  cases: number;
+  lastRun: string;
+  pass: number;
+  fail: number;
+}
 
 export default function EvalHarnessPage() {
-  const total = DOMAINS.reduce((s, d) => s + d.cases, 0);
-  const passed = DOMAINS.reduce((s, d) => s + d.pass, 0);
+  const [domains, setDomains] = useState<EvalHarnessDomain[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ eval_harness_domains: EvalHarnessDomain[] }>("security").then((d) => {
+      setDomains(d.eval_harness_domains ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  const total = domains.reduce((s, d) => s + d.cases, 0);
+  const passed = domains.reduce((s, d) => s + d.pass, 0);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
@@ -51,7 +65,7 @@ export default function EvalHarnessPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {DOMAINS.map((d) => (
+            {domains.map((d) => (
               <tr key={d.name}>
                 <td className="px-5 py-3 font-medium text-gray-900">{d.name}</td>
                 <td className="px-5 py-3">{d.cases}</td>

@@ -1,13 +1,30 @@
 "use client";
 
-const LEVELS = [
-  { level: "PUBLIC", color: "bg-green-100 text-green-700 border-green-200", description: "No restrictions — visible to all users and external parties", ruleCount: 42 },
-  { level: "INTERNAL", color: "bg-blue-100 text-blue-700 border-blue-200", description: "Visible to authenticated users within the organization", ruleCount: 185 },
-  { level: "CONFIDENTIAL", color: "bg-yellow-100 text-yellow-700 border-yellow-200", description: "Restricted access — evaluation logs masked on frontend", ruleCount: 67 },
-  { level: "RESTRICTED", color: "bg-red-100 text-red-700 border-red-200", description: "Self-hosted LLM only — logs purge after 90 days", ruleCount: 23 },
-];
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
+
+interface ClassificationLevel {
+  level: string;
+  color: string;
+  description: string;
+  ruleCount: number;
+}
 
 export default function ClassificationPage() {
+  const [levels, setLevels] = useState<ClassificationLevel[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ classification_levels: ClassificationLevel[] }>("security").then((d) => {
+      setLevels(d.classification_levels ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
       <div>
@@ -18,7 +35,7 @@ export default function ClassificationPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {LEVELS.map((l) => (
+        {levels.map((l) => (
           <div key={l.level} className={`rounded-xl border p-5 ${l.color}`}>
             <h3 className="text-lg font-bold">{l.level}</h3>
             <p className="mt-1 text-sm opacity-80">{l.description}</p>

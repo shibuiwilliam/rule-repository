@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
 
 type RiskLevel = "critical" | "warning" | "normal";
 
@@ -21,31 +22,13 @@ interface EmployeeRisk {
   risk: RiskLevel;
 }
 
-const DEPT_OVERTIME: DeptOvertime[] = [
-  { department: "Engineering", avgHours: 32, maxHours: 58, employeesOverLimit: 3, totalEmployees: 45 },
-  { department: "Sales", avgHours: 28, maxHours: 48, employeesOverLimit: 1, totalEmployees: 22 },
-  { department: "Marketing", avgHours: 18, maxHours: 35, employeesOverLimit: 0, totalEmployees: 15 },
-  { department: "Operations", avgHours: 38, maxHours: 62, employeesOverLimit: 4, totalEmployees: 30 },
-  { department: "Finance", avgHours: 22, maxHours: 40, employeesOverLimit: 0, totalEmployees: 12 },
-];
-
-const EMPLOYEE_RISKS: EmployeeRisk[] = [
-  { id: "E-1021", name: "Employee A", department: "Operations", currentHours: 62, limit: 45, risk: "critical" },
-  { id: "E-1044", name: "Employee B", department: "Engineering", currentHours: 58, limit: 45, risk: "critical" },
-  { id: "E-1033", name: "Employee C", department: "Engineering", currentHours: 52, limit: 45, risk: "critical" },
-  { id: "E-1087", name: "Employee D", department: "Sales", currentHours: 48, limit: 45, risk: "warning" },
-  { id: "E-1012", name: "Employee E", department: "Operations", currentHours: 44, limit: 45, risk: "warning" },
-  { id: "E-1056", name: "Employee F", department: "Operations", currentHours: 43, limit: 45, risk: "warning" },
-  { id: "E-1078", name: "Employee G", department: "Engineering", currentHours: 42, limit: 45, risk: "warning" },
-];
-
-const AGREEMENT_STATUS = [
-  { department: "Engineering", hasAgreement: true, specialExtension: true, maxAllowed: 80, expiry: "2027-03-31" },
-  { department: "Sales", hasAgreement: true, specialExtension: false, maxAllowed: 45, expiry: "2027-03-31" },
-  { department: "Marketing", hasAgreement: true, specialExtension: false, maxAllowed: 45, expiry: "2027-03-31" },
-  { department: "Operations", hasAgreement: true, specialExtension: true, maxAllowed: 60, expiry: "2027-03-31" },
-  { department: "Finance", hasAgreement: true, specialExtension: false, maxAllowed: 45, expiry: "2027-03-31" },
-];
+interface AgreementStatus {
+  department: string;
+  hasAgreement: boolean;
+  specialExtension: boolean;
+  maxAllowed: number;
+  expiry: string;
+}
 
 const RISK_BADGE: Record<RiskLevel, string> = {
   critical: "bg-red-100 text-red-700",
@@ -54,17 +37,34 @@ const RISK_BADGE: Record<RiskLevel, string> = {
 };
 
 export default function AttendancePage() {
+  const [deptOvertime, setDeptOvertime] = useState<DeptOvertime[]>([]);
+  const [employeeRisks, setEmployeeRisks] = useState<EmployeeRisk[]>([]);
+  const [agreementStatus, setAgreementStatus] = useState<AgreementStatus[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedDept, setSelectedDept] = useState<string>("all");
   const [selectedMonth, setSelectedMonth] = useState<string>("2026-05");
   const [selectedRisk, setSelectedRisk] = useState<string>("all");
 
-  const filteredEmployees = EMPLOYEE_RISKS.filter((e) => {
+  useEffect(() => {
+    fetchSeedData<{ attendance: { dept_overtime: DeptOvertime[]; employee_risks: EmployeeRisk[]; agreement_status: AgreementStatus[] } }>("hr").then((d) => {
+      setDeptOvertime(d.attendance?.dept_overtime ?? []);
+      setEmployeeRisks(d.attendance?.employee_risks ?? []);
+      setAgreementStatus(d.attendance?.agreement_status ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  const filteredEmployees = employeeRisks.filter((e) => {
     if (selectedDept !== "all" && e.department !== selectedDept) return false;
     if (selectedRisk !== "all" && e.risk !== selectedRisk) return false;
     return true;
   });
 
-  const departments = [...new Set(DEPT_OVERTIME.map((d) => d.department))];
+  const departments = [...new Set(deptOvertime.map((d) => d.department))];
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -136,7 +136,7 @@ export default function AttendancePage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {DEPT_OVERTIME.filter((d) => selectedDept === "all" || d.department === selectedDept).map((d) => (
+              {deptOvertime.filter((d) => selectedDept === "all" || d.department === selectedDept).map((d) => (
                 <tr key={d.department} className="hover:bg-gray-50">
                   <td className="px-5 py-3 font-medium text-gray-900">{d.department}</td>
                   <td className="px-5 py-3 text-gray-600">{d.avgHours}h</td>
@@ -228,7 +228,7 @@ export default function AttendancePage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {AGREEMENT_STATUS.map((a) => (
+              {agreementStatus.map((a) => (
                 <tr key={a.department} className="hover:bg-gray-50">
                   <td className="px-5 py-3 font-medium text-gray-900">{a.department}</td>
                   <td className="px-5 py-3">

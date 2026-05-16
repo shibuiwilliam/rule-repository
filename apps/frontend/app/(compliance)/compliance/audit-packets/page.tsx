@@ -1,3 +1,8 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { fetchSeedData } from "@/lib/seed-data";
+
 interface AuditPacket {
   id: string;
   title: string;
@@ -10,13 +15,6 @@ interface AuditPacket {
   reviewer: string;
 }
 
-const PACKETS: AuditPacket[] = [
-  { id: "AP-2026-Q1", title: "Q1 2026 Compliance Audit — HR", scope: "hr/attendance, hr/overtime", period: "2026-01 to 2026-03", status: "finalized", rulesIncluded: 25, evaluationsIncluded: 342, createdAt: "2026-04-05", reviewer: "M. Tanaka" },
-  { id: "AP-2026-Q1-FIN", title: "Q1 2026 Compliance Audit — Finance", scope: "finance/expense, finance/tax", period: "2026-01 to 2026-03", status: "in_review", rulesIncluded: 18, evaluationsIncluded: 156, createdAt: "2026-04-10", reviewer: "K. Sato" },
-  { id: "AP-2026-Q1-LEGAL", title: "Q1 2026 Contract Review Audit", scope: "legal/contract", period: "2026-01 to 2026-03", status: "in_review", rulesIncluded: 30, evaluationsIncluded: 47, createdAt: "2026-04-12", reviewer: "T. Yamada" },
-  { id: "AP-2026-Q2-HR", title: "Q2 2026 Compliance Audit — HR (Draft)", scope: "hr/attendance, hr/overtime, hr/leave", period: "2026-04 to 2026-06", status: "draft", rulesIncluded: 25, evaluationsIncluded: 0, createdAt: "2026-05-01", reviewer: "" },
-];
-
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
   in_review: "bg-yellow-100 text-yellow-800",
@@ -24,6 +22,20 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function AuditPacketsPage() {
+  const [packets, setPackets] = useState<AuditPacket[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ audit_packets: AuditPacket[] }>("compliance").then((d) => {
+      setPackets(d.audit_packets ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
@@ -32,9 +44,9 @@ export default function AuditPacketsPage() {
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
-          { label: "Finalized", value: PACKETS.filter((p) => p.status === "finalized").length, color: "text-green-600" },
-          { label: "In Review", value: PACKETS.filter((p) => p.status === "in_review").length, color: "text-yellow-600" },
-          { label: "Drafts", value: PACKETS.filter((p) => p.status === "draft").length, color: "text-gray-600" },
+          { label: "Finalized", value: packets.filter((p) => p.status === "finalized").length, color: "text-green-600" },
+          { label: "In Review", value: packets.filter((p) => p.status === "in_review").length, color: "text-yellow-600" },
+          { label: "Drafts", value: packets.filter((p) => p.status === "draft").length, color: "text-gray-600" },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border bg-white p-5">
             <p className="text-xs font-medium text-gray-500">{s.label}</p>
@@ -43,7 +55,7 @@ export default function AuditPacketsPage() {
         ))}
       </div>
       <div className="space-y-3">
-        {PACKETS.map((p) => (
+        {packets.map((p) => (
           <div key={p.id} className="rounded-xl border bg-white p-5 hover:border-amber-300 transition-colors">
             <div className="flex items-start justify-between">
               <div>

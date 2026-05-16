@@ -1,6 +1,41 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { fetchSeedData } from "@/lib/seed-data";
+
+interface EncryptionKey {
+  id: string;
+  purpose: string;
+  alg: string;
+  rotation: string;
+  status: string;
+}
+
+interface EvalHarnessScore {
+  domain: string;
+  score: number;
+  tests: number;
+  passed: number;
+}
 
 export default function SecurityDashboardPage() {
+  const [encryptionKeys, setEncryptionKeys] = useState<EncryptionKey[]>([]);
+  const [evalScores, setEvalScores] = useState<EvalHarnessScore[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSeedData<{ encryption_keys: EncryptionKey[]; eval_harness_scores: EvalHarnessScore[] }>("security").then((d) => {
+      setEncryptionKeys(d.encryption_keys ?? []);
+      setEvalScores(d.eval_harness_scores ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12 text-sm text-gray-400">Loading...</div>;
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
@@ -45,12 +80,7 @@ export default function SecurityDashboardPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {[
-              { id: "K-001", purpose: "Audit log encryption", alg: "AES-256-GCM", rotation: "2026-07-15", status: "active" },
-              { id: "K-002", purpose: "PII field encryption", alg: "AES-256-GCM", rotation: "2026-08-01", status: "active" },
-              { id: "K-003", purpose: "Evidence storage", alg: "AES-256-GCM", rotation: "2026-06-01", status: "rotation-due" },
-              { id: "K-004", purpose: "API token signing", alg: "Ed25519", rotation: "2026-09-10", status: "active" },
-            ].map((k) => (
+            {encryptionKeys.map((k) => (
               <tr key={k.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-mono text-xs text-gray-500">{k.id}</td>
                 <td className="px-5 py-3 font-medium text-gray-900">{k.purpose}</td>
@@ -71,13 +101,7 @@ export default function SecurityDashboardPage() {
         <h2 className="text-base font-semibold text-gray-900">Eval Harness Scores by Domain</h2>
         <p className="mt-1 text-xs text-gray-500">Latest nightly evaluation run results</p>
         <div className="mt-4 space-y-3">
-          {[
-            { domain: "Code Diff Evaluation", score: 94, tests: 212, passed: 199 },
-            { domain: "Contract Clause Analysis", score: 87, tests: 85, passed: 74 },
-            { domain: "HR Event Compliance", score: 91, tests: 56, passed: 51 },
-            { domain: "Transaction Screening", score: 82, tests: 38, passed: 31 },
-            { domain: "Creative Content Review", score: 78, tests: 24, passed: 19 },
-          ].map((d) => (
+          {evalScores.map((d) => (
             <div key={d.domain}>
               <div className="mb-1 flex items-center justify-between text-sm">
                 <span className="text-gray-700">{d.domain}</span>
