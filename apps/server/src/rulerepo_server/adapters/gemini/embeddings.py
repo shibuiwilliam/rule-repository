@@ -8,7 +8,7 @@ from rulerepo_server.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-EMBEDDING_MODEL = "gemini-embedding-exp-03-07"
+EMBEDDING_MODEL = "gemini-embedding-001"
 EMBEDDING_DIMENSION = 768
 
 
