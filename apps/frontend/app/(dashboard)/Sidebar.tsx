@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   // Observe
   { href: "/dashboard", key: "dashboard", section: "observe" },
   { href: "/intelligence", key: "intelligence", section: "observe" },
-  { href: "/compliance", key: "compliance", section: "observe" },
+  { href: "/compliance-cockpit", key: "compliance", section: "observe" },
   { href: "/feedback", key: "feedback", section: "observe" },
   { href: "/notifications", key: "notifications", section: "observe" },
   { href: "/agents", key: "agents", section: "observe" },
