@@ -81,7 +81,7 @@ reset: ## Reset all data to initial state (wipe volumes + rebuild + seed)
 	@curl -sf http://localhost:8000/readyz > /dev/null 2>&1 || { echo "Error: server did not become ready"; exit 1; }
 	@echo "Server is ready (migrations ran at container startup)."
 	@echo "Seeding sample rules..."
-	uv run python scripts/seed_data.py
+	RULEREPO_SERVER_URL=http://localhost:8000 uv run python scripts/seed_data.py
 	@echo "Reset complete. Stack is running with fresh data."
 
 restart: down up ## Restart the full stack
@@ -232,7 +232,7 @@ db.revision: ## Create a new Alembic migration (usage: make db.revision MSG="add
 .PHONY: seed reconcile spec-audit
 
 seed: ## Load sample rules into a running stack
-	uv run python scripts/seed_data.py
+	RULEREPO_SERVER_URL=http://localhost:8000 uv run python scripts/seed_data.py
 
 reconcile: ## Rebuild Neo4j graph from PostgreSQL source of truth
 	uv run python scripts/reconcile_graph.py
